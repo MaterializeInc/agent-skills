@@ -58,6 +58,11 @@ Help me set up a materialized view that joins two sources
 ```
 What's the syntax for CREATE SINK?
 ```
+Skills can also be explicitly invoked in user prompts:
+
+```
+❯ /materialize-docs what sources are supported?
+```
 
 ## Compatibility
 
