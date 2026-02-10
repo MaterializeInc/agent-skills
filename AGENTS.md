@@ -138,10 +138,10 @@ Install skills from this repository using the [Skills CLI](https://github.com/ve
 
 ```bash
 # Install all skills from this repo
-npx @anthropic-ai/skills add MaterializeInc/agent-skills
+npx skills add MaterializeInc/agent-skills
 
 # Install a specific skill
-npx @anthropic-ai/skills add MaterializeInc/agent-skills@materialize-docs
+npx skills add MaterializeInc/agent-skills@materialize-docs
 ```
 
 The CLI auto-detects installed agents (Claude Code, Cursor, Cline, etc.) and
@@ -166,5 +166,5 @@ After installing, confirm the skill is available:
 ls ~/.claude/skills/materialize-docs/SKILL.md
 
 # For a local (development) install from a checkout of this repo
-npx @anthropic-ai/skills add ./
+npx skills add ./
 ```
