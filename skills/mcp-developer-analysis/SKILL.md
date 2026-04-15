@@ -12,40 +12,46 @@ report with health status, performance findings, and optimization recommendation
 
 ## Discovering Tables and Columns
 
-**Before writing any query**, use the `mz_ontology` schema to discover the
-correct tables, columns, join paths, and ID types. Do NOT guess column names.
+**Do NOT guess column names.** Before writing queries, check if the `mz_ontology`
+schema is available by running:
 
-### Ontology tables
+```sql
+SHOW TABLES FROM mz_ontology
+```
+
+### If mz_ontology is available
+
+Use it to discover the correct tables, columns, join paths, and ID types:
 
 | Table | What it tells you |
 |-------|-------------------|
-| `mz_ontology.mz_ontology_entity_types` | What catalog entities exist (e.g., `cluster`, `source`, `materialized_view`) and which `mz_*` table they map to. The `properties` jsonb has `{"primary_key": ["id"]}`. |
-| `mz_ontology.mz_ontology_link_types` | Relationships between entities — foreign keys, metrics, measurements. The `properties` jsonb has `kind`, `source_column`, `target_column`, `cardinality`. |
-| `mz_ontology.mz_ontology_properties` | Every column for each entity type, with its semantic type and description. |
-| `mz_ontology.mz_ontology_semantic_types` | Typed ID domains (CatalogItemId, ReplicaId, ByteCount, etc.) and their SQL types. |
+| `mz_ontology.mz_ontology_entity_types` | What catalog entities exist and which `mz_*` table they map to. |
+| `mz_ontology.mz_ontology_link_types` | Relationships between entities (foreign keys, metrics, etc.). |
+| `mz_ontology.mz_ontology_properties` | Column names, types, and descriptions for each entity. |
+| `mz_ontology.mz_ontology_semantic_types` | Typed ID domains (CatalogItemId, ReplicaId, etc.). |
 
-### How to use the ontology
-
-**To find the right table for an entity:**
+Example queries:
 ```sql
+-- Find the right table for an entity
 SELECT name, relation, description
 FROM mz_ontology.mz_ontology_entity_types
 WHERE name LIKE '%source%'
-```
 
-**To find how two entities are related (join path):**
-```sql
+-- Find join paths between entities
 SELECT name, source_entity, target_entity, properties, description
 FROM mz_ontology.mz_ontology_link_types
 WHERE source_entity = 'source' OR target_entity = 'source'
-```
 
-**To find columns for a table:**
-```sql
+-- Find columns for a table
 SELECT column_name, semantic_type, description
 FROM mz_ontology.mz_ontology_properties
 WHERE entity_type = 'source_status'
 ```
+
+### If mz_ontology is NOT available
+
+Use `SHOW COLUMNS FROM <schema>.<table>` to verify column names before querying.
+Refer to the Critical Rules below for known pitfalls.
 
 ## Critical Rules
 
