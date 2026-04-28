@@ -8,78 +8,6 @@ Materialize release notes
 > both Cloud and Self-Managed. See [Release schedule](/releases/schedule) for details.
 
 
-## v26.20.2
-*Released to Materialize Cloud: 2026-04-16* <br>
-*Released to Materialize Self-Managed: 2026-04-17* <br>
-
-This release introduces the built-in Developer MCP server, Console
-improvements, and bug fixes.
-
-### Developer MCP server
-
-> **Public Preview:** This feature is in public preview.
-
-
-Materialize environments now include a built-in Model Context Protocol (MCP)
-[Developer endpoint
-(`/api/mcp/developer`)](/integrations/mcp-server/mcp-developer/). Connecting an
-MCP-compatible coding agent (such as Claude Code, Claude Desktop, or Cursor) to
-this endpoint lets you ask natural language questions about your environment.
-
-For example, you could ask *why is my materialized view stale?* or *how much memory is my cluster using?*. You'll receive a diagnosis and recommendations on how to fix isssues.
-
-For more information, refer to:
-- [Integrations: MCP Server for
-  Developers](/integrations/mcp-server/mcp-developer/)
-
-### Improvements {#v26-20-improvements}
-- **Better Console schema navigation**: The schema dropdown in the SQL Shell now
-  prioritizes schemas from the current database, making it easier to find
-  relevant schemas.
-
-### Bug Fixes {#v26-20-bug-fixes}
-- Fixed Console RBAC users tab that was displaying incorrectly for cloud users
-  due to null `rolcanlogin` values.
-- Fixed builtin dependency ordering issue that could cause system catalog
-  inconsistencies.
-
-## v26.19.0
-*Released to Materialize Cloud: 2026-04-09* <br>
-*Released to Materialize Self-Managed: 2026-04-10* <br>
-
-This release introduces append mode for [Iceberg sinks](/sql/create-sink/iceberg/),
-and bug fixes.
-
-### Iceberg sink append mode
-
-When an [Iceberg sink](/sql/create-sink/iceberg/) is created in append
-mode, all changes are written as data rows — no Iceberg delete files are
-produced. This is especially useful if you're sinking data from a materialized
-view with temporal filters, and you don't want data to be deleted from your Iceberg table as it ages out.
-
-```mzsql
-CREATE SINK events_log_iceberg
-  IN CLUSTER analytics_cluster
-  FROM user_events
-  INTO ICEBERG CATALOG CONNECTION iceberg_catalog_connection (
-    NAMESPACE = 'events',
-    TABLE = 'user_events_log'
-  )
-  USING AWS CONNECTION aws_connection
-  MODE APPEND
-  WITH (COMMIT INTERVAL = '5m');
-```
-
-For more information, refer to:
-- [Guide: Apache Iceberg sink](/serve-results/sink/iceberg/)
-- [Reference: `CREATE SINK ICEBERG`](/sql/create-sink/iceberg/)
-
-### Bug Fixes {#v26.19-bug-fixes}
-
-- Fixed identifier display in system catalog tables `mz_kafka_source_tables`,
-  `mz_mysql_source_tables`, and `mz_postgres_source_tables` to show raw values
-  without SQL quoting (e.g., `my-kafka-topic` instead of `"my-kafka-topic"`).
-
 ## v26.18.0
 *Released to Materialize Cloud: 2026-04-02* <br>
 *Released to Materialize Self-Managed: 2026-04-03* <br>
@@ -879,24 +807,6 @@ notes](/self-managed-deployments/upgrading/#version-specific-upgrade-notes).
 ## See also
 
 - [Release Schedule](/releases/schedule/)
-
-
-
----
-
-## Materialize v26.23
-
-
-
----
-
-## Materialize v26.22
-
-
-
----
-
-## Materialize v26.21
 
 
 

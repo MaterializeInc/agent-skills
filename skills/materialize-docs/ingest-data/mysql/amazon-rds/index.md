@@ -233,6 +233,62 @@ enables binary logging (`log_bin`).
      
    
    <td>
+   <code>binlog_row_metadata</code>
+   </td>
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
+   <td>
+   <code>FULL</code>
+   </td>
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
+   <td>
+   Required when using the <code>CREATE TABLE FROM SOURCE</code> syntax.
+   </td>
+   
+   </tr>
+   
+   
+   
+   
+   
+   
+   
+     
+     
+   
+   
+   <tr>
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
+   <td>
    <code>gtid_mode</code>
    </td>
    

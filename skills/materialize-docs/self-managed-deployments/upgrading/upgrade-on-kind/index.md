@@ -62,7 +62,7 @@ deployment does not have a license key configured, contact <a href="https://mate
 1. Get the sample configuration files for the new version.
 
    ```shell
-   mz_version=v26.20.2
+   mz_version=v26.18.0
 
    curl -o upgrade-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
    ```
@@ -77,7 +77,7 @@ deployment does not have a license key configured, contact <a href="https://mate
    ```shell
    helm upgrade my-materialize-operator materialize/materialize-operator \
    --namespace=materialize \
-   --version v26.20.2 \
+   --version v26.18.0 \
    -f upgrade-values.yaml \
    --set observability.podMetrics.enabled=true
    ```
@@ -109,7 +109,7 @@ deployment has not been configured with a license key:
 
    | Field | Description |
    |-------|-------------|
-   | `environmentdImageRef` | Update the version to the new version. This should be the same as the operator version: `v26.20.2`. |
+   | `environmentdImageRef` | Update the version to the new version. This should be the same as the operator version: `v26.18.0`. |
    | `requestRollout` or `forceRollout`| Enter a new UUID. Can be generated with `uuidgen`. <br> <ul><li>`requestRollout` triggers a rollout only if changes exist. </li><li>`forceRollout` triggers a rollout even if no changes exist.</li></ul> |
 
 
@@ -120,7 +120,7 @@ deployment has not been configured with a license key:
      name: 12345678-1234-1234-1234-123456789012
      namespace: materialize-environment
    spec:
-     environmentdImageRef: materialize/environmentd:v26.20.2 # Update version
+     environmentdImageRef: materialize/environmentd:v26.18.0 # Update version
      requestRollout: 22222222-2222-2222-2222-222222222222    # Enter a new UUID
    # forceRollout: 33333333-3333-3333-3333-333333333333    # For forced rollouts
      rolloutStrategy: WaitUntilReady                         # The mechanism to use when rolling out the new version.

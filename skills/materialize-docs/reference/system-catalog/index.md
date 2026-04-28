@@ -1337,12 +1337,9 @@ each materialized view with a refresh strategy other than `on-commit`.
 
 ## `mz_mcp_data_products`
 
-The `mz_mcp_data_products` view lists data products (materialized views
-and indexed views) that are available through the Model Context Protocol
-(MCP) server and that the current user has SELECT access on. Non-indexed
-regular views are excluded to avoid triggering a full recompute when an
-agent queries the data product. Comments are optional enrichment. This
-is a lightweight discovery view. Use
+The `mz_mcp_data_products` view lists data products (i.e., indexed materialized
+views) that are available through the Model Context Protocol (MCP) server and
+that the current user can access. This is a lightweight discovery view. Use
 [`mz_mcp_data_product_details`](#mz_mcp_data_product_details) for full column
 schema information.
 
@@ -1350,8 +1347,8 @@ schema information.
 | Field         | Type     | Meaning                                                                                  |
 | ------------- | -------- | ---------------------------------------------------------------------------------------- |
 | `object_name` | [`text`] | Fully qualified object name (database.schema.name).                                      |
-| `cluster`     | [`text`] | Cluster where the object computes or its index is hosted. The object can be read from any cluster. |
-| `description` | [`text`] | Index comment if available, otherwise object comment. Used as data product description.   |
+| `cluster`     | [`text`] | Cluster where the index is hosted.                                                       |
+| `description` | [`text`] | Index comment (used as data product description).                                        |
 
 ## `mz_mcp_data_product_details`
 
@@ -1362,8 +1359,8 @@ with a JSON Schema describing each data product's columns and types.
 | Field         | Type     | Meaning                                                                                  |
 | ------------- | -------- | ---------------------------------------------------------------------------------------- |
 | `object_name` | [`text`] | Fully qualified object name (database.schema.name).                                      |
-| `cluster`     | [`text`] | Cluster where the object computes or its index is hosted. The object can be read from any cluster. |
-| `description` | [`text`] | Index comment if available, otherwise object comment. Used as data product description.   |
+| `cluster`     | [`text`] | Cluster where the index is hosted.                                                       |
+| `description` | [`text`] | Index comment (used as data product description).                                        |
 | `schema`      | [`jsonb`]| JSON Schema describing the object's columns and types.                                   |
 
 ## `mz_object_dependencies`
@@ -2181,6 +2178,7 @@ The `mz_webhook_sources` table contains a row for each webhook source in the sys
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_catalog_raw -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_cluster_workload_classes -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_compute_error_counts_raw_unified -->
+<!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_continual_tasks -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_recent_activity_log_redacted -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_recent_activity_log_thinned -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_aggregates -->
@@ -2193,6 +2191,7 @@ The `mz_webhook_sources` table contains a row for each webhook source in the sys
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_show_cluster_replicas -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_show_columns -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_show_connections -->
+<!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_show_continual_tasks -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_show_databases -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_show_indexes -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_show_materialized_views -->

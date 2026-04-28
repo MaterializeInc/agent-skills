@@ -16,16 +16,6 @@ Syntax element                | Description
 **LIKE** \<pattern\>          | If specified, only show clusters that match the pattern.
 **WHERE** <condition(s)>      | If specified, only show clusters that match the condition(s).
 
-## Output
-
-Column       | Description
--------------|------------
-**cluster**  | The name of the cluster.
-**replica**  | The name of the replica.
-**size**     | The [size](/sql/create-cluster#available-sizes) of the replica.
-**ready**    | Whether all indexes, materialized views, sources, and sinks on the cluster have hydrated.
-**comment**  | The [comment](/sql/comment-on) associated with the cluster replica, if any.
-
 ## Examples
 
 ```mzsql
@@ -33,8 +23,8 @@ SHOW CLUSTER REPLICAS;
 ```
 
 ```nofmt
-    cluster    | replica |  size  | ready | comment
----------------+---------|--------|-------|--------
+    cluster    | replica |  size  | ready |
+---------------+---------|--------|-------|
  auction_house | bigger  | 1600cc | t     |
  quickstart    | r1      | 25cc   | t     |
 ```
@@ -44,9 +34,9 @@ SHOW CLUSTER REPLICAS WHERE cluster = 'quickstart';
 ```
 
 ```nofmt
-    cluster    | replica |  size  | ready | comment
----------------+---------|--------|-------|--------
- quickstart    | r1      | 25cc   | t     |
+    cluster    | replica |  size  | ready|
+---------------+---------|--------|-------
+ quickstart    | r1      | 25cc   | t    |
 ```
 
 

@@ -1,4 +1,4 @@
-# materialize-docs
+# materialize-docs v26.20.2
 
 Documentation retrieval and synthesis for Materialize.
 
