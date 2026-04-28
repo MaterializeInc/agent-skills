@@ -20,7 +20,7 @@ disaster recovery **as long as**:
 In such cases, your mean time to recovery is the **same as your compute
 cluster's rehydration time**.
 
-> **💡 Recommendation:** When running with the basic configuration, we recommend that you track your rehydration time to ensure that it is within an acceptable range for your business' risk tolerance.
+> **💡 Recommendation:** When running with the basic configuration, we recommend that you track your rehydration time to ensure that it is within an acceptable range for your business' risk tolerance. 
 
 
 ## Level 2:  Multi-replica clusters (High availability across AZs)
@@ -58,7 +58,7 @@ AZ level failures for those clusters:
 As such, your compute and serving clusters will continue to serve up-to-date
 data uninterrupted in the case of a replica failure.
 
-> **💡 Cost and work capacity:** <ul> <li> <p>Each replica incurs cost, calculated as <code>cluster size * replication factor</code> per second. See <a href="/administration/billing/" >Usage &amp; billing</a> for more details.</p> </li> <li> <p>Increasing the replication factor does <strong>not</strong> increase the cluster&rsquo;s work capacity. Replicas are exact copies of one another: each replica must do exactly the same work as all the other replicas of the cluster(i.e., maintain the same dataflows and process the same queries). To increase the capacity of a cluster, you must increase its size.</p> </li> </ul>
+> **💡 Cost and work capacity:** <ul> <li> <p>Each replica incurs cost, calculated as <code>cluster size * replication factor</code> per second. See <a href="/administration/billing/" >Usage &amp; billing</a> for more details.</p> </li> <li> <p>Increasing the replication factor does <strong>not</strong> increase the cluster&rsquo;s work capacity. Replicas are exact copies of one another: each replica must do exactly the same work as all the other replicas of the cluster(i.e., maintain the same dataflows and process the same queries). To increase the capacity of a cluster, you must increase its size.</p> </li> </ul> 
 
 
 If you require resilience beyond a single region, consider the Level 3 strategy.
@@ -81,7 +81,7 @@ environment in another region. With this strategy:
 can also be accessed from the second region, the two Materialize environments
 can guarantee the same results.
 
-> **💡 No strict transactional consistency between environments:** This approach does <red>**not**</red> offer strict transactional consistency across regions. However, as long as both regions are caught up, the results should be within about a second of each other.
+> **💡 No strict transactional consistency between environments:** This approach does <red>**not**</red> offer strict transactional consistency across regions. However, as long as both regions are caught up, the results should be within about a second of each other. 
 
 
 The duplicate Materialize environment setup can be adapted into a more
@@ -145,7 +145,7 @@ in underlying providers.
 | <strong>Single Region System Resources</strong> | There are metadata resources running in HA in <strong>us-east-1</strong>. An outage in <strong>us-east-1</strong> may result in issues viewing the console for other regions. This does <strong>not</strong> affect database access, up-time, or performance. |
 
 
-> **Recommendation(s):** - Use privatelink when possible and configure to use multiple AZs. - If you are concerned about multi-AZ outages, consider [duplicate Materialize environment in second region strategy](/manage/disaster-recovery/#level-3-a-duplicate-materialize-environment-inter-region-resilience)
+> **Recommendation(s):** - Use privatelink when possible and configure to use multiple AZs. - If you are concerned about multi-AZ outages, consider [duplicate Materialize environment in second region strategy](/manage/disaster-recovery/#level-3-a-duplicate-materialize-environment-inter-region-resilience) 
 
 
 ## Database environment
@@ -168,7 +168,7 @@ RPO (Recovery Point Objective) • RTO (Recovery Time Objective) • RF (Replica
 Factor)
 </span>
 
-> **Key point(s):** - If `environmentd` becomes unavailable, RTO is non-zero. - If `environmentd` becomes unavailable, its RTO affects the RTO of the clusters as you cannot access data while `environmentd` is unavailable.
+> **Key point(s):** - If `environmentd` becomes unavailable, RTO is non-zero. - If `environmentd` becomes unavailable, its RTO affects the RTO of the clusters as you cannot access data while `environmentd` is unavailable. 
 
 
 ### Clusters
@@ -185,7 +185,7 @@ RPO (Recovery Point Objective) • RTO (Recovery Time Objective) • RF (Replica
 Factor)
 </span>
 
-> **Key point(s):** - Cluster RTO can be affected if the environmentd is down (seconds to minutes). - For regional failover strategy, you can use a [duplicate Materialize environment strategy](/manage/disaster-recovery/#level-3-a-duplicate-materialize-environment-inter-region-resilience).
+> **Key point(s):** - Cluster RTO can be affected if the environmentd is down (seconds to minutes). - For regional failover strategy, you can use a [duplicate Materialize environment strategy](/manage/disaster-recovery/#level-3-a-duplicate-materialize-environment-inter-region-resilience). 
 
 
 ## Materialize data corruption/operations error
@@ -214,9 +214,10 @@ RPO (Recovery Point Objective) • RTO (Recovery Time Objective) • RF (Replica
 Factor)
 </span>
 
-> **Key point(s):** - You can use [RBAC](/security/access-control/) to reduce the risk of accidentally dropping sources (and other objects) in Materialize.
+> **Key point(s):** - You can use [RBAC](/security/access-control/) to reduce the risk of accidentally dropping sources (and other objects) in Materialize. 
 
 
 ## See also
 
 - [Disaster recovery (DR) strategies](/manage/disaster-recovery/)
+

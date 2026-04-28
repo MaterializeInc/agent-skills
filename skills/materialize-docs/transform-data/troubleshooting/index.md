@@ -52,7 +52,7 @@ one.
 Other options to consider:
 
 * If you've gone through the dataflow troubleshooting and do not want to make
-  any changes to your query, consider [sizing up your cluster](/sql/create-cluster/#size).
+  any changes to your query, consider [sizing up your cluster](/sql/create-cluster/#available-sizes).
 * You can also consider changing your [isolation level](/get-started/isolation-level/),
   depending on the consistency guarantees that you need. With a lower isolation
   level, you may be able to query stale results out of lagging indexes and
@@ -247,7 +247,7 @@ If your query was the root cause, you’ll need to kill it for the cluster repli
 
 If your query was not the root cause, you can wait for the other activity on the cluster to stop and Memory Utilization/CPU to go down, or switch to a different cluster.
 
-If you’ve gone through the dataflow troubleshooting and do not want to make any changes to your query, consider [sizing up your cluster](https://materialize.com/docs/sql/create-cluster/#size). A larger size cluster will provision more resources.
+If you’ve gone through the dataflow troubleshooting and do not want to make any changes to your query, consider [sizing up your cluster](https://materialize.com/docs/sql/create-cluster/#available-sizes). A larger size cluster will provision more resources.
 
 
 ## Which part of my query runs slowly or uses a lot of memory?
@@ -269,7 +269,7 @@ in the [Materialize console](/console/). You can filter
 and sort statements by type, duration, and other dimensions.
 
 This data is also available via the
-[mz_internal.mz_recent_activity_log](/sql/system-catalog/mz_internal/#mz_recent_activity_log)
+[mz_internal.mz_recent_activity_log](/reference/system-catalog/mz_internal/#mz_recent_activity_log)
 catalog table.
 
 It's important to note that the default (and max) sample rate for most
@@ -277,6 +277,6 @@ Materialize organizations is 99%, which means that not all statements will be
 captured in the log. The sampling rate is not user-configurable, and may change
 at any time.
 
-If you're looking for a complete audit history, use the [mz_audit_events](/sql/system-catalog/mz_catalog/#mz_audit_events)
+If you're looking for a complete audit history, use the [mz_audit_events](/reference/system-catalog/mz_catalog/#mz_audit_events)
 catalog table, which records all DDL commands issued against your Materialize
 region.

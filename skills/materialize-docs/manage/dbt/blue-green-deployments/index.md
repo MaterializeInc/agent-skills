@@ -187,3 +187,4 @@ deployment environment to ensure it's safe to [cutover](#cutover-and-cleanup).
    > **Note:** Any **active `SUBSCRIBE` commands** attached to the swapped
 >    cluster(s) **will break**. On retry, the client will automatically connect
 >    to the newly deployed cluster
+

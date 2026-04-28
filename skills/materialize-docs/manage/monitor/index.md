@@ -26,7 +26,7 @@ prevent operational incidents. For alert rules guidelines, see
 
 ### Monitoring
 
-You can monitor the performance and overall health of your Self-Manaed
+You can monitor the performance and overall health of your Self-Managed
 Materialize.
 
 To help you get started, the following guides are available:
@@ -78,7 +78,7 @@ This section covers monitoring and alerting for Self-Managed Materialize.
 
 ### Monitoring
 
-You can monitor the performance and overall health of your Self-Manaed
+You can monitor the performance and overall health of your Self-Managed
 Materialize.
 
 To help you get started, the following guides are available:
@@ -94,3 +94,4 @@ After setting up a monitoring tool, you can configure alert rules. Alert rules
 send a notification when a metric surpasses a threshold. This will help you
 prevent operational incidents. For alert rules guidelines, see
 [Alerting](/manage/monitor/self-managed/alerting/).
+

@@ -18,7 +18,7 @@ JOIN mysql_simple_region AS region ON user.region_id = region.id
 GROUP BY region.id;
 ```
 
-Performing a `SELECT` on an indexed view or a materialized view is
+Performing a `SELECT` on an indexed view or an indexed materialized view is
 Materialize's ideal operation. When Materialize receives such a `SELECT` query,
 it quickly returns the maintained results from memory.
 
@@ -72,3 +72,4 @@ For more information, see [`SUBSCRIBE`](/sql/subscribe/) reference page.  See
 also the following client library guides:
 
 <ul style="column-count: 2"><li><a href="/integrations/client-libraries/golang/#stream" >Go</a></li></li><li><a href="/integrations/client-libraries/java-jdbc/#stream" >Java</a></li></li><li><a href="/integrations/client-libraries/node-js/#stream" >Node.js</a></li></li><li><a href="/integrations/client-libraries/php/#stream" >PHP</a></li></li><li><a href="/integrations/client-libraries/python/#stream" >Python</a></li></li><li><a href="/integrations/client-libraries/ruby/#stream" >Ruby</a></li></li><li><a href="/integrations/client-libraries/rust/#stream" >Rust</a></li></li></ul>
+

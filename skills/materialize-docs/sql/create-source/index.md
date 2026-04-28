@@ -65,19 +65,33 @@ FROM MYSQL CONNECTION <connection_name> [
 For details, see [CREATE SOURCE: MySQL](/sql/create-source/mysql/).
 
 
-**SQL Server:**
+**SQL Server (New):**
+
+<no value>```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM SQL SERVER CONNECTION <connection_name>
+
+```
+
+For details, see [CREATE SOURCE: SQL Server (New Syntax)](/sql/create-source/sql-server-v2/).
+
+
+
+**SQL Server (Legacy):**
 
 <no value>```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
 [IN CLUSTER <cluster_name>]
 FROM SQL SERVER CONNECTION <connection_name>
   [ ( EXCLUDE COLUMNS (<col1> [, ...]) ) ]
+  [ ( TEXT COLUMNS (<col1> [, ...]) ) ]
 <FOR ALL TABLES | FOR TABLES ( <table1> [AS <subsrc_name>] [, ...] )>
 [WITH (RETAIN HISTORY FOR <retention_period>)]
 
 ```
 
-For details, see [CREATE SOURCE: SQL Server](/sql/create-source/sql-server/).
+For details, see [CREATE SOURCE: SQL Server(Legacy)](/sql/create-source/sql-server/).
 
 
 
@@ -844,7 +858,7 @@ ORDER BY
 To connect to a Kafka/Redpanda broker (and optionally a schema registry), you
 first need to [create a connection](#prerequisite-creating-a-connection) that specifies
 access and authentication parameters. Once created, a connection is **reusable**
-across multiple `CREATE SOURCE` and `CREATE SINK` statements.
+across multiple `CREATE SOURCE` and `CREATE SINK` statements. 
 
 
 > **Note:** The same syntax, supported formats and features can be used to connect to a
@@ -1431,7 +1445,7 @@ Debezium may produce duplicate records if the connector is interrupted. Material
 
 Kafka sources that use `ENVELOPE UPSERT` or `ENVELOPE DEBEZIUM` require storing
 the current value for _each key_ in the source to produce retractions when keys
-are updated. When using [standard cluster sizes](/sql/create-cluster/#size),
+are updated. When using [standard cluster sizes](/sql/create-cluster/#available-sizes),
 Materialize will automatically offload this state to disk, seamlessly handling
 key spaces that are larger than memory.
 
@@ -2107,7 +2121,7 @@ database has been configured for GTID-based binlog replication:
 
 
 
-
+  
 
 
 
@@ -2159,11 +2173,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>log_bin</code>
@@ -2173,11 +2187,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -2187,11 +2201,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -2212,11 +2226,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_format</code>
@@ -2226,11 +2240,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ROW</code>
@@ -2240,11 +2254,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
@@ -2265,11 +2279,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_row_image</code>
@@ -2279,11 +2293,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>FULL</code>
@@ -2293,11 +2307,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -2318,11 +2332,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>gtid_mode</code>
@@ -2332,11 +2346,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -2346,11 +2360,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -2371,11 +2385,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>enforce_gtid_consistency</code>
@@ -2385,11 +2399,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -2399,11 +2413,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -2424,11 +2438,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>replica_preserve_commit_order</code>
@@ -2438,11 +2452,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -2452,11 +2466,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 Only required when connecting Materialize to a read-replica.
@@ -3643,8 +3657,58 @@ guides</a>.</p>
 
 
 
+Once you have configured the upstream PostgreSQL, network security, and
+created the connection, you can create the source. In this example, the
+PostgreSQL publication is `mz_source` and the connection to PostgreSQL is
+`pg_connection`.
+```mzsql
+/* This example assumes:
+- In the upstream PostgreSQL, you have defined:
+  - replication user and password with the appropriate access.
+  - a publication named `mz_source` for the `public.items` and `public.orders` tables.
+- In Materialize:
+  - You have created a secret for the PostgreSQL password.
+  - You have defined the connection to the upstream PostgreSQL.
+  - You have used the connection to create a source.
 
+  For example (substitute with your configuration):
+    CREATE SECRET pgpass AS '<replication user password>'; -- substitute
+    CREATE CONNECTION pg_connection TO POSTGRES (
+      HOST '<hostname>',          -- substitute
+      DATABASE <db>,              -- substitute
+      USER <replication user>,    -- substitute
+      PASSWORD SECRET pgpass
+      -- [, <network security configuration> ]
+    );
+*/
 
+CREATE SOURCE pg_source
+FROM POSTGRES CONNECTION pg_connection (
+  PUBLICATION 'mz_source'
+);
+
+```
+
+After a source is created, you can create tables from the source,
+referencing specific upstream table(s). Use a [DDL transaction block](/sql/begin/#ddl-only-transactions) to create multiple tables from the same source.
+```mzsql
+BEGIN;
+CREATE TABLE items
+FROM SOURCE pg_source(REFERENCE public.items)
+;
+CREATE TABLE orders
+FROM SOURCE pg_source(REFERENCE public.orders)
+;
+COMMIT;
+
+```
+{{< note >}}
+
+- Although the example creates the tables with the same name as the upstream tables, the tables in Materialize can have different names.
+- You can create multiple tables that reference the same upstream table.
+{{< /note >}}
+
+For more information, see [`CREATE TABLE`](/sql/create-table/).
 
 
 ## Related pages
@@ -3656,6 +3720,223 @@ guides</a>.</p>
 
 [`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
 [`money`]: https://www.postgresql.org/docs/current/datatype-money.html
+
+
+---
+
+## CREATE SOURCE: SQL Server
+
+
+
+
+> **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/sql-server/).
+
+
+## Prerequisites
+
+[`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
+
+
+Materialize supports SQL Server (2016+) as a real-time data source. To connect to a
+SQL Server database, you first need to tweak its configuration to enable [Change Data
+Capture](https://learn.microsoft.com/en-us/sql/relational-databases/track-changes/enable-and-disable-change-data-capture-sql-server)
+and [`SNAPSHOT` transaction isolation](https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/snapshot-isolation-in-sql-server)
+for the database that you would like to replicate. Then [create a connection](#prerequisite-creating-a-connection-to-sql-server)
+in Materialize that specifies access and authentication parameters.
+
+
+
+## Syntax
+
+
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM SQL SERVER CONNECTION <connection_name>
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<src_name>` | The name for the source.  |
+| **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
+| **CONNECTION** `<connection_name>` | The name of the SQL Server connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#sql-server) documentation page.  |
+
+
+## Ingesting data
+
+After a source is created, you can create tables from the source
+upstream SQL Server database that have [Change Data Capture enabled](https://learn.microsoft.com/en-us/sql/relational-databases/track-changes/about-change-data-capture-sql-server).
+You can create multiple tables that reference the same table in the source.
+
+See [`CREATE TABLE FROM SOURCE`](/sql/create-table/) for details.
+
+#### Handling table schema changes
+
+The use of the `CREATE SOURCE` with the new [`CREATE TABLE FROM
+SOURCE`](/sql/create-table/) allows for the handling of certain upstream DDL
+changes without downtime.
+
+See [Guide: Handle upstream schema changes with zero downtime](/ingest-data/sql-server/source-versioning/) for details.
+
+#### Supported types
+
+With the new syntax, after a SQL Server source is created, you [`CREATE TABLE
+FROM SOURCE`](/sql/create-table/) to create a corresponding table in
+Matererialize and start ingesting data.
+
+<p>Materialize natively supports the following SQL Server types:</p>
+<ul style="column-count: 3">
+<li><code>tinyint</code></li>
+<li><code>smallint</code></li>
+<li><code>int</code></li>
+<li><code>bigint</code></li>
+<li><code>real</code></li>
+<li><code>double precision</code></li>
+<li><code>float</code></li>
+<li><code>bit</code></li>
+<li><code>decimal</code></li>
+<li><code>numeric</code></li>
+<li><code>money</code></li>
+<li><code>smallmoney</code></li>
+<li><code>char</code></li>
+<li><code>nchar</code></li>
+<li><code>varchar</code></li>
+<li><code>varchar(max)</code></li>
+<li><code>nvarchar</code></li>
+<li><code>nvarchar(max)</code></li>
+<li><code>sysname</code></li>
+<li><code>binary</code></li>
+<li><code>varbinary</code></li>
+<li><code>json</code></li>
+<li><code>date</code></li>
+<li><code>time</code></li>
+<li><code>smalldatetime</code></li>
+<li><code>datetime</code></li>
+<li><code>datetime2</code></li>
+<li><code>datetimeoffset</code></li>
+<li><code>uniqueidentifier</code></li>
+</ul>
+
+For more information, including strategies for handling unsupported types,
+see [`CREATE TABLE FROM SOURCE`](/sql/create-table/).
+
+### Monitoring source progress
+
+[//]: # "TODO(morsapaes) Replace this section with guidance using the new
+progress metrics in mz_source_statistics + console monitoring, when available
+(also for PostgreSQL)."
+
+By default, SQL Server sources expose progress metadata as a subsource that you
+can use to monitor source **ingestion progress**. The name of the progress
+subsource can be specified when creating a source using the `EXPOSE PROGRESS
+AS` clause; otherwise, it will be named `<src_name>_progress`.
+
+The following metadata is available for each source as a progress subsource:
+
+Field     | Type                          | Details
+----------|-------------------------------|--------------
+`lsn`     | [`bytea`](/sql/types/bytea/)  | The upper-bound [Log Sequence Number](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-log-architecture-and-management-guide) replicated thus far into Materialize.
+
+
+And can be queried using:
+
+```mzsql
+SELECT lsn
+FROM <src_name>_progress;
+```
+
+The reported `lsn` should increase as Materialize consumes **new** CDC events
+from the upstream SQL Server database. For more details on monitoring source
+ingestion progress and debugging related issues, see [Troubleshooting](/ops/troubleshooting/).
+
+## Example
+
+> **Important:** Before creating a SQL Server source, you must enable Change Data Capture and
+> `SNAPSHOT` transaction isolation in the upstream database.
+
+
+### Creating a source {#create-source-example}
+
+#### Prerequisite: Creating a connection to SQL Server
+
+First, you must create a connection to your SQL Server database. A connection describes how to connect and authenticate to an external system you
+want Materialize to read data from.
+
+Once created, a connection is **reusable** across multiple `CREATE SOURCE`
+statements. For more details on creating connections, check the
+[`CREATE CONNECTION`](/sql/create-connection/#sql-server) documentation page.
+
+```mzsql
+CREATE SECRET sqlserver_pass AS '<SQL_SERVER_PASSWORD>';
+
+CREATE CONNECTION sqlserver_connection TO SQL SERVER (
+    HOST 'instance.foo000.us-west-1.rds.amazonaws.com',
+    PORT 1433,
+    USER 'materialize',
+    PASSWORD SECRET sqlserver_pass,
+    DATABASE '<DATABASE_NAME>'
+);
+```
+
+If your SQL Server instance is not exposed to the public internet, you can
+[tunnel the connection](/sql/create-connection/#network-security-connections)
+through and SSH bastion host.
+
+
+**SSH tunnel:**
+```mzsql
+CREATE CONNECTION ssh_connection TO SSH TUNNEL (
+    HOST 'bastion-host',
+    PORT 22,
+    USER 'materialize',
+    DATABASE '<DATABASE_NAME>'
+);
+```
+
+```mzsql
+CREATE CONNECTION sqlserver_connection TO SQL SERVER (
+    HOST 'instance.foo000.us-west-1.rds.amazonaws.com',
+    SSH TUNNEL ssh_connection,
+    DATABASE '<DATABASE_NAME>'
+);
+```
+
+For step-by-step instructions on creating SSH tunnel connections and configuring
+an SSH bastion server to accept connections from Materialize, check
+[this guide](/ops/network-security/ssh-tunnel/).
+
+
+
+
+#### Creating the source in Materialize
+
+You **must** enable Change Data Capture, see [Enable Change Data Capture SQL Server Instructions](/ingest-data/sql-server/self-hosted/#a-configure-sql-server).
+
+Once CDC is enabled for all of the tables you wish to create subsources for, you can create a `SOURCE` in
+Materialize to begin replicating data!
+
+_Create source from the connection we just created_
+
+```mzsql
+CREATE SOURCE mz_source
+    FROM SQL SERVER CONNECTION sqlserver_connection;
+```
+
+After a source is created, you can create a table from the source, referencing specific table(s).
+
+_Creates a table in Materialize from the upstream table dbo.items_
+```mzsql
+CREATE TABLE items FROM SOURCE mz_source(REFERENCE dbo.items);
+```
+
+## Related pages
+
+- [`CREATE SECRET`](/sql/create-secret)
+- [`CREATE CONNECTION`](/sql/create-connection)
+- [`CREATE SOURCE`](../)
 
 
 ---
@@ -3684,6 +3965,7 @@ CREATE SOURCE [IF NOT EXISTS] <src_name>
 [IN CLUSTER <cluster_name>]
 FROM SQL SERVER CONNECTION <connection_name>
   [ ( EXCLUDE COLUMNS (<col1> [, ...]) ) ]
+  [ ( TEXT COLUMNS (<col1> [, ...]) ) ]
 <FOR ALL TABLES | FOR TABLES ( <table1> [AS <subsrc_name>] [, ...] )>
 [WITH (RETAIN HISTORY FOR <retention_period>)]
 
@@ -3696,6 +3978,7 @@ FROM SQL SERVER CONNECTION <connection_name>
 | **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
 | **CONNECTION** `<connection_name>` | The name of the SQL Server connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#sql-server) documentation page.  |
 | **EXCLUDE COLUMNS** ( `<col1>` [, ...] ) | Optional. Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.  |
+| **TEXT COLUMNS** ( `<col1>` [, ...] ) | Optional. If specified, decode data from the specified columns in the subsource(s) as `text` for the listed column(s), such as for unsupported data types.  |
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables with CDC enabled in all schemas upstream. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables upstream. Requires fully-qualified table names (`<schema1>.<table1>`). \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
@@ -3780,14 +4063,18 @@ ingestion progress and debugging related issues, see [Troubleshooting](/ops/trou
 ## Known limitations
 
 ### Schema changes
-
-> **Note:** Work to more smoothly support ddl changes to upstream tables is currently in
-> progress. The work introduces the ability to re-ingest the same upstream table
-> under a new schema and switch over without downtime.
-
 Materialize supports schema changes in the upstream database as follows:
 
-#### Compatible schema changes
+#### Compatible schema changes (Legacy syntax)
+
+> **Note:** This section refer to the legacy [`CREATE SOURCE ... FOR
+> ...`](/sql/create-source/sql-server/) that creates subsources as part of the
+> `CREATE SOURCE` operation.  To be able to handle the upstream column additions
+> and drops, use [`CREATE SOURCE (New Syntax)`](/sql/create-source/sql-server-v2/)
+> and [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
+> [SQL Server: Source versioning
+> guide](/ingest-data/sql-server/source-versioning/).
+
 
 - Adding columns to tables. Materialize will **not ingest** new columns added
   upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to first
@@ -3799,6 +4086,7 @@ Materialize supports schema changes in the upstream database as follows:
 
 - Adding or removing `NOT NULL` constraints to tables that were nullable when
   the source was created.
+
 
 #### Incompatible schema changes
 
@@ -3858,6 +4146,27 @@ following types:</p>
 <p>Columns with the specified types need to be excluded because <a href="https://learn.microsoft.com/en-us/sql/relational-databases/system-tables/cdc-capture-instance-ct-transact-sql?view=sql-server-2017#large-object-data-types" >SQL Server does not provide
 the &ldquo;before&rdquo;</a>
 value when said column is updated.</p>
+<p>To replicate tables that contain the following unsupported data types:</p>
+<ul>
+<li><code>text</code></li>
+<li><code>ntext</code></li>
+<li><code>image</code></li>
+<li><code>varbinary(max)</code></li>
+</ul>
+<p>You can use either the <code>TEXT COLUMNS</code> or the <code>EXCLUDE COLUMNS</code> option.</p>
+<ul>
+<li>For <code>text</code> and <code>ntext</code> columns:
+<ul>
+<li>You can use <code>TEXT COLUMNS</code> to expose them as varchar and nvarchar, respectively.</li>
+<li>You can use <code>EXCLUDE COLUMNS</code> to omit them from replication.</li>
+</ul>
+</li>
+<li>For <code>image</code> and <code>varbinary(max)</code> columns:
+<ul>
+<li>You can use <code>EXCLUDE COLUMNS</code>.</li>
+</ul>
+</li>
+</ul>
 
 
 ### Timestamp Rounding
@@ -4105,7 +4414,7 @@ Column     | Type                        | Optional?                            
 ### Webhook URL
 
 After source creation, the unique URL that allows you to **POST** events to the
-source can be looked up in the [`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
+source can be looked up in the [`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
 system catalog table. The URL will have the following format:
 
 ```
@@ -4438,3 +4747,4 @@ required data types. To avoid doing this tedious task manually, you can use
 - [`CREATE SOURCE`](../)
 - [`SHOW SOURCES`](/sql/show-sources)
 - [`DROP SOURCE`](/sql/drop-source)
+

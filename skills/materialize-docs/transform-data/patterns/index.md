@@ -122,7 +122,7 @@ views](/sql/create-materialized-view/), you can either:
 
 To see what history retention period has been configured for an object, look up
 the object in the
-[`mz_internal.mz_history_retention_strategies`](/sql/system-catalog/mz_internal/#mz_history_retention_strategies)
+[`mz_internal.mz_history_retention_strategies`](/reference/system-catalog/mz_internal/#mz_history_retention_strategies)
 catalog table. For example:
 
 ```mzsql
@@ -238,6 +238,14 @@ continuous query against Materialize in your application code:
    updates with timestamp greater than the `AS OF` timestamp. To include updates
    that occurred at the last progress timestamp, subtract `1` from the last
    progress timestamp.
+
+   If you're subscribing _directly_ to a collection, as in `SUBSCRIBE TO <your
+   collection> WITH (PROGRESS, SNAPSHOT false) AS OF <time>`, Materialize will
+   only fetch the recent data for that query from storage, which can make this
+   resumption fairly quick. However, subscribing to a query (`SUBSCRIBE TO
+   SELECT... WITH (PROGRESS, SNAPSHOT false) AS OF <time>` will build a new
+   dataflow that needs to rehydrate, which can be slower. For details, see
+   [`SUBSCRIBE`](/sql/subscribe/#snapshot).
 
    In a similar way, as results come in continuously, buffer the latest results
    in memory until you receive a [progress](/sql/subscribe#progress) message. At that point,
@@ -608,7 +616,7 @@ same for HDR histograms.
    precision of the significand to 1/16 (4 bits), the value is reconstructed to
    an approximated value.
 
-
+   
 
    **Materialize Console:**
 
@@ -640,7 +648,7 @@ FROM buckets
 GROUP BY bucket;
 ```
 
-
+   
 
    **psql:**
 
@@ -674,8 +682,8 @@ SELECT
 FROM buckets
 GROUP BY bucket;
 ```
-
-
+   
+   
 
 1. Create a view `hdr_distribution` to calculate the cumulative count and the
    cumulative density for each bucket. The cumulative density is calculated by
@@ -1284,3 +1292,5 @@ The filter in our query appears in the `pushdown=` list at the bottom of the out
 Some common functions, such as casting from a string to a timestamp, can prevent filter pushdown for a query. For similar functions that _do_ allow pushdown, see [the pushdown functions documentation](/sql/functions/pushdown/).
 
 > **Note:** See the guide on [partitioning and filter pushdown](/transform-data/patterns/partition-by/) for a **private preview** feature that can make the filter pushdown optimization more predictable.
+
+

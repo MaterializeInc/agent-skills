@@ -320,3 +320,4 @@ CREATE SOURCE rp_source
   FROM KAFKA CONNECTION redpanda_cloud (TOPIC '<topic-name>')
   FORMAT JSON;
 ```
+

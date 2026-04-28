@@ -2,34 +2,32 @@
 `BEGIN` starts a transaction block.
 <p><a href="/sql/begin/" ><code>BEGIN</code></a> starts a transaction block. Once a transaction is started:</p>
 <ul>
-<li>
-<p>Statements within the transaction are executed sequentially.</p>
-</li>
-<li>
-<p>A transaction ends with either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
-<a href="/sql/rollback/" ><code>ROLLBACK</code></a> statement.</p>
+<li>Statements within the transaction are executed sequentially.</li>
+<li>A transaction ends with either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
+<a href="/sql/rollback/" ><code>ROLLBACK</code></a> statement.
 <ul>
-<li>
-<p>If all transaction statements succeed and a <a href="/sql/commit/" ><code>COMMIT</code></a> is
-<a href="/sql/commit/#details" >issued</a>, all changes are saved.</p>
-</li>
-<li>
-<p>If all transaction statements succeed and a <a href="/sql/rollback/" ><code>ROLLBACK</code></a>
-is issued, all changes are discarded.</p>
-</li>
-<li>
-<p>If an error occurs and either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
-<a href="/sql/rollback/" ><code>ROLLBACK</code></a> is issued, all changes are discarded.</p>
-</li>
+<li>If all transaction statements succeed and a <a href="/sql/commit/" ><code>COMMIT</code></a> is
+<a href="/sql/commit/#details" >issued</a>, all changes are saved.</li>
+<li>If all transaction statements succeed and a <a href="/sql/rollback/" ><code>ROLLBACK</code></a>
+is issued, all changes are discarded.</li>
+<li>If an error occurs and either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
+<a href="/sql/rollback/" ><code>ROLLBACK</code></a> is issued, all changes are discarded.</li>
 </ul>
 </li>
 </ul>
 
+Materialize supports multi-statement[^ddltxn] transaction blocks for:
+- [**read-only** statements](#read-only-transactions);
+- [**write-only** (specifically, insert-only)
+  statements](#write-only-transactions);
+- [**DDL-only** (specifically, `CREATE TABLE FROM SOURCE` (and optionally,
+  `CREATE SOURCE`) statements)](#ddl-only-transactions). (***Private Preview***)
 
-Materialize only supports [**read-only** transactions](#read-only-transactions)
-or [**write-only** (specifically, insert-only)
-transactions](#write-only-transactions). See [Details](#details) for more
-information.
+See [Details](#details) for more information.
+
+[^ddltxn]: Materialize also supports single-statement transaction blocks for various
+`CREATE ...` statements. However, single-statement transactions do not need to
+be wrapped in an explicit transaction block.
 
 ## Syntax
 
@@ -42,16 +40,17 @@ You can specify the following optional settings for `BEGIN`:
 Option | Description
 -------|----------
 `ISOLATION LEVEL <level>` | *Optional*. If specified, sets the transaction [isolation level](/get-started/isolation-level).
-`READ ONLY` | <a name="begin-option-read-only"></a> *Optional*. If specified, restricts the transaction to read-only operations. If unspecified, Materialize restricts the transaction to read-only or insert-only operations based on the first statement in the transaction.
+`READ ONLY` | <a name="begin-option-read-only"></a> *Optional*. If specified, restricts the transaction to [**read-only** statements](#read-only-transactions). If unspecified, Materialize restricts the transaction to [**read-only** statements](#read-only-transactions), [**write-only** statements](#write-only-transactions), or [**DDL-only** statements](#ddl-only-transactions) based on the first statement in the transaction.
 
 ## Details
 
-Transactions in Materialize are either [**read-only**
-transactions](#read-only-transactions) or [**write-only**
-transactions](#insert-only-transactions) as determined by either:
+Multi-statement transactions in Materialize are [**read-only**
+transactions](#read-only-transactions), [**write-only**
+transactions](#write-only-transactions), or [**DDL-only**
+transactions](#ddl-only-transactions) (*Private Preview*) as determined by
+either:
 
 - The first statement after the `BEGIN`, or
-
 - The [`READ ONLY`](#begin-option-read-only) option is specified.
 
 ### Read-only transactions
@@ -164,7 +163,7 @@ statements.
 
 #### INSERT-only transactions
 
-<p>An <strong>insert-only</strong> transaction only contains <a href="/sql/insert/" ><code>INSERT</code></a>
+<p>An <strong>insert-only</strong> transaction block only contains <a href="/sql/insert/" ><code>INSERT</code></a>
 statements that insert into the <strong>same</strong> table.</p>
 <p>On a successful <a href="/sql/commit/" ><code>COMMIT</code></a>, all statements from the
 transaction are committed at the same timestamp.</p>
@@ -173,7 +172,7 @@ transaction are committed at the same timestamp.</p>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="c1">-- Subsequent INSERTs must write to sales_items table only
 </span></span></span><span class="line"><span class="cl"><span class="c1">-- Otherwise, the COMMIT will error and roll back the transaction.
-</span></span></span><span class="line"><span class="cl">
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
 </span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;chocolate cake&#39;</span><span class="p">,</span><span class="mf">1</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;chocolate chip cookie&#39;</span><span class="p">,</span><span class="mf">20</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl"><span class="k">COMMIT</span><span class="p">;</span>
@@ -182,6 +181,26 @@ that of the first statement, on <a href="/sql/commit/" ><code>COMMIT</code></a>,
 encounters an <strong>internal ERROR</strong> and rolls back:</p>
 <pre tabindex="0"><code class="language-none" data-lang="none">ERROR:  internal error, wrong set of locks acquired
 </code></pre>
+
+### DDL-only transactions
+
+
+
+In Materialize, a DDL-only transaction block is a transaction that can contain
+multiple [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/) (and optionally,
+[`CREATE SOURCE`](/sql/create-source/)) statements.[^ddltxn]
+
+In practice, use DDL transaction blocks to create multiple tables from a source
+in a single transaction. On a successful [`COMMIT`](/sql/commit/), all objects
+in the transaction are created with the same timestamp.
+
+```mzsql
+BEGIN;
+CREATE TABLE items FROM SOURCE pg_source (REFERENCE public.items);
+CREATE TABLE orders FROM SOURCE pg_source (REFERENCE public.orders);
+CREATE TABLE customers FROM SOURCE pg_source (REFERENCE public.customers);
+COMMIT;
+```
 
 ## See also
 

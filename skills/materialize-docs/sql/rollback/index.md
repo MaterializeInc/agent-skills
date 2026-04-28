@@ -1,6 +1,6 @@
 # ROLLBACK
-`ROLLBACK` aborts the current [transaction](/sql/begin/#details) and all changes
-in the transaction are discarded.
+`ROLLBACK` aborts the current [transaction](/sql/begin/#details) and rolls back
+all changes made by the transaction.
 
 ## Syntax
 
@@ -11,3 +11,8 @@ ROLLBACK;
 ## Details
 
 Rolls back the current transaction, discarding all changes made by the transaction.
+
+## See also
+
+- [`BEGIN`](/sql/begin)
+- [`COMMIT`](/sql/commit)

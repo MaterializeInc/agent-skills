@@ -17,36 +17,31 @@ COMMIT;
 
 <p><a href="/sql/begin/" ><code>BEGIN</code></a> starts a transaction block. Once a transaction is started:</p>
 <ul>
-<li>
-<p>Statements within the transaction are executed sequentially.</p>
-</li>
-<li>
-<p>A transaction ends with either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
-<a href="/sql/rollback/" ><code>ROLLBACK</code></a> statement.</p>
+<li>Statements within the transaction are executed sequentially.</li>
+<li>A transaction ends with either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
+<a href="/sql/rollback/" ><code>ROLLBACK</code></a> statement.
 <ul>
-<li>
-<p>If all transaction statements succeed and a <a href="/sql/commit/" ><code>COMMIT</code></a> is
-<a href="/sql/commit/#details" >issued</a>, all changes are saved.</p>
-</li>
-<li>
-<p>If all transaction statements succeed and a <a href="/sql/rollback/" ><code>ROLLBACK</code></a>
-is issued, all changes are discarded.</p>
-</li>
-<li>
-<p>If an error occurs and either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
-<a href="/sql/rollback/" ><code>ROLLBACK</code></a> is issued, all changes are discarded.</p>
-</li>
+<li>If all transaction statements succeed and a <a href="/sql/commit/" ><code>COMMIT</code></a> is
+<a href="/sql/commit/#details" >issued</a>, all changes are saved.</li>
+<li>If all transaction statements succeed and a <a href="/sql/rollback/" ><code>ROLLBACK</code></a>
+is issued, all changes are discarded.</li>
+<li>If an error occurs and either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
+<a href="/sql/rollback/" ><code>ROLLBACK</code></a> is issued, all changes are discarded.</li>
 </ul>
 </li>
 </ul>
 
-
-Transactions in Materialize are either **read-only** transactions or
-**write-only** (more specifically, **insert-only**) transactions.
+Transactions in Materialize are **read-only** transactions, **write-only**
+(more specifically, **insert-only**) transactions, or **DDL-only**
+transactions (***Private Preview***).
 
 For a [write-only (i.e., insert-only)
 transaction](/sql/begin/#write-only-transactions), all statements in the
 transaction are committed at the same timestamp.
+
+For a [DDL-only transaction](/sql/begin/#ddl-only-transactions) (***Private
+Preview***), all statements in the transaction are committed at the same
+timestamp.
 
 ## Examples
 
@@ -54,7 +49,7 @@ transaction are committed at the same timestamp.
 
 In Materialize, write-only transactions are **insert-only** transactions.
 
-<p>An <strong>insert-only</strong> transaction only contains <a href="/sql/insert/" ><code>INSERT</code></a>
+<p>An <strong>insert-only</strong> transaction block only contains <a href="/sql/insert/" ><code>INSERT</code></a>
 statements that insert into the <strong>same</strong> table.</p>
 <p>On a successful <a href="/sql/commit/" ><code>COMMIT</code></a>, all statements from the
 transaction are committed at the same timestamp.</p>
@@ -63,7 +58,7 @@ transaction are committed at the same timestamp.</p>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="c1">-- Subsequent INSERTs must write to sales_items table only
 </span></span></span><span class="line"><span class="cl"><span class="c1">-- Otherwise, the COMMIT will error and roll back the transaction.
-</span></span></span><span class="line"><span class="cl">
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
 </span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;chocolate cake&#39;</span><span class="p">,</span><span class="mf">1</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;chocolate chip cookie&#39;</span><span class="p">,</span><span class="mf">20</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl"><span class="k">COMMIT</span><span class="p">;</span>

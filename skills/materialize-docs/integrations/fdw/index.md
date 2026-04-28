@@ -1,4 +1,4 @@
-# Foreign data wrapper (FDW)
+# Foreign data wrapper (FDW) 
 Use FDW to access Materialize
 Materialize can be used as a remote server in a PostgreSQL foreign data wrapper
 (FDW). This allows you to query any object in Materialize as foreign tables from

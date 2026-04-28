@@ -20,7 +20,7 @@ in underlying providers.
 | <strong>Single Region System Resources</strong> | There are metadata resources running in HA in <strong>us-east-1</strong>. An outage in <strong>us-east-1</strong> may result in issues viewing the console for other regions. This does <strong>not</strong> affect database access, up-time, or performance. |
 
 
-> **Recommendation(s):** - Use privatelink when possible and configure to use multiple AZs. - If you are concerned about multi-AZ outages, consider [duplicate Materialize environment in second region strategy](/manage/disaster-recovery/#level-3-a-duplicate-materialize-environment-inter-region-resilience)
+> **Recommendation(s):** - Use privatelink when possible and configure to use multiple AZs. - If you are concerned about multi-AZ outages, consider [duplicate Materialize environment in second region strategy](/manage/disaster-recovery/#level-3-a-duplicate-materialize-environment-inter-region-resilience) 
 
 
 ## Database environment
@@ -43,7 +43,7 @@ RPO (Recovery Point Objective) • RTO (Recovery Time Objective) • RF (Replica
 Factor)
 </span>
 
-> **Key point(s):** - If `environmentd` becomes unavailable, RTO is non-zero. - If `environmentd` becomes unavailable, its RTO affects the RTO of the clusters as you cannot access data while `environmentd` is unavailable.
+> **Key point(s):** - If `environmentd` becomes unavailable, RTO is non-zero. - If `environmentd` becomes unavailable, its RTO affects the RTO of the clusters as you cannot access data while `environmentd` is unavailable. 
 
 
 ### Clusters
@@ -60,7 +60,7 @@ RPO (Recovery Point Objective) • RTO (Recovery Time Objective) • RF (Replica
 Factor)
 </span>
 
-> **Key point(s):** - Cluster RTO can be affected if the environmentd is down (seconds to minutes). - For regional failover strategy, you can use a [duplicate Materialize environment strategy](/manage/disaster-recovery/#level-3-a-duplicate-materialize-environment-inter-region-resilience).
+> **Key point(s):** - Cluster RTO can be affected if the environmentd is down (seconds to minutes). - For regional failover strategy, you can use a [duplicate Materialize environment strategy](/manage/disaster-recovery/#level-3-a-duplicate-materialize-environment-inter-region-resilience). 
 
 
 ## Materialize data corruption/operations error
@@ -89,7 +89,7 @@ RPO (Recovery Point Objective) • RTO (Recovery Time Objective) • RF (Replica
 Factor)
 </span>
 
-> **Key point(s):** - You can use [RBAC](/security/access-control/) to reduce the risk of accidentally dropping sources (and other objects) in Materialize.
+> **Key point(s):** - You can use [RBAC](/security/access-control/) to reduce the risk of accidentally dropping sources (and other objects) in Materialize. 
 
 
 ## See also

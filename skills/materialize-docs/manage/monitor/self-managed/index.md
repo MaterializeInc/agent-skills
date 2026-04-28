@@ -8,7 +8,7 @@ This section covers monitoring and alerting for Self-Managed Materialize.
 
 ### Monitoring
 
-You can monitor the performance and overall health of your Self-Manaed
+You can monitor the performance and overall health of your Self-Managed
 Materialize.
 
 To help you get started, the following guides are available:
@@ -53,7 +53,7 @@ CPU | 85% | 100% | Average CPU usage for a cluster in the last *15 minutes*.
 Memory | 80% | 90% | Average memory usage for a cluster in the last *15 minutes*.
 Source status | - | On Change | Source status change in the last *1 minute*.
 Cluster status | - | On Change | Cluster replica status change in the last *1 minute*.
-Freshness | > 5s | > 1m | Average [lag behind an input](/sql/system-catalog/mz_internal/#mz_materialization_lag) in the last *15 minutes*.
+Freshness | > 5s | > 1m | Average [lag behind an input](/reference/system-catalog/mz_internal/#mz_materialization_lag) in the last *15 minutes*.
 
 ### Custom Thresholds
 
@@ -324,3 +324,4 @@ Ensure you have:
 5. [Import the dashboards using the Prometheus data source](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/import-dashboards/#importing-a-dashboard)
 
     ![Image of Materialize Console login screen with mz_system user](/images/self-managed/grafana-monitoring-success.png)
+

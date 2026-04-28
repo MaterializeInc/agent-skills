@@ -4,7 +4,7 @@ How to configure and manage role-based database access control (RBAC) in Materia
 
 
 
-> **Disambiguation:** Materialize uses roles to manage access control at two levels: - [Organization roles](/security/cloud/users-service-accounts/#organization-roles), which determines the access to the Console's administrative features and sets the **initial database roles** for the user/service account. - [Database roles](/security/cloud/access-control/#role-based-access-control-rbac), which controls access to database objects and operations within Materialize. This section focuses on the database access control. For information on organization roles, see [Users and service accounts](../users-service-accounts/).
+> **Disambiguation:** Materialize uses roles to manage access control at two levels: - [Organization roles](/security/cloud/users-service-accounts/#organization-roles), which determines the access to the Console's administrative features and sets the **initial database roles** for the user/service account. - [Database roles](/security/cloud/access-control/#role-based-access-control-rbac), which controls access to database objects and operations within Materialize. This section focuses on the database access control. For information on organization roles, see [Users and service accounts](../users-service-accounts/). 
 
 
 
@@ -48,7 +48,7 @@ Once a role is created, you can:
    [applicable privileges](/security/appendix/appendix-privileges/) for that
    object automatically).
 
-> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges.
+> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
 
 ### Initial privileges
@@ -79,8 +79,8 @@ privileges were set.
 
 In addition, all roles have:
 - `USAGE` on all built-in types and [all system catalog
-schemas](/sql/system-catalog/).
-- `SELECT` on [system catalog objects](/sql/system-catalog/).
+schemas](/reference/system-catalog/).
+- `SELECT` on [system catalog objects](/reference/system-catalog/).
 - All [applicable privileges](/security/appendix/appendix-privileges/) for
   an object they create; for example, the creator of a schema gets `CREATE` and
   `USAGE`; the creator of a table gets `SELECT`, `INSERT`, `UPDATE`, and
@@ -169,7 +169,7 @@ information.
 In Materialize, role-based access control (RBAC) governs access to **database
 objects** through privileges granted to database roles.
 
-> **Disambiguation:** Materialize uses roles to manage access control at two levels: - [Organization roles](/security/cloud/users-service-accounts/#organization-roles), which determines the access to the Console's administrative features and sets the **initial database roles** for the user/service account. - [Database roles](/security/cloud/access-control/#role-based-access-control-rbac), which controls access to database objects and operations within Materialize. The focus of this page is on managing database roles. For information on organization roles, see [Users and service accounts](/security/cloud/users-service-accounts/).
+> **Disambiguation:** Materialize uses roles to manage access control at two levels: - [Organization roles](/security/cloud/users-service-accounts/#organization-roles), which determines the access to the Console's administrative features and sets the **initial database roles** for the user/service account. - [Database roles](/security/cloud/access-control/#role-based-access-control-rbac), which controls access to database objects and operations within Materialize. The focus of this page is on managing database roles. For information on organization roles, see [Users and service accounts](/security/cloud/users-service-accounts/). 
 
 
 ## Required privileges for managing roles
@@ -209,7 +209,7 @@ In Materialize, a database role is created:
 To create a new role manually, use the [`CREATE ROLE`](/sql/create-role/)
 statement.
 
-> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system.
+> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. 
 
 
 ```mzsql
@@ -281,7 +281,7 @@ Once a role is created, you can:
    [applicable privileges](/security/appendix/appendix-privileges/) for that
    object automatically).
 
-> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges.
+> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
 
 See also:
@@ -302,7 +302,7 @@ The examples below assume:
   CREATE CLUSTER source_cluster (SIZE = '25cc');
   CREATE CLUSTER compute_cluster (SIZE = '25cc');
   CREATE CLUSTER serving_cluster (SIZE = '25cc');
-
+  
   ```
 
 - The existence of a `mydb` database and a `sales` schema within the `mydb`
@@ -311,7 +311,7 @@ The examples below assume:
   <no value>```mzsql
   CREATE DATABASE IF NOT EXISTS mydb;
   CREATE SCHEMA IF NOT EXISTS mydb.sales;
-
+  
   ```
 
 - The existence of `items`, `orders`, and `sales_items` tables within the
@@ -319,16 +319,16 @@ The examples below assume:
 
   <no value>```mzsql
   SET CLUSTER = source_cluster;
-
+  
   SET DATABASE = mydb;
   SET SCHEMA  = sales;
-
+  
   CREATE TABLE items(
     item text NOT NULL,
     price numeric(8,4) NOT NULL,
     currency text NOT NULL DEFAULT 'USD'
   );
-
+  
   CREATE TABLE orders (
       order_id int NOT NULL,
       order_date timestamp NOT NULL,
@@ -336,17 +336,17 @@ The examples below assume:
       quantity int NOT NULL,
       status text NOT NULL
   );
-
+  
   CREATE TABLE sales_items (
     week_of date NOT NULL,
     items text[]
   );
-
+  
   INSERT INTO items VALUES
   ('brownie',2.25,'USD'),
   ('cheesecake',40,'USD'),
   ('chiffon cake',30,'USD');
-
+  
   INSERT INTO orders VALUES
   (1,current_timestamp - (1 * interval '3 day') - (35 * interval '1 minute'),'brownies',12, 'Complete'),
   (1,current_timestamp - (1 * interval '3 day') - (35 * interval '1 minute'),'cupcake',12, 'Complete'),
@@ -359,16 +359,16 @@ The examples below assume:
   (5,current_timestamp - (1 * interval '2 day'),'chocolate cake',1, 'Processing'),
   (6,current_timestamp,'brownie',10, 'Pending'),
   (6,current_timestamp,'chocolate cake',1, 'Pending');
-
+  
   INSERT INTO sales_items VALUES
   (date_trunc('week', current_timestamp),ARRAY['brownie','chocolate chip cookie','chocolate cake']),
   (date_trunc('week', current_timestamp + (1* interval '7 day')), ARRAY['chocolate chip cookie','donut','cupcake']);
-
+  
   ```
 
 ### View privileges for a role
 
-> **Privilege(s) required to run the command:** No specific privilege is required to run the `SHOW PRIVILEGES`
+> **Privilege(s) required to run the command:** No specific privilege is required to run the `SHOW PRIVILEGES` 
 
 
 To view privileges granted to a role, you can use the [`SHOW
@@ -526,7 +526,7 @@ To grant [privileges](/security/appendix/appendix-command-privileges/) to
 a role, use the [`GRANT PRIVILEGE`](/sql/grant-privilege/) statement (see
 [`GRANT PRIVILEGE`](/sql/grant-privilege/) for the full syntax)
 
-> **Privilege(s) required to run the command:** - Ownership of affected objects. - `USAGE` privileges on the containing database if the affected object is a schema. - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema. - _superuser_ status if the privilege is a system privilege. To override the **object ownership** requirements to grant privileges, run as an Organization admin.
+> **Privilege(s) required to run the command:** - Ownership of affected objects. - `USAGE` privileges on the containing database if the affected object is a schema. - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema. - _superuser_ status if the privilege is a system privilege. To override the **object ownership** requirements to grant privileges, run as an Organization admin. 
 
 
 ```mzsql
@@ -788,7 +788,7 @@ To grant a role to another role (where the role can be a user role/service
 account role/functional role), use the [`GRANT ROLE`](/sql/grant-role/)
 statement (see [`GRANT ROLE`](/sql/grant-role/) for full syntax):
 
-> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. Organization admin has the required privileges on the system.
+> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. Organization admin has the required privileges on the system. 
 
 
 ```mzsql
@@ -1090,7 +1090,7 @@ to automatically grant `SELECT` privileges on new objects.
 
 To remove privileges from a role, use the [`REVOKE <privilege>`](/sql/revoke-privilege/) statement:
 
-> **Privilege(s) required to run the command:** - Ownership of affected objects. - `USAGE` privileges on the containing database if the affected object is a schema. - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema. - _superuser_ status if the privilege is a system privilege.
+> **Privilege(s) required to run the command:** - Ownership of affected objects. - `USAGE` privileges on the containing database if the affected object is a schema. - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema. - _superuser_ status if the privilege is a system privilege. 
 
 
 ```mzsql
@@ -1101,7 +1101,7 @@ REVOKE <PRIVILEGE> ON <OBJECT_TYPE> <object_name> FROM <role>;
 
 To revoke a role from another role, use the [`REVOKE <role>`](/sql/revoke-role/) statement:
 
-> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the systems.
+> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the systems. 
 
 
 ```mzsql
@@ -1142,7 +1142,7 @@ Default privileges apply only to objects created after these privileges are
 defined. They do not affect objects that were created before the default
 privileges were set.
 
-> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges.
+> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
 
 ### View default privileges
@@ -1152,7 +1152,7 @@ PRIVILEGES`](/sql/show-default-privileges) command, substituting `<role>` with
 the role name (see [`SHOW DEFAULT PRIVILEGES`](/sql/show-default-privileges) for
 the full syntax):
 
-> **Privilege(s) required to run the command:** No specific privilege is required to run the `SHOW DEFAULT PRIVILEGES`.
+> **Privilege(s) required to run the command:** No specific privilege is required to run the `SHOW DEFAULT PRIVILEGES`. 
 
 
 ```mzsql
@@ -1260,7 +1260,7 @@ To define default privilege for objects created by a role, use the [`ALTER
 DEFAULT PRIVILEGES`](/sql/alter-default-privileges) command (see  [`ALTER
 DEFAULT PRIVILEGES`](/sql/alter-default-privileges) for the full syntax):
 
-> **Privilege(s) required to run the command:** - Role membership in `role_name`. - `USAGE` privileges on the containing database if `database_name` is specified. - `USAGE` privileges on the containing schema if `schema_name` is specified. - _superuser_ status if the _target_role_ is `PUBLIC` or **ALL ROLES** is specified.
+> **Privilege(s) required to run the command:** - Role membership in `role_name`. - `USAGE` privileges on the containing database if `database_name` is specified. - `USAGE` privileges on the containing schema if `schema_name` is specified. - _superuser_ status if the _target_role_ is `PUBLIC` or **ALL ROLES** is specified. 
 
 
 ```mzsql
@@ -1523,7 +1523,7 @@ view_manager           |
 To remove a role from the system, use the [`DROP ROLE`](/sql/drop-role/)
 command:
 
-> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system.
+> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. 
 
 
 ```mzsql
@@ -1604,7 +1604,7 @@ transfer ownership (and privileges) to another role (another user role/service
 account role/functional role), you can use the [ALTER ... OWNER
 TO](/sql/#rbac) commands:
 
-> **Privilege(s) required to run the command:** - Ownership of the object being altered. - Role membership in `new_owner`. - `CREATE` privileges on the containing cluster if the object is a cluster replica. - `CREATE` privileges on the containing database if the object is a schema. - `CREATE` privileges on the containing schema if the object is namespaced by a schema.
+> **Privilege(s) required to run the command:** - Ownership of the object being altered. - Role membership in `new_owner`. - `CREATE` privileges on the containing cluster if the object is a cluster replica. - `CREATE` privileges on the containing database if the object is a schema. - `CREATE` privileges on the containing schema if the object is namespaced by a schema. 
 
 
 ```mzsql
@@ -1703,3 +1703,4 @@ The results show that `lemon@example.com` now only has access through
 - [Access control best practices](/security/cloud/access-control/#best-practices)
 - [Manage privileges with
   Terraform](/manage/terraform/manage-rbac/)
+

@@ -80,7 +80,7 @@ using the `external_login_password_mz_system` password, and use [`CREATE ROLE
 CREATE ROLE <user> WITH LOGIN PASSWORD '<password>';
 ```
 
-> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system.
+> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. 
 
 
 For example, the following creates:
@@ -144,7 +144,7 @@ Once a role is created, you can:
    [applicable privileges](/security/appendix/appendix-privileges/) for that
    object automatically).
 
-> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges.
+> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
 
 See also:
@@ -225,7 +225,7 @@ Once a role is created, you can:
    [applicable privileges](/security/appendix/appendix-privileges/) for that
    object automatically).
 
-> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges.
+> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
 
 See also:
@@ -243,7 +243,7 @@ Privileges by command](/security/appendix/appendix-command-privileges/).
 
 ### View privileges for a role
 
-> **Privilege(s) required to run the command:** No specific privilege is required to run the `SHOW PRIVILEGES`
+> **Privilege(s) required to run the command:** No specific privilege is required to run the `SHOW PRIVILEGES` 
 
 
 To view privileges granted to a role, you can use the [`SHOW
@@ -397,7 +397,7 @@ To grant [privileges](/security/appendix/appendix-command-privileges/) to
 a role, use the [`GRANT PRIVILEGE`](/sql/grant-privilege/) statement (see
 [`GRANT PRIVILEGE`](/sql/grant-privilege/) for the full syntax)
 
-> **Privilege(s) required to run the command:** - Ownership of affected objects. - `USAGE` privileges on the containing database if the affected object is a schema. - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema. - _superuser_ status if the privilege is a system privilege. To override the **object ownership** requirements to grant privileges, run as a user with superuser privileges; e.g. `mz_system` user.
+> **Privilege(s) required to run the command:** - Ownership of affected objects. - `USAGE` privileges on the containing database if the affected object is a schema. - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema. - _superuser_ status if the privilege is a system privilege. To override the **object ownership** requirements to grant privileges, run as a user with superuser privileges; e.g. `mz_system` user. 
 
 
 ```mzsql
@@ -656,7 +656,7 @@ To grant a role to another role (where the role can be a user role/service
 account role/functional role), use the [`GRANT ROLE`](/sql/grant-role/)
 statement (see [`GRANT ROLE`](/sql/grant-role/) for full syntax):
 
-> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. `mz_system` user has the required privileges on the system.
+> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. `mz_system` user has the required privileges on the system. 
 
 
 ```mzsql
@@ -958,7 +958,7 @@ to automatically grant `SELECT` privileges on new objects.
 
 To remove privileges from a role, use the [`REVOKE <privilege>`](/sql/revoke-privilege/) statement:
 
-> **Privilege(s) required to run the command:** - Ownership of affected objects. - `USAGE` privileges on the containing database if the affected object is a schema. - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema. - _superuser_ status if the privilege is a system privilege.
+> **Privilege(s) required to run the command:** - Ownership of affected objects. - `USAGE` privileges on the containing database if the affected object is a schema. - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema. - _superuser_ status if the privilege is a system privilege. 
 
 
 ```mzsql
@@ -969,7 +969,7 @@ REVOKE <PRIVILEGE> ON <OBJECT_TYPE> <object_name> FROM <role>;
 
 To revoke a role from another role, use the [`REVOKE <role>`](/sql/revoke-role/) statement:
 
-> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the systems.
+> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the systems. 
 
 
 ```mzsql
@@ -1010,7 +1010,7 @@ Default privileges apply only to objects created after these privileges are
 defined. They do not affect objects that were created before the default
 privileges were set.
 
-> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges.
+> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
 
 ### View default privileges
@@ -1020,7 +1020,7 @@ PRIVILEGES`](/sql/show-default-privileges) command, substituting `<role>` with
 the role name (see [`SHOW DEFAULT PRIVILEGES`](/sql/show-default-privileges) for
 the full syntax):
 
-> **Privilege(s) required to run the command:** No specific privilege is required to run the `SHOW DEFAULT PRIVILEGES`.
+> **Privilege(s) required to run the command:** No specific privilege is required to run the `SHOW DEFAULT PRIVILEGES`. 
 
 
 ```mzsql
@@ -1127,7 +1127,7 @@ To define default privilege for objects created by a role, use the [`ALTER
 DEFAULT PRIVILEGES`](/sql/alter-default-privileges) command (see  [`ALTER
 DEFAULT PRIVILEGES`](/sql/alter-default-privileges) for the full syntax):
 
-> **Privilege(s) required to run the command:** - Role membership in `role_name`. - `USAGE` privileges on the containing database if `database_name` is specified. - `USAGE` privileges on the containing schema if `schema_name` is specified. - _superuser_ status if the _target_role_ is `PUBLIC` or **ALL ROLES** is specified.
+> **Privilege(s) required to run the command:** - Role membership in `role_name`. - `USAGE` privileges on the containing database if `database_name` is specified. - `USAGE` privileges on the containing schema if `schema_name` is specified. - _superuser_ status if the _target_role_ is `PUBLIC` or **ALL ROLES** is specified. 
 
 
 ```mzsql
@@ -1393,7 +1393,7 @@ view_manager           |
 To remove a role from the system, use the [`DROP ROLE`](/sql/drop-role/)
 command:
 
-> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system.
+> **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. 
 
 
 ```mzsql
@@ -1473,7 +1473,7 @@ transfer ownership (and privileges) to another role (another user role/service
 account role/functional role), you can use the [ALTER ... OWNER
 TO](/sql/#rbac) command:
 
-> **Privilege(s) required to run the command:** - Ownership of the object being altered. - Role membership in `new_owner`. - `CREATE` privileges on the containing cluster if the object is a cluster replica. - `CREATE` privileges on the containing database if the object is a schema. - `CREATE` privileges on the containing schema if the object is namespaced by a schema.
+> **Privilege(s) required to run the command:** - Ownership of the object being altered. - Role membership in `new_owner`. - `CREATE` privileges on the containing cluster if the object is a cluster replica. - `CREATE` privileges on the containing database if the object is a schema. - `CREATE` privileges on the containing schema if the object is namespaced by a schema. 
 
 
 ```mzsql

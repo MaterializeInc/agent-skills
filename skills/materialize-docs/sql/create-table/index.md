@@ -9,7 +9,7 @@ In Materialize, you can create:
 -  ***Private Preview***. Read-only tables from [PostgreSQL sources (new
   syntax)](/sql/create-source/postgres-v2/). Users cannot be write ([`INSERT`],
   [`UPDATE`], [`DELETE`]) to these tables. These tables are populated by [data
-  ingestion from a source](/ingest-data/postgres/).
+  ingestion from a source](/ingest-data/postgres/). 
 
 
 Tables in Materialize are similar to tables in standard relational databases:
@@ -97,6 +97,40 @@ For an example, see [Create a table (PostgreSQL
 source)](/sql/create-table/#create-a-table-postgresql-source).
 
 
+**SQL Server source table:**
+### SQL Server source table
+
+
+
+> **Note:** You must be on **v26+** to use the new syntax.
+
+
+To create a read-only table from a [source](/sql/create-source/) connected
+(via native connector) to an external SQL Server database:
+
+
+```mzsql
+CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <upstream_table>)
+[WITH (
+    TEXT COLUMNS (<column_name> [, ...])
+  | EXCLUDE COLUMNS (<column_name> [, ...])
+  | PARTITION BY (<column_name> [, ...])
+  [, ...]
+)]
+;
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}  |
+| `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
+| `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
+| **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
+| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
+
+
+
 
 
 
@@ -119,7 +153,7 @@ Tables do not currently support:
 See also the known limitations for [`INSERT`](/sql/insert#known-limitations),
 [`UPDATE`](/sql/update#known-limitations), and [`DELETE`](/sql/delete#known-limitations).
 
-## PostgreSQL source tables
+## Source-populated tables
 
 
 
@@ -140,6 +174,12 @@ operations
 (<a href="/sql/insert/" ><code>INSERT</code></a>/<a href="/sql/update/" ><code>UPDATE</code></a>/<a href="/sql/delete/" ><code>DELETE</code></a>) on
 these tables.
 
+### DDL transaction block
+
+For performance, when issuing multiple `CREATE TABLE FROM SOURCE...` statements,
+use within a [transaction block](/sql/begin/#ddl-only-transactions).
+
+
 ### Source-populated tables and snapshotting
 
 <p>Creating the tables from sources starts the <a href="/ingest-data/#snapshotting" >snapshotting</a> process. Snapshotting syncs the
@@ -152,6 +192,10 @@ timestamp), you are not able to query the table until snapshotting is complete.<
 > once the process finishes, resize the cluster for steady-state.
 
 ### Supported data types
+
+
+**PostgreSQL:**
+#### PostgreSQL types
 
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
@@ -204,12 +248,94 @@ output.</p>
 </ul>
 
 
+
+**SQL Server:**
+#### SQL Server types
+
+<p>Materialize natively supports the following SQL Server types:</p>
+<ul style="column-count: 3">
+<li><code>tinyint</code></li>
+<li><code>smallint</code></li>
+<li><code>int</code></li>
+<li><code>bigint</code></li>
+<li><code>real</code></li>
+<li><code>double precision</code></li>
+<li><code>float</code></li>
+<li><code>bit</code></li>
+<li><code>decimal</code></li>
+<li><code>numeric</code></li>
+<li><code>money</code></li>
+<li><code>smallmoney</code></li>
+<li><code>char</code></li>
+<li><code>nchar</code></li>
+<li><code>varchar</code></li>
+<li><code>varchar(max)</code></li>
+<li><code>nvarchar</code></li>
+<li><code>nvarchar(max)</code></li>
+<li><code>sysname</code></li>
+<li><code>binary</code></li>
+<li><code>varbinary</code></li>
+<li><code>json</code></li>
+<li><code>date</code></li>
+<li><code>time</code></li>
+<li><code>smalldatetime</code></li>
+<li><code>datetime</code></li>
+<li><code>datetime2</code></li>
+<li><code>datetimeoffset</code></li>
+<li><code>uniqueidentifier</code></li>
+</ul>
+
+<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is possible via the <a href="/sql/create-source/sql-server/#handling-unsupported-types" ><code>EXCLUDE COLUMNS</code> option</a> for the
+following types:</p>
+<ul style="column-count: 3">
+<li><code>text</code></li>
+<li><code>ntext</code></li>
+<li><code>image</code></li>
+<li><code>varbinary(max)</code></li>
+</ul>
+<p>Columns with the specified types need to be excluded because <a href="https://learn.microsoft.com/en-us/sql/relational-databases/system-tables/cdc-capture-instance-ct-transact-sql?view=sql-server-2017#large-object-data-types" >SQL Server does not provide
+the &ldquo;before&rdquo;</a>
+value when said column is updated.</p>
+<p>To replicate tables that contain the following unsupported data types:</p>
+<ul>
+<li><code>text</code></li>
+<li><code>ntext</code></li>
+<li><code>image</code></li>
+<li><code>varbinary(max)</code></li>
+</ul>
+<p>You can use either the <code>TEXT COLUMNS</code> or the <code>EXCLUDE COLUMNS</code> option.</p>
+<ul>
+<li>For <code>text</code> and <code>ntext</code> columns:
+<ul>
+<li>You can use <code>TEXT COLUMNS</code> to expose them as varchar and nvarchar, respectively.</li>
+<li>You can use <code>EXCLUDE COLUMNS</code> to omit them from replication.</li>
+</ul>
+</li>
+<li>For <code>image</code> and <code>varbinary(max)</code> columns:
+<ul>
+<li>You can use <code>EXCLUDE COLUMNS</code>.</li>
+</ul>
+</li>
+</ul>
+
+
+
+
+
+
+
 ### Handling table schema changes
 
-The use of <a href="/sql/create-source/postgres-v2/" ><code>CREATE SOURCE</code></a> with <code>CREATE TABLE FROM SOURCE</code> allows for the handling of the upstream DDL changes,
+The use of [`CREATE SOURCE`](/sql/create-source/postgres-v2/) with `CREATE
+TABLE FROM SOURCE` allows for the handling of the upstream DDL changes,
 specifically adding or dropping columns in the upstream tables, without
-downtime. See <a href="/ingest-data/postgres/source-versioning/" >Handling upstream schema changes with zero
-downtime</a> for more details.
+downtime. For details, see:
+
+- [PostgreSQL: Handling upstream schema changes with zero
+downtime](/ingest-data/postgres/source-versioning/)
+
+- [SQL Server: Handling upstream schema changes with zero
+downtime](/ingest-data/sql-server/source-versioning/)
 
 #### Incompatible schema changes
 
@@ -312,9 +438,10 @@ SELECT * FROM mytable;
 
 
 To create new **read-only** tables from a source table, use the `CREATE
-TABLE ... FROM SOURCE ... (REFERENCE <upstream_table>)` statement. The
-following example creates **read-only** tables `items` and `orders` from the
-PostgreSQL source's `public.items` and `public.orders` tables (the schema is `public`).
+TABLE ... FROM SOURCE ... (REFERENCE <upstream_table>)` statement in a [DDL
+transaction block](/sql/begin/#ddl-only-transactions). The following example
+creates **read-only** tables `items` and `orders` from the PostgreSQL
+source's `public.items` and `public.orders` tables (the schema is `public`).
 
 {{< note >}}
 
@@ -352,12 +479,14 @@ types](/sql/create-table/#supported-data-types).
       );
 */
 
+BEGIN;
 CREATE TABLE items
 FROM SOURCE pg_source(REFERENCE public.items)
 ;
 CREATE TABLE orders
 FROM SOURCE pg_source(REFERENCE public.orders)
 ;
+COMMIT;
 
 ```
 {{< include-md

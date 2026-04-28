@@ -34,8 +34,8 @@ Install [`Docker`](https://docs.docker.com/get-started/get-docker/).
 For this local deployment, you will need the following Docker resource
 requirements:
 
-- 3 CPUs
-- 10GB memory
+- 5 CPUs
+- 15GB memory
 
 
 ### Helm 3.2.0+
@@ -70,9 +70,9 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 
    For this local deployment, you will need the following Docker resource
    requirements:
-
-   - 3 CPUs
-   - 10GB memory
+   
+   - 5 CPUs
+   - 15GB memory
 
 
 1. Open a Terminal window.
@@ -112,23 +112,23 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    some sample configuration files. Download the sample configuration files from
    the Materialize repo:
 
-
-
+   
+   
    ```shell
-   mz_version=v26.10.1
-
+   mz_version=v26.20.2
+   
    curl -o sample-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
    curl -o sample-postgres.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/postgres.yaml
    curl -o sample-minio.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/minio.yaml
    curl -o sample-materialize.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/materialize.yaml
    ```
-
+   
    - `sample-values.yaml`: Used to configure the Materialize Operator.
    - `sample-postgres.yaml`: Used to configure PostgreSQL as the metadata
      database.
    - `sample-minio.yaml`: Used to configure minIO as the blob storage.
    - `sample-materialize.yaml`: Used to configure Materialize instance.
-
+   
    These configuration files are for local evaluation/testing purposes only and
    not intended for production use.
 
@@ -137,7 +137,7 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 
    a. To get your license key:
 
-
+      
       | License key type | Deployment type | Action |
       | --- | --- | --- |
       | Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
@@ -157,11 +157,12 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    name: materialize-backend
    namespace: materialize-environment
    stringData:
-   metadata_backend_url: "postgres://materialize_user:materialize_pass@postgres.materialize.svc.cluster.local:5432/materialize_db?sslmode=disable"
-   persist_backend_url: "s3://minio:minio123@bucket/12345678-1234-1234-1234-123456789012?endpoint=http%3A%2F%2Fminio.materialize.svc.cluster.local%3A9000&region=minio"
-   license_key: "<enter your license key here>"
+     metadata_backend_url: "postgres://materialize_user:materialize_pass@postgres.materialize.svc.cluster.local:5432/materialize_db?sslmode=disable"
+     persist_backend_url: "s3://minio:minio123@bucket/12345678-1234-1234-1234-123456789012?endpoint=http%3A%2F%2Fminio.materialize.svc.cluster.local%3A9000&region=minio"
+     license_key: "<enter your license key here>"
    ---
    ```
+
 
 1. Install the Materialize Helm chart.
 
@@ -177,15 +178,15 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
       helm repo update materialize
       ```
 
-
-
+   
+   
    1. Install the Materialize Operator. The operator will be installed in the
       `materialize` namespace.
-
+   
       ```shell
       helm install my-materialize-operator materialize/materialize-operator \
           --namespace=materialize --create-namespace \
-          --version v26.10.1 \
+          --version v26.20.2 \
           --set observability.podMetrics.enabled=true \
           -f sample-values.yaml
       ```
@@ -308,6 +309,11 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 
     1. Verify the installation and check the status:
 
+       > **Note:** It may take approximately 1-2 minutes for all resources to appear in the
+>        namespace. Allow up to 90 seconds before verifying resource creation with
+>        `kubectl get` commands.
+
+
        ```shell
        kubectl get all -n materialize-environment
        ```
@@ -351,17 +357,17 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 
 1. Open the Materialize Console in your browser:
 
-
+   
    1. Find your console service name.
-
+   
       ```shell
       MZ_SVC_CONSOLE=$(kubectl -n materialize-environment get svc \
         -o custom-columns="NAME:.metadata.name" --no-headers | grep console)
       echo $MZ_SVC_CONSOLE
       ```
-
+   
    1. Port forward the Materialize Console service to your local machine:[^1]
-
+   
       ```shell
       (
         while true; do
@@ -370,15 +376,15 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
         done;
       ) &
       ```
-
+   
       The command is run in background.
       <br>- To list the background jobs, use `jobs`.
       <br>- To bring back to foreground, use `fg %<job-number>`.
       <br>- To kill the background job, use `kill %<job-number>`.
-
+   
    1. Open a browser and navigate to
       [http://localhost:8080](http://localhost:8080).
-
+   
    [^1]: The port forwarding command uses a while loop to handle a [known
    Kubernetes issue 78446](https://github.com/kubernetes/kubernetes/issues/78446),
    where interrupted long-running requests through a standard port-forward cause
@@ -394,6 +400,7 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 >       guide.
 
 
+
 ## Next steps
 
 
@@ -403,6 +410,9 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 - To start ingesting your own data from an external system like Kafka, MySQL or
   PostgreSQL, see [Ingest data](/ingest-data/).
 
+
+- To enable authentication and authorization, see
+  [Security](/security/self-managed/).
 
 ## Clean up
 

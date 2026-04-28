@@ -33,7 +33,7 @@ been configured for GTID-based binlog replication:
 
 
 
-
+  
 
 
 
@@ -85,11 +85,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>log_bin</code>
@@ -99,11 +99,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -113,11 +113,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -138,11 +138,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_format</code>
@@ -152,11 +152,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ROW</code>
@@ -166,11 +166,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
@@ -191,11 +191,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_row_image</code>
@@ -205,11 +205,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>FULL</code>
@@ -219,11 +219,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -244,11 +244,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>gtid_mode</code>
@@ -258,11 +258,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -272,11 +272,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -297,11 +297,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>enforce_gtid_consistency</code>
@@ -311,11 +311,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -325,11 +325,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -350,11 +350,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>replica_preserve_commit_order</code>
@@ -364,11 +364,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -378,11 +378,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 Only required when connecting Materialize to a read-replica.
@@ -604,7 +604,7 @@ your MySQL database.
     SET CLUSTER = ingest_mysql;
     ```
 
-    A cluster of [size](/sql/create-cluster/#size) `200cc` should be enough to
+    A cluster of [size](/sql/create-cluster/#available-sizes) `200cc` should be enough to
     process the initial snapshot of the tables in your MySQL database. For very
     large snapshots, consider using a larger size to speed up processing. Once
     the snapshot is finished, you can readjust the size of the cluster to fit
@@ -750,7 +750,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -778,7 +778,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql

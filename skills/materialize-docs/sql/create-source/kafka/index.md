@@ -7,7 +7,7 @@ Connecting Materialize to a Kafka or Redpanda broker
 To connect to a Kafka/Redpanda broker (and optionally a schema registry), you
 first need to [create a connection](#prerequisite-creating-a-connection) that specifies
 access and authentication parameters. Once created, a connection is **reusable**
-across multiple `CREATE SOURCE` and `CREATE SINK` statements.
+across multiple `CREATE SOURCE` and `CREATE SINK` statements. 
 
 
 > **Note:** The same syntax, supported formats and features can be used to connect to a
@@ -594,7 +594,7 @@ Debezium may produce duplicate records if the connector is interrupted. Material
 
 Kafka sources that use `ENVELOPE UPSERT` or `ENVELOPE DEBEZIUM` require storing
 the current value for _each key_ in the source to produce retractions when keys
-are updated. When using [standard cluster sizes](/sql/create-cluster/#size),
+are updated. When using [standard cluster sizes](/sql/create-cluster/#available-sizes),
 Materialize will automatically offload this state to disk, seamlessly handling
 key spaces that are larger than memory.
 

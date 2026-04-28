@@ -163,7 +163,7 @@ same for HDR histograms.
    precision of the significand to 1/16 (4 bits), the value is reconstructed to
    an approximated value.
 
-
+   
 
    **Materialize Console:**
 
@@ -195,7 +195,7 @@ FROM buckets
 GROUP BY bucket;
 ```
 
-
+   
 
    **psql:**
 
@@ -229,8 +229,8 @@ SELECT
 FROM buckets
 GROUP BY bucket;
 ```
-
-
+   
+   
 
 1. Create a view `hdr_distribution` to calculate the cumulative count and the
    cumulative density for each bucket. The cumulative density is calculated by

@@ -135,7 +135,7 @@ contains:
 - Per-replica introspection metrics (under `{cluster_name}/{replica_name}/*.csv`)
 
 For more information about each relation, view the [system
-catalog](/sql/system-catalog/).
+catalog](/reference/system-catalog/).
 
 
 ### Prometheus metrics
@@ -256,7 +256,7 @@ contains:
 - Per-replica introspection metrics (under `{cluster_name}/{replica_name}/*.csv`)
 
 For more information about each relation, view the [system
-catalog](/sql/system-catalog/).
+catalog](/reference/system-catalog/).
 
 
 ### Prometheus metrics
@@ -305,3 +305,4 @@ mz-debug self-managed --k8s-namespace materialize-environment \
 --mz-instance-name 12345678-1234-1234-1234-123456789012 \
 --additional-k8s-namespace materialize
 ```
+

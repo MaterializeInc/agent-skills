@@ -197,371 +197,371 @@ to Materialize using the [MySQL source](/sql/create-source/mysql/).
 1. Before creating a source in Materialize, you **must** configure Amazon Aurora
    MySQL for GTID-based binlog replication. Ensure the upstream MySQL database  has been configured for GTID-based binlog replication:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+     
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
    <table>
    <thead>
    <tr>
-
+   
    <th>MySQL Configuration</th>
-
-
+   
+   
    <th>Value</th>
-
-
+   
+   
    <th>Notes</th>
-
-
+   
+   
    </tr>
    </thead>
    <tbody>
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+   
+   
    <tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>log_bin</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>ON</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
-
+   
    </td>
-
+   
    </tr>
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+   
+   
+   
    <tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>binlog_format</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>ROW</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
-
+   
    </td>
-
+   
    </tr>
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+   
+   
+   
    <tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>binlog_row_image</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>FULL</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
-
+   
    </td>
-
+   
    </tr>
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+   
+   
+   
    <tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>gtid_mode</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>ON</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    In the AWS console, this parameter appears as <code>gtid-mode</code>.
    </td>
-
+   
    </tr>
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+   
+   
+   
    <tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>enforce_gtid_consistency</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>ON</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
-
+   
    </td>
-
+   
    </tr>
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+   
+   
+   
    <tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>replica_preserve_commit_order</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>ON</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    Only required when connecting Materialize to a read-replica.
    </td>
-
+   
    </tr>
-
-
+   
+   
    </tbody>
    </table>
-
+   
 
 
    For guidance on enabling GTID-based binlog replication in Aurora, see the
@@ -949,7 +949,7 @@ your MySQL database.
     SET CLUSTER = ingest_mysql;
     ```
 
-    A cluster of [size](/sql/create-cluster/#size) `200cc` should be enough to
+    A cluster of [size](/sql/create-cluster/#available-sizes) `200cc` should be enough to
     process the initial snapshot of the tables in your MySQL database. For very
     large snapshots, consider using a larger size to speed up processing. Once
     the snapshot is finished, you can readjust the size of the cluster to fit
@@ -1216,7 +1216,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -1244,7 +1244,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -1493,351 +1493,351 @@ enables binary logging (`log_bin`).
 1. Edit the new parameter group to set the configuration parameters to the
    following values:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+     
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+     
+     
+       
+       
+     
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
    <table>
    <thead>
    <tr>
-
+   
    <th>MySQL Configuration</th>
-
-
+   
+   
    <th>Value</th>
-
-
+   
+   
    <th>Notes</th>
-
-
+   
+   
    </tr>
    </thead>
    <tbody>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+   
+     
+     
+       
+     
+   
+   
+   
+   
+   
+   
+   
+   
+     
+     
+   
+   
    <tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>binlog_format</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>ROW</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
    </td>
-
+   
    </tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+   
+   
+     
+     
+   
+   
    <tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>binlog_row_image</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>FULL</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
-
+   
    </td>
-
+   
    </tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+   
+   
+     
+     
+   
+   
    <tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>gtid_mode</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>ON</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    In the AWS console, this parameter appears as <code>gtid-mode</code>.
    </td>
-
+   
    </tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+   
+   
+     
+     
+   
+   
    <tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>enforce_gtid_consistency</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>ON</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
-
+   
    </td>
-
+   
    </tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+   
+   
+     
+     
+   
+   
    <tr>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>replica_preserve_commit_order</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    <code>ON</code>
    </td>
-
-
-
-
-
-
-
-
-
-
-
+   
+   
+   
+   
+   
+     
+     
+   
+     
+     
+   
    <td>
    Only required when connecting Materialize to a read-replica.
    </td>
-
+   
    </tr>
-
-
+   
+   
    </tbody>
    </table>
-
+   
 
 
 
@@ -2230,7 +2230,7 @@ your MySQL database.
     SET CLUSTER = ingest_mysql;
     ```
 
-    A cluster of [size](/sql/create-cluster/#size) `200cc` should be enough to
+    A cluster of [size](/sql/create-cluster/#available-sizes) `200cc` should be enough to
     process the initial snapshot of the tables in your MySQL database. For very
     large snapshots, consider using a larger size to speed up processing. Once
     the snapshot is finished, you can readjust the size of the cluster to fit
@@ -2499,7 +2499,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -2527,7 +2527,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -2772,7 +2772,7 @@ been configured for GTID-based binlog replication:
 
 
 
-
+  
 
 
 
@@ -2824,11 +2824,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>log_bin</code>
@@ -2838,11 +2838,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -2852,11 +2852,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -2877,11 +2877,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_format</code>
@@ -2891,11 +2891,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ROW</code>
@@ -2905,11 +2905,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
@@ -2930,11 +2930,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_row_image</code>
@@ -2944,11 +2944,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>FULL</code>
@@ -2958,11 +2958,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -2983,11 +2983,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>gtid_mode</code>
@@ -2997,11 +2997,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -3011,11 +3011,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -3036,11 +3036,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>enforce_gtid_consistency</code>
@@ -3050,11 +3050,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -3064,11 +3064,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -3089,11 +3089,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>replica_preserve_commit_order</code>
@@ -3103,11 +3103,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -3117,11 +3117,11 @@ been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 Only required when connecting Materialize to a read-replica.
@@ -3343,7 +3343,7 @@ your MySQL database.
     SET CLUSTER = ingest_mysql;
     ```
 
-    A cluster of [size](/sql/create-cluster/#size) `200cc` should be enough to
+    A cluster of [size](/sql/create-cluster/#available-sizes) `200cc` should be enough to
     process the initial snapshot of the tables in your MySQL database. For very
     large snapshots, consider using a larger size to speed up processing. Once
     the snapshot is finished, you can readjust the size of the cluster to fit
@@ -3489,7 +3489,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -3517,7 +3517,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -3758,7 +3758,7 @@ has been configured for GTID-based binlog replication:
 
 
 
-
+  
 
 
 
@@ -3810,11 +3810,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>log_bin</code>
@@ -3824,11 +3824,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -3838,11 +3838,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -3863,11 +3863,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_format</code>
@@ -3877,11 +3877,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ROW</code>
@@ -3891,11 +3891,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
@@ -3916,11 +3916,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_row_image</code>
@@ -3930,11 +3930,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>FULL</code>
@@ -3944,11 +3944,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -3969,11 +3969,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>gtid_mode</code>
@@ -3983,11 +3983,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -3997,11 +3997,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -4022,11 +4022,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>enforce_gtid_consistency</code>
@@ -4036,11 +4036,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -4050,11 +4050,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -4075,11 +4075,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>replica_preserve_commit_order</code>
@@ -4089,11 +4089,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -4103,11 +4103,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 Only required when connecting Materialize to a read-replica.
@@ -4327,7 +4327,7 @@ your MySQL database.
     SET CLUSTER = ingest_mysql;
     ```
 
-    A cluster of [size](/sql/create-cluster/#size) `200cc` should be enough to
+    A cluster of [size](/sql/create-cluster/#available-sizes) `200cc` should be enough to
     process the initial snapshot of the tables in your MySQL database. For very
     large snapshots, consider using a larger size to speed up processing. Once
     the snapshot is finished, you can readjust the size of the cluster to fit
@@ -4474,7 +4474,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -4502,7 +4502,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -4743,7 +4743,7 @@ has been configured for GTID-based binlog replication:
 
 
 
-
+  
 
 
 
@@ -4795,11 +4795,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>log_bin</code>
@@ -4809,11 +4809,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -4823,11 +4823,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -4848,11 +4848,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_format</code>
@@ -4862,11 +4862,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ROW</code>
@@ -4876,11 +4876,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
@@ -4901,11 +4901,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_row_image</code>
@@ -4915,11 +4915,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>FULL</code>
@@ -4929,11 +4929,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -4954,11 +4954,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>gtid_mode</code>
@@ -4968,11 +4968,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -4982,11 +4982,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -5007,11 +5007,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>enforce_gtid_consistency</code>
@@ -5021,11 +5021,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -5035,11 +5035,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -5060,11 +5060,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>replica_preserve_commit_order</code>
@@ -5074,11 +5074,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -5088,11 +5088,11 @@ has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 Only required when connecting Materialize to a read-replica.
@@ -5311,7 +5311,7 @@ your MySQL database.
     SET CLUSTER = ingest_mysql;
     ```
 
-    A cluster of [size](/sql/create-cluster/#size) `200cc` should be enough to
+    A cluster of [size](/sql/create-cluster/#available-sizes) `200cc` should be enough to
     process the initial snapshot of the tables in your MySQL database. For very
     large snapshots, consider using a larger size to speed up processing. Once
     the snapshot is finished, you can readjust the size of the cluster to fit
@@ -5457,7 +5457,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -5485,7 +5485,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -5930,3 +5930,198 @@ CREATE INDEX idx_cnt_table1_field1 ON cnt_table1(field1);
 
 For best practices on when to index a view, see
 [Indexes](/concepts/indexes/) and [Views](/concepts/views/).
+
+
+
+---
+
+## Troubleshooting
+
+
+This section contains troubleshooting guides for specific errors you may
+encounter when using MySQL sources in Materialize. These guides focus on
+errors that are unique to the MySQL replication workflow, including issues
+with GTIDs, binlog management, and other CDC-specific scenarios.
+
+For general data ingestion troubleshooting that applies to all source types, see
+the main [Troubleshooting](/ingest-data/troubleshooting/) guide.
+
+## Troubleshooting guides
+
+| Guide | Description |
+|-------|-------------|
+| [Received out of order GTIDs](/ingest-data/mysql/received-out-of-order-gtids/) | Resolve errors when Materialize observes GTID events from MySQL in an order it cannot safely reconcile |
+
+
+---
+
+## Troubleshooting: Received out of order GTIDs
+
+
+This guide helps you troubleshoot and resolve the "received out of order GTIDs"
+error that can occur with MySQL sources in Materialize.
+
+## What this error means
+
+When you see an error like:
+
+```nofmt
+mysql: Source error: source must be dropped and recreated due to failure: received out of order gtids for source 16b115c3-7f51-11ec-83f8-0274e24fd16b at transaction-id 5747289
+```
+
+Materialize is telling you that it observed GTID events from MySQL in an order
+that it cannot safely reconcile. At that point, Materialize treats the source as
+potentially corrupted: continuing ingestion could produce incorrect results, so
+the only safe action is to stop and rebuild from a clean snapshot.
+
+## Common causes
+
+- **Out-of-order commits**: If the MySQL instance Materialize is replicating
+  from uses parallel transaction application or has preserve commit order disabled,
+  commits may occur out of order, producing GTID sequences that Materialize cannot
+  safely ingest.
+- **Incomplete GTID enablement across a replication chain**: If GTID mode was
+  enabled part-way through a system's lifetime, or enabled on some nodes but not
+  others, replicas can end up with a GTID/binlog history that violates the
+  assumptions required for GTID-based CDC.
+- **Complex replication topologies (chained replication, filtering)**: Chained
+  replication and replication filtering (for example, selective database
+  replication) can change what gets written into replica binlogs. In combination
+  with parallel replication, this can increase the risk of GTID ordering becoming
+  incompatible with GTID-based CDC consumers.
+- **Topology changes and failovers**: Failovers, topology changes, or
+  configuration changes can alter replication behavior and surface issues that
+  were latent before.
+
+## Diagnosing the issue
+
+### Confirm which MySQL server Materialize is connected to
+
+Determine whether Materialize is connected to:
+
+- The primary (writer)
+- A read replica
+- A replica-of-a-replica (chained replication)
+
+Replica settings can differ from the primary, and those differences often matter
+for GTID ordering.
+
+### Check replication apply settings on the connected server
+
+On the MySQL server Materialize connects to, confirm the replication settings
+match what Materialize expects:
+
+```sql
+SHOW VARIABLES LIKE 'replica_preserve_commit_order';
+SHOW VARIABLES LIKE 'replica_parallel_workers';
+```
+
+- `replica_preserve_commit_order` should be `ON`
+- `replica_parallel_workers` should be ` 1` (or `0` to disable parallel apply)
+
+If `replica_parallel_workers > 1`, MySQL can externalize transactions out
+of order ("gaps") even when `replica_preserve_commit_order` is `ON`.
+
+### Verify GTID configuration is consistent end-to-end
+
+If you recently enabled GTID, confirm that GTID mode and GTID consistency
+settings are correctly configured across the full replication chain (primary and
+any intermediate replicas), and that you followed the complete procedure for
+enabling GTIDs in an existing topology.
+
+```sql
+SHOW VARIABLES LIKE 'gtid_mode';
+SHOW VARIABLES LIKE 'enforce_gtid_consistency';
+```
+
+Both should return `ON` on every node in the replication chain.
+
+### Determine whether the error is recurring
+
+- If it happens repeatedly, focus on ongoing replication behavior/configuration.
+- If it started right after a change window, focus on what changed upstream in
+  that period (failover, configuration change, new replica, GTID enablement
+  work).
+
+## Resolution
+
+### Immediate fix: Drop and recreate the source
+
+> **Warning:** This will cause Materialize to take a new snapshot of your MySQL tables, which
+> may take time and temporarily increase load on your MySQL server.
+
+
+Once Materialize reports this error, the data is considered potentially
+corrupted. You must **drop and recreate the source**. Dropping the source will
+also drop any dependent objects; be prepared to recreate them as part of the
+recovery process.
+
+### Long-term fixes
+
+**1. Configure replica settings for GTID-based CDC**
+
+If using MySQL replicas with parallel apply, ensure commit order is preserved:
+
+```sql
+SET GLOBAL replica_parallel_workers = 1;
+SET GLOBAL replica_preserve_commit_order = ON;
+```
+
+`SET GLOBAL` changes the runtime value but does not persist across MySQL
+restarts. To make the change permanent, also update your MySQL configuration
+file (`my.cnf` or `my.ini`):
+
+```ini
+[mysqld]
+replica_parallel_workers = 1
+replica_preserve_commit_order = ON
+```
+
+If the error persists, consider disabling parallel apply entirely by setting
+`replica_parallel_workers = 0`.
+
+**2. Ensure consistent GTID enablement**
+
+If enabling GTIDs on an existing replication chain, follow the full end-to-end
+procedure and avoid partially-enabled states.
+
+**3. Validate complex replication topologies**
+
+If using chained replication and/or filtering, validate your replication setup
+with GTID-based consumers (including Materialize) before relying on it in
+production.
+
+## Prevention
+
+**Best practices to avoid this error:**
+
+- If using MySQL replicas with parallel apply, ensure commit order is preserved
+  and set `replica_parallel_workers <= 1`.
+- If enabling GTIDs on an existing replication chain, follow the full end-to-end
+  procedure and avoid partially-enabled states.
+- If using chained replication and/or filtering, validate your replication setup
+  with GTID-based consumers (including Materialize) before relying on it in
+  production.
+- After upstream failovers or topology changes, monitor closely for source
+  errors and address them immediately.
+
+## Additional technical details
+
+### Multi-threaded replicas
+
+This error is most commonly seen with multithreaded MySQL replicas upstream from
+Materialize. A multithreaded replica is a MySQL instance with parallel
+replication apply enabled (`replica_parallel_workers > 0`). When
+`replica_parallel_workers = N`, MySQL may dedicate `N` threads per replication
+channel in multi-source replication.
+
+### MySQL "gaps"
+
+Even with `replica_preserve_commit_order=ON` and
+`replica_parallel_type=LOGICAL_CLOCK`, MySQL can still present "gaps" in the
+externalized transaction set. MySQL defines gaps as:
+
+> A gap in the externalized transaction set appears when, given an ordered
+> sequence of transactions, a transaction that is later in the sequence is
+> applied before some other transaction that is prior in the sequence.
+

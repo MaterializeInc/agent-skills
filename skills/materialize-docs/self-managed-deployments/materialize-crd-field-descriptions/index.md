@@ -48,7 +48,8 @@ Reference page on Materialize CRD Fields
 
 <p>The name of a secret containing <code>metadata_backend_url</code> and <code>persist_backend_url</code>.
 It may also contain <code>external_login_password_mz_system</code>, which will be used as
-the password for the <code>mz_system</code> user if <code>authenticatorKind</code> is <code>Password</code>.</p>
+the password for the <code>mz_system</code> user if <code>authenticatorKind</code> is <code>Password</code>,
+<code>Sasl</code>, or <code>Oidc</code>.</p>
 
 </td>
 </tr>
@@ -77,6 +78,7 @@ the password for the <code>mz_system</code> user if <code>authenticatorKind</cod
 <li><code>Password</code>:<br>  Authenticate users using internally stored password hashes.
 The backend secret must contain external_login_password_mz_system.</li>
 <li><code>Sasl</code>:<br>  Authenticate users using SASL.</li>
+<li><code>Oidc</code>:<br>  Authenticate users using OIDC (JWT tokens).</li>
 <li><code>None</code> (default):<br>  Do not authenticate users. Trust they are who they say they are without verification.</li>
 </ul>
 </p>
@@ -476,6 +478,28 @@ Value must be in units accepted by Go
 
 
 <p>Reference to an <code>Issuer</code> or <code>ClusterIssuer</code> that will generate the certificate.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>privateKeyAlgorithm</code></td>
+<td></td>
+<td>
+<em><strong>CertificatePrivateKeyAlgorithm</strong></em>
+
+
+<p>Optional algorithm to use for the private key. If not specified, a recommended default will be chosen.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>privateKeySize</code></td>
+<td></td>
+<td>
+<em><strong>Integer</strong></em>
+
+
+<p>Optional size for the private key.</p>
 
 </td>
 </tr>
@@ -946,3 +970,5 @@ Value must be in units accepted by Go
 </tr>
 </tbody>
 </table>
+
+

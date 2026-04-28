@@ -244,18 +244,18 @@ components:
    MY_ORGANIZATION=<enter-your-organization>
    ```
 
-1. Clone your forked repo and checkout the `v0.8.13` tag. For example,
+1. Clone your forked repo and checkout the `v0.8.27` tag. For example,
 
    - If cloning via SSH:
 
      ```bash
-     git clone --depth 1 -b v0.8.13 git@github.com:${MY_ORGANIZATION}/terraform-google-materialize.git
+     git clone --depth 1 -b v0.8.27 git@github.com:${MY_ORGANIZATION}/terraform-google-materialize.git
      ```
 
    - If cloning via HTTPS:
 
      ```bash
-     git clone --depth 1 -b v0.8.13 https://github.com/${MY_ORGANIZATION}/terraform-google-materialize.git
+     git clone --depth 1 -b v0.8.27 https://github.com/${MY_ORGANIZATION}/terraform-google-materialize.git
      ```
 
 
@@ -380,7 +380,7 @@ components:
    starting in v0.3.0, a `cert-manager`. Verify the
    installation and check the status:
 
-
+   
    **Materialize Operator:**
 
    Verify the installation and check the status:
@@ -402,7 +402,7 @@ components:
    replicaset.apps/materialize-mz-simple-materialize-operator-74d8f549d6       1         1         1       36m
    ```
 
-
+   
    **cert-manager (Starting in version 0.3.0):**
 
    Verify the installation and check the status:
@@ -433,8 +433,8 @@ components:
    replicaset.apps/cert-manager-webhook-6cc5dccc4b      1         1         1       22m
    ```
 
-
-
+   
+   
 
    If you run into an error during deployment, refer to the
    [Troubleshooting](/installation/troubleshooting/).
@@ -580,7 +580,7 @@ components:
 
 1. Open the Materialize Console in your browser:
 
-
+   
 
    **Via Network Load Balancer:**
 
@@ -603,20 +603,20 @@ components:
    from an official Certificate Authority (CA) rather than self-signed
    certificates.
 
-
+   
 
    **Via port forwarding:**
 
    1. Find your console service name.
-
+   
       ```shell
       MZ_SVC_CONSOLE=$(kubectl -n materialize-environment get svc \
         -o custom-columns="NAME:.metadata.name" --no-headers | grep console-lb)
       echo $MZ_SVC_CONSOLE
       ```
-
+   
    1. Port forward the Materialize Console service to your local machine:[^1]
-
+   
       ```shell
       (
         while true; do
@@ -625,21 +625,21 @@ components:
         done;
       ) &
       ```
-
+   
       The command is run in background.
       <br>- To list the background jobs, use `jobs`.
       <br>- To bring back to foreground, use `fg %<job-number>`.
       <br>- To kill the background job, use `kill %<job-number>`.
-
+   
    1. Open a browser and navigate to
       [https://localhost:8080](https://localhost:8080) (or, if you have not enabled
       TLS, [http://localhost:8080](http://localhost:8080)).
-
+   
       The example uses a self-signed ClusterIssuer. As such, you may encounter a
       warning with regards to the certificate. In production, run with certificates
       from an official Certificate Authority (CA) rather than self-signed
       certificates.
-
+   
    [^1]: The port forwarding command uses a while loop to handle a [known
    Kubernetes issue 78446](https://github.com/kubernetes/kubernetes/issues/78446),
    where interrupted long-running requests through a standard port-forward cause
@@ -648,8 +648,8 @@ components:
    monitoring for "portforward.go" error messages.
 
 
-
-
+   
+   
 
 
    > **Tip:** If you experience long loading screens or unresponsiveness in the Materialize

@@ -84,7 +84,7 @@ This example provisions the following infrastructure:
 |----------|-------------|
 | Operator | Materialize Kubernetes operator in the `materialize` namespace |
 | Instance | Single Materialize instance in the `materialize-environment` namespace |
-| Load Balancers | Azure Load Balancers for access to Materialize
+| Load Balancers | Azure Load Balancers for access to Materialize 
 | Port | Description |
 | --- | --- |
 | 6875 | For SQL connections to the database |
@@ -131,6 +131,15 @@ An active Azure subscription with appropriate permissions to create:
 > deployment, either:
 > - Fork the repo and pin to a specific version; or
 > - Use the code as a reference when developing your own deployment.
+
+
+
+> **Tip:** The simple example used in this tutorial enables [Password
+> authentication](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/azure/examples/simple/main.tf#L340)
+> for the Materialize instance. To use a different authentication method, update
+> [`authenticator_kind`](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/kubernetes/modules/materialize-instance/README.md#input_authenticator_kind).
+> See [Authentication](/security/self-managed/authentication/) for the supported
+> authentication mechanisms.
 
 
 ### Step 1: Set Up the Environment
@@ -265,14 +274,14 @@ An active Azure subscription with appropriate permissions to create:
    ```bash
    kubectl -n materialize get all
    ```
-
+   
    **Materialize instance:**
    To check the status of the Materialize instance, which runs in the `materialize-environment` namespace:
    ```bash
    kubectl -n materialize-environment get all
    ```
-
-
+   
+   
    <p>If you run into an error during deployment, refer to the
    <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
 
@@ -395,6 +404,8 @@ guide](/self-managed-deployments/deployment-guidelines/azure-deployment-guidelin
 
 
 See also:
+- [Configuring System
+  Parameters](/self-managed-deployments/configuration-system-parameters/)
 - [Materialize Operator
   Configuration](/self-managed-deployments/operator-configuration/)
 - [Materialize CRD Field
@@ -416,5 +427,5 @@ When prompted to proceed, type `yes` to confirm the deletion.
 
 ## See Also
 
-- [Materialize Operator Configuration](/installation/configuration/)
-- [Troubleshooting](/installation/troubleshooting/)
+- [Troubleshooting](/self-managed-deployments/troubleshooting/)
+- [Security](/security/self-managed/)

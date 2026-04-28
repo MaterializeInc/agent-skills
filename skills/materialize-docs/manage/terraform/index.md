@@ -855,3 +855,4 @@ For more information on RBAC in Materialize, review the reference documentation:
 * [`ALTER ROLE`](/sql/alter-role/)
 * [`REVOKE PRIVILEGE`](/sql/revoke-privilege/)
 * [`DROP ROLE`](/sql/drop-role/)
+

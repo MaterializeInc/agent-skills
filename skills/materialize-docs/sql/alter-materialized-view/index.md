@@ -5,20 +5,7 @@ Use `ALTER MATERIALIZED VIEW` to:
 - Rename a materialized view.
 - Change owner of a materialized view.
 - Change retain history configuration for the materialized view.
-
-
-
-
-
-
-
-
-
-
 - Replace a materialized view. (*Public preview*)
-
-
-
 
 
 ## Syntax
@@ -101,14 +88,6 @@ ALTER MATERIALIZED VIEW <name> RESET (RETAIN HISTORY);
 
 
 
-
-
-
-
-
-
-
-
 **Replace materialized view:**
 
 ### Replace materialized view
@@ -129,17 +108,6 @@ ALTER MATERIALIZED VIEW <name> APPLY REPLACEMENT <replacement_materialized_view>
 | --- | --- |
 | `<name>` | The name of the materialized view to replace.  |
 | `<replacement_materialized_view>` | The name of a replacement materialized view specifically created for the target materialized view. See [`CREATE REPLACEMENT MATERIALIZED VIEW <replacement_view>...FOR <name>...`](/sql/create-materialized-view).  |
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -212,9 +180,6 @@ replacement view.</p>
 
 
 
-
-
-
 ## Privileges
 
 The privileges required to execute this statement are:
@@ -224,26 +189,8 @@ The privileges required to execute this statement are:
   - Role membership in `new_owner`.
   - `CREATE` privileges on the containing schema if the materialized view is
   namespaced by a schema.
-
-
-
-
-
-
-
-
-
-
 - In addition, to apply a replacement:
   - Ownership of the replacement materialized view.
-
-
-
-
-
-
-
-
 
 ## Examples
 
@@ -297,9 +244,6 @@ APPLY REPLACEMENT winning_bids_replacement;
 For a step-by-step tutorial on replacing a materialized view, see [Replace
 materialized views
 guide](/transform-data/updating-materialized-views/replace-materialized-view/).
-
-
-
 
 
 ## Related pages

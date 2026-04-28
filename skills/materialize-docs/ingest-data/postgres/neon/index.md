@@ -112,7 +112,7 @@ role, which has the required `REPLICATION` privilege.
    While you can use the default user for replication, we recommend creating a
    dedicated user for security reasons.
 
-
+    
 **Neon CLI:**
 
 Use the [`roles create` CLI command](https://neon.tech/docs/reference/cli-roles)
@@ -157,7 +157,7 @@ curl 'https://console.neon.tech/api/v2/projects/<project_id>/branches/<branch_id
 
 
 
-
+    
 
 4. Grant the user the required permissions on the schema(s) you want to
    replicate:
@@ -258,7 +258,7 @@ command to create the new cluster:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#size" >size</a> <code>50cc</code> should be enough to
+</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
 accommodate multiple PostgreSQL sources, depending on the source
 characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
 or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
@@ -317,6 +317,13 @@ your networking configuration.
 
 ### 3. Start ingesting data
 
+{{< tip >}}
+When snapshotting, Materialize uses PostgreSQL statistics to estimate the amount of data and
+number of rows to read. Before creating the source in Materialize, check that the PostgreSQL
+statistics are up to date by running PostgreSQL `ANALYZE`.  See
+[Snapshotting considerations](#snapshotting) for more information.
+{{< /tip >}}
+
 {{< tabs >}}
 {{< tab "Legacy Syntax" >}}
 #### Legacy syntax
@@ -344,7 +351,7 @@ status of the snapshotting process.</p>
 <ol>
 <li>
 <p>Back in the SQL client connected to Materialize, use the
-<a href="/sql/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
+<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
 table to check the overall status of your source:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -369,7 +376,7 @@ Also, if the <code>status</code> of any subsource is <code>starting</code> for m
 minutes, <a href="/support/" >contact our team</a>.</p>
 </li>
 <li>
-<p>Once the source is running, use the <a href="/sql/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
+<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
 table to check the status of the initial snapshot:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -430,7 +437,7 @@ follows:</p>
 <ol>
 <li>
 <p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/sql/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
+PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
 table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
 </span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
@@ -652,3 +659,15 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
+

@@ -76,11 +76,19 @@ Learn how to efficiently transform data using Materialize SQL.
 
 - **Dataflow troubleshooting**: `transform-data/dataflow-troubleshooting/index.md`
 - **FAQ: Indexes**: `transform-data/faq/index.md`
+- **Freshness troubleshooting**: `transform-data/freshness-troubleshooting/index.md`
 - **Idiomatic Materialize SQL**: `transform-data/idiomatic-materialize-sql/index.md`
 - **Optimization**: `transform-data/optimization/index.md`
 - **Patterns**: `transform-data/patterns/index.md`
 - **Troubleshooting**: `transform-data/troubleshooting/index.md`
 - **Updating materialized views**: `transform-data/updating-materialized-views/index.md`
+
+### References
+
+- **Explain plan operators**: `reference/explain-plan-operators/index.md`
+- **M.1 to cc size mapping**: `reference/m1-cc-mapping/index.md`
+- **System catalog**: `reference/system-catalog/index.md`
+- **System clusters**: `reference/system-clusters/index.md`
 
 ### Security
 
@@ -123,17 +131,18 @@ SQL commands reference.
 - **ALTER MATERIALIZED VIEW**: `sql/alter-materialized-view/index.md`
 - **ALTER NETWORK POLICY (Cloud)**: `sql/alter-network-policy/index.md`
 - **ALTER ROLE**: `sql/alter-role/index.md`
-- _(and 112 more files in this section)_
+- _(and 108 more files in this section)_
 
 ### Tools and integrations
 Get details about third-party tools and integrations supported by Materialize
 
 - **Client libraries**: `integrations/client-libraries/index.md`
+- **Coding Agent Skills**: `integrations/coding-agent-skills/index.md`
 - **Connect to Materialize via HTTP**: `integrations/http-api/index.md`
 - **Connect to Materialize via WebSocket**: `integrations/websocket-api/index.md`
 - **Connection Pooling**: `integrations/connection-pooling/index.md`
 - **Foreign data wrapper (FDW) **: `integrations/fdw/index.md`
-- **MCP Server**: `integrations/llm/index.md`
+- **MCP Server**: `integrations/mcp-server/index.md`
 - **mz - Materialize CLI**: `integrations/cli/index.md`
 - **mz-debug**: `integrations/mz-debug/index.md`
 - **SQL clients**: `integrations/sql-clients/index.md`

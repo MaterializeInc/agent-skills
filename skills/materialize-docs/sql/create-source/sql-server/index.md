@@ -21,6 +21,7 @@ CREATE SOURCE [IF NOT EXISTS] <src_name>
 [IN CLUSTER <cluster_name>]
 FROM SQL SERVER CONNECTION <connection_name>
   [ ( EXCLUDE COLUMNS (<col1> [, ...]) ) ]
+  [ ( TEXT COLUMNS (<col1> [, ...]) ) ]
 <FOR ALL TABLES | FOR TABLES ( <table1> [AS <subsrc_name>] [, ...] )>
 [WITH (RETAIN HISTORY FOR <retention_period>)]
 
@@ -33,6 +34,7 @@ FROM SQL SERVER CONNECTION <connection_name>
 | **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
 | **CONNECTION** `<connection_name>` | The name of the SQL Server connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#sql-server) documentation page.  |
 | **EXCLUDE COLUMNS** ( `<col1>` [, ...] ) | Optional. Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.  |
+| **TEXT COLUMNS** ( `<col1>` [, ...] ) | Optional. If specified, decode data from the specified columns in the subsource(s) as `text` for the listed column(s), such as for unsupported data types.  |
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables with CDC enabled in all schemas upstream. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables upstream. Requires fully-qualified table names (`<schema1>.<table1>`). \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
@@ -117,14 +119,18 @@ ingestion progress and debugging related issues, see [Troubleshooting](/ops/trou
 ## Known limitations
 
 ### Schema changes
-
-> **Note:** Work to more smoothly support ddl changes to upstream tables is currently in
-> progress. The work introduces the ability to re-ingest the same upstream table
-> under a new schema and switch over without downtime.
-
 Materialize supports schema changes in the upstream database as follows:
 
-#### Compatible schema changes
+#### Compatible schema changes (Legacy syntax)
+
+> **Note:** This section refer to the legacy [`CREATE SOURCE ... FOR
+> ...`](/sql/create-source/sql-server/) that creates subsources as part of the
+> `CREATE SOURCE` operation.  To be able to handle the upstream column additions
+> and drops, use [`CREATE SOURCE (New Syntax)`](/sql/create-source/sql-server-v2/)
+> and [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
+> [SQL Server: Source versioning
+> guide](/ingest-data/sql-server/source-versioning/).
+
 
 - Adding columns to tables. Materialize will **not ingest** new columns added
   upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to first
@@ -136,6 +142,7 @@ Materialize supports schema changes in the upstream database as follows:
 
 - Adding or removing `NOT NULL` constraints to tables that were nullable when
   the source was created.
+
 
 #### Incompatible schema changes
 
@@ -195,6 +202,27 @@ following types:</p>
 <p>Columns with the specified types need to be excluded because <a href="https://learn.microsoft.com/en-us/sql/relational-databases/system-tables/cdc-capture-instance-ct-transact-sql?view=sql-server-2017#large-object-data-types" >SQL Server does not provide
 the &ldquo;before&rdquo;</a>
 value when said column is updated.</p>
+<p>To replicate tables that contain the following unsupported data types:</p>
+<ul>
+<li><code>text</code></li>
+<li><code>ntext</code></li>
+<li><code>image</code></li>
+<li><code>varbinary(max)</code></li>
+</ul>
+<p>You can use either the <code>TEXT COLUMNS</code> or the <code>EXCLUDE COLUMNS</code> option.</p>
+<ul>
+<li>For <code>text</code> and <code>ntext</code> columns:
+<ul>
+<li>You can use <code>TEXT COLUMNS</code> to expose them as varchar and nvarchar, respectively.</li>
+<li>You can use <code>EXCLUDE COLUMNS</code> to omit them from replication.</li>
+</ul>
+</li>
+<li>For <code>image</code> and <code>varbinary(max)</code> columns:
+<ul>
+<li>You can use <code>EXCLUDE COLUMNS</code>.</li>
+</ul>
+</li>
+</ul>
 
 
 ### Timestamp Rounding

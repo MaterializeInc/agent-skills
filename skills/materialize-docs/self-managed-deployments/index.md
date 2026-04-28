@@ -161,7 +161,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.10.1
+  environmentdImageRef: materialize/environmentd:v26.20.2
 # ... additional fields omitted for brevity
 ```
 
@@ -830,7 +830,8 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 
 <p>The name of a secret containing <code>metadata_backend_url</code> and <code>persist_backend_url</code>.
 It may also contain <code>external_login_password_mz_system</code>, which will be used as
-the password for the <code>mz_system</code> user if <code>authenticatorKind</code> is <code>Password</code>.</p>
+the password for the <code>mz_system</code> user if <code>authenticatorKind</code> is <code>Password</code>,
+<code>Sasl</code>, or <code>Oidc</code>.</p>
 
 </td>
 </tr>
@@ -859,6 +860,7 @@ the password for the <code>mz_system</code> user if <code>authenticatorKind</cod
 <li><code>Password</code>:<br>  Authenticate users using internally stored password hashes.
 The backend secret must contain external_login_password_mz_system.</li>
 <li><code>Sasl</code>:<br>  Authenticate users using SASL.</li>
+<li><code>Oidc</code>:<br>  Authenticate users using OIDC (JWT tokens).</li>
 <li><code>None</code> (default):<br>  Do not authenticate users. Trust they are who they say they are without verification.</li>
 </ul>
 </p>
@@ -1258,6 +1260,28 @@ Value must be in units accepted by Go
 
 
 <p>Reference to an <code>Issuer</code> or <code>ClusterIssuer</code> that will generate the certificate.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>privateKeyAlgorithm</code></td>
+<td></td>
+<td>
+<em><strong>CertificatePrivateKeyAlgorithm</strong></em>
+
+
+<p>Optional algorithm to use for the private key. If not specified, a recommended default will be chosen.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>privateKeySize</code></td>
+<td></td>
+<td>
+<em><strong>Integer</strong></em>
+
+
+<p>Optional size for the private key.</p>
 
 </td>
 </tr>
@@ -2172,7 +2196,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.10.1&quot;</code>
+<code>&quot;v26.20.2&quot;</code>
 </td>
 </tr>
 
@@ -2334,7 +2358,7 @@ To configure the Materialize operator, you can:
 
 #### balancerd.affinity
 
-**Default**:
+**Default**: 
 
 Affinity to use for balancerd pods spawned by the operator
 
@@ -2390,7 +2414,7 @@ Flag to indicate whether to create balancerd pods for the environments
 
 #### balancerd.nodeSelector
 
-**Default**:
+**Default**: 
 
 Node selector to use for balancerd pods spawned by the operator
 
@@ -2404,7 +2428,7 @@ Node selector to use for balancerd pods spawned by the operator
 
 #### balancerd.tolerations
 
-**Default**:
+**Default**: 
 
 Tolerations to use for balancerd pods spawned by the operator
 
@@ -2420,7 +2444,7 @@ Tolerations to use for balancerd pods spawned by the operator
 
 #### clusterd.affinity
 
-**Default**:
+**Default**: 
 
 Affinity to use for clusterd pods spawned by the operator
 
@@ -2434,7 +2458,7 @@ Affinity to use for clusterd pods spawned by the operator
 
 #### clusterd.nodeSelector
 
-**Default**:
+**Default**: 
 
 Node selector to use for all clusterd pods spawned by the operator
 
@@ -2448,7 +2472,7 @@ Node selector to use for all clusterd pods spawned by the operator
 
 #### clusterd.scratchfsNodeSelector
 
-**Default**:
+**Default**: 
 
 Additional node selector to use for clusterd pods when using an LVM scratch disk. This will be merged with the values in <code>nodeSelector</code>.
 
@@ -2462,7 +2486,7 @@ Additional node selector to use for clusterd pods when using an LVM scratch disk
 
 #### clusterd.swapNodeSelector
 
-**Default**:
+**Default**: 
 
 Additional node selector to use for clusterd pods when using swap. This will be merged with the values in <code>nodeSelector</code>.
 
@@ -2476,7 +2500,7 @@ Additional node selector to use for clusterd pods when using swap. This will be 
 
 #### clusterd.tolerations
 
-**Default**:
+**Default**: 
 
 Tolerations to use for clusterd pods spawned by the operator
 
@@ -2492,7 +2516,7 @@ Tolerations to use for clusterd pods spawned by the operator
 
 #### console.affinity
 
-**Default**:
+**Default**: 
 
 Affinity to use for console pods spawned by the operator
 
@@ -2562,7 +2586,7 @@ Override the mapping of environmentd versions to console versions
 
 #### console.nodeSelector
 
-**Default**:
+**Default**: 
 
 Node selector to use for console pods spawned by the operator
 
@@ -2576,7 +2600,7 @@ Node selector to use for console pods spawned by the operator
 
 #### console.tolerations
 
-**Default**:
+**Default**: 
 
 Tolerations to use for console pods spawned by the operator
 
@@ -2592,7 +2616,7 @@ Tolerations to use for console pods spawned by the operator
 
 #### environmentd.affinity
 
-**Default**:
+**Default**: 
 
 Affinity to use for environmentd pods spawned by the operator
 
@@ -2634,7 +2658,7 @@ Default resources requested for environmentd&rsquo;s CPU and memory if not set i
 
 #### environmentd.nodeSelector
 
-**Default**:
+**Default**: 
 
 Node selector to use for environmentd pods spawned by the operator
 
@@ -2648,7 +2672,7 @@ Node selector to use for environmentd pods spawned by the operator
 
 #### environmentd.tolerations
 
-**Default**:
+**Default**: 
 
 Tolerations to use for environmentd pods spawned by the operator
 
@@ -2808,7 +2832,7 @@ Additional columns to display when printing the Materialize CRD in table format.
 
 #### operator.affinity
 
-**Default**:
+**Default**: 
 
 Affinity to use for the operator pod
 
@@ -3144,7 +3168,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.10.1&quot;</code>
+**Default**: <code>&quot;v26.20.2&quot;</code>
 
 The tag/version of the operator image to be used
 
@@ -3158,7 +3182,7 @@ The tag/version of the operator image to be used
 
 #### operator.nodeSelector
 
-**Default**:
+**Default**: 
 
 Node selector to use for the operator pod
 
@@ -3214,7 +3238,7 @@ Which secrets controller to use for storing secrets. Valid values are &lsquo;kub
 
 #### operator.tolerations
 
-**Default**:
+**Default**: 
 
 Tolerations to use for the operator pod
 
@@ -3440,7 +3464,7 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
 
 
-
+ 
 
 
 ## See also
@@ -3459,7 +3483,23 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
-| v26.10.1 | v26.10.1 | v26.10.1 | 2026-02-06 |  |
+| v26.20.2 | v26.20.2 | v26.20.2 | 2026-04-18 | See <a href="/releases/#v26202" >v26.20.2 release notes</a> |
+| v26.20.0 | v26.20.0 | v26.20.0 | 2026-04-17 |  |
+| v26.19.0 | v26.19.0 | v26.19.0 | 2026-04-10 | See <a href="/releases/#v26190" >v26.19.0 release notes</a> |
+| v26.18.0 | v26.18.0 | v26.18.0 | 2026-04-03 | See <a href="/releases/#v26180" >v26.18.0 release notes</a> |
+| v26.17.1 | v26.17.1 | v26.17.1 | 2026-03-27 |  |
+| v26.17.0 | v26.17.0 | v26.17.0 | 2026-03-27 | See <a href="/releases/#v26170" >v26.17.0 release notes</a> |
+| v26.16.0 | v26.16.0 | v26.16.0 | 2026-03-20 | See <a href="/releases/#v26160" >v26.16.0 release notes</a> |
+| v26.15.0 | v26.15.0 | v26.15.0 | 2026-03-13 |  |
+| v26.15.0 | v26.15.0 | v26.15.0 | 2026-03-13 | See <a href="/releases/#v26150" >v26.15.0 release notes</a> |
+| v26.14.1 | v26.14.1 | v26.14.1 | 2026-03-06 | See <a href="/releases/#v26141" >v26.14 release notes</a> |
+| v26.14.0 | v26.14.0 | v26.14.0 | 2026-03-06 |  |
+| v26.13.0 | v26.13.0 | v26.13.0 | 2026-02-27 | See <a href="/releases/#v26130" >v26.13.0 release notes</a> |
+| v26.12.1 | v26.12.1 | v26.12.1 | 2026-02-20 |  |
+| v26.12.0 | v26.12.0 | v26.12.0 | 2026-02-20 | See <a href="/releases/#v26120" >v26.12.0 release notes</a> |
+| v26.11.0 | v26.11.0 | v26.11.0 | 2026-02-13 | See <a href="/releases/#v26110" >v26.11.0 release notes</a> |
+| v26.10.2 | v26.10.2 | v26.10.2 | 2026-02-09 |  |
+| v26.10.1 | v26.10.1 | v26.10.1 | 2026-02-06 | See <a href="/releases/#v26101" >v26.10.1 release notes</a> |
 | v26.9.0 | v26.9.0 | v26.9.0 | 2026-01-30 | See <a href="/releases/#v2690" >v26.9.0 release notes</a> |
 | v26.8.0 | v26.8.0 | v26.8.0 | 2026-01-23 | See <a href="/releases/#v2680" >v26.8.0 release notes</a> |
 | v26.7.0 | v26.7.0 | v26.7.0 | 2026-01-16 | See <a href="/releases/#v2670" >v26.7.0 release notes</a> |
@@ -3762,7 +3802,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.10.1
+  --version v26.20.2
 ```
 
 ## Upgrading Materialize Instances
@@ -3800,13 +3840,13 @@ To stage the Materialize instances version upgrade, update the
 compatible version of your currently deployed Materialize Operator.
 
 To stage, but **not** rollout, the Materialize instance version upgrade, you can
-use the `kubectl patch` command; for example, if the **App Version** is v26.10.1:
+use the `kubectl patch` command; for example, if the **App Version** is v26.20.2:
 
 ```shell
 kubectl patch materialize <instance-name> \
   -n <materialize-instance-namespace> \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.10.1\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.20.2\"}}"
 ```
 
 > **Note:** Until you specify a new `requestRollout`, the Operator watches for updates but
@@ -3836,7 +3876,7 @@ can, if preferred, combine both operations in a single command
 kubectl patch materialize <instance-name> \
   -n materialize-environment \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.10.1\", \"requestRollout\": \"$(uuidgen)\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.20.2\", \"requestRollout\": \"$(uuidgen)\"}}"
 ```
 
 #### Using YAML Definition
@@ -3850,7 +3890,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.10.1 # Update version as needed
+  environmentdImageRef: materialize/environmentd:v26.20.2 # Update version as needed
   requestRollout: 22222222-2222-2222-2222-222222222222    # Use a new UUID
   forceRollout: 33333333-3333-3333-3333-333333333333      # Optional: for forced rollouts
   inPlaceRollout: false                                   # In Place rollout is deprecated and ignored. Please use rolloutStrategy
@@ -4027,3 +4067,4 @@ to <a href="/self-managed-deployments/appendix/upgrade-to-swap/" >Prepare for sw
   Descriptions](/self-managed-deployments/materialize-crd-field-descriptions/)
 
 - [Troubleshooting](/self-managed-deployments/troubleshooting/)
+

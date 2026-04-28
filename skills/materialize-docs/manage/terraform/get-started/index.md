@@ -184,3 +184,6 @@ provider "materialize" {
 | `database` | Database name | `MZ_DATABASE` | `materialize` |
 | `password` | Database password | `MZ_PASSWORD` | - |
 | `sslmode` | SSL mode (`disable`, `require`, `verify-ca`, `verify-full`) | `MZ_SSLMODE` | `require` |
+
+
+

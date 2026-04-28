@@ -43,3 +43,6 @@ The following privileges are available in Materialize:
 | <code>TABLE</code> | <ul> <li><code>INSERT</code></li> <li><code>SELECT</code></li> <li><code>UPDATE</code></li> <li><code>DELETE</code></li> </ul>  |
 | <code>TYPE</code> | <ul> <li><code>USAGE</code></li> </ul>  |
 | <code>VIEW</code> | <ul> <li><code>SELECT</code></li> </ul>  |
+
+
+

@@ -361,7 +361,7 @@ your SQL Server database.
     SET CLUSTER = ingest_sqlserver;
     ```
 
-    A cluster of [size](/sql/create-cluster/#size) `200cc` should be enough to
+    A cluster of [size](/sql/create-cluster/#available-sizes) `200cc` should be enough to
     process the initial snapshot of the tables in your SQL Server database. For
     very large snapshots, consider using a larger size to speed up processing.
     Once the snapshot is finished, you can readjust the size of the cluster to fit
@@ -670,14 +670,18 @@ new data arrives, and serving results efficiently.
 ## Considerations
 
 ### Schema changes
-
-> **Note:** Work to more smoothly support ddl changes to upstream tables is currently in
-> progress. The work introduces the ability to re-ingest the same upstream table
-> under a new schema and switch over without downtime.
-
 Materialize supports schema changes in the upstream database as follows:
 
-#### Compatible schema changes
+#### Compatible schema changes (Legacy syntax)
+
+> **Note:** This section refer to the legacy [`CREATE SOURCE ... FOR
+> ...`](/sql/create-source/sql-server/) that creates subsources as part of the
+> `CREATE SOURCE` operation.  To be able to handle the upstream column additions
+> and drops, use [`CREATE SOURCE (New Syntax)`](/sql/create-source/sql-server-v2/)
+> and [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
+> [SQL Server: Source versioning
+> guide](/ingest-data/sql-server/source-versioning/).
+
 
 - Adding columns to tables. Materialize will **not ingest** new columns added
   upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to first
@@ -689,6 +693,7 @@ Materialize supports schema changes in the upstream database as follows:
 
 - Adding or removing `NOT NULL` constraints to tables that were nullable when
   the source was created.
+
 
 #### Incompatible schema changes
 
@@ -748,6 +753,27 @@ following types:</p>
 <p>Columns with the specified types need to be excluded because <a href="https://learn.microsoft.com/en-us/sql/relational-databases/system-tables/cdc-capture-instance-ct-transact-sql?view=sql-server-2017#large-object-data-types" >SQL Server does not provide
 the &ldquo;before&rdquo;</a>
 value when said column is updated.</p>
+<p>To replicate tables that contain the following unsupported data types:</p>
+<ul>
+<li><code>text</code></li>
+<li><code>ntext</code></li>
+<li><code>image</code></li>
+<li><code>varbinary(max)</code></li>
+</ul>
+<p>You can use either the <code>TEXT COLUMNS</code> or the <code>EXCLUDE COLUMNS</code> option.</p>
+<ul>
+<li>For <code>text</code> and <code>ntext</code> columns:
+<ul>
+<li>You can use <code>TEXT COLUMNS</code> to expose them as varchar and nvarchar, respectively.</li>
+<li>You can use <code>EXCLUDE COLUMNS</code> to omit them from replication.</li>
+</ul>
+</li>
+<li>For <code>image</code> and <code>varbinary(max)</code> columns:
+<ul>
+<li>You can use <code>EXCLUDE COLUMNS</code>.</li>
+</ul>
+</li>
+</ul>
 
 
 ### Timestamp Rounding

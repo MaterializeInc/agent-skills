@@ -21,7 +21,7 @@ From the Materialize Console:
       | Field | Description |
       | ----- | ----------- |
       | **Name** | A name for the cluster. | `
-      | **Size** | The [size](/sql/create-cluster/#size) of the cluster. |
+      | **Size** | The [size](/sql/create-cluster/#available-sizes) of the cluster. |
       | **Replica** | The [replication factor](/sql/create-cluster/#replication-factor) of the cluster. Default: `1` <br>Clusters that contain sources or sinks cannot have a replication factor greater than 1.|
 
    1. Click **Create cluster** to create the cluster.
@@ -76,7 +76,7 @@ application password")
 
 
 
-
+   
    **Personal:**
 
    For a personal app that you will run under your user account, specify the
@@ -87,13 +87,13 @@ application password")
    | **Type** | Select **Personal** |
    | **Name** | Specify a descriptive name. |
 
-
+   
    **Service account:**
 
    For an app that you will run under a Service account, specify the
    type and required field(s):
 
-
+   
    | Field | Details |
    | --- | --- |
    | <strong>Type</strong> | Select <strong>Service</strong> |
@@ -106,8 +106,8 @@ application password")
    accounts](/security/cloud/users-service-accounts/create-service-accounts/)
    for creating service accounts via Terraform.
 
-
-
+   
+   
 
 
 1. Click **Create password** to generate the app password.
@@ -131,7 +131,7 @@ specified service account **User** is created, and the service account creation 
    1. Click on the **Connect** button to get details on connecting with the new
       account.
 
-
+      
       **psql:**
 If you have `psql` installed:
 
@@ -142,7 +142,7 @@ If you have `psql` installed:
 Once connected, the service account creation is complete and you can grant roles
 to the new service account.
 
-
+      
       **Other clients:**
 To use a non-psql client to connect,
 
@@ -152,8 +152,8 @@ To use a non-psql client to connect,
 
 Once connected, the service account creation is complete and you can grant roles
 to the new service account.
-
-
+      
+      
 
 To view the created app accounts, go to [Admin > App
 Passwords](/console/admin/).

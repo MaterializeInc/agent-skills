@@ -23,7 +23,7 @@ More granular permissions for the service account can then be configured using
 
 1. In the **New app password** modal, specify the type and required field(s):
 
-
+   
    | Field | Details |
    | --- | --- |
    | <strong>Type</strong> | Select <strong>Service</strong> |
@@ -55,7 +55,7 @@ More granular permissions for the service account can then be configured using
    1. Click on the **Connect** button to get details on connecting with the new
       account.
 
-
+      
       **psql:**
 If you have `psql` installed:
 
@@ -66,7 +66,7 @@ If you have `psql` installed:
 The first time the account connects, a database role with the same name as the
 specified service account **User** is created, and the service account creation is complete.
 
-
+      
       **Other clients:**
 To use a different client to connect,
 
@@ -77,8 +77,8 @@ To use a different client to connect,
 The first time the account connects, a database role with the same name as the
 specified service account **User** is created, and the service account creation is complete.
 
-
-
+      
+      
 
 ## Terraform
 

@@ -6,22 +6,9 @@ Use `CREATE MATERIALIZED VIEW` to:
   results](/concepts/reaction-time) by persisting them in durable storage and
   incrementally updating them as new data arrives.
 
-
-
-
-
-
-
-
-
-
 - Create a replacement for an existing materialized view that can be applied in
   place with [`ALTER MATERIALIZED VIEW ... APPLY
   REPLACEMENT`](/sql/alter-materialized-view/).
-
-
-
-
 
 Materialized views are particularly useful when you need **cross-cluster
 access** to results or want to sink data to external systems like
@@ -68,15 +55,6 @@ AS <select_stmt>;
 
 
 
-
-
-
-
-
-
-
-
-
 **CREATE REPLACEMENT MATERIALIZED VIEW:**
 
 ### Create replacement materialized view
@@ -109,9 +87,6 @@ The created replacement materialized view starts hydrating immediately and can
 later be applied to replace the specified materialized view. For more
 information, see [Creating replacement materialized
 views](#creating-replacement-materialized-views).
-
-
-
 
 
 
@@ -355,8 +330,8 @@ SET (SCHEDULE = ON REFRESH (HYDRATION TIME ESTIMATE = '30 minutes'));
 
 To check details about the (non-default) refresh strategies associated with any materialized
 view in the system, you can query
-the [`mz_internal.mz_materialized_view_refresh_strategies`](../system-catalog/mz_internal/#mz_materialized_view_refresh_strategies)
-and [`mz_internal.mz_materialized_view_refreshes`](../system-catalog/mz_internal/#mz_materialized_view_refreshes)
+the [`mz_internal.mz_materialized_view_refresh_strategies`](/reference/system-catalog/mz_internal/#mz_materialized_view_refresh_strategies)
+and [`mz_internal.mz_materialized_view_refreshes`](/reference/system-catalog/mz_internal/#mz_materialized_view_refreshes)
 system catalog tables:
 
 ```mzsql
@@ -372,14 +347,6 @@ FROM mz_internal.mz_materialized_view_refresh_strategies rs
 JOIN mz_internal.mz_materialized_view_refreshes r ON r.materialized_view_id = rs.materialized_view_id
 JOIN mz_materialized_views mv ON rs.materialized_view_id = mv.id;
 ```
-
-
-
-
-
-
-
-
 
 ### Creating replacement materialized views
 
@@ -432,10 +399,6 @@ You cannot create dependent objects using [replacement materialized
 views](/sql/create-materialized-view/#creating-replacement-materialized-views);
 for example, you cannot create an index on a replacement materialized view or
 create other views on a replacement materialized view.
-
-
-
-
 
 ## Examples
 
@@ -494,14 +457,6 @@ AS SELECT ... FROM ...;
 things like querying materialized views from different clusters, indexed vs.
 non-indexed, and so on."
 
-
-
-
-
-
-
-
-
 ### Creating a replacement materialized view
 
 > **Public Preview:** This feature is in public preview.
@@ -535,9 +490,6 @@ See also:
 
 - [Replace materialized views guide
 ](/transform-data/updating-materialized-views/replace-materialized-view/)
-
-
-
 
 
 ## Privileges
