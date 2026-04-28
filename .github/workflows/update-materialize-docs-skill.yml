@@ -42,6 +42,11 @@ jobs:
       - name: Checkout agent-skills
         uses: actions/checkout@v4
         with:
+          # Always check out the default branch, not the ref the workflow was
+          # dispatched from. Otherwise testing the workflow on a feature branch
+          # via `gh workflow run --ref <branch>` would carry that branch's
+          # changes into the auto-bump PR.
+          ref: ${{ github.event.repository.default_branch }}
           path: agent-skills
           fetch-depth: 0
           persist-credentials: false
