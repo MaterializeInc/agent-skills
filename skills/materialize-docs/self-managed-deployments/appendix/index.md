@@ -151,9 +151,11 @@ operator:
         scale: 1                  # Generally, should be set to 1.
         cpu_exclusive: <bool>
         cpu_limit: <float>         # e.g., 6
+        cpu_request: <float>       # e.g., 4 (optional, defaults to cpu_limit, may not be higher than cpu_limit)
         credits_per_hour: "0.0"    # N/A for self-managed.
         disk_limit: <string>       # e.g., "93150MiB"
         memory_limit: <string>     # e.g., "46575MiB"
+        swap_enabled: <bool>       # optional, defaults to the cluster-level swap_enabled
         selectors: <map>           # k8s label selectors
         # ex: kubernetes.io/arch: amd64
 ```
@@ -164,15 +166,17 @@ operator:
 | <strong>workers</strong> | int | The number of timely workers in your cluster replica. | Use 1 worker per CPU core, with a minimum of 1 worker. |
 | <strong>scale</strong> | int | The number of pods (i.e., processes) to use in a cluster replica; used to scale out replicas horizontally. Each pod will be provisioned using the settings defined in the size definition. | Generally, this should be set to 1. This should only be greater than 1 when a replica needs to take on limits that are greater than the maximum limits permitted on a single node. |
 | <strong>cpu_exclusive</strong> | bool | The flag that determines if the workers should attempt to pin to a particular CPU core. | <p><a name="cpu_exclusive"></a></p> <p>Set to true <strong>if and only if</strong> the <a href="#cpu_limit" ><code>cpu_limit</code></a> is a whole number and the CPU management policy in the k8s cluster is set to static.</p>  |
-| <strong>cpu_limit</strong> | float | <a name="cpu_limit"></a> The k8s limit for CPU for a replica pod in cores. | <p>Prefer whole number values to enable CPU affinity. Kubernetes only allows CPU Affinity for pods taking a whole number of cores.</p> <p>If the value is not a whole number, set <a href="#cpu_exclusive" ><code>cpu_exclusive</code></a> to false.</p>  |
-| <strong>memory_limit</strong> | float | The k8s limit for memory for a replica pod in bytes. | <dl> <dt>For most workloads, use an approximate <strong>1:8</strong> CPU-to-memory ratio (1 core</dt> <dd>8 GiB). This can vary depending on your workload characteristics.</dd> </dl>  |
-| <strong>disk_limit</strong> | float | The size of the NVMe persistent volume to provision for a replica pod in bytes. | When spill-to-disk is enabled, use a <strong>1:2</strong> memory-to-disk ratio. Materialize spills data to disk when memory is insufficient, which can impact performance. |
+| <strong>cpu_limit</strong> | float | <a name="cpu_limit"></a> The Kubernetes CPU limit for a replica pod, in cores. | <p>Prefer whole number values to enable CPU affinity. Kubernetes only allows CPU Affinity for pods taking a whole number of cores.</p> <p>If the value is not a whole number, set <a href="#cpu_exclusive" ><code>cpu_exclusive</code></a> to false.</p>  |
+| <strong>cpu_request</strong> | float | <a name="cpu_request"></a> The Kubernetes CPU request for a replica pod, in cores. If not set, defaults to the value of <code>cpu_limit</code>. | In most cases, you do not need to set this. It is useful when you want to allow CPU bursting by setting a request lower than the limit. |
+| <strong>memory_limit</strong> | string | The Kubernetes memory limit for a replica pod (e.g., <code>&quot;46575MiB&quot;</code>). | <dl> <dt>For most workloads, use an approximate <strong>1:8</strong> CPU-to-memory ratio (1 core</dt> <dd>8 GiB). This can vary depending on your workload characteristics.</dd> </dl>  |
+| <strong>disk_limit</strong> | string | The size of the persistent volume to provision for a replica pod (e.g., <code>&quot;93150MiB&quot;</code>). | When spill-to-disk is enabled, use a <strong>1:2</strong> memory-to-disk ratio. Materialize spills data to disk when memory is insufficient, which can impact performance. When <code>swap_enabled</code> is true, this field is automatically set to <code>&quot;0&quot;</code> by the Helm chart. |
 | <strong>credits_per_hour</strong> | string | This is a cloud attribute that should be set to &ldquo;0.00&rdquo; in self-managed. | Set to &ldquo;0.00&rdquo; for self-managed deployments. |
-| <strong>selectors</strong> | map | This is a map of selector keys to values that will be used to schedule pods for this cluster on specific nodes. | It is generally not required to set this. |
+| <strong>swap_enabled</strong> | bool | Enables swap as the spill-to-disk mechanism for this size. When enabled, the replica uses swap instead of a provisioned persistent volume for spilling data. This also causes <code>disk_limit</code> to be set to <code>&quot;0&quot;</code>. | This defaults to the global <code>swap_enabled</code> value if not specified per size. Swap generally performs better than spill-to-disk via persistent volumes. |
+| <strong>selectors</strong> | map | A map of Kubernetes label selector keys to values used to schedule pods for this cluster size on specific nodes. | It is generally not required to set this. |
 
 
 > **Note:** If you have modified the default cluster size configurations, you can query the
-> [`mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes)
+> [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes)
 > system catalog table for the specific resource allocations.
 
 
@@ -190,7 +194,7 @@ operator:
 ## Prepare for swap and upgrade to v26.0
 
 
-> **Disambiguation:** This page outlines the general steps for upgrading from v25.2 to v26.0 if you are <red>**not**</red> using Materialize provided Terraforms. If you are using Materialize-provided Terraforms, `v0.6.1` and higher of the Terraforms handle the preparation for you.  If using Materialize-provided Terraforms, upgrade your Terraform version to `v0.6.1` or higher and follow the Upgrade notes: - <a href="https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#v061" >AWS Terraform v0.6.1 Upgrade Notes</a>. - <a href="https://github.com/MaterializeInc/terraform-google-materialize?tab=readme-ov-file#v061" >GCP Terraform v0.6.1 Upgrade Notes</a>. - <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#v061" >Azure Terraform v0.6.1 Upgrade Notes</a>. See also [Upgrade Overview](/self-managed-deployments/upgrading/).
+> **Disambiguation:** This page outlines the general steps for upgrading from v25.2 to v26.0 if you are <red>**not**</red> using Materialize provided Terraforms. If you are using Materialize-provided Terraforms, `v0.6.1` and higher of the Terraforms handle the preparation for you.  If using Materialize-provided Terraforms, upgrade your Terraform version to `v0.6.1` or higher and follow the Upgrade notes: - <a href="https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#v061" >AWS Terraform v0.6.1 Upgrade Notes</a>. - <a href="https://github.com/MaterializeInc/terraform-google-materialize?tab=readme-ov-file#v061" >GCP Terraform v0.6.1 Upgrade Notes</a>. - <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#v061" >Azure Terraform v0.6.1 Upgrade Notes</a>. See also [Upgrade Overview](/self-managed-deployments/upgrading/). 
 
 
 <p>Starting in v26.0.0, Self-Managed Materialize enables swap by default. Swap
@@ -313,3 +317,5 @@ and nodes running Materialize workloads.</p>
 </ol>
 <h2 id="how-to-disable-swap">How to disable swap</h2>
 <p>If you wish to opt out of swap and retain the old behavior, you may set <code>operator.clusters.swap_enabled: false</code> in your Helm values.</p>
+
+

@@ -381,3 +381,4 @@ CREATE INDEX idx_cnt_table1_field1 ON cnt_table1(field1);
 
 For best practices on when to index a view, see
 [Indexes](/concepts/indexes/) and [Views](/concepts/views/).
+

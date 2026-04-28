@@ -211,6 +211,17 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 
 
@@ -471,16 +482,6 @@ Dropping the column B will have no effect on `v3.T`. However, the drop affects
 `v2.T` and `v2.matview` from our earlier examples. When the user attempts to
 read from either, Materialize will report an error that the source table schema
 has been altered.
-
-## Optional: Swap schemas
-
-When you're ready to fully cut over to the new source version, you can optionally swap the schemas and drop the old objects.
-
-```sql
-ALTER SCHEMA v1 SWAP WITH v3;
-
-DROP SCHEMA v3 CASCADE;
-```
 
 
 ---
@@ -756,7 +757,7 @@ command to create the new cluster:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#size" >size</a> <code>50cc</code> should be enough to
+</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
 accommodate multiple PostgreSQL sources, depending on the source
 characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
 or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
@@ -800,9 +801,9 @@ use:
 
    ```
 
-
+   
    - Replace `<host>` with your PostgreSQL endpoint.
-
+   
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
 
@@ -826,7 +827,7 @@ tunnel connection:   ```mzsql
    - Replace `<SSH_BASTION_HOST>` and `<SSH_BASTION_PORT>` with the public IP
    address and port of the SSH bastion host you created
    [earlier](#b-optional-configure-network-security).
-
+   
    - Replace `<SSH_BASTION_USER>` with the username for the key pair you
    created for your SSH bastion host.
 
@@ -861,7 +862,7 @@ password for the `materialize` PostgreSQL user you created
 
    ```
 
-1.
+1. 
 Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another connection object, this time with database access and authentication details for Materialize to use:
    ```mzsql
    CREATE CONNECTION pg_connection TO POSTGRES (
@@ -876,7 +877,7 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    ```
 
    - Replace `<host>` with your PostgreSQL endpoint.
-
+   
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
@@ -885,6 +886,13 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
 
 
 ### 3. Start ingesting data
+
+{{< tip >}}
+When snapshotting, Materialize uses PostgreSQL statistics to estimate the amount of data and
+number of rows to read. Before creating the source in Materialize, check that the PostgreSQL
+statistics are up to date by running PostgreSQL `ANALYZE`.  See
+[Snapshotting considerations](#snapshotting) for more information.
+{{< /tip >}}
 
 {{< tabs >}}
 {{< tab "Legacy Syntax" >}}
@@ -913,7 +921,7 @@ status of the snapshotting process.</p>
 <ol>
 <li>
 <p>Back in the SQL client connected to Materialize, use the
-<a href="/sql/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
+<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
 table to check the overall status of your source:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -938,7 +946,7 @@ Also, if the <code>status</code> of any subsource is <code>starting</code> for m
 minutes, <a href="/support/" >contact our team</a>.</p>
 </li>
 <li>
-<p>Once the source is running, use the <a href="/sql/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
+<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
 table to check the status of the initial snapshot:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -999,7 +1007,7 @@ follows:</p>
 <ol>
 <li>
 <p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/sql/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
+PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
 table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
 </span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
@@ -1221,6 +1229,17 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 
 
@@ -1634,7 +1653,7 @@ command to create the new cluster:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#size" >size</a> <code>50cc</code> should be enough to
+</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
 accommodate multiple PostgreSQL sources, depending on the source
 characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
 or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
@@ -1682,12 +1701,12 @@ use:
      find the endpoint, select your database in the AWS Management Console,
      then click the **Connectivity & security** tab and look for the endpoint
      with type **Writer**.
-
+   
        <div class="warning">
            <strong class="gutter">WARNING!</strong>
            You must use the <strong>Writer</strong> endpoint for the database. Using a <strong>Reader</strong> endpoint will not work.
        </div>
-
+   
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
 
@@ -1709,10 +1728,10 @@ AWS PrivateLink connection:   ```mzsql
 
    - Replace the `SERVICE NAME` value with the service name you noted
    [earlier](#b-optional-configure-network-security).
-
+   
    - Replace the `AVAILABILITY ZONES` list with the IDs of the availability
      zones in your AWS account.
-
+   
      To find your availability zone IDs, select your database in the RDS
      Console and click the subnets under **Connectivity & security**. For each
      subnet, look for **Availability Zone ID** (e.g., `use1-az6`),
@@ -1778,7 +1797,7 @@ details for Materialize to use:
    - Replace `<host>` with your Aurora endpoint. To find your Aurora endpoint,
      select your database in the AWS Management Console, and look
      under **Connectivity & security**.
-
+   
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
 
@@ -1801,7 +1820,7 @@ tunnel connection:   ```mzsql
    - Replace `<SSH_BASTION_HOST>` and `<SSH_BASTION_PORT>` with the public IP
    address and port of the SSH bastion host you created
    [earlier](#b-optional-configure-network-security).
-
+   
    - Replace `<SSH_BASTION_USER>` with the username for the key pair you
    created for your SSH bastion host.
 
@@ -1844,7 +1863,7 @@ password for the `materialize` PostgreSQL user you created
 
    ```
 
-1.
+1. 
 Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another connection object, this time with database access and authentication details for Materialize to use:
    ```mzsql
    CREATE CONNECTION pg_connection TO POSTGRES (
@@ -1861,7 +1880,7 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    - Replace `<host>` with your Aurora endpoint. To find your Aurora endpoint,
    select your database in the AWS Management Console, and look under
    **Connectivity & security**.
-
+   
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
@@ -1871,6 +1890,13 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
 
 
 ### 3. Start ingesting data
+
+{{< tip >}}
+When snapshotting, Materialize uses PostgreSQL statistics to estimate the amount of data and
+number of rows to read. Before creating the source in Materialize, check that the PostgreSQL
+statistics are up to date by running PostgreSQL `ANALYZE`.  See
+[Snapshotting considerations](#snapshotting) for more information.
+{{< /tip >}}
 
 {{< tabs >}}
 {{< tab "Legacy Syntax" >}}
@@ -1899,7 +1925,7 @@ status of the snapshotting process.</p>
 <ol>
 <li>
 <p>Back in the SQL client connected to Materialize, use the
-<a href="/sql/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
+<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
 table to check the overall status of your source:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -1924,7 +1950,7 @@ Also, if the <code>status</code> of any subsource is <code>starting</code> for m
 minutes, <a href="/support/" >contact our team</a>.</p>
 </li>
 <li>
-<p>Once the source is running, use the <a href="/sql/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
+<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
 table to check the status of the initial snapshot:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -1985,7 +2011,7 @@ follows:</p>
 <ol>
 <li>
 <p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/sql/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
+PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
 table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
 </span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
@@ -2207,6 +2233,17 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 
 
@@ -2667,7 +2704,7 @@ command to create the new cluster:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#size" >size</a> <code>50cc</code> should be enough to
+</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
 accommodate multiple PostgreSQL sources, depending on the source
 characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
 or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
@@ -2712,7 +2749,7 @@ use:
 
    - Replace `<host>` with your RDS endpoint. To find your RDS endpoint, select
    your database in the RDS Console, and look under **Connect & security**
-
+   
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
 
@@ -2727,22 +2764,22 @@ CONNECTION`](/sql/create-connection/#aws-privatelink) command to create an
 **in-region** or **cross-region** AWS PrivateLink connection.
 
    ↕️ **In-region connections**
-
+   
    To connect to an AWS PrivateLink endpoint service in the **same region** as
    your Materialize environment:   ```mzsql
       CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK ( SERVICE
             NAME 'com.amazonaws.vpce.<region_id>.vpce-svc-<endpoint_service_id>',
             AVAILABILITY ZONES ('use1-az1', 'use1-az2', 'use1-az4') );
-
+   
       ```
 
    - Replace the `SERVICE NAME` value with the service name you noted
    [earlier](#b-optional-configure-network-security).
-
+   
    - Replace the `AVAILABILITY ZONES` list with the IDs of the availability
    zones in your AWS account. For in-region connections the availability zones
    of the NLB and the consumer VPC **must match**.
-
+   
      To find your availability zone IDs, select your database in the RDS
      Console and click the subnets under **Connectivity & security**. For each
      subnet, look for **Availability Zone ID** (e.g., `use1-az6`), not
@@ -2750,19 +2787,19 @@ CONNECTION`](/sql/create-connection/#aws-privatelink) command to create an
 
 
    ↔️ **Cross-region connections**
-
+   
    To connect to an AWS PrivateLink endpoint service in a **different region**
    to the one where your Materialize environment is deployed:   ```mzsql
       CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK ( SERVICE
       NAME 'com.amazonaws.vpce.us-west-1.vpce-svc-<endpoint_service_id>', -- For
       now, the AVAILABILITY ZONES clause **is** required, but will be -- made
       optional in a future release. AVAILABILITY ZONES () );
-
+   
       ```
 
    - Replace the `SERVICE NAME` value with the service name you noted
    [earlier](#b-optional-configure-network-security).
-
+   
    - The service name region refers to where the endpoint service was created.
    You **do not need** to specify `AVAILABILITY ZONES` manually — these will be
    optimally auto-assigned when none are provided.
@@ -2826,7 +2863,7 @@ details for Materialize to use:
    - Replace `<host>` with your RDS endpoint. To find your RDS endpoint, select
    your database in the RDS Console, and look under **Connectivity &
    security**.
-
+   
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
 
@@ -2849,7 +2886,7 @@ tunnel connection:   ```mzsql
    - Replace `<SSH_BASTION_HOST>` and `<SSH_BASTION_PORT>` with the public IP
    address and port of the SSH bastion host you created
    [earlier](#b-optional-configure-network-security).
-
+   
    - Replace `<SSH_BASTION_USER>` with the username for the key pair you
    created for your SSH bastion host.
 
@@ -2892,7 +2929,7 @@ password for the `materialize` PostgreSQL user you created
 
    ```
 
-1.
+1. 
 Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another connection object, this time with database access and authentication details for Materialize to use:
    ```mzsql
    CREATE CONNECTION pg_connection TO POSTGRES (
@@ -2909,7 +2946,7 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    - Replace `<host>` with your RDS endpoint. To find your RDS endpoint,
    select your database in the RDS Console, and look under
    **Connectivity & security**.
-
+   
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
@@ -2919,6 +2956,13 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
 
 
 ### 3. Start ingesting data
+
+{{< tip >}}
+When snapshotting, Materialize uses PostgreSQL statistics to estimate the amount of data and
+number of rows to read. Before creating the source in Materialize, check that the PostgreSQL
+statistics are up to date by running PostgreSQL `ANALYZE`.  See
+[Snapshotting considerations](#snapshotting) for more information.
+{{< /tip >}}
 
 {{< tabs >}}
 {{< tab "Legacy Syntax" >}}
@@ -2947,7 +2991,7 @@ status of the snapshotting process.</p>
 <ol>
 <li>
 <p>Back in the SQL client connected to Materialize, use the
-<a href="/sql/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
+<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
 table to check the overall status of your source:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -2972,7 +3016,7 @@ Also, if the <code>status</code> of any subsource is <code>starting</code> for m
 minutes, <a href="/support/" >contact our team</a>.</p>
 </li>
 <li>
-<p>Once the source is running, use the <a href="/sql/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
+<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
 table to check the status of the initial snapshot:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -3033,7 +3077,7 @@ follows:</p>
 <ol>
 <li>
 <p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/sql/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
+PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
 table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
 </span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
@@ -3255,6 +3299,17 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 
 
@@ -3516,7 +3571,7 @@ command to create the new cluster:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#size" >size</a> <code>50cc</code> should be enough to
+</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
 accommodate multiple PostgreSQL sources, depending on the source
 characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
 or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
@@ -3560,9 +3615,9 @@ use:
 
    ```
 
-
+   
    - Replace `<host>` with your PostgreSQL endpoint.
-
+   
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
 
@@ -3586,7 +3641,7 @@ tunnel connection:   ```mzsql
    - Replace `<SSH_BASTION_HOST>` and `<SSH_BASTION_PORT>` with the public IP
    address and port of the SSH bastion host you created
    [earlier](#b-optional-configure-network-security).
-
+   
    - Replace `<SSH_BASTION_USER>` with the username for the key pair you
    created for your SSH bastion host.
 
@@ -3621,7 +3676,7 @@ password for the `materialize` PostgreSQL user you created
 
    ```
 
-1.
+1. 
 Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another connection object, this time with database access and authentication details for Materialize to use:
    ```mzsql
    CREATE CONNECTION pg_connection TO POSTGRES (
@@ -3636,7 +3691,7 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    ```
 
    - Replace `<host>` with your PostgreSQL endpoint.
-
+   
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
@@ -3645,6 +3700,13 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
 
 
 ### 3. Start ingesting data
+
+{{< tip >}}
+When snapshotting, Materialize uses PostgreSQL statistics to estimate the amount of data and
+number of rows to read. Before creating the source in Materialize, check that the PostgreSQL
+statistics are up to date by running PostgreSQL `ANALYZE`.  See
+[Snapshotting considerations](#snapshotting) for more information.
+{{< /tip >}}
 
 {{< tabs >}}
 {{< tab "Legacy Syntax" >}}
@@ -3673,7 +3735,7 @@ status of the snapshotting process.</p>
 <ol>
 <li>
 <p>Back in the SQL client connected to Materialize, use the
-<a href="/sql/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
+<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
 table to check the overall status of your source:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -3698,7 +3760,7 @@ Also, if the <code>status</code> of any subsource is <code>starting</code> for m
 minutes, <a href="/support/" >contact our team</a>.</p>
 </li>
 <li>
-<p>Once the source is running, use the <a href="/sql/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
+<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
 table to check the status of the initial snapshot:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -3759,7 +3821,7 @@ follows:</p>
 <ol>
 <li>
 <p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/sql/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
+PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
 table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
 </span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
@@ -3981,6 +4043,17 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 
 
@@ -4243,7 +4316,7 @@ command to create the new cluster:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#size" >size</a> <code>50cc</code> should be enough to
+</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
 accommodate multiple PostgreSQL sources, depending on the source
 characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
 or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
@@ -4286,9 +4359,9 @@ use:
 
    ```
 
-
+   
    - Replace `<host>` with your PostgreSQL endpoint.
-
+   
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
 
@@ -4311,7 +4384,7 @@ tunnel connection:   ```mzsql
    - Replace `<SSH_BASTION_HOST>` and `<SSH_BASTION_PORT>` with the public IP
    address and port of the SSH bastion host you created
    [earlier](#b-optional-configure-network-security).
-
+   
    - Replace `<SSH_BASTION_USER>` with the username for the key pair you
    created for your SSH bastion host.
 
@@ -4346,7 +4419,7 @@ password for the `materialize` PostgreSQL user you created
 
    ```
 
-1.
+1. 
 Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another connection object, this time with database access and authentication details for Materialize to use:
    ```mzsql
    CREATE CONNECTION pg_connection TO POSTGRES (
@@ -4361,7 +4434,7 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    ```
 
    - Replace `<host>` with your PostgreSQL endpoint.
-
+   
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
@@ -4371,6 +4444,13 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
 
 
 ### 3. Start ingesting data
+
+{{< tip >}}
+When snapshotting, Materialize uses PostgreSQL statistics to estimate the amount of data and
+number of rows to read. Before creating the source in Materialize, check that the PostgreSQL
+statistics are up to date by running PostgreSQL `ANALYZE`.  See
+[Snapshotting considerations](#snapshotting) for more information.
+{{< /tip >}}
 
 {{< tabs >}}
 {{< tab "Legacy Syntax" >}}
@@ -4399,7 +4479,7 @@ status of the snapshotting process.</p>
 <ol>
 <li>
 <p>Back in the SQL client connected to Materialize, use the
-<a href="/sql/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
+<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
 table to check the overall status of your source:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -4424,7 +4504,7 @@ Also, if the <code>status</code> of any subsource is <code>starting</code> for m
 minutes, <a href="/support/" >contact our team</a>.</p>
 </li>
 <li>
-<p>Once the source is running, use the <a href="/sql/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
+<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
 table to check the status of the initial snapshot:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -4485,7 +4565,7 @@ follows:</p>
 <ol>
 <li>
 <p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/sql/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
+PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
 table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
 </span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
@@ -4707,6 +4787,17 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 
 
@@ -4827,7 +4918,7 @@ role, which has the required `REPLICATION` privilege.
    While you can use the default user for replication, we recommend creating a
    dedicated user for security reasons.
 
-
+    
 **Neon CLI:**
 
 Use the [`roles create` CLI command](https://neon.tech/docs/reference/cli-roles)
@@ -4872,7 +4963,7 @@ curl 'https://console.neon.tech/api/v2/projects/<project_id>/branches/<branch_id
 
 
 
-
+    
 
 4. Grant the user the required permissions on the schema(s) you want to
    replicate:
@@ -4973,7 +5064,7 @@ command to create the new cluster:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#size" >size</a> <code>50cc</code> should be enough to
+</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
 accommodate multiple PostgreSQL sources, depending on the source
 characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
 or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
@@ -5032,6 +5123,13 @@ your networking configuration.
 
 ### 3. Start ingesting data
 
+{{< tip >}}
+When snapshotting, Materialize uses PostgreSQL statistics to estimate the amount of data and
+number of rows to read. Before creating the source in Materialize, check that the PostgreSQL
+statistics are up to date by running PostgreSQL `ANALYZE`.  See
+[Snapshotting considerations](#snapshotting) for more information.
+{{< /tip >}}
+
 {{< tabs >}}
 {{< tab "Legacy Syntax" >}}
 #### Legacy syntax
@@ -5059,7 +5157,7 @@ status of the snapshotting process.</p>
 <ol>
 <li>
 <p>Back in the SQL client connected to Materialize, use the
-<a href="/sql/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
+<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
 table to check the overall status of your source:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -5084,7 +5182,7 @@ Also, if the <code>status</code> of any subsource is <code>starting</code> for m
 minutes, <a href="/support/" >contact our team</a>.</p>
 </li>
 <li>
-<p>Once the source is running, use the <a href="/sql/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
+<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
 table to check the status of the initial snapshot:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -5145,7 +5243,7 @@ follows:</p>
 <ol>
 <li>
 <p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/sql/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
+PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
 table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
 </span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
@@ -5367,6 +5465,17 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 
 
@@ -5756,7 +5865,7 @@ command to create the new cluster:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#size" >size</a> <code>50cc</code> should be enough to
+</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
 accommodate multiple PostgreSQL sources, depending on the source
 characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
 or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
@@ -5800,9 +5909,9 @@ use:
 
    ```
 
-
+   
    - Replace `<host>` with your PostgreSQL endpoint.
-
+   
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
 
@@ -5835,7 +5944,7 @@ details for Materialize to use:
    ```
 
    - Replace `<host>` with your database endpoint.
-
+   
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
 
@@ -5858,7 +5967,7 @@ tunnel connection:   ```mzsql
    - Replace `<SSH_BASTION_HOST>` and `<SSH_BASTION_PORT>` with the public IP
    address and port of the SSH bastion host you created
    [earlier](#b-optional-configure-network-security).
-
+   
    - Replace `<SSH_BASTION_USER>` with the username for the key pair you
    created for your SSH bastion host.
 
@@ -5901,7 +6010,7 @@ password for the `materialize` PostgreSQL user you created
 
    ```
 
-1.
+1. 
 Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another connection object, this time with database access and authentication details for Materialize to use:
    ```mzsql
    CREATE CONNECTION pg_connection TO POSTGRES (
@@ -5916,7 +6025,7 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    ```
 
    - Replace `<host>` with your PostgreSQL endpoint.
-
+   
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
@@ -5925,6 +6034,13 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
 
 
 ### 3. Start ingesting data
+
+{{< tip >}}
+When snapshotting, Materialize uses PostgreSQL statistics to estimate the amount of data and
+number of rows to read. Before creating the source in Materialize, check that the PostgreSQL
+statistics are up to date by running PostgreSQL `ANALYZE`.  See
+[Snapshotting considerations](#snapshotting) for more information.
+{{< /tip >}}
 
 {{< tabs >}}
 {{< tab "Legacy Syntax" >}}
@@ -5953,7 +6069,7 @@ status of the snapshotting process.</p>
 <ol>
 <li>
 <p>Back in the SQL client connected to Materialize, use the
-<a href="/sql/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
+<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
 table to check the overall status of your source:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -5978,7 +6094,7 @@ Also, if the <code>status</code> of any subsource is <code>starting</code> for m
 minutes, <a href="/support/" >contact our team</a>.</p>
 </li>
 <li>
-<p>Once the source is running, use the <a href="/sql/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
+<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
 table to check the status of the initial snapshot:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
 </span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
@@ -6039,7 +6155,7 @@ follows:</p>
 <ol>
 <li>
 <p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/sql/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
+PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
 table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
 </span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
@@ -6261,6 +6377,17 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 
 
@@ -6673,6 +6800,7 @@ common questions about PostgreSQL sources, see the [FAQ](/ingest-data/postgres/f
 |-------|-------------|
 | [Slot overcompacted](/ingest-data/postgres/slot-overcompacted/) | Resolve errors when PostgreSQL removes WAL data before Materialize can read it |
 | [Connection Closed](/ingest-data/postgres/connection-closed/) | Resolve unexpected networking connection terminations between Materialize and PostgreSQL |
+| [Replication slot is active](/ingest-data/postgres/replication-slot-active/) | Resolve errors when Materialize attempts to use a replication slot that is already in use by another active connection |
 
 
 ---
@@ -6911,6 +7039,156 @@ You have full control over connection settings:
 
 ---
 
+## Troubleshooting: Replication slot is active
+
+
+This guide helps you troubleshoot and resolve the "replication slot... is active"
+error that can occur with PostgreSQL sources in Materialize.
+
+## What this error means
+
+When you see an error like:
+
+```nofmt
+postgres: ERROR replication slot "materialize_1002f37c6eeb4c28b052fa3805d46baa" is active for PID 610
+```
+
+This means that PostgreSQL has detected an attempt to use a replication slot that
+is already in use by another active connection. Each replication slot can only
+have one active consumer at a time, and this error occurs when Materialize tries
+to connect to a slot that PostgreSQL considers already active. This error is
+generally transient and indicates a race condition during connection management
+between Materialize and PostgreSQL.
+
+## Common causes
+
+- **PostgreSQL or Materialize maintenance**: During maintenance windows,
+  Materialize clusters or PostgreSQL instances may restart, causing active
+  replication connections to be temporarily interrupted. When the cluster comes
+  back online, it attempts to reconnect to the replication slot before PostgreSQL
+  has fully released the previous connection.
+- **Cluster replica changes**: Adding replicas to your Materialize source cluster
+  can cause the ingestion process to restart from a different replica, triggering
+  this error as multiple replicas attempt to use the same replication slot.
+- **Source restarts or failover**: When a source cluster restarts or fails over
+  to another replica, the new replica may attempt to connect to the replication
+  slot before PostgreSQL has released the previous connection.
+- **Network interruptions**: Brief network disconnections can leave PostgreSQL
+  thinking a connection is still active when Materialize has already moved to a
+  new connection attempt.
+- **PostgreSQL connection cleanup delays**: PostgreSQL may not immediately
+  release replication slots when connections are terminated, especially if the
+  termination was not graceful.
+- **Multiple environments or sources**: Accidentally configuring multiple
+  Materialize sources to use the same replication slot.
+
+## Diagnosing the issue
+
+### Check replication slot status in PostgreSQL
+
+Connect to your PostgreSQL database and run:
+
+```sql
+-- Replace <slot_name> with the replication slot name shown in the error message
+SELECT
+  slot_name,
+  active,
+  active_pid,
+  restart_lsn,
+  confirmed_flush_lsn
+FROM pg_replication_slots
+WHERE slot_name = '<slot_name>';
+```
+
+Look for:
+
+- **active = true**: The slot is currently in use
+- **active_pid**: The PostgreSQL backend process ID that is using the slot
+- Multiple slots with similar names that might indicate configuration issues
+
+### Check for active connections
+
+Check which connections are using the replication slot:
+
+```sql
+-- Replace <slot_name> with the replication slot name shown in the error message
+SELECT
+  pid,
+  usename,
+  application_name,
+  client_addr,
+  state,
+  backend_start
+FROM pg_stat_activity
+WHERE pid IN (
+  SELECT active_pid
+  FROM pg_replication_slots
+  WHERE slot_name = '<slot_name>'
+);
+```
+
+## Resolution
+
+### Immediate fix: Wait for automatic recovery
+
+In most cases, Materialize will automatically reconnect and recover from this
+error. The error is typically transient and resolves itself within a few minutes
+as PostgreSQL releases the previous connection.
+
+### If automatic recovery fails: Terminate stale connections
+
+If the error persists and you've verified that there are no legitimate active
+connections, you can terminate the stale connection in PostgreSQL:
+
+> **Warning:** Only terminate connections if you're certain they are stale. Terminating an
+> active replication connection will interrupt data ingestion.
+
+
+```sql
+-- First, identify the PID from the error message or from pg_replication_slots
+-- Replace <slot_name> with the replication slot name shown in the error message
+SELECT
+  slot_name,
+  active_pid
+FROM pg_replication_slots
+WHERE slot_name = '<slot_name>' AND active = true;
+
+-- Terminate the connection (replace ### with the actual PID)
+SELECT pg_terminate_backend(###);
+```
+
+After terminating the connection, Materialize should be able to reconnect to
+the replication slot.
+
+## Prevention
+
+**Best practices to avoid this error:**
+
+- **Avoid frequent replica changes**: Minimize adding or removing replicas from
+  source clusters during active replication. Plan cluster sizing changes during
+  maintenance windows when possible.
+- **Ensure stable network connectivity**: Maintain reliable network connections
+  between Materialize and PostgreSQL to prevent connection interruptions.
+- **Monitor source health**: Regularly check source status to detect and address
+  issues early:
+
+```mzsql
+SELECT *
+FROM mz_internal.mz_source_statuses;
+```
+
+- **Configure connection timeouts appropriately**: Ensure PostgreSQL connection
+  timeout settings allow for proper cleanup of disconnected sessions.
+- **Use unique replication slots**: Verify that each Materialize source uses a
+  unique replication slot and avoid reusing slot names across different sources
+  or environments.
+- **Plan for graceful restarts**: When performing maintenance that requires
+  source restarts, allow sufficient time for PostgreSQL to release connections
+  before restarting.
+
+
+---
+
 ## Troubleshooting: Slot overcompacted
 
 
@@ -7029,7 +7307,7 @@ Make sure your Materialize source cluster has enough resources to keep up with
 replication:
 
 ```mzsql
-ALTER CLUSTER your_source_cluster SET (SIZE = 'M.1-large');
+ALTER CLUSTER your_source_cluster SET (SIZE = '800cc');
 ```
 
 **3. Monitor replication lag**
@@ -7077,3 +7355,4 @@ Ensure your RDS instance has adequate storage for WAL retention.
 
 You have full control over WAL retention settings, but ensure you also monitor
 disk space to prevent storage issues.
+

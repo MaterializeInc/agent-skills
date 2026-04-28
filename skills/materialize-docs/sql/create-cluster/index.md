@@ -19,7 +19,7 @@ CREATE CLUSTER <cluster_name> (
 | Syntax element | Description |
 | --- | --- |
 | `<cluster_name>` | A name for the cluster.  |
-| `SIZE` | The size of the resource allocations for the cluster.  {{< yaml-list column="Cluster size" data="m1_cluster_sizing" numColumns="3" >}}  See [Size](#size) for details as well as legacy sizes available.  |
+| `SIZE` | The size of the resource allocations for the cluster.  For valid size values, see [Available sizes](#available-sizes).  |
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. See [Replication factor](#replication-factor) for details.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  <a name="unmanaged-clusters"></a>  Specify `FALSE` to create an **unmanaged** cluster. With unmanaged clusters, you need to manually manage the cluster's replicas using the the [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) and [`DROP CLUSTER REPLICA`](/sql/drop-cluster-replica) commands. When creating an unmanaged cluster, you must specify the `REPLICAS` option as well.  {{< tip >}} When getting started with Materialize, we recommend starting with managed clusters. {{</ tip >}}  Default: `TRUE`  |
 | `SCHEDULE` | Optional. The [scheduling type](#scheduling) for the cluster. Valid values are: - `MANUAL` - `ON REFRESH`  Default: `MANUAL`  |
@@ -67,13 +67,52 @@ example, you could place your development workloads in a cluster named
 
 <a name="legacy-sizes"></a>
 
-### Size
+### Available sizes
 
 The `SIZE` option determines the amount of compute resources available to the
 cluster.
 
 
+**cc Clusters:**
+
+Materialize offers the following cc cluster sizes:
+
+* `25cc`
+* `50cc`
+* `100cc`
+* `200cc`
+* `300cc`
+* `400cc`
+* `600cc`
+* `800cc`
+* `1200cc`
+* `1600cc`
+* `3200cc`
+* `6400cc`
+* `128C`
+* `256C`
+* `512C`
+
+The resource allocations are proportional to the number in the size name. For
+example, a cluster of size `600cc` has 2x as much CPU, memory, and disk as a
+cluster of size `300cc`, and 1.5x as much CPU, memory, and disk as a cluster of
+size `400cc`. To determine the specific resource allocations for a size,
+query the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes) table.
+
+> **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
+> time. You should not rely on them for any kind of capacity planning.
+
+
+Clusters of larger sizes can process data faster and handle larger data volumes.
+
 **M.1 Clusters:**
+
+> **Note:** M.1 sizes provide access to additional disk capacity compared to
+> equivalently-priced cc sizes, which can be beneficial for disk-intensive
+> workloads. However, cc sizes offer better compute performance per credit for
+> most workloads. We recommend using cc sizes unless your workload specifically
+> requires the additional disk capacity that M.1 sizes provide.
+
 
 > **Note:** The values set forth in the table are solely for illustrative purposes.
 > Materialize reserves the right to change the capacity at any time. As such, you
@@ -103,55 +142,13 @@ cluster.
 
 
 
-**Legacy cc Clusters:**
-
-Materialize offers the following legacy cc cluster sizes:
-
-> **Tip:** In most cases, you **should not** use legacy sizes. [M.1 sizes](#size)
-> offer better performance per credit for nearly all workloads. We recommend using
-> M.1 sizes for all new clusters, and recommend migrating existing
-> legacy-sized clusters to M.1 sizes. Materialize is committed to supporting
-> customers during the transition period as we move to deprecate legacy sizes.
-> The legacy size information is provided for completeness.
-
-
-* `25cc`
-* `50cc`
-* `100cc`
-* `200cc`
-* `300cc`
-* `400cc`
-* `600cc`
-* `800cc`
-* `1200cc`
-* `1600cc`
-* `3200cc`
-* `6400cc`
-* `128C`
-* `256C`
-* `512C`
-
-The resource allocations are proportional to the number in the size name. For
-example, a cluster of size `600cc` has 2x as much CPU, memory, and disk as a
-cluster of size `300cc`, and 1.5x as much CPU, memory, and disk as a cluster of
-size `400cc`. To determine the specific resource allocations for a size,
-query the [`mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes) table.
-
-> **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
-> time. You should not rely on them for any kind of capacity planning.
-
-
-Clusters of larger sizes can process data faster and handle larger data volumes.
-
 **Legacy t-shirt Clusters:**
 
 Materialize also offers some legacy t-shirt cluster sizes for upsert sources.
 
-> **Tip:** In most cases, you **should not** use legacy t-shirt sizes. [M.1 sizes](#size)
-> offer better performance per credit for nearly all workloads. We recommend using
-> M.1 sizes for all new clusters, and recommend migrating existing
-> legacy-sized clusters to M.1 sizes. Materialize is committed to supporting
-> customers during the transition period as we move to deprecate legacy sizes.
+> **Tip:** In most cases, you **should not** use legacy t-shirt sizes. We recommend using
+> cc sizes for all new clusters, and recommend migrating existing legacy-sized
+> clusters to cc sizes.
 > The legacy size information is provided for completeness.
 
 
@@ -184,7 +181,7 @@ When legacy sizes are enabled for a region, the following sizes are available:
 
 See also:
 
-- [M.1 to cc size mapping](/sql/m1-cc-mapping/).
+- [cc to M.1 size mapping](/sql/m1-cc-mapping/).
 
 - [Materialize service consumption
   table](https://materialize.com/pdfs/pricing.pdf).
@@ -239,7 +236,7 @@ using [`ALTER CLUSTER`] to set a nonzero replication factor.
 > do exactly the same work (i.e., maintain the same dataflows and process the same
 > queries) as all the other replicas of the cluster.
 > To increase a cluster's capacity, you should instead increase the cluster's
-> [size](#size).
+> [size](#available-sizes).
 
 
 ### Credit usage
@@ -247,23 +244,23 @@ using [`ALTER CLUSTER`] to set a nonzero replication factor.
 Each [replica](#replication-factor) of the cluster consumes credits at a rate
 determined by the cluster's size:
 
-Size      | Legacy size  | Credits per replica per hour
-----------|--------------|-----------------------------
-`25cc`    | `3xsmall`    | 0.25
-`50cc`    | `2xsmall`    | 0.5
-`100cc`   | `xsmall`     | 1
-`200cc`   | `small`      | 2
-`300cc`   | &nbsp;       | 3
-`400cc`   | `medium`     | 4
-`600cc`   | &nbsp;       | 6
-`800cc`   | `large`      | 8
-`1200cc`  | &nbsp;       | 12
-`1600cc`  | `xlarge`     | 16
-`3200cc`  | `2xlarge`    | 32
-`6400cc`  | `3xlarge`    | 64
-`128C`    | `4xlarge`    | 128
-`256C`    | `5xlarge`    | 256
-`512C`    | `6xlarge`    | 512
+Size      | Legacy t-shirt size | Credits per replica per hour
+----------|---------------------|-----------------------------
+`25cc`    | `3xsmall`           | 0.25
+`50cc`    | `2xsmall`           | 0.5
+`100cc`   | `xsmall`            | 1
+`200cc`   | `small`             | 2
+`300cc`   | &nbsp;              | 3
+`400cc`   | `medium`            | 4
+`600cc`   | &nbsp;              | 6
+`800cc`   | `large`             | 8
+`1200cc`  | &nbsp;              | 12
+`1600cc`  | `xlarge`            | 16
+`3200cc`  | `2xlarge`           | 32
+`6400cc`  | `3xlarge`           | 64
+`128C`    | `4xlarge`           | 128
+`256C`    | `5xlarge`           | 256
+`512C`    | `6xlarge`           | 512
 
 Credit usage is measured at a one second granularity. For a given replica,
 credit usage begins when a `CREATE CLUSTER` or [`ALTER CLUSTER`] statement
@@ -298,7 +295,7 @@ you can configure a cluster to automatically turn on and off using the
 
 ```mzsql
 CREATE CLUSTER my_scheduled_cluster (
-  SIZE = 'M.1-large',
+  SIZE = '800cc',
   SCHEDULE = ON REFRESH (HYDRATION TIME ESTIMATE = '1 hour')
 );
 ```
@@ -338,7 +335,7 @@ TIME ESTIMATE` clause.
 #### Scheduling strategy
 
 To check the scheduling strategy associated with a cluster, you can query the
-[`mz_internal.mz_cluster_schedules`](/sql/system-catalog/mz_internal/#mz_cluster_schedules)
+[`mz_internal.mz_cluster_schedules`](/reference/system-catalog/mz_internal/#mz_cluster_schedules)
 system catalog table:
 
 ```mzsql
@@ -352,7 +349,7 @@ WHERE c.name = 'my_refresh_cluster';
 ```
 
 To check if a scheduled cluster is turned on, you can query the
-[`mz_catalog.mz_cluster_replicas`](/sql/system-catalog/mz_catalog/#mz_cluster_replicas)
+[`mz_catalog.mz_cluster_replicas`](/reference/system-catalog/mz_catalog/#mz_cluster_replicas)
 system catalog table:
 
 ```mzsql
@@ -366,7 +363,7 @@ JOIN mz_clusters c ON cs.cluster_id = c.id AND cs.type = 'on-refresh'
 LEFT JOIN mz_cluster_replicas cr ON c.id = cr.cluster_id;
 ```
 
-You can also use the [audit log](../system-catalog/mz_catalog/#mz_audit_events)
+You can also use the [audit log](/reference/system-catalog/mz_catalog/#mz_audit_events)
 to observe the commands that are automatically run when a scheduled cluster is
 turned on and off for materialized view refreshes:
 
@@ -392,10 +389,10 @@ Clusters have several known limitations:
 
 ### Basic
 
-Create a cluster with two `M.1-large` replicas:
+Create a cluster with two `200cc` replicas:
 
 ```mzsql
-CREATE CLUSTER c1 (SIZE = 'M.1-large', REPLICATION FACTOR = 2);
+CREATE CLUSTER c1 (SIZE = '200cc', REPLICATION FACTOR = 2);
 ```
 
 ### Empty
@@ -403,7 +400,7 @@ CREATE CLUSTER c1 (SIZE = 'M.1-large', REPLICATION FACTOR = 2);
 Create a cluster with no replicas:
 
 ```mzsql
-CREATE CLUSTER c1 (SIZE 'M.1-xsmall', REPLICATION FACTOR = 0);
+CREATE CLUSTER c1 (SIZE '100cc', REPLICATION FACTOR = 0);
 ```
 
 You can later add replicas to this cluster with [`ALTER CLUSTER`].
@@ -424,4 +421,4 @@ The privileges required to execute this statement are:
 [`DROP CLUSTER`]: /sql/drop-cluster/
 [`SELECT`]: /sql/select
 [`SUBSCRIBE`]: /sql/subscribe
-[`mz_cluster_replica_sizes`]: /sql/system-catalog/mz_catalog#mz_cluster_replica_sizes
+[`mz_cluster_replica_sizes`]: /reference/system-catalog/mz_catalog#mz_cluster_replica_sizes

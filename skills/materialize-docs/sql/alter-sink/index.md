@@ -93,7 +93,7 @@ make progress.
 
 To monitor the status of a sink after an `ALTER SINK` command, navigate to the
 respective object page in the [Materialize console](/console/),
-or query the [`mz_internal.mz_sink_statuses`](/sql/system-catalog/mz_internal/#mz_sink_statuses)
+or query the [`mz_internal.mz_sink_statuses`](/reference/system-catalog/mz_internal/#mz_sink_statuses)
 system catalog view.
 
 #### Cutover timestamp
@@ -169,7 +169,7 @@ keyspaces to avoid the scenario.
 
 ### Catalog objects
 
-A sink cannot be created directly on a [catalog object](/sql/system-catalog/).
+A sink cannot be created directly on a [catalog object](/reference/system-catalog/).
 As a workaround, you can create a materialized view on a catalog object and
 create a sink on the materialized view.
 
@@ -272,13 +272,13 @@ At first, the `switch.value` is `false`, so the `transition` materialized view c
    <no value>```mzsql
    CREATE TABLE switch (value bool);
    INSERT INTO switch VALUES (false); -- controls whether we want the new or the old materialized view.
-
+   
    CREATE MATERIALIZED VIEW transition AS
    (SELECT matview_old.* FROM matview_old JOIN switch ON switch.value = false)
    UNION ALL
    (SELECT matview_new.* FROM matview_new JOIN switch ON switch.value = true)
    ;
-
+   
    ```
 
 1. `ALTER SINK` to use `transition`, which currently contains `matview_old` content:
@@ -286,7 +286,7 @@ At first, the `switch.value` is `false`, so the `transition` materialized view c
 
    <no value>```mzsql
    ALTER SINK avro_sink SET FROM transition;
-
+   
    ```
 
 1. Update `switch.value` to `true`, which causes the `transition` materialized view to contain `matview_new` content:
@@ -294,11 +294,11 @@ At first, the `switch.value` is `false`, so the `transition` materialized view c
 
    <no value>```mzsql
    UPDATE switch SET value = true;
-
+   
    ```
 
 1. Wait for the sink's upper frontier
-([`mz_frontiers`](/sql/system-catalog/mz_internal/#mz_frontiers)) to advance
+([`mz_frontiers`](/reference/system-catalog/mz_internal/#mz_frontiers)) to advance
 beyond the time of the switch update. Once advanced, alter sink to use
 `matview_new`:
 
@@ -306,7 +306,7 @@ beyond the time of the switch update. Once advanced, alter sink to use
    <no value>```mzsql
    -- After sink upper has advanced beyond the time of the switch UPDATE.
    ALTER SINK avro_sink SET FROM matview_new;
-
+   
    ```
 
 1. Drop the `transition` materialized view and the `switch` table:
@@ -315,7 +315,7 @@ beyond the time of the switch update. Once advanced, alter sink to use
    <no value>```mzsql
    DROP MATERIALIZED VIEW transition;
    DROP TABLE switch;
-
+   
    ```
 
 ## See also

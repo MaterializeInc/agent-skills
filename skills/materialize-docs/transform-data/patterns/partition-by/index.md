@@ -166,3 +166,4 @@ Other datasets don't have a strong timeseries component, but they do have a clea
     ```
 
 > **Note:** As before, we're not guaranteed to see much or any benefit from filter pushdown on small collections... but for datasets of over a few gigabytes, we should reliably be able to filter down to a subset of the parts we'd otherwise need to fetch.
+

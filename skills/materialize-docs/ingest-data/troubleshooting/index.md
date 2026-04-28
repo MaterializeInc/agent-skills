@@ -20,7 +20,7 @@ to https://console.materialize.com/, clicking the **Sources** tab in the
 navigation bar, and clicking the affected source.
 
 Alternatively, you can get this information from the system catalog by querying
-the [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
+the [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
 table:
 
 ```mzsql
@@ -52,7 +52,7 @@ its subsources) will return after the snapshotting completes (unless the user
 breaks out of the query).
 
 <p>Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
-the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#size" >size of your ingestion cluster</a>.</p>
+the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#available-sizes" >size of your ingestion cluster</a>.</p>
 <p>We&rsquo;ve observed the following approximate snapshot rates from PostgreSQL:</p>
 <table>
   <thead>
@@ -79,7 +79,7 @@ the upstream database, the number of tables (more tables can be parallelized in 
 
 
 To determine whether your source has completed ingesting the initial snapshot,
-you can query the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
+you can query the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
 system catalog table:
 
 ```mzsql
@@ -99,7 +99,7 @@ monitor its progress. See [Monitoring data ingestion](/ingest-data/monitoring-da
 ## How do I speed up the snapshotting process?
 
 <p>Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
-the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#size" >size of your ingestion cluster</a>.</p>
+the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#available-sizes" >size of your ingestion cluster</a>.</p>
 <p>We&rsquo;ve observed the following approximate snapshot rates from PostgreSQL:</p>
 <table>
   <thead>
@@ -164,3 +164,4 @@ the cluster for steady-state.
 
 - [Monitoring data ingestion](/ingest-data/monitoring-data-ingestion/)
 - [Postgres troubleshooting guides](/ingest-data/postgres/troubleshooting/)
+- [MySQL troubleshooting guides](/ingest-data/mysql/troubleshooting/)

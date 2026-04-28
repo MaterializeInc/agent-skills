@@ -435,7 +435,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.10.1&quot;</code>
+<code>&quot;v26.20.2&quot;</code>
 </td>
 </tr>
 
@@ -597,7 +597,7 @@ To configure the Materialize operator, you can:
 
 #### balancerd.affinity
 
-**Default**:
+**Default**: 
 
 Affinity to use for balancerd pods spawned by the operator
 
@@ -653,7 +653,7 @@ Flag to indicate whether to create balancerd pods for the environments
 
 #### balancerd.nodeSelector
 
-**Default**:
+**Default**: 
 
 Node selector to use for balancerd pods spawned by the operator
 
@@ -667,7 +667,7 @@ Node selector to use for balancerd pods spawned by the operator
 
 #### balancerd.tolerations
 
-**Default**:
+**Default**: 
 
 Tolerations to use for balancerd pods spawned by the operator
 
@@ -683,7 +683,7 @@ Tolerations to use for balancerd pods spawned by the operator
 
 #### clusterd.affinity
 
-**Default**:
+**Default**: 
 
 Affinity to use for clusterd pods spawned by the operator
 
@@ -697,7 +697,7 @@ Affinity to use for clusterd pods spawned by the operator
 
 #### clusterd.nodeSelector
 
-**Default**:
+**Default**: 
 
 Node selector to use for all clusterd pods spawned by the operator
 
@@ -711,7 +711,7 @@ Node selector to use for all clusterd pods spawned by the operator
 
 #### clusterd.scratchfsNodeSelector
 
-**Default**:
+**Default**: 
 
 Additional node selector to use for clusterd pods when using an LVM scratch disk. This will be merged with the values in <code>nodeSelector</code>.
 
@@ -725,7 +725,7 @@ Additional node selector to use for clusterd pods when using an LVM scratch disk
 
 #### clusterd.swapNodeSelector
 
-**Default**:
+**Default**: 
 
 Additional node selector to use for clusterd pods when using swap. This will be merged with the values in <code>nodeSelector</code>.
 
@@ -739,7 +739,7 @@ Additional node selector to use for clusterd pods when using swap. This will be 
 
 #### clusterd.tolerations
 
-**Default**:
+**Default**: 
 
 Tolerations to use for clusterd pods spawned by the operator
 
@@ -755,7 +755,7 @@ Tolerations to use for clusterd pods spawned by the operator
 
 #### console.affinity
 
-**Default**:
+**Default**: 
 
 Affinity to use for console pods spawned by the operator
 
@@ -825,7 +825,7 @@ Override the mapping of environmentd versions to console versions
 
 #### console.nodeSelector
 
-**Default**:
+**Default**: 
 
 Node selector to use for console pods spawned by the operator
 
@@ -839,7 +839,7 @@ Node selector to use for console pods spawned by the operator
 
 #### console.tolerations
 
-**Default**:
+**Default**: 
 
 Tolerations to use for console pods spawned by the operator
 
@@ -855,7 +855,7 @@ Tolerations to use for console pods spawned by the operator
 
 #### environmentd.affinity
 
-**Default**:
+**Default**: 
 
 Affinity to use for environmentd pods spawned by the operator
 
@@ -897,7 +897,7 @@ Default resources requested for environmentd&rsquo;s CPU and memory if not set i
 
 #### environmentd.nodeSelector
 
-**Default**:
+**Default**: 
 
 Node selector to use for environmentd pods spawned by the operator
 
@@ -911,7 +911,7 @@ Node selector to use for environmentd pods spawned by the operator
 
 #### environmentd.tolerations
 
-**Default**:
+**Default**: 
 
 Tolerations to use for environmentd pods spawned by the operator
 
@@ -1071,7 +1071,7 @@ Additional columns to display when printing the Materialize CRD in table format.
 
 #### operator.affinity
 
-**Default**:
+**Default**: 
 
 Affinity to use for the operator pod
 
@@ -1407,7 +1407,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.10.1&quot;</code>
+**Default**: <code>&quot;v26.20.2&quot;</code>
 
 The tag/version of the operator image to be used
 
@@ -1421,7 +1421,7 @@ The tag/version of the operator image to be used
 
 #### operator.nodeSelector
 
-**Default**:
+**Default**: 
 
 Node selector to use for the operator pod
 
@@ -1477,7 +1477,7 @@ Which secrets controller to use for storing secrets. Valid values are &lsquo;kub
 
 #### operator.tolerations
 
-**Default**:
+**Default**: 
 
 Tolerations to use for the operator pod
 
@@ -1703,7 +1703,7 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
 
 
-
+ 
 
 
 ## See also

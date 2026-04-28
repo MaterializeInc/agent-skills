@@ -39,7 +39,7 @@ SET (
 | Syntax element | Description |
 | --- | --- |
 | `<cluster_name>` | The name of the cluster you want to alter.  |
-| `SIZE` | <a name="alter-cluster-size"></a> The size of the resource allocations for the cluster. {{< yaml-list column="Cluster size" data="m1_cluster_sizing" numColumns="3" >}} See [Size](#available-sizes) for details as well as legacy sizes available. {{< warning >}} Changing the size of a cluster may incur downtime. For more information, see [Resizing considerations](#resizing). {{< /warning >}} Not available for `ALTER CLUSTER ... RESET` since there is no default `SIZE` value. |
+| `SIZE` | <a name="alter-cluster-size"></a> The size of the resource allocations for the cluster. For valid size values, see [Available sizes](#available-sizes). {{< warning >}} Changing the size of a cluster may incur downtime. For more information, see [Resizing considerations](#resizing). {{< /warning >}} Not available for `ALTER CLUSTER ... RESET` since there is no default `SIZE` value. |
 | `REPLICATION FACTOR` | Optional.The number of replicas to provision for the cluster. Each replica of the cluster provisions a new pool of compute resources to perform exactly the same computations on exactly the same data. For more information, see [Replication factor considerations](#replication-factor).  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  If `FALSE`, enables the use of the <em>deprecated</em> [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) command.  Default: `TRUE`  |
 | `SCHEDULE` | Optional. The [scheduling type](/sql/create-cluster/#scheduling) for the cluster. Valid values are `MANUAL` and `ON REFRESH`.  Default: `MANUAL`  |
@@ -158,7 +158,41 @@ ALTER CLUSTER <cluster1> SWAP WITH <cluster2>;
 #### Available sizes
 
 
+**cc Clusters:**
+
+Valid cc cluster sizes are:
+
+* `25cc`
+* `50cc`
+* `100cc`
+* `200cc`
+* `300cc`
+* `400cc`
+* `600cc`
+* `800cc`
+* `1200cc`
+* `1600cc`
+* `3200cc`
+* `6400cc`
+* `128C`
+* `256C`
+* `512C`
+
+Resource allocations are proportional to the number in the size name. For
+example, a cluster of size `600cc` has 2x as much CPU, memory, and disk as a
+cluster of size `300cc`, and 1.5x as much CPU, memory, and disk as a cluster of
+size `400cc`.
+
+Clusters of larger sizes can process data faster and handle larger data volumes.
+
 **M.1 Clusters:**
+
+> **Note:** M.1 sizes provide access to additional disk capacity compared to
+> equivalently-priced cc sizes, which can be beneficial for disk-intensive
+> workloads. However, cc sizes offer better compute performance per credit for
+> most workloads. We recommend using cc sizes unless your workload specifically
+> requires the additional disk capacity that M.1 sizes provide.
+
 
 > **Note:** The values set forth in the table are solely for illustrative purposes.
 > Materialize reserves the right to change the capacity at any time. As such, you
@@ -188,46 +222,11 @@ ALTER CLUSTER <cluster1> SWAP WITH <cluster2>;
 
 
 
-**Legacy cc Clusters:**
-
-> **Tip:** In most cases, you **should not** use legacy sizes. [M.1 sizes](#available-sizes)
-> offer better performance per credit for nearly all workloads. We recommend using
-> M.1 sizes for all new clusters, and recommend migrating existing
-> legacy-sized clusters to M.1 sizes. Materialize is committed to supporting
-> customers during the transition period as we move to deprecate legacy sizes.
-> The legacy size information is provided for completeness.
-
-
-Valid legacy cc cluster sizes are:
-
-* `25cc`
-* `50cc`
-* `100cc`
-* `200cc`
-* `300cc`
-* `400cc`
-* `600cc`
-* `800cc`
-* `1200cc`
-* `1600cc`
-* `3200cc`
-* `6400cc`
-* `128C`
-* `256C`
-* `512C`
-
-For clusters using legacy cc sizes, resource allocations are proportional to the
-number in the size name. For example, a cluster of size `600cc` has 2x as much
-CPU, memory, and disk as a cluster of size `300cc`, and 1.5x as much CPU,
-memory, and disk as a cluster of size `400cc`.
-
-Clusters of larger sizes can process data faster and handle larger data volumes.
-
 
 
 See also:
 
-- [M.1 to cc size mapping](/sql/m1-cc-mapping/).
+- [cc to M.1 size mapping](/sql/m1-cc-mapping/).
 
 - [Materialize service consumption
   table](https://materialize.com/pdfs/pricing.pdf).
@@ -238,7 +237,7 @@ See also:
 #### Resource allocation
 
 To determine the specific resource allocation for a given cluster size, query
-the [`mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes)
+the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes)
 system catalog table.
 
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
@@ -263,7 +262,7 @@ replica.
 
 ```sql
 ALTER CLUSTER c1
-SET (SIZE 'M.1-xsmall') WITH (WAIT UNTIL READY (TIMEOUT = '10m', ON TIMEOUT = 'COMMIT'));
+SET (SIZE '100cc') WITH (WAIT UNTIL READY (TIMEOUT = '10m', ON TIMEOUT = 'COMMIT'));
 ```
 
 The `ALTER` statement is blocking and will return only when the new replica
@@ -365,7 +364,7 @@ CLUSTER` command with the `WAIT UNTIL READY` [option](#syntax):
 
 ```mzsql
 ALTER CLUSTER c1
-SET (SIZE 'M.1-xsmall') WITH (WAIT UNTIL READY (TIMEOUT = '10m', ON TIMEOUT = 'COMMIT'));
+SET (SIZE '100cc') WITH (WAIT UNTIL READY (TIMEOUT = '10m', ON TIMEOUT = 'COMMIT'));
 ```
 
 > **Note:** Using `WAIT UNTIL READY` requires that the session remain open: you need to
@@ -378,7 +377,7 @@ Alternatively, you can alter the cluster size immediately, without waiting, by
 running the `ALTER CLUSTER` command:
 
 ```mzsql
-ALTER CLUSTER c1 SET (SIZE 'M.1-xsmall');
+ALTER CLUSTER c1 SET (SIZE '100cc');
 ```
 
 This will incur downtime when the cluster contains objects that need

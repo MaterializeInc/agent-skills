@@ -896,3 +896,4 @@ Depending on the size and update frequency of your input collections, expressing
 
 - [Regular CTEs](/sql/select/#regular-ctes)
 - [`SELECT`](/sql/select)
+

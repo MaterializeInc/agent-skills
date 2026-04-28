@@ -87,3 +87,4 @@ between the operator and the Materialize instance you are upgrading to.</p>
 to ensure compatibility.</p>
 </li>
 </ul>
+

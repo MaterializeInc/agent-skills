@@ -97,3 +97,4 @@ SELECT normalize('x²', NFKC) AS normalized;
 ------------
  x2
 ```
+

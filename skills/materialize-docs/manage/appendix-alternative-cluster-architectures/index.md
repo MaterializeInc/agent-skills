@@ -75,3 +75,4 @@ compute objects to a new cluster (i.e., recreating compute objects in a new clus
 <p>Cluster restarts require rehydration of the indexes on views.</p>
 </li>
 </ul>
+

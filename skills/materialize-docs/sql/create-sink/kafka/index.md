@@ -64,7 +64,7 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name> [
 | `<item_name>` | The name of the source, table, or materialized view you want to send to the sink.  |
 | **CONNECTION** `<connection_name>` | The name of the Kafka connection to use in the sink. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection) documentation page.  |
 | **TOPIC** `'<topic>'` | The name of the Kafka topic to write to.  |
-| **COMPRESSION TYPE** `<compression_type>` | Optional. The type of compression to apply to messages before they are sent to Kafka: `none`, `gzip`, `snappy`, `lz4`, or `zstd`.<br>Default: {{< if-unreleased "v0.112" >}}`none`{{< /if-unreleased >}}{{< if-released "v0.112" >}}`lz4`{{< /if-released >}}  |
+| **COMPRESSION TYPE** `<compression_type>` | Optional. The type of compression to apply to messages before they are sent to Kafka: `none`, `gzip`, `snappy`, `lz4`, or `zstd`.<br>Default: `lz4`  |
 | **TRANSACTIONAL ID PREFIX** `'<transactional_id_prefix>'` | Optional. The prefix of the transactional ID to use when producing to the Kafka topic.<br>Default: `materialize-{REGION ID}-{CONNECTION ID}-{SINK ID}`.  |
 | **PARTITION BY** = `<expression>` | Optional. A SQL expression returning a hash that can be used for partition assignment. See [Partitioning](#partitioning) for details.  |
 | **PROGRESS GROUP ID PREFIX** `'<progress_group_id_prefix>'` | Optional. The prefix of the consumer group ID to use when reading from the progress topic.<br>Default: `materialize-{REGION ID}-{CONNECTION ID}-{SINK ID}`.  |
@@ -120,7 +120,7 @@ FORMAT JSON
 | `<item_name>` | The name of the source, table, or materialized view you want to send to the sink.  |
 | **CONNECTION** `<connection_name>` | The name of the Kafka connection to use in the sink. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection) documentation page.  |
 | **TOPIC** `'<topic>'` | The name of the Kafka topic to write to.  |
-| **COMPRESSION TYPE** `<compression_type>` | Optional. The type of compression to apply to messages before they are sent to Kafka: `none`, `gzip`, `snappy`, `lz4`, or `zstd`.<br>Default: {{< if-unreleased "v0.112" >}}`none`{{< /if-unreleased >}}{{< if-released "v0.112" >}}`lz4`{{< /if-released >}}  |
+| **COMPRESSION TYPE** `<compression_type>` | Optional. The type of compression to apply to messages before they are sent to Kafka: `none`, `gzip`, `snappy`, `lz4`, or `zstd`.<br>Default: `lz4`  |
 | **TRANSACTIONAL ID PREFIX** `'<transactional_id_prefix>'` | Optional. The prefix of the transactional ID to use when producing to the Kafka topic.<br>Default: `materialize-{REGION ID}-{CONNECTION ID}-{SINK ID}`.  |
 | **PARTITION BY** = `<expression>` | Optional. A SQL expression returning a hash that can be used for partition assignment. See [Partitioning](#partitioning) for details.  |
 | **PROGRESS GROUP ID PREFIX** `'<progress_group_id_prefix>'` | Optional. The prefix of the consumer group ID to use when reading from the progress topic.<br>Default: `materialize-{REGION ID}-{CONNECTION ID}-{SINK ID}`.  |
@@ -168,7 +168,7 @@ FORMAT TEXT | BYTES
 | `<item_name>` | The name of the source, table, or materialized view you want to send to the sink. Note that `TEXT` and `BYTES` format options only support single-column encoding.  |
 | **CONNECTION** `<connection_name>` | The name of the Kafka connection to use in the sink. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection) documentation page.  |
 | **TOPIC** `'<topic>'` | The name of the Kafka topic to write to.  |
-| **COMPRESSION TYPE** `<compression_type>` | Optional. The type of compression to apply to messages before they are sent to Kafka: `none`, `gzip`, `snappy`, `lz4`, or `zstd`.<br>Default: {{< if-unreleased "v0.112" >}}`none`{{< /if-unreleased >}}{{< if-released "v0.112" >}}`lz4`{{< /if-released >}}  |
+| **COMPRESSION TYPE** `<compression_type>` | Optional. The type of compression to apply to messages before they are sent to Kafka: `none`, `gzip`, `snappy`, `lz4`, or `zstd`.<br>Default: `lz4`  |
 | **TRANSACTIONAL ID PREFIX** `'<transactional_id_prefix>'` | Optional. The prefix of the transactional ID to use when producing to the Kafka topic.<br>Default: `materialize-{REGION ID}-{CONNECTION ID}-{SINK ID}`.  |
 | **PARTITION BY** = `<expression>` | Optional. A SQL expression returning a hash that can be used for partition assignment. See [Partitioning](#partitioning) for details.  |
 | **PROGRESS GROUP ID PREFIX** `'<progress_group_id_prefix>'` | Optional. The prefix of the consumer group ID to use when reading from the progress topic.<br>Default: `materialize-{REGION ID}-{CONNECTION ID}-{SINK ID}`.  |
@@ -231,7 +231,7 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 | `<item_name>` | The name of the source, table, or materialized view you want to send to the sink.  |
 | **CONNECTION** `<connection_name>` | The name of the Kafka connection to use in the sink. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection) documentation page.  |
 | **TOPIC** `'<topic>'` | The name of the Kafka topic to write to.  |
-| **COMPRESSION TYPE** `<compression_type>` | Optional. The type of compression to apply to messages before they are sent to Kafka: `none`, `gzip`, `snappy`, `lz4`, or `zstd`.<br>Default: {{< if-unreleased "v0.112" >}}`none`{{< /if-unreleased >}}{{< if-released "v0.112" >}}`lz4`{{< /if-released >}}  |
+| **COMPRESSION TYPE** `<compression_type>` | Optional. The type of compression to apply to messages before they are sent to Kafka: `none`, `gzip`, `snappy`, `lz4`, or `zstd`.<br>Default: `lz4`  |
 | **TRANSACTIONAL ID PREFIX** `'<transactional_id_prefix>'` | Optional. The prefix of the transactional ID to use when producing to the Kafka topic.<br>Default: `materialize-{REGION ID}-{CONNECTION ID}-{SINK ID}`.  |
 | **PARTITION BY** = `<expression>` | Optional. A SQL expression returning a hash that can be used for partition assignment. See [Partitioning](#partitioning) for details.  |
 | **PROGRESS GROUP ID PREFIX** `'<progress_group_id_prefix>'` | Optional. The prefix of the consumer group ID to use when reading from the progress topic.<br>Default: `materialize-{REGION ID}-{CONNECTION ID}-{SINK ID}`.  |

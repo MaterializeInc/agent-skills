@@ -90,7 +90,7 @@ database has been configured for GTID-based binlog replication:
 
 
 
-
+  
 
 
 
@@ -142,11 +142,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>log_bin</code>
@@ -156,11 +156,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -170,11 +170,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -195,11 +195,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_format</code>
@@ -209,11 +209,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ROW</code>
@@ -223,11 +223,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
@@ -248,11 +248,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>binlog_row_image</code>
@@ -262,11 +262,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>FULL</code>
@@ -276,11 +276,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -301,11 +301,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>gtid_mode</code>
@@ -315,11 +315,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -329,11 +329,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -354,11 +354,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>enforce_gtid_consistency</code>
@@ -368,11 +368,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -382,11 +382,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 
@@ -407,11 +407,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>replica_preserve_commit_order</code>
@@ -421,11 +421,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 <code>ON</code>
@@ -435,11 +435,11 @@ database has been configured for GTID-based binlog replication:
 
 
 
+  
+  
 
-
-
-
-
+  
+  
 
 <td>
 Only required when connecting Materialize to a read-replica.

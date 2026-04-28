@@ -102,7 +102,7 @@ just important to know than that they define a hierarchy on the operators.
 ## The system catalog and introspection relations
 
 Materialize collects a lot of useful information about the dataflows and
-operators in the system catalog in [introspection relations](/sql/system-catalog/mz_introspection).
+operators in the system catalog in [introspection relations](/reference/system-catalog/mz_introspection).
 The introspection relations are useful to troubleshoot and understand what is
 happening under the hood when Materialize is not behaving as expected. However,
 it is important to understand that most of the statistics we need for
@@ -527,3 +527,4 @@ index, you have to drop and recreate all downstream dependencies.
 > which incurs downtime while the objects are recreated and backfilled with
 > pre-existing data. We recommend doing a [blue/green deployment](/manage/dbt/blue-green-deployments/)
 > to handle these changes in production environments.
+

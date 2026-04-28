@@ -100,7 +100,7 @@ connection:
 
 You can retrieve the external ID for the connection, as well as an example trust
 policy, by querying the
-[`mz_internal.mz_aws_connections`](/sql/system-catalog/mz_internal/#mz_aws_connections)
+[`mz_internal.mz_aws_connections`](/reference/system-catalog/mz_internal/#mz_aws_connections)
 table:
 
 ```mzsql
@@ -178,9 +178,10 @@ CREATE CONNECTION aws_credentials TO AWS (
 
 
 ### S3 compatible object storage
-You can use an AWS connection to perform bulk exports to any S3 compatible object storage service,
-such as Google Cloud Storage. While connecting to S3 compatible object storage, you need to provide
-static access key credentials, specify the endpoint, and the region.
+You can use an AWS connection to perform bulk exports and bulk imports with any S3 compatible object
+storage service, such as Google Cloud Storage, Cloudflare R2, or MinIO. While connecting to S3
+compatible object storage, you need to provide static access key credentials, specify the endpoint,
+and the region.
 
 To create a connection that uses static access key credentials:
 
@@ -1023,6 +1024,55 @@ CREATE CONNECTION sqlserver_connection TO SQL SERVER (
 );
 ```
 
+### Iceberg Catalog
+
+> **Public Preview:** This feature is in public preview.
+
+
+An Iceberg catalog connection establishes a link to an [Apache Iceberg](https://iceberg.apache.org/)
+catalog. You can use Iceberg catalog connections to create [Iceberg sinks](/sql/create-sink/iceberg).
+
+#### Syntax {#iceberg-catalog-syntax}
+
+
+
+```mzsql
+CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
+    CATALOG TYPE = 's3tablesrest',
+    URL = '<catalog_url>',
+    WAREHOUSE = '<warehouse_arn>',
+    AWS CONNECTION = <aws_connection>
+);
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<connection_name>` | A name for the connection.  |
+| `CATALOG TYPE` | *Value:* `text`. Required.  The type of Iceberg catalog. Currently only `'s3tablesrest'` (AWS S3 Tables) is supported.  |
+| `URL` | *Value:* `text`. Required.  The URL of the Iceberg catalog endpoint. For AWS S3 Tables, use `https://s3tables.<region>.amazonaws.com/iceberg`.  |
+| `WAREHOUSE` | *Value:* `text`. Required.  The ARN of the S3 Tables bucket: `arn:aws:s3tables:<region>:<account-id>:bucket/<bucket-name>`.  |
+| `AWS CONNECTION` | *Value:* object name. Required.  The name of an [AWS connection](#aws) to use for authentication.  |
+
+
+#### Example {#iceberg-catalog-example}
+
+```mzsql
+-- First, create an AWS connection for authentication
+CREATE CONNECTION aws_connection
+  TO AWS (ASSUME ROLE ARN = 'arn:aws:iam::123456789012:role/MaterializeIceberg');
+
+-- Create the Iceberg catalog connection
+CREATE CONNECTION iceberg_catalog TO ICEBERG CATALOG (
+    CATALOG TYPE = 's3tablesrest',
+    URL = 'https://s3tables.us-east-1.amazonaws.com/iceberg',
+    WAREHOUSE = 'arn:aws:s3tables:us-east-1:123456789012:bucket/my-table-bucket',
+    AWS CONNECTION = aws_connection
+);
+```
+
+For more information about using Iceberg sinks, see the [Iceberg sink documentation](/serve-results/sink/iceberg/).
+
 ## Network security connections
 
 
@@ -1069,7 +1119,7 @@ arn:aws:iam::664411391173:role/mz_<REGION-ID>_<CONNECTION-ID>
 After creating the connection, you must configure the AWS PrivateLink service
 to accept connections from the AWS principal Materialize will connect as. The
 principals for AWS PrivateLink connections in your region are stored in
-the [`mz_aws_privatelink_connections`](/sql/system-catalog/mz_catalog/#mz_aws_privatelink_connections)
+the [`mz_aws_privatelink_connections`](/reference/system-catalog/mz_catalog/#mz_aws_privatelink_connections)
 system table.
 
 ```mzsql
@@ -1236,9 +1286,9 @@ The privileges required to execute this statement are:
 [`ALTER CONNECTION`]: /sql/alter-connection
 [`CREATE SOURCE`]: /sql/create-source
 [`CREATE SINK`]: /sql/create-sink
-[`mz_aws_privatelink_connections`]: /sql/system-catalog/mz_catalog/#mz_aws_privatelink_connections
-[`mz_connections`]: /sql/system-catalog/mz_catalog/#mz_connections
-[`mz_ssh_tunnel_connections`]: /sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections
+[`mz_aws_privatelink_connections`]: /reference/system-catalog/mz_catalog/#mz_aws_privatelink_connections
+[`mz_connections`]: /reference/system-catalog/mz_catalog/#mz_connections
+[`mz_ssh_tunnel_connections`]: /reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections
 [Ed25519 algorithm]: https://ed25519.cr.yp.to
 [latacora-crypto]: https://latacora.micro.blog/2018/04/03/cryptographic-right-answers.html
 [trust policy]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_terms-and-concepts.html#term_trust-policy

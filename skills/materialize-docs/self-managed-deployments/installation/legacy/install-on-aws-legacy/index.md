@@ -147,20 +147,20 @@ components:
    MY_ORGANIZATION=<enter-your-organization>
    ```
 
-1. Clone your forked repo and checkout the `v0.8.12` tag. For example,
+1. Clone your forked repo and checkout the `v0.8.26` tag. For example,
 
    - If cloning via SSH (replace `YOUR_ORGANIZATION` with your organization's
      name):
 
      ```bash
-     git clone --depth 1 -b v0.8.12 git@github.com:${MY_ORGANIZATION}/terraform-aws-materialize.git
+     git clone --depth 1 -b v0.8.26 git@github.com:${MY_ORGANIZATION}/terraform-aws-materialize.git
      ```
 
    - If cloning via HTTPS (replace `YOUR_ORGANIZATION` with your
      organization's name):
 
      ```bash
-     git clone --depth 1 -b v0.8.12 https://github.com/${MY_ORGANIZATION}/terraform-aws-materialize.git
+     git clone --depth 1 -b v0.8.26 https://github.com/${MY_ORGANIZATION}/terraform-aws-materialize.git
      ```
 
 
@@ -280,7 +280,7 @@ components:
    starting in v0.4.0, a `cert-manager`. Verify the installation and check the
    status:
 
-
+   
    **Materialize Operator:**
 
    Verify the installation and check the status:
@@ -302,7 +302,7 @@ components:
    replicaset.apps/my-demo-dev-materialize-operator-84ff4b4648   1        1         1       12s
    ```
 
-
+   
    **cert-manager (Starting in version 0.4.0):**
 
    Verify the installation and check the status:
@@ -331,8 +331,8 @@ components:
    4m20s
    ```
 
-
-
+   
+   
 
    If you run into an error during deployment, refer to the
    [Troubleshooting](/installation/troubleshooting) guide.
@@ -486,7 +486,7 @@ components:
 
 1. Open the Materialize Console in your browser:
 
-
+   
 
    **Via Network Load Balancer:**
 
@@ -509,20 +509,20 @@ components:
    from an official Certificate Authority (CA) rather than self-signed
    certificates.
 
-
+   
 
    **Via port forwarding:**
 
    1. Find your console service name.
-
+   
       ```shell
       MZ_SVC_CONSOLE=$(kubectl -n materialize-environment get svc \
         -o custom-columns="NAME:.metadata.name" --no-headers | grep console)
       echo $MZ_SVC_CONSOLE
       ```
-
+   
    1. Port forward the Materialize Console service to your local machine:[^1]
-
+   
       ```shell
       (
         while true; do
@@ -531,21 +531,21 @@ components:
         done;
       ) &
       ```
-
+   
       The command is run in background.
       <br>- To list the background jobs, use `jobs`.
       <br>- To bring back to foreground, use `fg %<job-number>`.
       <br>- To kill the background job, use `kill %<job-number>`.
-
+   
    1. Open a browser and navigate to
       [https://localhost:8080](https://localhost:8080) (or, if you have not enabled
       TLS, [http://localhost:8080](http://localhost:8080)).
-
+   
       The example uses a self-signed ClusterIssuer. As such, you may encounter a
       warning with regards to the certificate. In production, run with certificates
       from an official Certificate Authority (CA) rather than self-signed
       certificates.
-
+   
    [^1]: The port forwarding command uses a while loop to handle a [known
    Kubernetes issue 78446](https://github.com/kubernetes/kubernetes/issues/78446),
    where interrupted long-running requests through a standard port-forward cause
@@ -554,8 +554,8 @@ components:
    monitoring for "portforward.go" error messages.
 
 
-
-
+   
+   
 
    > **Tip:** If you experience long loading screens or unresponsiveness in the Materialize
 >    Console, we recommend increasing the size of the `mz_catalog_server` cluster.

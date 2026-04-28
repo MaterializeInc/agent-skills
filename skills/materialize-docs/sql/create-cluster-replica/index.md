@@ -23,19 +23,58 @@ CREATE CLUSTER REPLICA <cluster_name>.<replica_name> (
 | --- | --- |
 | `<cluster_name>` | The cluster you want to attach a replica to.  |
 | `<replica_name>` | A name for this replica.  |
-| `SIZE` | The size of the resource allocations for the cluster.  {{< yaml-list column="Cluster size" data="m1_cluster_sizing" numColumns="3" >}}  See [Size](#size) for details as well as legacy sizes available.  |
+| `SIZE` | The size of the resource allocations for the cluster.  For valid size values, see [Available sizes](#available-sizes).  |
 
 
 ## Details
 
-### Size
+### Available sizes
 
 The `SIZE` option for replicas is identical to the [`SIZE` option for
-clusters](/sql/create-cluster/#size) option, except that the size applies only
+clusters](/sql/create-cluster/#available-sizes) option, except that the size applies only
 to the new replica.
 
 
+**cc Clusters:**
+
+Materialize offers the following cc cluster sizes:
+
+* `25cc`
+* `50cc`
+* `100cc`
+* `200cc`
+* `300cc`
+* `400cc`
+* `600cc`
+* `800cc`
+* `1200cc`
+* `1600cc`
+* `3200cc`
+* `6400cc`
+* `128C`
+* `256C`
+* `512C`
+
+The resource allocations are proportional to the number in the size name. For
+example, a cluster of size `600cc` has 2x as much CPU, memory, and disk as a
+cluster of size `300cc`, and 1.5x as much CPU, memory, and disk as a cluster of
+size `400cc`. To determine the specific resource allocations for a size,
+query the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes) table.
+
+> **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
+> time. You should not rely on them for any kind of capacity planning.
+
+
+Clusters of larger sizes can process data faster and handle larger data volumes.
+
 **M.1 Clusters:**
+
+> **Note:** M.1 sizes provide access to additional disk capacity compared to
+> equivalently-priced cc sizes, which can be beneficial for disk-intensive
+> workloads. However, cc sizes offer better compute performance per credit for
+> most workloads. We recommend using cc sizes unless your workload specifically
+> requires the additional disk capacity that M.1 sizes provide.
+
 
 > **Note:** The values set forth in the table are solely for illustrative purposes.
 > Materialize reserves the right to change the capacity at any time. As such, you
@@ -66,51 +105,10 @@ to the new replica.
 
 
 
-**Legacy cc Clusters:**
-
-Materialize offers the following legacy cc cluster sizes:
-
-> **Tip:** In most cases, you **should not** use legacy sizes. [M.1 sizes](#size)
-> offer better performance per credit for nearly all workloads. We recommend using
-> M.1 sizes for all new clusters, and recommend migrating existing
-> legacy-sized clusters to M.1 sizes. Materialize is committed to supporting
-> customers during the transition period as we move to deprecate legacy sizes.
-> The legacy size information is provided for completeness.
-
-
-* `25cc`
-* `50cc`
-* `100cc`
-* `200cc`
-* `300cc`
-* `400cc`
-* `600cc`
-* `800cc`
-* `1200cc`
-* `1600cc`
-* `3200cc`
-* `6400cc`
-* `128C`
-* `256C`
-* `512C`
-
-The resource allocations are proportional to the number in the size name. For
-example, a cluster of size `600cc` has 2x as much CPU, memory, and disk as a
-cluster of size `300cc`, and 1.5x as much CPU, memory, and disk as a cluster of
-size `400cc`. To determine the specific resource allocations for a size,
-query the [`mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes) table.
-
-> **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
-> time. You should not rely on them for any kind of capacity planning.
-
-
-Clusters of larger sizes can process data faster and handle larger data volumes.
-
-
 
 See also:
 
-- [M.1 to cc size mapping](/sql/m1-cc-mapping/).
+- [cc to M.1 size mapping](/sql/m1-cc-mapping/).
 
 - [Materialize service consumption
   table](https://materialize.com/pdfs/pricing.pdf).
@@ -137,7 +135,7 @@ machines had computed.
 ## Example
 
 ```mzsql
-CREATE CLUSTER REPLICA c1.r1 (SIZE = 'M.1-large');
+CREATE CLUSTER REPLICA c1.r1 (SIZE = '800cc');
 ```
 
 ## Privileges

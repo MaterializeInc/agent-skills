@@ -235,8 +235,58 @@ guides</a>.</p>
 
 
 
+Once you have configured the upstream PostgreSQL, network security, and
+created the connection, you can create the source. In this example, the
+PostgreSQL publication is `mz_source` and the connection to PostgreSQL is
+`pg_connection`.
+```mzsql
+/* This example assumes:
+- In the upstream PostgreSQL, you have defined:
+  - replication user and password with the appropriate access.
+  - a publication named `mz_source` for the `public.items` and `public.orders` tables.
+- In Materialize:
+  - You have created a secret for the PostgreSQL password.
+  - You have defined the connection to the upstream PostgreSQL.
+  - You have used the connection to create a source.
 
+  For example (substitute with your configuration):
+    CREATE SECRET pgpass AS '<replication user password>'; -- substitute
+    CREATE CONNECTION pg_connection TO POSTGRES (
+      HOST '<hostname>',          -- substitute
+      DATABASE <db>,              -- substitute
+      USER <replication user>,    -- substitute
+      PASSWORD SECRET pgpass
+      -- [, <network security configuration> ]
+    );
+*/
 
+CREATE SOURCE pg_source
+FROM POSTGRES CONNECTION pg_connection (
+  PUBLICATION 'mz_source'
+);
+
+```
+
+After a source is created, you can create tables from the source,
+referencing specific upstream table(s). Use a [DDL transaction block](/sql/begin/#ddl-only-transactions) to create multiple tables from the same source.
+```mzsql
+BEGIN;
+CREATE TABLE items
+FROM SOURCE pg_source(REFERENCE public.items)
+;
+CREATE TABLE orders
+FROM SOURCE pg_source(REFERENCE public.orders)
+;
+COMMIT;
+
+```
+{{< note >}}
+
+- Although the example creates the tables with the same name as the upstream tables, the tables in Materialize can have different names.
+- You can create multiple tables that reference the same upstream table.
+{{< /note >}}
+
+For more information, see [`CREATE TABLE`](/sql/create-table/).
 
 
 ## Related pages

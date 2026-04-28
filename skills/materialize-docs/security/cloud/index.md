@@ -26,7 +26,7 @@ See also:
 ## Access control (Role-based)
 
 
-> **Disambiguation:** Materialize uses roles to manage access control at two levels: - [Organization roles](/security/cloud/users-service-accounts/#organization-roles), which determines the access to the Console's administrative features and sets the **initial database roles** for the user/service account. - [Database roles](/security/cloud/access-control/#role-based-access-control-rbac), which controls access to database objects and operations within Materialize. This section focuses on the database access control. For information on organization roles, see [Users and service accounts](../users-service-accounts/).
+> **Disambiguation:** Materialize uses roles to manage access control at two levels: - [Organization roles](/security/cloud/users-service-accounts/#organization-roles), which determines the access to the Console's administrative features and sets the **initial database roles** for the user/service account. - [Database roles](/security/cloud/access-control/#role-based-access-control-rbac), which controls access to database objects and operations within Materialize. This section focuses on the database access control. For information on organization roles, see [Users and service accounts](../users-service-accounts/). 
 
 
 
@@ -70,7 +70,7 @@ Once a role is created, you can:
    [applicable privileges](/security/appendix/appendix-privileges/) for that
    object automatically).
 
-> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges.
+> **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
 
 ### Initial privileges
@@ -101,8 +101,8 @@ privileges were set.
 
 In addition, all roles have:
 - `USAGE` on all built-in types and [all system catalog
-schemas](/sql/system-catalog/).
-- `SELECT` on [system catalog objects](/sql/system-catalog/).
+schemas](/reference/system-catalog/).
+- `SELECT` on [system catalog objects](/reference/system-catalog/).
 - All [applicable privileges](/security/appendix/appendix-privileges/) for
   an object they create; for example, the creator of a schema gets `CREATE` and
   `USAGE`; the creator of a table gets `SELECT`, `INSERT`, `UPDATE`, and
@@ -332,3 +332,4 @@ guide](./sso/).
 - [Role-based access control](/security/cloud/access-control/)
 - [Manage with dbt](/manage/dbt/)
 - [Manage with Terraform](/manage/terraform/)
+

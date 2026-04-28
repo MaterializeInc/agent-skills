@@ -1522,7 +1522,7 @@ configuration.
     ```
 
 1. Once `persist-docs` is configured, any `description` defined in your `.yml`
-  files is persisted to Materialize in the [mz_internal.mz_comments](/sql/system-catalog/mz_internal/#mz_comments)
+  files is persisted to Materialize in the [mz_internal.mz_comments](/reference/system-catalog/mz_internal/#mz_comments)
   system catalog table on every `dbt run`:
 
     ```mzsql
@@ -1619,3 +1619,4 @@ production deployments, you should prefer the [blue/green deployment pattern](/m
             run: |
               aws s3 cp ./target/manifest.json s3://mz-test-dbt
     ```
+

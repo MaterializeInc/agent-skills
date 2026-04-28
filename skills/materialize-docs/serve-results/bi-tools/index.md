@@ -763,3 +763,4 @@ The errors occur because Tableau falls back to a legacy PostgreSQL ODBC driver
 that does not support connecting to Materialize. Follow the [Setup](#setup)
 instructions again and ensure you've downloaded the driver to the correct folder
 for your platform.
+

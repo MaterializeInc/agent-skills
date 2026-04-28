@@ -6,6 +6,7 @@ Use `ALTER SOURCE` to:
 - Rename a source.
 - Change owner of a source.
 - Change retain history configuration for the source.
+- Change timestamp interval for the source.
 
 ## Syntax
 
@@ -121,6 +122,40 @@ ALTER SOURCE [IF EXISTS] <name>  RESET (RETAIN HISTORY);
 
 
 
+**(Re)Set timestamp interval:**
+
+### (Re)Set timestamp interval
+
+To set the timestamp interval for a source:
+
+
+
+```mzsql
+ALTER SOURCE [IF EXISTS] <name> SET (TIMESTAMP INTERVAL [=] <interval>);
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<name>` | The name of the source you want to alter.  |
+| `<interval>` | The interval at which timestamps are assigned to the data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: `1s`.  |
+
+
+To reset the timestamp interval to the system default for a source:
+
+
+
+```mzsql
+ALTER SOURCE [IF EXISTS] <name> RESET (TIMESTAMP INTERVAL);
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<name>` | The name of the source you want to alter.  |
+
+
+
 
 
 
@@ -173,6 +208,20 @@ To drop a subsource, use the [`DROP SOURCE`](/sql/drop-source/) command:
 
 ```mzsql
 DROP SOURCE tbl_a, b CASCADE;
+```
+
+### Changing the timestamp interval
+
+To set a custom timestamp interval for a source:
+
+```mzsql
+ALTER SOURCE kafka_src SET (TIMESTAMP INTERVAL = '500ms');
+```
+
+To reset the timestamp interval to the system default:
+
+```mzsql
+ALTER SOURCE kafka_src RESET (TIMESTAMP INTERVAL);
 ```
 
 ## Privileges

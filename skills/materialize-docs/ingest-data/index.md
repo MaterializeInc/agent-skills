@@ -336,7 +336,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -1019,7 +1019,7 @@ topics in your Kafka (or Kafka-API compatible) broker.
     SET CLUSTER = ingest_kafka;
     ```
 
-    A cluster of [size](/sql/create-cluster/#size) `100cc` should be enough to
+    A cluster of [size](/sql/create-cluster/#available-sizes) `100cc` should be enough to
     accommodate multiple Kafka sources, depending on the source
     characteristics (e.g., sources with [`ENVELOPE UPSERT`](/sql/create-source/kafka/#upsert-envelope)
     or [`ENVELOPE DEBEZIUM`](/sql/create-source/kafka/#debezium-envelope) will be more
@@ -1387,7 +1387,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -1959,7 +1959,7 @@ In the Materialize Console, you can go to the source overview page to view the
 data ingestion progress (e.g., rows_received, bytes_received, ingestion rate).
 
 Alternatively, you can query the
-[`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
+[`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
 table and look for ingestion statistics that advance over time:
 
 ```mzsql
@@ -2382,6 +2382,17 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 
 
@@ -2505,7 +2516,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -2684,7 +2695,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -2962,7 +2973,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -3220,14 +3231,18 @@ Data Capture (CDC) support.
 ## Considerations
 
 ### Schema changes
-
-> **Note:** Work to more smoothly support ddl changes to upstream tables is currently in
-> progress. The work introduces the ability to re-ingest the same upstream table
-> under a new schema and switch over without downtime.
-
 Materialize supports schema changes in the upstream database as follows:
 
-#### Compatible schema changes
+#### Compatible schema changes (Legacy syntax)
+
+> **Note:** This section refer to the legacy [`CREATE SOURCE ... FOR
+> ...`](/sql/create-source/sql-server/) that creates subsources as part of the
+> `CREATE SOURCE` operation.  To be able to handle the upstream column additions
+> and drops, use [`CREATE SOURCE (New Syntax)`](/sql/create-source/sql-server-v2/)
+> and [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
+> [SQL Server: Source versioning
+> guide](/ingest-data/sql-server/source-versioning/).
+
 
 - Adding columns to tables. Materialize will **not ingest** new columns added
   upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to first
@@ -3239,6 +3254,7 @@ Materialize supports schema changes in the upstream database as follows:
 
 - Adding or removing `NOT NULL` constraints to tables that were nullable when
   the source was created.
+
 
 #### Incompatible schema changes
 
@@ -3298,6 +3314,27 @@ following types:</p>
 <p>Columns with the specified types need to be excluded because <a href="https://learn.microsoft.com/en-us/sql/relational-databases/system-tables/cdc-capture-instance-ct-transact-sql?view=sql-server-2017#large-object-data-types" >SQL Server does not provide
 the &ldquo;before&rdquo;</a>
 value when said column is updated.</p>
+<p>To replicate tables that contain the following unsupported data types:</p>
+<ul>
+<li><code>text</code></li>
+<li><code>ntext</code></li>
+<li><code>image</code></li>
+<li><code>varbinary(max)</code></li>
+</ul>
+<p>You can use either the <code>TEXT COLUMNS</code> or the <code>EXCLUDE COLUMNS</code> option.</p>
+<ul>
+<li>For <code>text</code> and <code>ntext</code> columns:
+<ul>
+<li>You can use <code>TEXT COLUMNS</code> to expose them as varchar and nvarchar, respectively.</li>
+<li>You can use <code>EXCLUDE COLUMNS</code> to omit them from replication.</li>
+</ul>
+</li>
+<li>For <code>image</code> and <code>varbinary(max)</code> columns:
+<ul>
+<li>You can use <code>EXCLUDE COLUMNS</code>.</li>
+</ul>
+</li>
+</ul>
 
 
 ### Timestamp Rounding
@@ -3386,7 +3423,7 @@ Before you begin, make sure you have access to a bastion host. You will need:
 1. Configure the SSH bastion host. The bastion host needs a **public key** to
 connect to the Materialize tunnel you created in the previous step. Materialize
 stores public keys for SSH tunnels in the system catalog. Query
-[`mz_ssh_tunnel_connections`](/sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
+[`mz_ssh_tunnel_connections`](/reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
 to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```mzsql
@@ -3518,7 +3555,7 @@ Before you begin, make sure you have access to a bastion host. You will need:
 1. Configure the SSH bastion host. The bastion host needs a **public key** to
 connect to the Materialize tunnel you created in the previous step. Materialize
 stores public keys for SSH tunnels in the system catalog. Query
-[`mz_ssh_tunnel_connections`](/sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
+[`mz_ssh_tunnel_connections`](/reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
 to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```mzsql
@@ -3718,7 +3755,7 @@ Region          | CIDR
 ## Fetching static egress IPs addresses
 
 You can fetch the static egress CIDR blocks associated with your region by
-querying the [`mz_egress_ips`](/sql/system-catalog/mz_catalog/#mz_egress_ips)
+querying the [`mz_egress_ips`](/reference/system-catalog/mz_catalog/#mz_egress_ips)
 system catalog table.
 
 ```mzsql
@@ -3733,7 +3770,7 @@ SELECT * FROM mz_egress_ips;
 ```
 
 As an alternative, you can also submit an HTTP request to Materialize's
-[SQL API](/integrations/http-api/) querying the [`mz_egress_ips`](/sql/system-catalog/mz_catalog/#mz_egress_ips)
+[SQL API](/integrations/http-api/) querying the [`mz_egress_ips`](/reference/system-catalog/mz_catalog/#mz_egress_ips)
 system catalog table. In the request, specify the username, app password, and
 host for your Materialize region:
 
@@ -3982,7 +4019,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -4094,7 +4131,7 @@ to https://console.materialize.com/, clicking the **Sources** tab in the
 navigation bar, and clicking the affected source.
 
 Alternatively, you can get this information from the system catalog by querying
-the [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
+the [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
 table:
 
 ```mzsql
@@ -4126,7 +4163,7 @@ its subsources) will return after the snapshotting completes (unless the user
 breaks out of the query).
 
 <p>Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
-the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#size" >size of your ingestion cluster</a>.</p>
+the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#available-sizes" >size of your ingestion cluster</a>.</p>
 <p>We&rsquo;ve observed the following approximate snapshot rates from PostgreSQL:</p>
 <table>
   <thead>
@@ -4153,7 +4190,7 @@ the upstream database, the number of tables (more tables can be parallelized in 
 
 
 To determine whether your source has completed ingesting the initial snapshot,
-you can query the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
+you can query the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
 system catalog table:
 
 ```mzsql
@@ -4173,7 +4210,7 @@ monitor its progress. See [Monitoring data ingestion](/ingest-data/monitoring-da
 ## How do I speed up the snapshotting process?
 
 <p>Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
-the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#size" >size of your ingestion cluster</a>.</p>
+the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#available-sizes" >size of your ingestion cluster</a>.</p>
 <p>We&rsquo;ve observed the following approximate snapshot rates from PostgreSQL:</p>
 <table>
   <thead>
@@ -4238,6 +4275,7 @@ the cluster for steady-state.
 
 - [Monitoring data ingestion](/ingest-data/monitoring-data-ingestion/)
 - [Postgres troubleshooting guides](/ingest-data/postgres/troubleshooting/)
+- [MySQL troubleshooting guides](/ingest-data/mysql/troubleshooting/)
 
 
 ---
@@ -4368,7 +4406,7 @@ to shape the events.
   let generationInterval;
 
   document.addEventListener("DOMContentLoaded", function () {
-    formatJSON();
+    formatJSON(); 
   });
 
   function validateJson(jsonString) {
@@ -4401,12 +4439,12 @@ to shape the events.
         }
       })
     );
-    logs.unshift(`Sent: ${JSON.stringify(generatedData)}`);
+    logs.unshift(`Sent: ${JSON.stringify(generatedData)}`); 
     logOutputDiv.innerHTML = logs
       .map((log, index) => `<p key="${index}">${log}</p>`)
       .join("");
 
-
+    
     updateLogDisplay();
 
     console.log("URL:", webhookURLInput.value);
@@ -4431,15 +4469,15 @@ to shape the events.
         return response;
       })
       .then((data) => {
-
+        
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
-        logs.unshift(`Error: ${error.message}`);
+        logs.unshift(`Error: ${error.message}`); 
         logOutputDiv.innerHTML = logs
           .map((log, index) => `<p key="${index}">${log}</p>`)
           .join("");
-
+        
         updateLogDisplay();
       });
   }
@@ -4465,7 +4503,7 @@ to shape the events.
     generationInterval = null;
   }
 
-
+  
   function updateLogDisplay() {
     logOutputDiv.style.display = logs.length > 0 ? "block" : "none";
   }
@@ -4474,7 +4512,7 @@ to shape the events.
   stopButton.addEventListener("click", stopGeneration);
   updateLogDisplay();
 
-
+  
   jsonSchemaTextarea.addEventListener("blur", formatJSON);
 
   function formatJSON() {
@@ -4483,7 +4521,7 @@ to shape the events.
       const formattedJSON = JSON.stringify(JSON.parse(jsonString), null, 2);
       jsonSchemaTextarea.value = formattedJSON;
     } catch (error) {
-
+      
       console.error("Error while formatting JSON:", error);
     }
   }
@@ -4493,7 +4531,7 @@ to shape the events.
     const schema = schemas[selectedUseCase];
     if (schema) {
       jsonSchemaTextarea.value = schema;
-      formatJSON();
+      formatJSON(); 
     }
   });
 
@@ -4602,3 +4640,4 @@ DROP SECRET demo_webhook;
 
 To get started with your own data, check out the [reference documentation](/sql/create-source/webhook/)
 for the webhook source.
+

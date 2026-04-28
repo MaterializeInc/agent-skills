@@ -997,7 +997,7 @@ configuration.
     ```
 
 1. Once `persist-docs` is configured, any `description` defined in your `.yml`
-  files is persisted to Materialize in the [mz_internal.mz_comments](/sql/system-catalog/mz_internal/#mz_comments)
+  files is persisted to Materialize in the [mz_internal.mz_comments](/reference/system-catalog/mz_internal/#mz_comments)
   system catalog table on every `dbt run`:
 
     ```mzsql

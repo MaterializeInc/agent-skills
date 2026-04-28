@@ -123,7 +123,7 @@ to shape the events.
   let generationInterval;
 
   document.addEventListener("DOMContentLoaded", function () {
-    formatJSON();
+    formatJSON(); 
   });
 
   function validateJson(jsonString) {
@@ -156,12 +156,12 @@ to shape the events.
         }
       })
     );
-    logs.unshift(`Sent: ${JSON.stringify(generatedData)}`);
+    logs.unshift(`Sent: ${JSON.stringify(generatedData)}`); 
     logOutputDiv.innerHTML = logs
       .map((log, index) => `<p key="${index}">${log}</p>`)
       .join("");
 
-
+    
     updateLogDisplay();
 
     console.log("URL:", webhookURLInput.value);
@@ -186,15 +186,15 @@ to shape the events.
         return response;
       })
       .then((data) => {
-
+        
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
-        logs.unshift(`Error: ${error.message}`);
+        logs.unshift(`Error: ${error.message}`); 
         logOutputDiv.innerHTML = logs
           .map((log, index) => `<p key="${index}">${log}</p>`)
           .join("");
-
+        
         updateLogDisplay();
       });
   }
@@ -220,7 +220,7 @@ to shape the events.
     generationInterval = null;
   }
 
-
+  
   function updateLogDisplay() {
     logOutputDiv.style.display = logs.length > 0 ? "block" : "none";
   }
@@ -229,7 +229,7 @@ to shape the events.
   stopButton.addEventListener("click", stopGeneration);
   updateLogDisplay();
 
-
+  
   jsonSchemaTextarea.addEventListener("blur", formatJSON);
 
   function formatJSON() {
@@ -238,7 +238,7 @@ to shape the events.
       const formattedJSON = JSON.stringify(JSON.parse(jsonString), null, 2);
       jsonSchemaTextarea.value = formattedJSON;
     } catch (error) {
-
+      
       console.error("Error while formatting JSON:", error);
     }
   }
@@ -248,7 +248,7 @@ to shape the events.
     const schema = schemas[selectedUseCase];
     if (schema) {
       jsonSchemaTextarea.value = schema;
-      formatJSON();
+      formatJSON(); 
     }
   });
 

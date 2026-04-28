@@ -132,7 +132,7 @@ disaster recovery **as long as**:
 In such cases, your mean time to recovery is the **same as your compute
 cluster's rehydration time**.
 
-> **💡 Recommendation:** When running with the basic configuration, we recommend that you track your rehydration time to ensure that it is within an acceptable range for your business' risk tolerance.
+> **💡 Recommendation:** When running with the basic configuration, we recommend that you track your rehydration time to ensure that it is within an acceptable range for your business' risk tolerance. 
 
 
 ## Level 2:  Multi-replica clusters (High availability across AZs)
@@ -170,7 +170,7 @@ AZ level failures for those clusters:
 As such, your compute and serving clusters will continue to serve up-to-date
 data uninterrupted in the case of a replica failure.
 
-> **💡 Cost and work capacity:** <ul> <li> <p>Each replica incurs cost, calculated as <code>cluster size * replication factor</code> per second. See <a href="/administration/billing/" >Usage &amp; billing</a> for more details.</p> </li> <li> <p>Increasing the replication factor does <strong>not</strong> increase the cluster&rsquo;s work capacity. Replicas are exact copies of one another: each replica must do exactly the same work as all the other replicas of the cluster(i.e., maintain the same dataflows and process the same queries). To increase the capacity of a cluster, you must increase its size.</p> </li> </ul>
+> **💡 Cost and work capacity:** <ul> <li> <p>Each replica incurs cost, calculated as <code>cluster size * replication factor</code> per second. See <a href="/administration/billing/" >Usage &amp; billing</a> for more details.</p> </li> <li> <p>Increasing the replication factor does <strong>not</strong> increase the cluster&rsquo;s work capacity. Replicas are exact copies of one another: each replica must do exactly the same work as all the other replicas of the cluster(i.e., maintain the same dataflows and process the same queries). To increase the capacity of a cluster, you must increase its size.</p> </li> </ul> 
 
 
 If you require resilience beyond a single region, consider the Level 3 strategy.
@@ -193,7 +193,7 @@ environment in another region. With this strategy:
 can also be accessed from the second region, the two Materialize environments
 can guarantee the same results.
 
-> **💡 No strict transactional consistency between environments:** This approach does <red>**not**</red> offer strict transactional consistency across regions. However, as long as both regions are caught up, the results should be within about a second of each other.
+> **💡 No strict transactional consistency between environments:** This approach does <red>**not**</red> offer strict transactional consistency across regions. However, as long as both regions are caught up, the results should be within about a second of each other. 
 
 
 The duplicate Materialize environment setup can be adapted into a more
@@ -258,7 +258,7 @@ prevent operational incidents. For alert rules guidelines, see
 
 ### Monitoring
 
-You can monitor the performance and overall health of your Self-Manaed
+You can monitor the performance and overall health of your Self-Managed
 Materialize.
 
 To help you get started, the following guides are available:
@@ -602,3 +602,4 @@ infrastructure with a single `terraform apply` command.
 ## Contributing
 
 If you want to help develop the Materialize provider, check out the [contribution guidelines](https://github.com/MaterializeInc/terraform-provider-materialize/blob/main/CONTRIBUTING.md).
+
