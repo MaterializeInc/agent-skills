@@ -1,0 +1,144 @@
+# Regenerates the `materialize-docs` skill from upstream Materialize docs.
+#
+# Generator: https://github.com/MaterializeInc/materialize/blob/main/bin/gen-claude-skill
+# Target:    https://github.com/MaterializeInc/agent-skills/tree/main/skills/materialize-docs
+#
+# The generator uses `hugo --cleanDestinationDir`, so it wipes the output
+# directory on each run. Hand-maintained files (the skill's top-level README
+# and references/README) are stashed before generation and restored after.
+# If new hand-maintained files are added under `skills/materialize-docs/`,
+# update the "Stash" and "Restore" steps below.
+
+name: update-materialize-docs-skill
+
+on:
+  workflow_dispatch:
+    inputs:
+      mz_version:
+        description: 'Materialize ref (tag, branch, or commit SHA). Defaults to main.'
+        required: false
+        default: 'main'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      MZ_REF: ${{ inputs.mz_version }}
+      BRANCH: automated/update-materialize-docs-skill
+    steps:
+      - name: Checkout agent-skills
+        uses: actions/checkout@v4
+        with:
+          path: agent-skills
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout MaterializeInc/materialize @ ${{ inputs.mz_version }}
+        uses: actions/checkout@v4
+        with:
+          repository: MaterializeInc/materialize
+          ref: ${{ inputs.mz_version }}
+          path: materialize
+          fetch-depth: 1
+
+      - name: Set up Hugo (extended)
+        uses: peaceiris/actions-hugo@v3
+        with:
+          # Pinned to match the version used in MaterializeInc/materialize CI
+          # (ci/builder/Dockerfile). Update together if upstream changes.
+          hugo-version: '0.152.2'
+          extended: true
+
+      - name: Set up branch
+        id: branch
+        working-directory: agent-skills
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          EXISTING_PR=$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "Updating existing PR #$EXISTING_PR on $BRANCH"
+            git fetch origin "$BRANCH"
+            git checkout "$BRANCH"
+            # Stay current with main; if a conflict appears, prefer regenerated content.
+            if ! git merge --no-edit origin/main; then
+              git merge --abort
+              git reset --hard origin/main
+            fi
+          else
+            if git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
+              echo "Deleting stale remote branch $BRANCH (no open PR)"
+              git push origin --delete "$BRANCH"
+            fi
+            git checkout -b "$BRANCH"
+          fi
+
+          echo "existing_pr=$EXISTING_PR" >> "$GITHUB_OUTPUT"
+
+      - name: Stash hand-maintained files
+        working-directory: agent-skills
+        run: |
+          # The generator runs `hugo --cleanDestinationDir`, which wipes the
+          # output directory. Preserve hand-maintained files here and restore
+          # them after generation. Add new entries as needed.
+          mkdir -p ../preserved/references
+          cp skills/materialize-docs/README.md ../preserved/README.md
+          cp skills/materialize-docs/references/README.md ../preserved/references/README.md
+
+      - name: Generate skill
+        working-directory: materialize
+        run: bin/gen-claude-skill ../agent-skills/skills/materialize-docs
+
+      - name: Restore hand-maintained files
+        working-directory: agent-skills
+        run: |
+          mkdir -p skills/materialize-docs/references
+          cp ../preserved/README.md skills/materialize-docs/README.md
+          cp ../preserved/references/README.md skills/materialize-docs/references/README.md
+
+      - name: Check for changes
+        id: changes
+        working-directory: agent-skills
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.has_changes == 'true'
+        working-directory: agent-skills
+        run: |
+          git add skills/materialize-docs
+          git commit -m "Update materialize-docs skill from materialize@${MZ_REF}"
+          git push origin "$BRANCH"
+
+      - name: Create draft PR
+        if: steps.changes.outputs.has_changes == 'true' && steps.branch.outputs.existing_pr == ''
+        working-directory: agent-skills
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --draft \
+            --head "$BRANCH" \
+            --title "Update materialize-docs skill from materialize@${MZ_REF}" \
+            --body "$(cat <<EOF
+          Regenerates \`skills/materialize-docs/\` by running [\`bin/gen-claude-skill\`](https://github.com/MaterializeInc/materialize/blob/main/bin/gen-claude-skill) from MaterializeInc/materialize.
+
+          **Source ref:** \`${MZ_REF}\`
+
+          Triggered by the \`update-materialize-docs-skill\` workflow.
+
+          EOF
+          )"
