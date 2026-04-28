@@ -3,6 +3,16 @@
 # Generator: https://github.com/MaterializeInc/materialize/blob/main/bin/gen-claude-skill
 # Target:    https://github.com/MaterializeInc/agent-skills/tree/main/skills/materialize-docs
 #
+# When triggered without an `mz_version` input, the workflow auto-detects the
+# latest Materialize release by reading level-2 version headings from
+# `doc/user/content/releases/_index.md` on `main`. It only regenerates if the
+# latest release is strictly greater than the version recorded in the heading
+# of `skills/materialize-docs/README.md` (`# materialize-docs vX.Y.Z`). After
+# a successful auto-bump, the README heading is updated to the new version.
+#
+# When triggered with an explicit `mz_version`, the workflow always regenerates
+# at that ref and does not modify the README heading.
+#
 # The generator uses `hugo --cleanDestinationDir`, so it wipes the output
 # directory on each run. Hand-maintained files (the skill's top-level README
 # and references/README) are stashed before generation and restored after.
@@ -15,9 +25,9 @@ on:
   workflow_dispatch:
     inputs:
       mz_version:
-        description: 'Materialize ref (tag, branch, or commit SHA). Defaults to main.'
+        description: 'Materialize ref (tag, branch, or commit SHA). Leave empty to auto-detect the latest release.'
         required: false
-        default: 'main'
+        default: ''
 
 jobs:
   update:
@@ -27,7 +37,6 @@ jobs:
       contents: write
       pull-requests: write
     env:
-      MZ_REF: ${{ inputs.mz_version }}
       BRANCH: automated/update-materialize-docs-skill
     steps:
       - name: Checkout agent-skills
@@ -37,15 +46,77 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Checkout MaterializeInc/materialize @ ${{ inputs.mz_version }}
+      - name: Determine target version
+        id: target
+        working-directory: agent-skills
+        env:
+          INPUT_MZ_VERSION: ${{ inputs.mz_version }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "$INPUT_MZ_VERSION" ]; then
+            echo "User-specified ref: $INPUT_MZ_VERSION"
+            {
+              echo "should_run=true"
+              echo "mz_ref=$INPUT_MZ_VERSION"
+              echo "update_readme=false"
+              echo "new_version="
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          RAW_URL="https://raw.githubusercontent.com/MaterializeInc/materialize/main/doc/user/content/releases/_index.md"
+          LATEST=$(curl -fsSL "$RAW_URL" \
+            | grep -E '^##[[:space:]]+v[0-9]+\.[0-9]+\.[0-9]+' \
+            | sed -E 's/^##[[:space:]]+(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/' \
+            | sort -V \
+            | tail -1)
+          if [ -z "$LATEST" ]; then
+            echo "Failed to find any 'vX.Y.Z' headings in _index.md" >&2
+            exit 1
+          fi
+          echo "Latest release in _index.md: $LATEST"
+
+          CURRENT=$(sed -nE '1s/^# materialize-docs[[:space:]]+(v[0-9]+\.[0-9]+\.[0-9]+).*/\1/p' skills/materialize-docs/README.md || true)
+          echo "Current version in README: ${CURRENT:-<none>}"
+
+          if [ -z "$CURRENT" ]; then
+            echo "No current version recorded; bootstrapping to $LATEST"
+            SHOULD_RUN=true
+          else
+            HIGHEST=$(printf '%s\n%s\n' "$CURRENT" "$LATEST" | sort -V | tail -1)
+            if [ "$HIGHEST" = "$LATEST" ] && [ "$LATEST" != "$CURRENT" ]; then
+              echo "New release detected: $CURRENT -> $LATEST"
+              SHOULD_RUN=true
+            else
+              echo "Already up to date at $CURRENT"
+              SHOULD_RUN=false
+            fi
+          fi
+
+          if [ "$SHOULD_RUN" != "true" ]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          {
+            echo "should_run=true"
+            echo "mz_ref=$LATEST"
+            echo "update_readme=true"
+            echo "new_version=$LATEST"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Checkout MaterializeInc/materialize
+        if: steps.target.outputs.should_run == 'true'
         uses: actions/checkout@v4
         with:
           repository: MaterializeInc/materialize
-          ref: ${{ inputs.mz_version }}
+          ref: ${{ steps.target.outputs.mz_ref }}
           path: materialize
           fetch-depth: 1
 
       - name: Set up Hugo (extended)
+        if: steps.target.outputs.should_run == 'true'
         uses: peaceiris/actions-hugo@v3
         with:
           # Pinned to match the version used in MaterializeInc/materialize CI
@@ -55,6 +126,7 @@ jobs:
 
       - name: Set up branch
         id: branch
+        if: steps.target.outputs.should_run == 'true'
         working-directory: agent-skills
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,6 +157,7 @@ jobs:
           echo "existing_pr=$EXISTING_PR" >> "$GITHUB_OUTPUT"
 
       - name: Stash hand-maintained files
+        if: steps.target.outputs.should_run == 'true'
         working-directory: agent-skills
         run: |
           # The generator runs `hugo --cleanDestinationDir`, which wipes the
@@ -95,18 +168,36 @@ jobs:
           cp skills/materialize-docs/references/README.md ../preserved/references/README.md
 
       - name: Generate skill
+        if: steps.target.outputs.should_run == 'true'
         working-directory: materialize
         run: bin/gen-claude-skill ../agent-skills/skills/materialize-docs
 
       - name: Restore hand-maintained files
+        if: steps.target.outputs.should_run == 'true'
         working-directory: agent-skills
         run: |
           mkdir -p skills/materialize-docs/references
           cp ../preserved/README.md skills/materialize-docs/README.md
           cp ../preserved/references/README.md skills/materialize-docs/references/README.md
 
+      - name: Update README version heading
+        if: steps.target.outputs.should_run == 'true' && steps.target.outputs.update_readme == 'true'
+        working-directory: agent-skills
+        env:
+          NEW_VERSION: ${{ steps.target.outputs.new_version }}
+        run: |
+          set -euo pipefail
+          if ! head -1 skills/materialize-docs/README.md | grep -q '^# materialize-docs'; then
+            echo "Expected line 1 of README to start with '# materialize-docs'; aborting." >&2
+            head -1 skills/materialize-docs/README.md >&2
+            exit 1
+          fi
+          sed -i "1s|.*|# materialize-docs ${NEW_VERSION}|" skills/materialize-docs/README.md
+          echo "Updated README heading to: $(head -1 skills/materialize-docs/README.md)"
+
       - name: Check for changes
         id: changes
+        if: steps.target.outputs.should_run == 'true'
         working-directory: agent-skills
         run: |
           if [ -z "$(git status --porcelain)" ]; then
@@ -116,21 +207,23 @@ jobs:
           fi
 
       - name: Commit and push
-        if: steps.changes.outputs.has_changes == 'true'
+        if: steps.target.outputs.should_run == 'true' && steps.changes.outputs.has_changes == 'true'
         working-directory: agent-skills
+        env:
+          MZ_REF: ${{ steps.target.outputs.mz_ref }}
         run: |
           git add skills/materialize-docs
           git commit -m "Update materialize-docs skill from materialize@${MZ_REF}"
           git push origin "$BRANCH"
 
-      - name: Create draft PR
-        if: steps.changes.outputs.has_changes == 'true' && steps.branch.outputs.existing_pr == ''
+      - name: Create PR
+        if: steps.target.outputs.should_run == 'true' && steps.changes.outputs.has_changes == 'true' && steps.branch.outputs.existing_pr == ''
         working-directory: agent-skills
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MZ_REF: ${{ steps.target.outputs.mz_ref }}
         run: |
           gh pr create \
-            --draft \
             --head "$BRANCH" \
             --title "Update materialize-docs skill from materialize@${MZ_REF}" \
             --body "$(cat <<EOF
@@ -139,6 +232,5 @@ jobs:
           **Source ref:** \`${MZ_REF}\`
 
           Triggered by the \`update-materialize-docs-skill\` workflow.
-
           EOF
           )"
