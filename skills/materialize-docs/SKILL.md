@@ -142,7 +142,7 @@ Get details about third-party tools and integrations supported by Materialize
 - **Connect to Materialize via WebSocket**: `integrations/websocket-api/index.md`
 - **Connection Pooling**: `integrations/connection-pooling/index.md`
 - **Foreign data wrapper (FDW) **: `integrations/fdw/index.md`
-- **MCP Server**: `integrations/mcp-server/index.md`
+- **MCP Server**: `integrations/llm/index.md`
 - **mz - Materialize CLI**: `integrations/cli/index.md`
 - **mz-debug**: `integrations/mz-debug/index.md`
 - **SQL clients**: `integrations/sql-clients/index.md`

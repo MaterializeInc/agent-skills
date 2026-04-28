@@ -328,7 +328,7 @@ with the ARN of your S3 table bucket:
             "Effect": "Allow",
             "Action": "s3tables:*",
             "Resource": [
-                "<S3 table bucket ARN>",
+                "<S3 table bucket ARN>"
                 "<S3 table bucket ARN>/table/*"
             ]
         }
@@ -555,10 +555,7 @@ Materialize converts SQL types to Iceberg/Parquet types:
 |----------|--------------|
 | `boolean` | `boolean` |
 | `smallint`, `integer` | `int` |
-| `uint2` | `int` |
 | `bigint` | `long` |
-| `uint4` | `long` |
-| `uint8` | `decimal(20, 0)` |
 | `real` | `float` |
 | `double precision` | `double` |
 | `numeric` | `decimal(38, scale)` |
@@ -570,8 +567,6 @@ Materialize converts SQL types to Iceberg/Parquet types:
 | `bytea` | `binary` |
 | `uuid` | `fixed(16)` |
 | `jsonb` | `string` |
-| `interval` | `string` |
-| `int4range`, `int8range`, `numrange`, `daterange`, `tsrange`, `tstzrange` | `struct` (fields: `lower`, `upper`, `lower_inclusive`, `upper_inclusive`, `empty`) |
 | `record` | `struct` |
 | `list` | `list` |
 | `map` | `map` |
@@ -750,7 +745,8 @@ running `CREATE SINK`, observe the following guidance:
 | Progress topic | Compaction          | We recommend enabling compaction to avoid accumulating unbounded state. Disabling compaction may cause performance issues, but will not cause correctness issues.
 | Progress topic | Retention           | **Must be disabled.** Enabling retention can cause Materialize to violate its [exactly-once guarantees](/sql/create-sink/kafka#exactly-once-processing).
 | Progress topic | Tiered storage      | We recommend disabling tiered storage to allow for more aggressive data compaction. Fully compacted data requires minimal storage, typically only tens of bytes per sink, making it cost-effective to maintain directly on local disk.
-| Progress topic | Segment bytes       | Defaults to 128 MiB. We recommend going no higher than 256 MiB to avoid slow startups when creating new sinks, as they must process the entire progress topic on startup.
+| Progress topic | Segment bytes.      | Defaults to 128 MiB. We recommend going no higher than 256 MiB to avoid
+slow startups when creating new sinks, as they must process the entire progress topic on startup.
 > **Warning:** Dropping a Kafka sink doesn't drop the corresponding topic. For more information, see the [Kafka documentation](https://kafka.apache.org/documentation/).
 
 

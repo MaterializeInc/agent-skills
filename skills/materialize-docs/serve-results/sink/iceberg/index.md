@@ -52,7 +52,7 @@ with the ARN of your S3 table bucket:
             "Effect": "Allow",
             "Action": "s3tables:*",
             "Resource": [
-                "<S3 table bucket ARN>",
+                "<S3 table bucket ARN>"
                 "<S3 table bucket ARN>/table/*"
             ]
         }
@@ -279,10 +279,7 @@ Materialize converts SQL types to Iceberg/Parquet types:
 |----------|--------------|
 | `boolean` | `boolean` |
 | `smallint`, `integer` | `int` |
-| `uint2` | `int` |
 | `bigint` | `long` |
-| `uint4` | `long` |
-| `uint8` | `decimal(20, 0)` |
 | `real` | `float` |
 | `double precision` | `double` |
 | `numeric` | `decimal(38, scale)` |
@@ -294,8 +291,6 @@ Materialize converts SQL types to Iceberg/Parquet types:
 | `bytea` | `binary` |
 | `uuid` | `fixed(16)` |
 | `jsonb` | `string` |
-| `interval` | `string` |
-| `int4range`, `int8range`, `numrange`, `daterange`, `tsrange`, `tstzrange` | `struct` (fields: `lower`, `upper`, `lower_inclusive`, `upper_inclusive`, `empty`) |
 | `record` | `struct` |
 | `list` | `list` |
 | `map` | `map` |

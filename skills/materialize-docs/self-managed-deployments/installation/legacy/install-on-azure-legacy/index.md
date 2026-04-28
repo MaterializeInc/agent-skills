@@ -177,20 +177,20 @@ deploys a sample infrastructure on Azure with the following components:
    ```
 
 
-1. Clone your forked repo and checkout the `v0.8.26` tag. For example,
+1. Clone your forked repo and checkout the `v0.8.23` tag. For example,
 
    - If cloning via SSH (substitute `YOUR_ORGANIZATION` with your organization's
      name):
 
      ```bash
-     git clone --depth 1 -b v0.8.26 git@github.com:${MY_ORGANIZATION}/terraform-azurerm-materialize.git
+     git clone --depth 1 -b v0.8.23 git@github.com:${MY_ORGANIZATION}/terraform-azurerm-materialize.git
      ```
 
    - If cloning via HTTPS (substitute `YOUR_ORGANIZATION` with your
      organization's name):
 
      ```bash
-     git clone --depth 1 -b v0.8.26 https://github.com/${MY_ORGANIZATION}/terraform-azurerm-materialize.git
+     git clone --depth 1 -b v0.8.23 https://github.com/${MY_ORGANIZATION}/terraform-azurerm-materialize.git
      ```
 
 

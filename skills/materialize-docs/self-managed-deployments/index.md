@@ -161,7 +161,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.20.2
+  environmentdImageRef: materialize/environmentd:v26.18.0
 # ... additional fields omitted for brevity
 ```
 
@@ -3483,9 +3483,6 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
-| v26.20.2 | v26.20.2 | v26.20.2 | 2026-04-18 | See <a href="/releases/#v26202" >v26.20.2 release notes</a> |
-| v26.20.0 | v26.20.0 | v26.20.0 | 2026-04-17 |  |
-| v26.19.0 | v26.19.0 | v26.19.0 | 2026-04-10 | See <a href="/releases/#v26190" >v26.19.0 release notes</a> |
 | v26.18.0 | v26.18.0 | v26.18.0 | 2026-04-03 | See <a href="/releases/#v26180" >v26.18.0 release notes</a> |
 | v26.17.1 | v26.17.1 | v26.17.1 | 2026-03-27 |  |
 | v26.17.0 | v26.17.0 | v26.17.0 | 2026-03-27 | See <a href="/releases/#v26170" >v26.17.0 release notes</a> |
@@ -3802,7 +3799,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.20.2
+  --version v26.18.0
 ```
 
 ## Upgrading Materialize Instances
@@ -3840,13 +3837,13 @@ To stage the Materialize instances version upgrade, update the
 compatible version of your currently deployed Materialize Operator.
 
 To stage, but **not** rollout, the Materialize instance version upgrade, you can
-use the `kubectl patch` command; for example, if the **App Version** is v26.20.2:
+use the `kubectl patch` command; for example, if the **App Version** is v26.18.0:
 
 ```shell
 kubectl patch materialize <instance-name> \
   -n <materialize-instance-namespace> \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.20.2\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.18.0\"}}"
 ```
 
 > **Note:** Until you specify a new `requestRollout`, the Operator watches for updates but
@@ -3876,7 +3873,7 @@ can, if preferred, combine both operations in a single command
 kubectl patch materialize <instance-name> \
   -n materialize-environment \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.20.2\", \"requestRollout\": \"$(uuidgen)\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.18.0\", \"requestRollout\": \"$(uuidgen)\"}}"
 ```
 
 #### Using YAML Definition
@@ -3890,7 +3887,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.20.2 # Update version as needed
+  environmentdImageRef: materialize/environmentd:v26.18.0 # Update version as needed
   requestRollout: 22222222-2222-2222-2222-222222222222    # Use a new UUID
   forceRollout: 33333333-3333-3333-3333-333333333333      # Optional: for forced rollouts
   inPlaceRollout: false                                   # In Place rollout is deprecated and ignored. Please use rolloutStrategy

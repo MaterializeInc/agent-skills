@@ -244,18 +244,18 @@ components:
    MY_ORGANIZATION=<enter-your-organization>
    ```
 
-1. Clone your forked repo and checkout the `v0.8.27` tag. For example,
+1. Clone your forked repo and checkout the `v0.8.24` tag. For example,
 
    - If cloning via SSH:
 
      ```bash
-     git clone --depth 1 -b v0.8.27 git@github.com:${MY_ORGANIZATION}/terraform-google-materialize.git
+     git clone --depth 1 -b v0.8.24 git@github.com:${MY_ORGANIZATION}/terraform-google-materialize.git
      ```
 
    - If cloning via HTTPS:
 
      ```bash
-     git clone --depth 1 -b v0.8.27 https://github.com/${MY_ORGANIZATION}/terraform-google-materialize.git
+     git clone --depth 1 -b v0.8.24 https://github.com/${MY_ORGANIZATION}/terraform-google-materialize.git
      ```
 
 
