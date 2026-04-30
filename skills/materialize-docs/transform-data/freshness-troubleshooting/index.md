@@ -161,7 +161,6 @@ memory utilization forcing data to disk, or Out of Memory (OOM) crash loops.
 
 ### Check the CPU or memory pressure
 
-
 **Specific cluster:**
 
 You can run the following query to check a cluster's resource utilization,
@@ -198,8 +197,6 @@ WHERE c.id LIKE 'u%'
 ORDER BY u.cpu_percent DESC;
 ```
 
-
-
 - If the returned `cpu_percent` is high, all objects on that cluster experience
   correlated freshness degradation.
 
@@ -216,7 +213,6 @@ if possible.
 > single cluster cannot be explained by CPU or memory pressure, [check whether
 > DDL or deploy activity](#check-for-ddl-or-deploy-activity) occurred during the
 > same window.
-
 
 ### Check for OOM crash loops
 
@@ -260,7 +256,6 @@ that are frozen, and their lag grows indefinitely.
 > runs) where replicas are scaled to zero between runs to save costs. High lag
 > on these clusters is expected and does not indicate a problem.
 
-
 To check, you can query `mz_catalog.mz_clusters` for clusters whose
 `replication_factor = 0`.
 
@@ -275,7 +270,6 @@ WHERE c.replication_factor = 0;
 - If compute is needed, set the replication factor to a non-zero integer
   ([`ALTER CLUSTER ... SET (REPLICATION FACTOR = <int>)`](/sql/alter-cluster/)).
 
-
 ## Check source ingestion
 
 A source ingestion bottleneck occurs when the source is not ingesting data fast
@@ -286,7 +280,6 @@ credential expiration, or a deliberately paused source.
 
 To check if a source or its associated subsource/table is unhealthy, query
 [`mz_internal.mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses):
-
 
 ```mzsql
 SELECT s.id, o.name, s.type, s.status, s.error, s.details
@@ -341,7 +334,6 @@ LIMIT 30;
 
 You can exclude intentionally paused sources by adding `AND o.id NOT IN (...)`
 to the `WHERE` clause.
-
 
 ### Determine spike scope
 
@@ -465,18 +457,15 @@ Interpreting the results:
 * **`source_peak_lag` stays low while `mv_peak_lag` spikes**: the MV cluster itself is falling behind, independent of its sources.
   This can happen during DDL operations, deploy events, or when the cluster is overloaded.
 
-
 ## Measuring aggregate freshness
 
 This section provides queries to measure overall freshness across your deployment.
-
 
 ### Peak and threshold-based freshness
 
 To count how many minutes exceed specific thresholds:
 
 > **Tip:** You may want to exclude non-production (e.g., development/testing/staging) clusters that may produce misleading results.
-
 
 ```mzsql
 SELECT
@@ -507,13 +496,11 @@ ORDER BY max(wl.lag) DESC
 LIMIT 30;
 ```
 
-
 ### Cluster-level freshness summary
 
 To get a per-cluster summary (useful for SLO reporting):
 
 > **Tip:** You may want to exclude non-production (e.g., development/testing/staging) clusters that may produce misleading results.
-
 
 ```mzsql
 SELECT

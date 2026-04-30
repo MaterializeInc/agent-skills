@@ -8,11 +8,9 @@
 SHOW [REDACTED] CREATE TYPE <type_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available type names, see [`SHOW TYPES`](/sql/show-types).
 

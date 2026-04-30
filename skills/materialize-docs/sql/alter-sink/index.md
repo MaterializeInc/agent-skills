@@ -8,14 +8,11 @@ Use `ALTER SINK` to:
 
 ## Syntax
 
-
 **Change sink from relation:**
 
 ### Change sink from relation
 
 To change the relation you want to sink from:
-
-
 
 ```mzsql
 ALTER SINK <name> SET FROM <relation_name>;
@@ -27,15 +24,11 @@ ALTER SINK <name> SET FROM <relation_name>;
 | `<name>`  | The name of the sink you want to change.  |
 | `<relation_name>`  | The name of the relation you want to sink from.  |
 
-
-
 **Rename:**
 
 ### Rename
 
 To rename a sink:
-
-
 
 ```mzsql
 ALTER SINK <name> RENAME TO <new_name>;
@@ -48,17 +41,11 @@ ALTER SINK <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the sink.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a sink:
-
-
 
 ```mzsql
 ALTER SINK <name> OWNER TO <new_owner_role>;
@@ -71,9 +58,6 @@ ALTER SINK <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the sink.  |
 To change the owner, you must be a current owner as well as have membership
 in the `<new_owner_role>`.
-
-
-
 
 ## Details
 
@@ -110,7 +94,6 @@ relation.
 > definition of the sink to emit results up until the oldest timestamp at which
 > the contents of the new upstream relation are known. Attempting to `ALTER` an
 > unhealthy sink that can't make progress will result in the command timing out.
-
 
 #### Cutover scenarios and workarounds
 
@@ -211,7 +194,6 @@ CREATE SINK avro_sink
 
 ```
 
-
 To have the sink read from `matview_new` instead of `matview_old`, you can
 use `ALTER SINK` to change the `FROM <relation>`:
 
@@ -241,7 +223,6 @@ scenarios:
 For workaround, see [Example: Handle cutover scenarios](#handle-cutover-scenarios)
 {{< /tip >}}
 
-
 ### Handle cutover scenarios
 
 Because Materialize emits updates from the newly specified relation **only** if
@@ -260,14 +241,12 @@ the changes. Then, after the sink upper has advanced beyond the time of the
 switch, you can `ALTER SINK` to the new relation (and remove the temporary
 intermediary materialized view and table).
 
-
 1. For example, create a table `switch` and a temporary materialized view
 `transition` that contains either:
 - the `matview_old` content if `switch.value` is `false`.
 - the `matview_new` content if `switch.value` is `true`.
 
 At first, the `switch.value` is `false`, so the `transition` materialized view contains the `matview_old` content.
-
 
    <no value>```mzsql
    CREATE TABLE switch (value bool);
@@ -283,14 +262,12 @@ At first, the `switch.value` is `false`, so the `transition` materialized view c
 
 1. `ALTER SINK` to use `transition`, which currently contains `matview_old` content:
 
-
    <no value>```mzsql
    ALTER SINK avro_sink SET FROM transition;
    
    ```
 
 1. Update `switch.value` to `true`, which causes the `transition` materialized view to contain `matview_new` content:
-
 
    <no value>```mzsql
    UPDATE switch SET value = true;
@@ -302,7 +279,6 @@ At first, the `switch.value` is `false`, so the `transition` materialized view c
 beyond the time of the switch update. Once advanced, alter sink to use
 `matview_new`:
 
-
    <no value>```mzsql
    -- After sink upper has advanced beyond the time of the switch UPDATE.
    ALTER SINK avro_sink SET FROM matview_new;
@@ -310,7 +286,6 @@ beyond the time of the switch update. Once advanced, alter sink to use
    ```
 
 1. Drop the `transition` materialized view and the `switch` table:
-
 
    <no value>```mzsql
    DROP MATERIALIZED VIEW transition;

@@ -40,7 +40,6 @@ resources.</p>
 </li>
 </ul>
 
-
 ## One-tier architecture
 
 <p>If the <a href="/manage/operational-guidelines/#three-tier-architecture" >recommended three-tier

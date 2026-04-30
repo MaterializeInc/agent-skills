@@ -2,8 +2,6 @@
 
 Connecting Materialize to a MySQL database for Change Data Capture (CDC).
 
-
-
 ## Change Data Capture (CDC)
 
 Materialize supports MySQL as a real-time data source. The [MySQL source](/sql/create-source/mysql/)
@@ -31,7 +29,6 @@ gives you the following benefits:
 > **Note:** MySQL-compatible database systems are not guaranteed to work with the MySQL
 > source out-of-the-box. [MariaDB](https://mariadb.org/), [Vitess](https://vitess.io/)
 > and [PlanetScale](https://planetscale.com/) are currently **not supported**.
-
 
 The MySQL source requires **MySQL 5.7+** and is compatible with most common
 MySQL hosted services.
@@ -74,7 +71,6 @@ when the source was created.</p>
 </li>
 </ul>
 
-
 #### Incompatible schema changes
 
 <p>All other schema changes to upstream tables will set the corresponding
@@ -84,7 +80,6 @@ subsource.</p>
 and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
 subsource back to the source. When you add the subsource, it will have the
 updated schema from the corresponding upstream table.</p>
-
 
 ### Supported types
 
@@ -141,7 +136,6 @@ option to exclude any columns that contain unsupported data types.</p>
 </li>
 </ul>
 
-
 ### Truncation
 
 <p>Avoid truncating upstream tables that are being replicated into Materialize.
@@ -162,19 +156,15 @@ the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
 
-
-
 ---
 
 ## Ingest data from Amazon Aurora
-
 
 This page shows you how to stream data from [Amazon Aurora MySQL](https://aws.amazon.com/rds/aurora/)
 to Materialize using the [MySQL source](/sql/create-source/mysql/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -185,7 +175,6 @@ to Materialize using the [MySQL source](/sql/create-source/mysql/).
 - Ensure you have access to your MySQL instance via the [`mysql` client](https://dev.mysql.com/doc/refman/8.0/en/mysql.html),
   or your preferred SQL client.
 
-
 ## A. Configure Amazon Aurora
 
 ### 1. Enable GTID-based binlog replication
@@ -193,376 +182,121 @@ to Materialize using the [MySQL source](/sql/create-source/mysql/).
 > **Note:** GTID-based replication is supported for Amazon Aurora MySQL v2 and v3 as well
 > as Aurora Serverless v2.
 
-
 1. Before creating a source in Materialize, you **must** configure Amazon Aurora
    MySQL for GTID-based binlog replication. Ensure the upstream MySQL database  has been configured for GTID-based binlog replication:
 
-   
-   
-   
-   
-     
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
    <table>
    <thead>
    <tr>
    
    <th>MySQL Configuration</th>
-   
-   
+
    <th>Value</th>
-   
-   
+
    <th>Notes</th>
-   
-   
+
    </tr>
    </thead>
    <tbody>
-   
-   
-   
-   
-   
-   
-   
+
    <tr>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>log_bin</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>ON</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    
    </td>
    
    </tr>
-   
-   
-   
-   
-   
-   
-   
-   
+
    <tr>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>binlog_format</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>ROW</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    
    </td>
    
    </tr>
-   
-   
-   
-   
-   
-   
-   
-   
+
    <tr>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>binlog_row_image</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>FULL</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    
    </td>
    
    </tr>
-   
-   
-   
-   
-   
-   
-   
-   
+
    <tr>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>gtid_mode</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>ON</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    In the AWS console, this parameter appears as <code>gtid-mode</code>.
    </td>
    
    </tr>
-   
-   
-   
-   
-   
-   
-   
-   
+
    <tr>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>enforce_gtid_consistency</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>ON</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    
    </td>
    
    </tr>
-   
-   
-   
-   
-   
-   
-   
-   
+
    <tr>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>replica_preserve_commit_order</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>ON</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    Only required when connecting Materialize to a read-replica.
    </td>
    
    </tr>
-   
-   
+
    </tbody>
    </table>
-   
-
 
    For guidance on enabling GTID-based binlog replication in Aurora, see the
    [Amazon Aurora MySQL
@@ -642,15 +376,11 @@ user for Materialize with sufficient privileges to manage replication.
    FLUSH PRIVILEGES;
    ```
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your Aurora instance is publicly accessible, **you
 > can skip this step**. For production scenarios, we recommend configuring one of
 > the network security options below.
-
-
-
 
 **Cloud:**
 
@@ -667,8 +397,6 @@ to connect:
 
 - **Use an SSH tunnel:** If your database is running in a private network, you
     can use an SSH tunnel to connect Materialize to the database.
-
-
 
 **Allow Materialize IPs:**
 
@@ -688,8 +416,6 @@ to connect:
     - Set **Type** to **MySQL**.
     - Set **Source** to the IP address in CIDR notation.
 
-
-
 **Use AWS PrivateLink:**
 
 [AWS PrivateLink](https://aws.amazon.com/privatelink/) lets you connect
@@ -702,7 +428,6 @@ Aurora via the network load balancer.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
-
 
 1. Get the IP address of your Aurora instance.
 
@@ -784,8 +509,6 @@ Aurora via the network load balancer.
    make sure that the [health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html)
    are reporting the targets as healthy.
 
-
-
 **Use an SSH tunnel:**
 
 To create an SSH tunnel from Materialize to your database, you launch an
@@ -796,7 +519,6 @@ network to allow traffic from the bastion host.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of resources for an SSH tunnel. For more details, see the
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
-
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
     to serve as your SSH bastion host.
@@ -836,12 +558,6 @@ network to allow traffic from the bastion host.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -863,9 +579,6 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. [Add an inbound rule to your Aurora security group](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Overview.RDSSecurityGroups.html)
@@ -875,7 +588,6 @@ database.</p>
 
     - Set **Type** to **MySQL**.
     - Set **Source** to the IP address in CIDR notation.
-
 
 **Use an SSH tunnel:**
 
@@ -887,7 +599,6 @@ network to allow traffic from the bastion host.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of resources for an SSH tunnel. For more details, see the
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
-
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
     to serve as your SSH bastion host.
@@ -911,14 +622,6 @@ network to allow traffic from the bastion host.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a source cluster
@@ -927,7 +630,6 @@ network to allow traffic from the bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 In Materialize, a [cluster](/concepts/clusters/) is an isolated
 environment, similar to a virtual warehouse in Snowflake. When you create a
@@ -955,13 +657,10 @@ your MySQL database.
     the snapshot is finished, you can readjust the size of the cluster to fit
     the volume of changes being replicated from your upstream MySQL database.
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -993,8 +692,6 @@ your networking configuration.
     - Replace `<host>` with your MySQL endpoint.
 
     AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql) command for details.
-
-
 
 **Use AWS PrivateLink (Cloud-only):**
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -1110,8 +807,6 @@ details for Materialize to use:
 
     AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql) command for details.
 
-
-
 **Use an SSH tunnel:**
 1. In the [SQL Shell](/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CONNECTION`](/sql/create-connection/#ssh-tunnel)
@@ -1173,11 +868,6 @@ details for Materialize to use:
   AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql)
   command for details.
 
-
-
-
-
-
 ### 3. Start ingesting data
 
 Once you have created the connection, you can use the connection in the
@@ -1190,17 +880,14 @@ CREATE SOURCE mz_source
 
 ```
 
-
 - By default, the source will be created in the active cluster; to use a different cluster, use the `IN CLUSTER` clause.
 
 - To ingest data from specific schemas or tables, use the `FOR SCHEMAS (<schema1>,<schema2>)` or `FOR TABLES (<table1>, <table2>)` options instead of `FOR ALL TABLES`.
 
 - To handle [unsupported data types](#supported-types), use the `TEXT COLUMNS` or `EXCLUDE COLUMNS` options.
 
-
 After source creation, refer to [schema changes
 considerations](#schema-changes) for information on handling upstream schema changes.
-
 
 [//]: # "TODO(morsapaes) Replace these Step 6. and 7. with guidance using the
 new progress metrics in mz_source_statistics + console monitoring, when
@@ -1279,7 +966,6 @@ status of the snapshotting process.
     take between a few minutes to several hours, depending on the size of your
     dataset and the size of the cluster the source is running in.
 
-
 ### 5. Right-size the cluster
 
 After the snapshotting phase, Materialize starts ingesting change events from
@@ -1312,7 +998,6 @@ accordingly.
     (1 row)
     ```
 
-
 ## D. Explore your data
 
 With Materialize ingesting your MySQL data into durable storage, you can
@@ -1331,7 +1016,6 @@ new data arrives, and serving results efficiently.
 
 - Check out the [tools and integrations](/integrations/) supported by
   Materialize.
-
 
 ## Considerations
 
@@ -1362,7 +1046,6 @@ when the source was created.</p>
 </li>
 </ul>
 
-
 #### Incompatible schema changes
 
 <p>All other schema changes to upstream tables will set the corresponding
@@ -1372,7 +1055,6 @@ subsource.</p>
 and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
 subsource back to the source. When you add the subsource, it will have the
 updated schema from the corresponding upstream table.</p>
-
 
 ### Supported types
 
@@ -1429,7 +1111,6 @@ option to exclude any columns that contain unsupported data types.</p>
 </li>
 </ul>
 
-
 ### Truncation
 
 <p>Avoid truncating upstream tables that are being replicated into Materialize.
@@ -1450,18 +1131,15 @@ the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
 
-
 ---
 
 ## Ingest data from Amazon RDS
-
 
 This page shows you how to stream data from [Amazon RDS for MySQL](https://aws.amazon.com/rds/mysql/)
 to Materialize using the [MySQL source](/sql/create-source/mysql).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -1471,7 +1149,6 @@ to Materialize using the [MySQL source](/sql/create-source/mysql).
 
 - Ensure you have access to your MySQL instance via the [`mysql` client](https://dev.mysql.com/doc/refman/8.0/en/mysql.html),
   or your preferred SQL client.
-
 
 ## A. Configure Amazon RDS
 
@@ -1493,353 +1170,102 @@ enables binary logging (`log_bin`).
 1. Edit the new parameter group to set the configuration parameters to the
    following values:
 
-   
-   
-   
-   
-     
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-     
-     
-       
-       
-     
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
-   
    <table>
    <thead>
    <tr>
    
    <th>MySQL Configuration</th>
-   
-   
+
    <th>Value</th>
-   
-   
+
    <th>Notes</th>
-   
-   
+
    </tr>
    </thead>
    <tbody>
-   
-   
-   
-   
-   
-   
-     
-     
-       
-     
-   
-   
-   
-   
-   
-   
-   
-   
-     
-     
-   
-   
+
    <tr>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>binlog_format</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>ROW</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
    </td>
    
    </tr>
-   
-   
-   
-   
-   
-   
-   
-     
-     
-   
-   
+
    <tr>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>binlog_row_image</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>FULL</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    
    </td>
    
    </tr>
-   
-   
-   
-   
-   
-   
-   
-     
-     
-   
-   
+
    <tr>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>gtid_mode</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>ON</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    In the AWS console, this parameter appears as <code>gtid-mode</code>.
    </td>
    
    </tr>
-   
-   
-   
-   
-   
-   
-   
-     
-     
-   
-   
+
    <tr>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>enforce_gtid_consistency</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>ON</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    
    </td>
    
    </tr>
-   
-   
-   
-   
-   
-   
-   
-     
-     
-   
-   
+
    <tr>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>replica_preserve_commit_order</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    <code>ON</code>
    </td>
-   
-   
-   
-   
-   
-     
-     
-   
-     
-     
-   
+
    <td>
    Only required when connecting Materialize to a read-replica.
    </td>
    
    </tr>
-   
-   
+
    </tbody>
    </table>
-   
-
-
 
 1. [Associate the RDS parameter group to your database](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_WorkingWithDBInstanceParamGroups.html#USER_WorkingWithParamGroups.Associating).
 
@@ -1924,15 +1350,11 @@ user for Materialize with sufficient privileges to manage replication.
    FLUSH PRIVILEGES;
    ```
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your RDS instance is publicly accessible, **you can
 > skip this step**. For production scenarios, we recommend configuring one of the
 > network security options below.
-
-
-
 
 **Cloud:**
 
@@ -1949,8 +1371,6 @@ to connect:
 
 - **Use an SSH tunnel:** If your database is running in a private network, you
     can use an SSH tunnel to connect Materialize to the database.
-
-
 
 **Allow Materialize IPs:**
 
@@ -1970,8 +1390,6 @@ to connect:
     - Set **Type** to **MySQL**.
     - Set **Source** to the IP address in CIDR notation.
 
-
-
 **Use AWS PrivateLink:**
 
 [AWS PrivateLink](https://aws.amazon.com/privatelink/) lets you connect
@@ -1984,7 +1402,6 @@ RDS via the network load balancer.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
-
 
 1. Get the IP address of your RDS instance. You'll need this address to register
    your RDS instance as the target for the network load balancer in the next
@@ -2065,8 +1482,6 @@ RDS via the network load balancer.
    make sure that the [health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html)
    are reporting the targets as healthy.
 
-
-
 **Use an SSH tunnel:**
 
 To create an SSH tunnel from Materialize to your database, you launch an
@@ -2077,7 +1492,6 @@ network to allow traffic from the bastion host.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of resources for an SSH tunnel. For more details, see the
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
-
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
    to serve as your SSH bastion host.
@@ -2116,12 +1530,6 @@ network to allow traffic from the bastion host.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -2143,9 +1551,6 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. In the RDS Console, [add an inbound rule to your RDS security group](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/working-with-security-groups.html#adding-security-group-rule)
@@ -2155,8 +1560,6 @@ database.</p>
 
     - Set **Type** to **MySQL**.
     - Set **Source** to the IP address in CIDR notation.
-
-
 
 **Use an SSH tunnel:**
 
@@ -2168,7 +1571,6 @@ network to allow traffic from the bastion host.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of resources for an SSH tunnel. For more details, see the
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
-
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
    to serve as your SSH bastion host.
@@ -2192,14 +1594,6 @@ network to allow traffic from the bastion host.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -2208,7 +1602,6 @@ network to allow traffic from the bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 In Materialize, a [cluster](/concepts/clusters/) is an isolated
 environment, similar to a virtual warehouse in Snowflake. When you create a
@@ -2236,15 +1629,10 @@ your MySQL database.
     the snapshot is finished, you can readjust the size of the cluster to fit
     the volume of changes being replicated from your upstream MySQL database.
 
-
 ### 2. Create a connection
-
-
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -2276,8 +1664,6 @@ your networking configuration.
     - Replace `<host>` with your MySQL endpoint.
 
     AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql) command for details.
-
-
 
 **Use AWS PrivateLink (Cloud-only):**
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -2393,8 +1779,6 @@ details for Materialize to use:
 
     AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql) command for details.
 
-
-
 **Use an SSH tunnel:**
 1. In the [SQL Shell](/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CONNECTION`](/sql/create-connection/#ssh-tunnel)
@@ -2456,11 +1840,6 @@ details for Materialize to use:
   AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql)
   command for details.
 
-
-
-
-
-
 ### 3. Start ingesting data
 
 Once you have created the connection, you can use the connection in the
@@ -2473,17 +1852,14 @@ CREATE SOURCE mz_source
 
 ```
 
-
 - By default, the source will be created in the active cluster; to use a different cluster, use the `IN CLUSTER` clause.
 
 - To ingest data from specific schemas or tables, use the `FOR SCHEMAS (<schema1>,<schema2>)` or `FOR TABLES (<table1>, <table2>)` options instead of `FOR ALL TABLES`.
 
 - To handle [unsupported data types](#supported-types), use the `TEXT COLUMNS` or `EXCLUDE COLUMNS` options.
 
-
 After source creation, refer to [schema changes
 considerations](#schema-changes) for information on handling upstream schema changes.
-
 
 [//]: # "TODO(morsapaes) Replace these Step 6. and 7. with guidance using the
 new progress metrics in mz_source_statistics + console monitoring, when
@@ -2562,7 +1938,6 @@ status of the snapshotting process.
     take between a few minutes to several hours, depending on the size of your
     dataset and the size of the cluster the source is running in.
 
-
 ### 5. Right-size the cluster
 
 After the snapshotting phase, Materialize starts ingesting change events from
@@ -2595,7 +1970,6 @@ accordingly.
     (1 row)
     ```
 
-
 ## D. Explore your data
 
 With Materialize ingesting your MySQL data into durable storage, you can
@@ -2614,7 +1988,6 @@ new data arrives, and serving results efficiently.
 
 - Check out the [tools and integrations](/integrations/) supported by
   Materialize.
-
 
 ## Considerations
 
@@ -2645,7 +2018,6 @@ when the source was created.</p>
 </li>
 </ul>
 
-
 #### Incompatible schema changes
 
 <p>All other schema changes to upstream tables will set the corresponding
@@ -2655,7 +2027,6 @@ subsource.</p>
 and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
 subsource back to the source. When you add the subsource, it will have the
 updated schema from the corresponding upstream table.</p>
-
 
 ### Supported types
 
@@ -2712,7 +2083,6 @@ option to exclude any columns that contain unsupported data types.</p>
 </li>
 </ul>
 
-
 ### Truncation
 
 <p>Avoid truncating upstream tables that are being replicated into Materialize.
@@ -2733,18 +2103,15 @@ the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
 
-
 ---
 
 ## Ingest data from Azure DB
-
 
 This page shows you how to stream data from [Azure DB for MySQL](https://azure.microsoft.com/en-us/products/MySQL)
 to Materialize using the [MySQL source](/sql/create-source/mysql/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -2755,7 +2122,6 @@ to Materialize using the [MySQL source](/sql/create-source/mysql/).
 - Ensure you have access to your MySQL instance via the [`mysql` client](https://dev.mysql.com/doc/refman/8.0/en/mysql.html),
   or your preferred SQL client.
 
-
 ## A. Configure Azure DB
 
 ### 1. Enable GTID-based binlog replication
@@ -2763,37 +2129,9 @@ to Materialize using the [MySQL source](/sql/create-source/mysql/).
 > **Note:** GTID-based replication is supported for Azure DB for MySQL [flexible server](https://learn.microsoft.com/en-us/azure/mysql/flexible-server/overview-single).
 > It is **not supported** for single server databases.
 
-
 Before creating a source in Materialize, you **must** configure Azure DB for
 MySQL for GTID-based binlog replication. Ensure the upstream MySQL database has
 been configured for GTID-based binlog replication:
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 <table>
 <thead>
@@ -2801,62 +2139,23 @@ been configured for GTID-based binlog replication:
 
 <th>MySQL Configuration</th>
 
-
 <th>Value</th>
 
-
 <th>Notes</th>
-
 
 </tr>
 </thead>
 <tbody>
 
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>log_bin</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -2864,52 +2163,15 @@ been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>binlog_format</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ROW</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
@@ -2917,52 +2179,15 @@ been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>binlog_row_image</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>FULL</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -2970,52 +2195,15 @@ been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>gtid_mode</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -3023,52 +2211,15 @@ been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>enforce_gtid_consistency</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -3076,52 +2227,15 @@ been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>replica_preserve_commit_order</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 Only required when connecting Materialize to a read-replica.
@@ -3129,11 +2243,8 @@ Only required when connecting Materialize to a read-replica.
 
 </tr>
 
-
 </tbody>
 </table>
-
-
 
 For guidance on enabling GTID-based binlog replication in Azure DB, see the
 [Azure documentation](https://learn.microsoft.com/en-us/azure/mysql/flexible-server/how-to-data-in-replication?tabs=shell%2Ccommand-line#configure-the-source-mysql-server).
@@ -3172,15 +2283,11 @@ user for Materialize with sufficient privileges to manage replication.
    FLUSH PRIVILEGES;
    ```
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your Azure DB instance is publicly accessible, **you
 > can skip this step**. For production scenarios, we recommend configuring one of
 > the network security options below.
-
-
-
 
 **Cloud:**
 
@@ -3196,8 +2303,6 @@ to connect:
 
 Select the option that works best for you.
 
-
-
 **Allow Materialize IPs:**
 
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -3210,8 +2315,6 @@ Select the option that works best for you.
 
 1. Update your [Azure DB firewall rules](https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure?view=azuresql)
    to allow traffic from each IP address from the previous step.
-
-
 
 **Use an SSH tunnel:**
 
@@ -3246,12 +2349,6 @@ to serve as your SSH bastion host.
 1. Update your [Azure DB firewall rules](https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure?view=azuresql)
    to allow traffic from the SSH bastion host.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -3273,15 +2370,10 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. Update your [Azure DB firewall rules](https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure?view=azuresql)
    to allow traffic from Materialize IPs.
-
-
 
 **Use an SSH tunnel:**
 
@@ -3305,14 +2397,6 @@ to serve as your SSH bastion host.
 1. Update your [Azure DB firewall rules](https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure?view=azuresql)
    to allow traffic from the SSH bastion host.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -3321,7 +2405,6 @@ to serve as your SSH bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 In Materialize, a [cluster](/concepts/clusters/) is an isolated
 environment, similar to a virtual warehouse in Snowflake. When you create a
@@ -3349,13 +2432,10 @@ your MySQL database.
     the snapshot is finished, you can readjust the size of the cluster to fit
     the volume of changes being replicated from your upstream MySQL database.
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -3387,8 +2467,6 @@ your networking configuration.
     - Replace `<host>` with your MySQL endpoint.
 
     AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql) command for details.
-
-
 
 **Use an SSH tunnel:**
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -3451,10 +2529,6 @@ your networking configuration.
   AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql)
   command for details.
 
-
-
-
-
 ### 3. Start ingesting data
 
 Once you have created the connection, you can use the connection in the
@@ -3467,17 +2541,14 @@ CREATE SOURCE mz_source
 
 ```
 
-
 - By default, the source will be created in the active cluster; to use a different cluster, use the `IN CLUSTER` clause.
 
 - To ingest data from specific schemas or tables, use the `FOR SCHEMAS (<schema1>,<schema2>)` or `FOR TABLES (<table1>, <table2>)` options instead of `FOR ALL TABLES`.
 
 - To handle [unsupported data types](#supported-types), use the `TEXT COLUMNS` or `EXCLUDE COLUMNS` options.
 
-
 After source creation, refer to [schema changes
 considerations](#schema-changes) for information on handling upstream schema changes.
-
 
 ### 4. Monitor the ingestion status
 
@@ -3552,7 +2623,6 @@ status of the snapshotting process.
     take between a few minutes to several hours, depending on the size of your
     dataset and the size of the cluster the source is running in.
 
-
 ### 5. Right-size the cluster
 
 After the snapshotting phase, Materialize starts ingesting change events from
@@ -3585,7 +2655,6 @@ accordingly.
     (1 row)
     ```
 
-
 ## D. Explore your data
 
 With Materialize ingesting your MySQL data into durable storage, you can
@@ -3604,7 +2673,6 @@ new data arrives, and serving results efficiently.
 
 - Check out the [tools and integrations](/integrations/) supported by
   Materialize.
-
 
 ## Considerations
 
@@ -3635,7 +2703,6 @@ when the source was created.</p>
 </li>
 </ul>
 
-
 #### Incompatible schema changes
 
 <p>All other schema changes to upstream tables will set the corresponding
@@ -3645,7 +2712,6 @@ subsource.</p>
 and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
 subsource back to the source. When you add the subsource, it will have the
 updated schema from the corresponding upstream table.</p>
-
 
 ### Supported types
 
@@ -3702,7 +2768,6 @@ option to exclude any columns that contain unsupported data types.</p>
 </li>
 </ul>
 
-
 ### Truncation
 
 <p>Avoid truncating upstream tables that are being replicated into Materialize.
@@ -3723,18 +2788,15 @@ the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
 
-
 ---
 
 ## Ingest data from Google Cloud SQL
-
 
 This page shows you how to stream data from [Google Cloud SQL for MySQL](https://cloud.google.com/sql/MySQL)
 to Materialize using the[MySQL source](/sql/create-source/mysql/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -3745,7 +2807,6 @@ to Materialize using the[MySQL source](/sql/create-source/mysql/).
 - Ensure you have access to your MySQL instance via the [`mysql` client](https://dev.mysql.com/doc/refman/8.0/en/mysql.html),
   or your preferred SQL client.
 
-
 ## A. Configure Google Cloud SQL
 
 ### 1. Enable GTID-based binlog replication
@@ -3754,95 +2815,29 @@ Before creating a source in Materialize, you **must** configure Google Cloud SQL
 for MySQL for GTID-based binlog replication. Ensure the upstream MySQL database
 has been configured for GTID-based binlog replication:
 
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <table>
 <thead>
 <tr>
 
 <th>MySQL Configuration</th>
 
-
 <th>Value</th>
 
-
 <th>Notes</th>
-
 
 </tr>
 </thead>
 <tbody>
 
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>log_bin</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -3850,52 +2845,15 @@ has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>binlog_format</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ROW</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
@@ -3903,52 +2861,15 @@ has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>binlog_row_image</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>FULL</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -3956,52 +2877,15 @@ has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>gtid_mode</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -4009,52 +2893,15 @@ has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>enforce_gtid_consistency</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -4062,52 +2909,15 @@ has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>replica_preserve_commit_order</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 Only required when connecting Materialize to a read-replica.
@@ -4115,11 +2925,8 @@ Only required when connecting Materialize to a read-replica.
 
 </tr>
 
-
 </tbody>
 </table>
-
-
 
 For guidance on enabling GTID-based binlog replication in Cloud SQL, see the [Cloud SQL documentation](https://cloud.google.com/sql/docs/mysql/replication).
 
@@ -4157,15 +2964,11 @@ user for Materialize with sufficient privileges to manage replication.
    FLUSH PRIVILEGES;
    ```
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your Google Cloud SQL instance is publicly
 > accessible, **you can skip this step**. For production scenarios, we recommend
 > configuring one of the network security options below.
-
-
-
 
 **Cloud:**
 
@@ -4181,8 +2984,6 @@ to connect:
 
 Select the option that works best for you.
 
-
-
 **Allow Materialize IPs:**
 
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -4195,8 +2996,6 @@ Select the option that works best for you.
 
 1. Update your Google Cloud SQL firewall rules to allow traffic from each IP
    address from the previous step.
-
-
 
 **Use an SSH tunnel:**
 
@@ -4231,12 +3030,6 @@ network to allow traffic from the bastion host.
 1. Update your Google Cloud SQL firewall rules to allow traffic from the SSH
 bastion host.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -4258,14 +3051,9 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. Update your Google Cloud SQL to allow traffic from Materialize IPs.
-
-
 
 **Use an SSH tunnel:**
 
@@ -4289,14 +3077,6 @@ network to allow traffic from the bastion host.
 1. Update your Google Cloud SQL firewall rules to allow traffic from the SSH
 bastion host.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -4305,7 +3085,6 @@ bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 In Materialize, a [cluster](/concepts/clusters/) is an isolated
 environment, similar to a virtual warehouse in Snowflake. When you create a
@@ -4333,14 +3112,10 @@ your MySQL database.
     the snapshot is finished, you can readjust the size of the cluster to fit
     the volume of changes being replicated from your upstream MySQL database.
 
-
 ### 2. Create a connection
-
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -4372,8 +3147,6 @@ your networking configuration.
     - Replace `<host>` with your MySQL endpoint.
 
     AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql) command for details.
-
-
 
 **Use an SSH tunnel:**
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -4436,10 +3209,6 @@ your networking configuration.
   AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql)
   command for details.
 
-
-
-
-
 ### 3. Start ingesting data
 
 Once you have created the connection, you can use the connection in the
@@ -4452,17 +3221,14 @@ CREATE SOURCE mz_source
 
 ```
 
-
 - By default, the source will be created in the active cluster; to use a different cluster, use the `IN CLUSTER` clause.
 
 - To ingest data from specific schemas or tables, use the `FOR SCHEMAS (<schema1>,<schema2>)` or `FOR TABLES (<table1>, <table2>)` options instead of `FOR ALL TABLES`.
 
 - To handle [unsupported data types](#supported-types), use the `TEXT COLUMNS` or `EXCLUDE COLUMNS` options.
 
-
 After source creation, refer to [schema changes
 considerations](#schema-changes) for information on handling upstream schema changes.
-
 
 ### 4. Monitor the ingestion status
 
@@ -4537,7 +3303,6 @@ status of the snapshotting process.
     take between a few minutes to several hours, depending on the size of your
     dataset and the size of the cluster the source is running in.
 
-
 ### 5. Right-size the cluster
 
 After the snapshotting phase, Materialize starts ingesting change events from
@@ -4570,7 +3335,6 @@ accordingly.
     (1 row)
     ```
 
-
 ## D. Explore your data
 
 With Materialize ingesting your MySQL data into durable storage, you can
@@ -4589,7 +3353,6 @@ new data arrives, and serving results efficiently.
 
 - Check out the [tools and integrations](/integrations/) supported by
   Materialize.
-
 
 ## Considerations
 
@@ -4620,7 +3383,6 @@ when the source was created.</p>
 </li>
 </ul>
 
-
 #### Incompatible schema changes
 
 <p>All other schema changes to upstream tables will set the corresponding
@@ -4630,7 +3392,6 @@ subsource.</p>
 and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
 subsource back to the source. When you add the subsource, it will have the
 updated schema from the corresponding upstream table.</p>
-
 
 ### Supported types
 
@@ -4687,7 +3448,6 @@ option to exclude any columns that contain unsupported data types.</p>
 </li>
 </ul>
 
-
 ### Truncation
 
 <p>Avoid truncating upstream tables that are being replicated into Materialize.
@@ -4708,18 +3468,15 @@ the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
 
-
 ---
 
 ## Ingest data from self-hosted MySQL
-
 
 This page shows you how to stream data from a self-hosted MySQL database to
 Materialize using the [MySQL source](/sql/create-source/mysql/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -4730,7 +3487,6 @@ Materialize using the [MySQL source](/sql/create-source/mysql/).
 - Ensure you have access to your MySQL instance via the [`mysql` client](https://dev.mysql.com/doc/refman/8.0/en/mysql.html),
   or your preferred SQL client.
 
-
 ## A. Configure MySQL
 
 ### 1. Enable GTID-based binlog replication
@@ -4739,95 +3495,29 @@ Before creating a source in Materialize, you **must** configure your MySQL
 database for GTID-based binlog replication. Ensure the upstream MySQL database
 has been configured for GTID-based binlog replication:
 
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <table>
 <thead>
 <tr>
 
 <th>MySQL Configuration</th>
 
-
 <th>Value</th>
 
-
 <th>Notes</th>
-
 
 </tr>
 </thead>
 <tbody>
 
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>log_bin</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -4835,52 +3525,15 @@ has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>binlog_format</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ROW</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
@@ -4888,52 +3541,15 @@ has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>binlog_row_image</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>FULL</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -4941,52 +3557,15 @@ has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>gtid_mode</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -4994,52 +3573,15 @@ has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>enforce_gtid_consistency</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -5047,52 +3589,15 @@ has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>replica_preserve_commit_order</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 Only required when connecting Materialize to a read-replica.
@@ -5100,11 +3605,8 @@ Only required when connecting Materialize to a read-replica.
 
 </tr>
 
-
 </tbody>
 </table>
-
-
 
 For guidance on enabling GTID-based binlog replication, see the
 [MySQL documentation](https://dev.mysql.com/blog-archive/enabling-gtids-without-downtime-in-mysql-5-7-6/).
@@ -5143,15 +3645,11 @@ user for Materialize with sufficient privileges to manage replication.
    FLUSH PRIVILEGES;
    ```
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your MySQL instance is publicly accessible, **you can
 > skip this step**. For production scenarios, we recommend configuring one of the
 > network security options below.
-
-
-
 
 **Cloud:**
 
@@ -5167,8 +3665,6 @@ to connect:
 
 Select the option that works best for you.
 
-
-
 **Allow Materialize IPs:**
 
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -5181,8 +3677,6 @@ Select the option that works best for you.
 
 1. Update your database firewall rules to allow traffic from each IP address
    from the previous step.
-
-
 
 **Use an SSH tunnel:**
 
@@ -5216,12 +3710,6 @@ traffic from the bastion host.
 1. Update your database firewall rules to allow traffic from the SSH bastion
    host.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -5243,14 +3731,9 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. Update your database firewall rules to allow traffic from Materialize IPs.
-
-
 
 **Use an SSH tunnel:**
 
@@ -5273,14 +3756,6 @@ traffic from the bastion host.
 1. Update your database firewall rules to allow traffic from the SSH bastion
    host.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -5289,7 +3764,6 @@ traffic from the bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 In Materialize, a [cluster](/concepts/clusters/) is an isolated
 environment, similar to a virtual warehouse in Snowflake. When you create a
@@ -5317,13 +3791,10 @@ your MySQL database.
     the snapshot is finished, you can readjust the size of the cluster to fit
     the volume of changes being replicated from your upstream MySQL database.
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -5355,8 +3826,6 @@ your networking configuration.
     - Replace `<host>` with your MySQL endpoint.
 
     AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql) command for details.
-
-
 
 **Use an SSH tunnel:**
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -5419,10 +3888,6 @@ your networking configuration.
   AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql)
   command for details.
 
-
-
-
-
 ### 3. Start ingesting data
 
 Once you have created the connection, you can use the connection in the
@@ -5435,17 +3900,14 @@ CREATE SOURCE mz_source
 
 ```
 
-
 - By default, the source will be created in the active cluster; to use a different cluster, use the `IN CLUSTER` clause.
 
 - To ingest data from specific schemas or tables, use the `FOR SCHEMAS (<schema1>,<schema2>)` or `FOR TABLES (<table1>, <table2>)` options instead of `FOR ALL TABLES`.
 
 - To handle [unsupported data types](#supported-types), use the `TEXT COLUMNS` or `EXCLUDE COLUMNS` options.
 
-
 After source creation, refer to [schema changes
 considerations](#schema-changes) for information on handling upstream schema changes.
-
 
 ### 4. Monitor the ingestion status
 
@@ -5520,7 +3982,6 @@ status of the snapshotting process.
     take between a few minutes to several hours, depending on the size of your
     dataset and the size of the cluster the source is running in.
 
-
 ### 5. Right-size the cluster
 
 After the snapshotting phase, Materialize starts ingesting change events from
@@ -5553,7 +4014,6 @@ accordingly.
     (1 row)
     ```
 
-
 ## D. Explore your data
 
 With Materialize ingesting your MySQL data into durable storage, you can
@@ -5572,7 +4032,6 @@ new data arrives, and serving results efficiently.
 
 - Check out the [tools and integrations](/integrations/) supported by
   Materialize.
-
 
 ## Considerations
 
@@ -5603,7 +4062,6 @@ when the source was created.</p>
 </li>
 </ul>
 
-
 #### Incompatible schema changes
 
 <p>All other schema changes to upstream tables will set the corresponding
@@ -5613,7 +4071,6 @@ subsource.</p>
 and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
 subsource back to the source. When you add the subsource, it will have the
 updated schema from the corresponding upstream table.</p>
-
 
 ### Supported types
 
@@ -5670,7 +4127,6 @@ option to exclude any columns that contain unsupported data types.</p>
 </li>
 </ul>
 
-
 ### Truncation
 
 <p>Avoid truncating upstream tables that are being replicated into Materialize.
@@ -5691,21 +4147,17 @@ the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
 
-
 ---
 
 ## MySQL CDC using Kafka and Debezium
-
 
 > **Warning:** You can use [Debezium](https://debezium.io/) to propagate Change
 > Data Capture(CDC) data to Materialize from a MySQL database, but
 > we **strongly recommend** using the native [MySQL](/sql/create-source/mysql/)
 > source instead.
 
-
 For help getting started with your own data, you can schedule a [free guided
 trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 Change Data Capture (CDC) allows you to track and propagate changes in a MySQL
 database to downstream consumers based on its binary log (`binlog`). In this
@@ -5763,8 +4215,6 @@ connector by adding it to Kafka Connect.
 > **Warning:** If you deploy the MySQL Debezium connector in [Confluent Cloud](https://docs.confluent.io/cloud/current/connectors/cc-mysql-source-cdc-debezium.html),
 > you **must** override the default value of `After-state only` to `false`.
 
-
-
 **Debezium 1.5+:**
 
 1. Create a connector configuration file and save it as `register-mysql.json`:
@@ -5792,7 +4242,6 @@ connector by adding it to Kafka Connect.
 
     You can read more about each configuration property in the
     [Debezium documentation](https://debezium.io/documentation/reference/connectors/mysql.html#mysql-connector-properties).
-
 
 **Debezium 2.0+:**
 
@@ -5845,9 +4294,6 @@ connector by adding it to Kafka Connect.
     By default, the connector writes events for each table to a Kafka topic
     named `serverName.databaseName.tableName`.
 
-
-
-
 1. Start the Debezium MySQL connector using the configuration file:
 
     ```bash
@@ -5881,7 +4327,6 @@ connector by adding it to Kafka Connect.
   <strong class="gutter">NOTE:</strong> Currently, Materialize only supports Avro-encoded Debezium records. If you're interested in JSON support, please reach out in the community Slack or submit a <a href="https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests">feature request</a>.
 </div>
 
-
 Debezium emits change events using an envelope that contains detailed
 information about upstream database operations, like the `before` and `after`
 values for each record. To create a source that interprets the
@@ -5911,7 +4356,6 @@ CREATE VIEW cnt_table1 AS
     GROUP BY field1;
 ```
 
-
 ### E. Create an index on the view
 
 In Materialize, [indexes](/concepts/indexes) on views compute and, as new data
@@ -5931,12 +4375,9 @@ CREATE INDEX idx_cnt_table1_field1 ON cnt_table1(field1);
 For best practices on when to index a view, see
 [Indexes](/concepts/indexes/) and [Views](/concepts/views/).
 
-
-
 ---
 
 ## Troubleshooting
-
 
 This section contains troubleshooting guides for specific errors you may
 encounter when using MySQL sources in Materialize. These guides focus on
@@ -5952,11 +4393,9 @@ the main [Troubleshooting](/ingest-data/troubleshooting/) guide.
 |-------|-------------|
 | [Received out of order GTIDs](/ingest-data/mysql/received-out-of-order-gtids/) | Resolve errors when Materialize observes GTID events from MySQL in an order it cannot safely reconcile |
 
-
 ---
 
 ## Troubleshooting: Received out of order GTIDs
-
 
 This guide helps you troubleshoot and resolve the "received out of order GTIDs"
 error that can occur with MySQL sources in Materialize.
@@ -6049,7 +4488,6 @@ Both should return `ON` on every node in the replication chain.
 
 > **Warning:** This will cause Materialize to take a new snapshot of your MySQL tables, which
 > may take time and temporarily increase load on your MySQL server.
-
 
 Once Materialize reports this error, the data is considered potentially
 corrupted. You must **drop and recreate the source**. Dropping the source will

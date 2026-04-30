@@ -18,7 +18,6 @@ Syntax element | Description
 > **Note:** Since indexes do not have dependent objects, `DROP INDEX`, `DROP INDEX
 > RESTRICT`, and `DROP INDEX CASCADE` are equivalent.
 
-
 ## Privileges
 
 To execute the `DROP INDEX` statement, you need:
@@ -33,7 +32,6 @@ To execute the `DROP INDEX` statement, you need:
 > **Tip:** In the **Materialize Console**, you can view existing indexes in the [**Database
 > object explorer**](/console/data/). Alternatively, you can use the
 > [`SHOW INDEXES`](/sql/show-indexes) command.
-
 
 Using the  `DROP INDEX` commands, the following example drops an index named `q01_geo_idx`.
 

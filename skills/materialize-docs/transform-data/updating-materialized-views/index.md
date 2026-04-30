@@ -2,8 +2,6 @@
 
 Strategies for updating materialized views in production.
 
-
-
 As your application and workload evolves, you might need to update materialized view definitions. Materialize offers multiple strategies to update your materialized views, each with different tradeoffs for complexity, resource usage, and impact on freshness.
 
 ## Choosing an update strategy
@@ -45,13 +43,9 @@ This strategy is ideal when:
 
 For detailed instructions, see the [Replace materialized view guide](replace-materialized-view/).
 
-
-
 ---
 
 ## Replace Materialized Views
-
-
 
 > **Public Preview:** This feature is in public preview.
 
@@ -82,7 +76,6 @@ Before using this guide, you should be familiar with:
 This guide uses a [three-tier cluster architecture](/manage/operational-guidelines/#three-tier-architecture),
 with separate clusters for ingestion, computation, and serving.
 
-
 **cc clusters:**
 Create separate clusters for ingestion, computation, and serving.
 ```mzsql
@@ -108,7 +101,6 @@ CREATE CLUSTER compute_cluster SIZE = 'M.1-small';
 -- Create a serving cluster
 CREATE CLUSTER serving_cluster SIZE = 'M.1-small';
 ```
-
 
 ### Step 1. Set up a data source
 
@@ -319,12 +311,9 @@ view and drops the replacement view at the same time.</p>
 </li>
 </ul>
 
-
 > **Warning:** When applying the replacement, dependent objects must process the diff
 > emitted by the operation. Depending on the size of the changes, this may
 > cause temporary CPU and memory spikes.
-
-
 
 ```mzsql
 -- Apply the replacement
@@ -427,7 +416,6 @@ of your original and replacement materialized views.</p>
 original materialized view. If the rate of advancement suggests that catch
 up will take an extended period of time, it is recommended to drop the
 replacement view.</p>
-
 
 ## Related pages
 

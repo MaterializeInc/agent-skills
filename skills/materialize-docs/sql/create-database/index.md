@@ -4,8 +4,6 @@ Use `CREATE DATABASE` to create a new database.
 
 ## Syntax
 
-
-
 ```mzsql
 CREATE DATABASE [IF NOT EXISTS] <database_name>;
 
@@ -15,7 +13,6 @@ CREATE DATABASE [IF NOT EXISTS] <database_name>;
 | --- | --- |
 | `IF NOT EXISTS` | If specified, do not generate an error if a database of the same name already exists. If not specified, throw an error if a database of the same name already exists.  |
 | `<database_name>` | A name for the database.  |
-
 
 ## Details
 

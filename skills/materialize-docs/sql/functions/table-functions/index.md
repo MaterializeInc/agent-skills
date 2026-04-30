@@ -58,7 +58,6 @@ The query returns 5 rows, one row for each list item:
 > results (i.e., query projection). In practice, you generally would omit
 > including the original list to minimize the return data size.
 
-
 ## `WITH ORDINALITY`
 
 When a table function is used in the `FROM` clause, you can add `WITH
@@ -99,7 +98,6 @@ FROM
 You can also name fewer columns in the column alias list than the number of
 columns in the output of the table function (plus `WITH ORDINALITY`, if
 present), in which case the extra columns retain their original names.
-
 
 ## `ROWS FROM`
 
@@ -208,7 +206,6 @@ The results contain the ordinality value in the `o` column:
   6 |  9 | 2
 (2 rows)
 ```
-
 
 ## Table functions in the `SELECT` clause
 

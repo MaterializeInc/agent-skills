@@ -7,10 +7,7 @@ cluster](/sql/create-cluster/#unmanaged-clusters).
 > **Tip:** When getting started with Materialize, we recommend starting with managed
 > clusters.
 
-
 ## Syntax
-
-
 
 ```mzsql
 CREATE CLUSTER REPLICA <cluster_name>.<replica_name> (
@@ -25,7 +22,6 @@ CREATE CLUSTER REPLICA <cluster_name>.<replica_name> (
 | `<replica_name>` | A name for this replica.  |
 | `SIZE` | The size of the resource allocations for the cluster.  For valid size values, see [Available sizes](#available-sizes).  |
 
-
 ## Details
 
 ### Available sizes
@@ -33,7 +29,6 @@ CREATE CLUSTER REPLICA <cluster_name>.<replica_name> (
 The `SIZE` option for replicas is identical to the [`SIZE` option for
 clusters](/sql/create-cluster/#available-sizes) option, except that the size applies only
 to the new replica.
-
 
 **cc Clusters:**
 
@@ -64,7 +59,6 @@ query the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
 > time. You should not rely on them for any kind of capacity planning.
 
-
 Clusters of larger sizes can process data faster and handle larger data volumes.
 
 **M.1 Clusters:**
@@ -75,14 +69,10 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 > most workloads. We recommend using cc sizes unless your workload specifically
 > requires the additional disk capacity that M.1 sizes provide.
 
-
 > **Note:** The values set forth in the table are solely for illustrative purposes.
 > Materialize reserves the right to change the capacity at any time. As such, you
 > acknowledge and agree that those values in this table may change at any time,
 > and you should not rely on these values for any capacity planning.
-
-
-
 
 | Cluster size | Compute Credits/Hour | Total Capacity | Notes |
 | --- | --- | --- | --- |
@@ -102,10 +92,6 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 | <strong>M.1-64xlarge</strong> | 768 | 26320 GiB | Available upon request |
 | <strong>M.1-128xlarge</strong> | 1536 | 52640 GiB | Available upon request |
 
-
-
-
-
 See also:
 
 - [cc to M.1 size mapping](/sql/m1-cc-mapping/).
@@ -115,7 +101,6 @@ See also:
 
 - [Blog:Scaling Beyond Memory: How Materialize Uses Swap for Larger
   Workloads](https://materialize.com/blog/scaling-beyond-memory/).
-
 
 ### Homogeneous vs. heterogeneous hardware provisioning
 

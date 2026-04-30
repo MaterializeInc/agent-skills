@@ -11,7 +11,6 @@ To see the current value of a configuration parameter, use [`SHOW`](../show).
 RESET <parameter_name>;
 ```
 
-
 Syntax element | Description
 ---------------|------------
 `<parameter_name>` | The configuration parameter's name.

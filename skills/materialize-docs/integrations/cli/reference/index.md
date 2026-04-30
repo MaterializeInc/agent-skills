@@ -2,14 +2,9 @@
 
 Reference section for `mz`, Materialize command-line interface (CLI).
 
-
-
-
-
 ---
 
 ## mz app-password
-
 
 The `mz app-password` command manages app passwords for your user account.
 
@@ -77,14 +72,11 @@ Argument           | Environment variables     | Description
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
 
-
 [authentication profile]: ../../configuration/#authentication-profiles
-
 
 ---
 
 ## mz config
-
 
 The `mz config` command manages [global configuration parameters] for `mz`.
 
@@ -200,15 +192,12 @@ Argument           | Environment variables     | Description
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
 
-
 [global configuration parameters]: ../../configuration/#global-parameters
 [Global parameters]: ../../configuration/#global-parameters
-
 
 ---
 
 ## mz profile
-
 
 The `mz profile` command manages [authentication profiles] for `mz`.
 
@@ -229,7 +218,6 @@ Argument                    | Environment variables | Description
 `--browser`, `‑‑no-browser` |                       | If set, open a web browser to authenticate. Otherwise, prompt for a username and password on the terminal.
 `--region=<REGION>`         |                       | Set the default region for the profile.
 `--profile=<PROFILE>`       | `MZ_PROFILE`          | Use the specified [authentication profile].
-
 
 ### Examples
 
@@ -387,14 +375,11 @@ Argument           | Environment variables     | Description
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
 
-
 [authentication profiles]: ../../configuration/#authentication-profiles
-
 
 ---
 
 ## mz region
-
 
 The `mz region` command manages regions in your organization.
 
@@ -407,7 +392,6 @@ mz region enable [options...]
 ```
 
 > **Warning:** You cannot disable a region with `mz`. To disable a region, contact support.
-
 
 ### Arguments
 
@@ -441,7 +425,6 @@ Argument              | Environment variables | Description
 ----------------------|-----------------------|------------
 `--profile=<PROFILE>` | `MZ_PROFILE`          | Use the specified [authentication profile].
 
-
 ### Examples
 
 ```shell
@@ -469,7 +452,6 @@ Argument              | Environment variables | Description
 `--region=<REGION>`   | `MZ_REGION`           | Use the specified region.
 `--profile=<PROFILE>` | `MZ_PROFILE`          | Use the specified [authentication profile].
 
-
 ### Examples
 
 Show the status of the `aws/us-east-1` region:
@@ -493,14 +475,11 @@ Argument           | Environment variables     | Description
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
 
-
 [authentication profile]: ../../configuration/#authentication-profiles
-
 
 ---
 
 ## mz secret
-
 
 The `mz secret` command manages secrets in a region.
 
@@ -521,7 +500,6 @@ new value, if it exists.
 > **Note:** Using this command is preferred to executing [`CREATE SECRET`](/sql/create-secret) directly, as it avoids leaving the
 > secret's value in your shell history.
 
-
 ### Arguments
 
 Flag                    | Environment variables | Description
@@ -531,7 +509,6 @@ Flag                    | Environment variables | Description
 `--schema=<SCHEMA>`     |                       | The schema in which to create the secret.<br>Default: the first schema in the user's default `search_path`.
 `--force`               |                       | Overwrite the existing value of the secret, if it exists.
 `--profile=<PROFILE>`   | `MZ_PROFILE`          | Use the specified [authentication profile].
-
 
 ## Global arguments
 
@@ -543,14 +520,11 @@ Argument           | Environment variables     | Description
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
 
-
 [authentication profile]: ../../configuration/#authentication-profiles
-
 
 ---
 
 ## mz sql
-
 
 The `mz sql` command executes SQL statements in a region.
 
@@ -589,14 +563,11 @@ Argument           | Environment variables     | Description
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
 
-
 [authentication profile]: ../../configuration/#authentication-profiles
-
 
 ---
 
 ## mz user
-
 
 The `mz user` command manages users in your organization.
 
@@ -683,7 +654,6 @@ Argument           | Environment variables     | Description
 `‑‑no‑color`       | `NO_COLOR`, `MZ_NO_COLOR` | Disable color output.
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
-
 
 [authentication profile]: ../../configuration/#authentication-profiles
 

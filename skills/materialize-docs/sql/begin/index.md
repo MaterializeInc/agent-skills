@@ -70,7 +70,6 @@ In Materialize, read-only transactions can be either:
 > - The transaction will additionally hold back normal compaction of the objects,
 >   potentially increasing memory usage for very long running transactions.
 
-
 #### SELECT-only transactions
 
 A **SELECT-only** transaction only contains [`SELECT`](/sql/select) statement.
@@ -183,8 +182,6 @@ encounters an <strong>internal ERROR</strong> and rolls back:</p>
 </code></pre>
 
 ### DDL-only transactions
-
-
 
 In Materialize, a DDL-only transaction block is a transaction that can contain
 multiple [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/) (and optionally,

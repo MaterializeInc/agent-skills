@@ -2,8 +2,6 @@
 
 Monitor the performance of your Self-Managed Materialize region with Datadog and Grafana.
 
-
-
 This section covers monitoring and alerting for Self-Managed Materialize.
 
 ### Monitoring
@@ -17,7 +15,6 @@ To help you get started, the following guides are available:
 
 - [Datadog using Prometheus SQL Exporter](/manage/monitor/self-managed/datadog/)
 
-
 ### Alerting
 
 After setting up a monitoring tool, you can configure alert rules. Alert rules
@@ -25,12 +22,9 @@ send a notification when a metric surpasses a threshold. This will help you
 prevent operational incidents. For alert rules guidelines, see
 [Alerting](/manage/monitor/self-managed/alerting/).
 
-
-
 ---
 
 ## Alerting
-
 
 After setting up a monitoring tool, it is important to configure alert rules. Alert rules send a notification when a metric surpasses a threshold. This will help you prevent operational incidents.
 
@@ -64,11 +58,9 @@ Metric | Warning | Alert | Description
 Latency | Avg > X | Avg > Y | Average latency in the last *15 minutes*. Where X and Y are the expected latencies in milliseconds.
 Credits | Consumption rate increase by X% | Consumption rate increase by Y% | Average credit consumption in the last *60 minutes*.
 
-
 ---
 
 ## Datadog using Prometheus SQL Exporter
-
 
 This guide walks you through the steps required to monitor the performance and
 overall health of your Materialize region using [Datadog](https://www.datadoghq.com/).
@@ -81,9 +73,7 @@ the following additional services:
 * A Prometheus SQL Exporter.
 * A Datadog Agent configured with an [OpenMetrics check](https://docs.datadoghq.com/integrations/openmetrics/).
 
-
 ## Step 1. Set up a Prometheus SQL Exporter
-
 
 To export metrics from Materialize and expose them in a format that Datadog can
 consume, you need to configure and run a Prometheus SQL Exporter. This service
@@ -101,14 +91,11 @@ which has been tried and tested in production environments.
 >    as guidance to bootstrap your monitoring with some key Materialize metrics
 >    and indicators.
 
-
-
 1. In the configuration file, define the connection to your Materialize region
    under `connections` using the credentials provided in the [Materialize Console](/console/).
 
    > **Note:** You must escape the special `@` character in `USER` for a successful
 >    connection. Example: instead of `name@email.com`, use `name%40email.com`.
-
 
    **Filename:** config.yml
    ```yaml
@@ -230,14 +217,11 @@ Before adding a custom query, make sure to consider the following:
 4. The Datadog agent is subject to a limit of 2000 metrics.
 5. Queries can impact cluster performance.
 
-
 ---
 
 ## Grafana using Prometheus
 
-
 > **Warning:** The metrics scraped are unstable and may change across releases.
-
 
 This guide walks you through the steps required to monitor the performance and
 overall health of your Materialize instance using Prometheus and Grafana.
@@ -252,21 +236,15 @@ Ensure you have:
 
 > **Important:** This guide assumes you have administrative access to your Kubernetes cluster and the necessary permissions to install Prometheus.
 
-
 ## 1. Download our Prometheus scrape configurations (`prometheus.yml`)
   Download the Prometheus scrape configurations that we'll use to configure Prometheus to collect metrics from Materialize:
   ```shell
   curl -o prometheus_scrape_configs.yml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/heads/main/doc/user/data/self_managed/monitoring/prometheus.yml
   ```
 
-
-
-
 ## 2. Install Prometheus to your Kubernetes cluster
 
   > **Note:** This guide uses the [prometheus-community](https://github.com/prometheus-community/helm-charts) Helm chart to install Prometheus.
-
-
 
 1. Download the prometheus-community default chart values (`values.yaml`):
    ```bash
@@ -288,7 +266,6 @@ Ensure you have:
 
 1. Install the Grafana helm chart following [this guide](https://grafana.com/docs/grafana/latest/setup-grafana/installation/helm/).
 
-
 2.  Set up port forwarding to access the Grafana UI:
     ```bash
     MZ_POD_GRAFANA=$(kubectl get pods -n monitoring -l app.kubernetes.io/name=grafana -o custom-columns="NAME:.metadata.name" --no-headers)
@@ -296,7 +273,6 @@ Ensure you have:
     ```
 
     > **Warning:** The port forwarding method is for testing purposes only. For production environments, configure an ingress controller to securely expose the Grafana UI.
-
 
 3. Open the Grafana UI on [http://localhost:3000](http://localhost:3000) in a browser.
 

@@ -12,7 +12,6 @@ views](/concepts/views/#materialized-views).
 > **Note:** In practice, you may find that you rarely need to index a source
 > without performing some transformation using a view, etc.
 
-
 In Materialize, you can create indexes on a [source](/concepts/sources/) to
 maintain in-memory up-to-date source data within the cluster you create the
 index. This can help improve [query
@@ -64,7 +63,6 @@ materialized views require no additional computation to keep results up-to-date.
 > the index is created is faster since the results are served from memory rather
 > than from storage.
 
-
 For best practices on using indexes, and understanding when to use indexed views
 vs. materialized views, see [Usage patterns](#usage-patterns).
 
@@ -94,7 +92,6 @@ CREATE INDEX idx_on_my_view IN CLUSTER active_cluster ON my_view (...);
 ### Index usage
 
 > **Important:** Indexes are local to a cluster. Queries in one cluster cannot use the indexes in another, different cluster.
-
 
 Unlike some other databases, Materialize can use an index to serve query results
 even if the query does not specify a `WHERE` condition on the index key. Serving
@@ -181,7 +178,6 @@ CREATE INDEX idx_orders_view_qty on orders_view (quantity);
 The following table shows various queries and whether Materialize performs a
 point lookup or an index scan.
 
-
 | Query | Index Usage |
 | --- | --- |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span><span class="p">;</span> </span></span></code></pre></div> | Index scan. |
@@ -195,7 +191,6 @@ point lookup or an index scan.
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> <span class="k">WHERE</span> <span class="n">round</span><span class="p">(</span><span class="n">quantity</span><span class="p">)</span> <span class="o">=</span> <span class="mf">20</span><span class="p">;</span> </span></span></code></pre></div> | Index scan. |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- Assume quantity is an integer </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> <span class="k">WHERE</span> <span class="n">quantity</span> <span class="o">=</span> <span class="s1">&#39;hello&#39;</span><span class="p">;</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> <span class="k">WHERE</span> <span class="n">quantity</span><span class="o">::</span><span class="nb">TEXT</span> <span class="o">=</span> <span class="s1">&#39;hello&#39;</span><span class="p">;</span> </span></span></code></pre></div> | Index scan, assuming <code>quantity</code> field in <code>orders_view</code> is an integer. In the first query, the quantity is implicitly cast to text. In the second query, the quantity is explicitly cast to text. |
 
-
 Consider that the view has an index on the `quantity` and `price` fields
 instead of an index on the `quantity` field:
 
@@ -203,7 +198,6 @@ instead of an index on the `quantity` field:
 DROP INDEX idx_orders_view_qty;
 CREATE INDEX idx_orders_view_qty_price on orders_view (quantity, price);
 ```
-
 
 | Query | Index Usage |
 | --- | --- |
@@ -214,7 +208,6 @@ CREATE INDEX idx_orders_view_qty_price on orders_view (quantity, price);
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">quantity</span> <span class="o">=</span> <span class="mf">10</span> <span class="k">AND</span> <span class="p">(</span><span class="n">price</span> <span class="o">=</span> <span class="mf">2.50</span> <span class="k">OR</span> <span class="n">price</span> <span class="o">=</span> <span class="mf">3.00</span><span class="p">);</span> </span></span></code></pre></div> | Point lookup. Query uses <code>OR</code> to combine conditions on <strong>same</strong> field and <code>AND</code> to combine conditions on <strong>different</strong> fields. |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">quantity</span> <span class="o">=</span> <span class="mf">10</span> <span class="k">AND</span> <span class="n">price</span> <span class="o">=</span> <span class="mf">2.50</span> <span class="k">AND</span> <span class="n">item</span> <span class="o">=</span> <span class="s1">&#39;cupcake&#39;</span><span class="p">;</span> </span></span></code></pre></div> | Point lookup on the index keys <code>quantity</code> and <code>price</code>, then filter on <code>item</code>. |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">quantity</span> <span class="o">=</span> <span class="mf">10</span> <span class="k">AND</span> <span class="n">price</span> <span class="o">=</span> <span class="mf">2.50</span> <span class="k">OR</span> <span class="n">item</span> <span class="o">=</span> <span class="s1">&#39;cupcake&#39;</span><span class="p">;</span> </span></span></code></pre></div> | Index scan. Query uses <code>OR</code> to combine conditions on <strong>different</strong> fields. |
-
 
 #### Limitations
 
@@ -293,8 +286,6 @@ cluster that maintains the view results:
 - Index the materialized view in the serving cluster(s) to serve the results
 from memory.
 
-
-
 **2-tier architecture:**
 
 ![Image of the 2-tier-architecture](/images/2-tier-architecture.svg)
@@ -314,9 +305,6 @@ results from memory.
 > filters](/transform-data/patterns/temporal-filters/), avoid creating
 > materialized views on a shared cluster used for both compute/transformat
 > operations and serving queries. Use indexed views instead.
-
-
-
 
 **1-tier architecture:**
 
@@ -363,7 +351,6 @@ joins</a>.</p>
 </ul>
 <p>For more information, see <a href="/transform-data/optimization" >Optimization</a>.</p>
 
-
 ### Best practices
 
 <p>Before creating an index, consider the following:</p>
@@ -387,7 +374,6 @@ underlying work is discarded after each query run, take into account the
 expected data access patterns to determine if you need to index or not.</p>
 </li>
 </ul>
-
 
 ## Related pages
 

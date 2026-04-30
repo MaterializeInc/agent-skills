@@ -11,9 +11,7 @@ the following additional services:
 * A Prometheus SQL Exporter.
 * A Datadog Agent configured with an [OpenMetrics check](https://docs.datadoghq.com/integrations/openmetrics/).
 
-
 ## Step 1. Set up a Prometheus SQL Exporter
-
 
 To export metrics from Materialize and expose them in a format that Datadog can
 consume, you need to configure and run a Prometheus SQL Exporter. This service
@@ -31,14 +29,11 @@ which has been tried and tested in production environments.
 >    as guidance to bootstrap your monitoring with some key Materialize metrics
 >    and indicators.
 
-
-
 1. In the configuration file, define the connection to your Materialize region
    under `connections` using the credentials provided in the [Materialize Console](/console/).
 
    > **Note:** You must escape the special `@` character in `USER` for a successful
 >    connection. Example: instead of `name@email.com`, use `name%40email.com`.
-
 
    **Filename:** config.yml
    ```yaml

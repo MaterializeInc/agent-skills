@@ -12,7 +12,6 @@ mz region enable [options...]
 
 > **Warning:** You cannot disable a region with `mz`. To disable a region, contact support.
 
-
 ### Arguments
 
 Argument              | Environment variables | Description
@@ -45,7 +44,6 @@ Argument              | Environment variables | Description
 ----------------------|-----------------------|------------
 `--profile=<PROFILE>` | `MZ_PROFILE`          | Use the specified [authentication profile].
 
-
 ### Examples
 
 ```shell
@@ -73,7 +71,6 @@ Argument              | Environment variables | Description
 `--region=<REGION>`   | `MZ_REGION`           | Use the specified region.
 `--profile=<PROFILE>` | `MZ_PROFILE`          | Use the specified [authentication profile].
 
-
 ### Examples
 
 Show the status of the `aws/us-east-1` region:
@@ -96,6 +93,5 @@ Argument           | Environment variables     | Description
 `‑‑no‑color`       | `NO_COLOR`, `MZ_NO_COLOR` | Disable color output.
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
-
 
 [authentication profile]: ../../configuration/#authentication-profiles

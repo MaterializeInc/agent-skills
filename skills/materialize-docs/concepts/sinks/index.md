@@ -10,7 +10,6 @@ view, a source, or a table.
 
 To create a sink, you can:
 
-
 | Method | External system | Guide(s) or Example(s) |
 | --- | --- | --- |
 | Use <code>COPY TO</code> command | Amazon S3 or S3-compatible storage | <ul> <li><a href="/serve-results/sink/s3/" >Sink to Amazon S3</a></li> </ul>  |
@@ -19,7 +18,6 @@ To create a sink, you can:
 | Use a native connector | Kafka/Redpanda | <ul> <li><a href="/serve-results/sink/kafka/" >Sink to Kafka/Redpanda</a></li> </ul>  |
 | Use a native connector | Apache Iceberg hosted on AWS S3 Tables | <ul> <li><a href="/serve-results/sink/iceberg/" >Sink to Iceberg</a></li> </ul>  |
 | Use <code>SUBSCRIBE</code> | Various | <ul> <li><a href="https://github.com/MaterializeInc/mz-catalog-sync" >Sink to Postgres</a></li> <li><a href="https://github.com/MaterializeIncLabs/mz-redis-sync" >Sink to Redis</a></li> </ul>  |
-
 
 ## Clusters and sinks
 

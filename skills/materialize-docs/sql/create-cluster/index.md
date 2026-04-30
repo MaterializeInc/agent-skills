@@ -4,8 +4,6 @@
 
 ## Syntax
 
-
-
 ```mzsql
 CREATE CLUSTER <cluster_name> (
     SIZE = <text>
@@ -23,7 +21,6 @@ CREATE CLUSTER <cluster_name> (
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. See [Replication factor](#replication-factor) for details.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  <a name="unmanaged-clusters"></a>  Specify `FALSE` to create an **unmanaged** cluster. With unmanaged clusters, you need to manually manage the cluster's replicas using the the [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) and [`DROP CLUSTER REPLICA`](/sql/drop-cluster-replica) commands. When creating an unmanaged cluster, you must specify the `REPLICAS` option as well.  {{< tip >}} When getting started with Materialize, we recommend starting with managed clusters. {{</ tip >}}  Default: `TRUE`  |
 | `SCHEDULE` | Optional. The [scheduling type](#scheduling) for the cluster. Valid values are: - `MANUAL` - `ON REFRESH`  Default: `MANUAL`  |
-
 
 ## Details
 
@@ -72,7 +69,6 @@ example, you could place your development workloads in a cluster named
 The `SIZE` option determines the amount of compute resources available to the
 cluster.
 
-
 **cc Clusters:**
 
 Materialize offers the following cc cluster sizes:
@@ -102,7 +98,6 @@ query the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
 > time. You should not rely on them for any kind of capacity planning.
 
-
 Clusters of larger sizes can process data faster and handle larger data volumes.
 
 **M.1 Clusters:**
@@ -113,14 +108,10 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 > most workloads. We recommend using cc sizes unless your workload specifically
 > requires the additional disk capacity that M.1 sizes provide.
 
-
 > **Note:** The values set forth in the table are solely for illustrative purposes.
 > Materialize reserves the right to change the capacity at any time. As such, you
 > acknowledge and agree that those values in this table may change at any time,
 > and you should not rely on these values for any capacity planning.
-
-
-
 
 | Cluster size | Compute Credits/Hour | Total Capacity | Notes |
 | --- | --- | --- | --- |
@@ -140,8 +131,6 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 | <strong>M.1-64xlarge</strong> | 768 | 26320 GiB | Available upon request |
 | <strong>M.1-128xlarge</strong> | 1536 | 52640 GiB | Available upon request |
 
-
-
 **Legacy t-shirt Clusters:**
 
 Materialize also offers some legacy t-shirt cluster sizes for upsert sources.
@@ -151,15 +140,10 @@ Materialize also offers some legacy t-shirt cluster sizes for upsert sources.
 > clusters to cc sizes.
 > The legacy size information is provided for completeness.
 
-
-
-
 <blockquote>
 <p><strong>Warning:</strong> Materialize regions that were enabled after 15 April 2024 do not have access
 to legacy sizes.</p>
 </blockquote>
-
-
 
 When legacy sizes are enabled for a region, the following sizes are available:
 
@@ -175,9 +159,6 @@ When legacy sizes are enabled for a region, the following sizes are available:
 * `4xlarge`
 * `5xlarge`
 * `6xlarge`
-
-
-
 
 See also:
 
@@ -198,8 +179,6 @@ the cluster is hosting, this operation **might incur downtime**.
 See the reference documentation for [`ALTER
 CLUSTER`](/sql/alter-cluster#zero-downtime-cluster-resizing) for more details
 on cluster resizing.
-
-
 
 ### Replication factor
 
@@ -237,7 +216,6 @@ using [`ALTER CLUSTER`] to set a nonzero replication factor.
 > queries) as all the other replicas of the cluster.
 > To increase a cluster's capacity, you should instead increase the cluster's
 > [size](#available-sizes).
-
 
 ### Credit usage
 
@@ -286,8 +264,6 @@ Cluster `c` will have consumed 0.4 credits in total:
     credits.
 
 ### Scheduling
-
-
 
 To support [scheduled refreshes in materialized views](../create-materialized-view/#refresh-strategies),
 you can configure a cluster to automatically turn on and off using the

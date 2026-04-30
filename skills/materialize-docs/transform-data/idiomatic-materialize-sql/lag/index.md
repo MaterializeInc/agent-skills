@@ -27,14 +27,10 @@ function.
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
 
-
-
-
 ## Idiomatic Materialize SQL
 
 > **Important:** Do not use if the "lag over (order by)" ordering cannot be represented by an
 > equality match.
-
 
 ### Exclude the first row in results
 
@@ -66,7 +62,6 @@ row.
 
 > **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
-
 
 <br>
 
@@ -143,8 +138,6 @@ query *includes* the first row, returning `null` as its lag value.
 > **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
 
-
-
 <br>
 
 ```mzsql
@@ -188,12 +181,10 @@ FROM tableA;
 </tbody>
 </table>
 
-
 ## Examples
 
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
-
 
 ### Find previous row's value (exclude the first row in results)
 
@@ -229,7 +220,6 @@ ORDER BY order_date;
 
 > **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
-
 
 </td>
 </tr>
@@ -292,7 +282,6 @@ ORDER BY order_date;
 
 > **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
-
 
 </td>
 </tr>

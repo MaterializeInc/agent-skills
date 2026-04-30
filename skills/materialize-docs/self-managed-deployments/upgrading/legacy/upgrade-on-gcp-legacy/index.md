@@ -1,7 +1,6 @@
 # Upgrade on GCP (Legacy Terraform)
 > **Disambiguation:** - To upgrade to `v26.0` using Materialize-provided Terraforms, upgrade your Terraform version to `v0.6.1` or higher, <a href="https://github.com/MaterializeInc/terraform-google-materialize?tab=readme-ov-file#v061" >GCP Terraform v0.6.1 Upgrade Notes</a>. - To upgrade to `v26.0` if <red>**not**</red> using a Materialize-provided Terraforms, you must prepare your nodes by adding the required labels. For detailed instructions, see [Prepare for swap and upgrade to v26.0](/self-managed-deployments/appendix/upgrade-to-swap/). 
 
-
 To upgrade your Materialize instances, first choose a new operator version and upgrade the Materialize operator. Then, upgrade your Materialize instances to the same version. The following tutorial upgrades your
 Materialize deployment running on GCP Google Kubernetes Engine (GKE).
 
@@ -17,20 +16,11 @@ or the root).
 > but **v26**.1.0 to **v28**.0.0 is not. Skipping major versions or downgrading is
 > not supported. To upgrade from v25.2 to v26.0, you must [upgrade first to v25.2.16+](https://materialize.com/docs/self-managed/v25.2/release-notes/#v25216).
 
-
-
-
-
 **Materialize on GCP Terraform Releases:**
-
 
 | Terraform version | Notable changes |
 | --- | --- |
 | <a href="https://github.com/MaterializeInc/terraform-google-materialize/releases/tag/v0.6.4" >v0.6.4</a> | <ul> <li>Released as part of v26.0.0.</li> <li>Uses <code>terraform-helm-materialize</code> version <code>v0.1.35</code>.</li> </ul>  |
-
-
-
-
 
 ## Prerequisites
 
@@ -38,7 +28,6 @@ or the root).
 > Materialize instances are running before the the old instance are removed.
 > When performing a rolling upgrade, ensure you have enough resources to support
 > having both the old and new Materialize instances running.
-
 
 ### Google cloud project
 
@@ -69,7 +58,6 @@ Terraform](https://developer.hashicorp.com/terraform/install?product_intent=terr
 > **Tip:** Using `gcloud` to install `kubectl` will also install the needed plugins.
 > Otherwise, you will need to manually install the `gke-gcloud-auth-plugin` for
 > `kubectl`.
-
 
 - If you do not have `kubectl`, install `kubectl`.  To install, see [Install
   kubectl and configure cluster
@@ -109,7 +97,6 @@ deployment does not have a license key configured, contact <a href="https://mate
 
    > **Tip:** You do not need to configure a default Compute Region and Zone as you will
 >    specify the region.
-
 
 1. To the service account that will be used to perform the upgrade,
    grant the following IAM roles (if the account does not have them already):
@@ -167,7 +154,6 @@ deployment does not have a license key configured, contact <a href="https://mate
 
    > **Tip:** If using `GOOGLE_APPLICATION_CREDENTIALS`, use absolute path to your key file.
 
-
 ### B. Upgrade Materialize operator and instances
 
 1. Go to the `examples/simple` folder in the Materialize Terraform repo
@@ -184,7 +170,6 @@ deployment does not have a license key configured, contact <a href="https://mate
 >    Terraform modules, additional considerations may apply when using an updated
 >    Terraform modules to your existing deployments.
 >    See [Materialize on GCP releases](/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-gcp-terraform-module) for notable changes.
-
 
 1. Configure `kubectl` to connect to your EKS cluster, specifying:
 
@@ -219,10 +204,6 @@ deployment does not have a license key configured, contact <a href="https://mate
 
    For help with `kubectl` commands, see [kubectl Quick
    reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/).
-
-
-
-
 
 1. Back up your `terraform.tfvars` file.
 
@@ -285,7 +266,6 @@ deployment does not have a license key configured, contact <a href="https://mate
    - The **Events** section should list that the new version of the
      orchestratord have been pulled.
 
-
 1. Back up your ``mz_instances.tfvars`` file.
 
    ```sh
@@ -294,7 +274,6 @@ deployment does not have a license key configured, contact <a href="https://mate
 
 1. Update the `mz_instances.tfvars` to specify the upgrade variables for each
    instance:
-
 
    | Variable          | Description |
    |--------------------|-------------|
@@ -333,10 +312,6 @@ deployment does not have a license key configured, contact <a href="https://mate
    <div class="warning">
       <strong class="gutter">WARNING!</strong> Please consult the Materialize team before setting inPlaceRollout to true and performing an in-place rollout. In almost all cases a rolling upgrade is preferred.
    </div>
-
-
-
-
 
 1. Run `terraform plan` with both the `terraform.tfvars` and your
    `mz_instances.tfvars` files and review the changes to be made.

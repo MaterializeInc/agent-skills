@@ -22,9 +22,6 @@ elements within each group according to some ordering.
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
 
-
-
-
 ## Idiomatic Materialize SQL
 
 ### For K >= 1
@@ -188,7 +185,6 @@ For more information on setting `DISTINCT ON INPUT GROUP SIZE`, see
 
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
-
 
 ### Select Top-3 items
 

@@ -12,7 +12,6 @@ troubleshooting](/transform-data/troubleshooting) guide instead.
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 ## Why isn't my source ingesting data?
 
 First, check the status of your source in the Materialize console by navigating
@@ -27,7 +26,6 @@ table:
 SELECT * FROM mz_internal.mz_source_statuses
 WHERE name = <SOURCE_NAME>;
 ```
-
 
 | Status        | Description/recommendation                                                                                                                                             |
 |---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -77,7 +75,6 @@ the upstream database, the number of tables (more tables can be parallelized in 
   </tbody>
 </table>
 
-
 To determine whether your source has completed ingesting the initial snapshot,
 you can query the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
 system catalog table:
@@ -124,7 +121,6 @@ the upstream database, the number of tables (more tables can be parallelized in 
   </tbody>
 </table>
 
-
 To speed up the snapshotting process, you can scale up the [size of the cluster
 ](/sql/alter-cluster/#alter-cluster-size) used for snapshotting, then scale it
 back down once the snapshot completes.
@@ -141,7 +137,6 @@ this process.</p>
 </blockquote>
 <p>Once the initial snapshot has completed, you can resize the cluster for steady
 state.</p>
-
 
 For upsert sources, a larger cluster can not only speed up snapshotting, but may
 also be necessary to support increased memory usage during the process. For more

@@ -2,8 +2,6 @@
 
 Learn more about Materialize
 
-
-
 Materialize is the live data layer for apps and AI agents. To keep results
 up-to-date as new data arrives, Materialize incrementally updates results as it
 ingests data rather than recalculating results from scratch.
@@ -98,7 +96,6 @@ engine based on <a href="/get-started/#incremental-updates" >Timely and Differen
 <p>If you need specific syntax or features that are not currently supported in
 Materialize, please submit a <a href="/support/#share-your-feedback" >feature request</a>.</p>
 
-
 ### Real-time data ingestion
 
 Materialize provides **native connectors** that allow ingesting data from various external systems:
@@ -143,8 +140,6 @@ Materialize provides **native connectors** that allow ingesting data from variou
 
 </div>
 
-
-
 For more information, see [Ingest Data](/ingest-data/) and
 [Integrations](/integrations/).
 
@@ -174,12 +169,9 @@ depending on your consistency and performance requirements.
 - [Key concepts](/concepts/)
 - [Get started with Materialize](/get-started/quickstart)
 
-
-
 ---
 
 ## Arrangements
-
 
 The mechanisms that maintain materialized views for Materialize dataflows are
 called **arrangements**. Understanding arrangements better can help you make
@@ -312,11 +304,9 @@ when you combine 32-bit and 64-bit numbers.
 * [Deployment](/ops/optimization/)
 * [Differential Dataflow](https://timelydataflow.github.io/differential-dataflow/)
 
-
 ---
 
 ## Consistency guarantees
-
 
 The SQL standard defines four levels of transaction isolation. In order of least strict to most strict they are:
 
@@ -337,7 +327,6 @@ Isolation level is a configuration parameter that can be set by the user on a se
 ```mzsql
 SET TRANSACTION_ISOLATION TO|= <isolation_level>
 ```
-
 
 | Valid Isolation Levels                      |
 | ------------------------------------------- |
@@ -428,8 +417,6 @@ THEN all subsequent read transactions are guaranteed to see that piece of data.
 
 ### Real-time recency
 
-
-
 Materialize offers a form of "end-to-end linearizability" known as real-time
 recency. When using real-time recency, all client-issued `SELECT` statements
 include at least all data visible to Materialize in any external source (i.e.,
@@ -505,18 +492,15 @@ Check out:
     isolation levels.
 -   [Jepsen Consistency Models documentation](https://jepsen.io/consistency) for more information on consistency models.
 
-
 ---
 
 ## Download and run Materialize Emulator
-
 
 The Materialize Emulator is an all-in-one Docker image available on Docker Hub
 for testing and evaluation purposes. The Materialize Emulator is not
 representative of Materialize's performance and full feature set.
 
 > **Important:** The Materialize Emulator is <redb> not suitable for production workloads.</redb>.
-
 
 ### Materialize Emulator
 
@@ -541,7 +525,6 @@ not suitable for full feature set evaluations or production workloads.
 
 > **Note:** - Use of the Docker image is subject to Materialize's [BSL License](https://github.com/MaterializeInc/materialize/blob/main/LICENSE).
 > - By downloading the Docker image, you are agreeing to Materialize's [privacy policy](https://materialize.com/privacy-policy/).
-
 
 1. In a terminal, issue the following command to run a Docker container from the
    Materialize Emulator image. The command downloads the image, if one has not
@@ -600,7 +583,6 @@ not suitable for full feature set evaluations or production workloads.
   The full experience of Materialize is also available as a self-managed
   offering. See [Self-managed Materialize](/self-managed-deployments/).
 
-
 ### Technical Support
 
 For questions, discussions, or general technical support, join the [Materialize
@@ -621,7 +603,6 @@ mz-debug emulator --docker-container-id <your-container-id>
 This debug information can be particularly helpful when troubleshooting issues or when working with the Materialize support team.
 
 For more detailed information about the debug tool, see the [`mz-debug` documentation](/integrations/mz-debug/).
-
 
 ### License and privacy policy
 
@@ -656,11 +637,9 @@ red { color: #d33902 }
 redb { color: #d33902; font-weight: 500; }
 </style>
 
-
 ---
 
 ## Install Self-Managed Materialize
-
 
 <p>You can install Self-Managed Materialize on a Kubernetes cluster running
 locally or on a cloud provider. Self-Managed Materialize requires:</p>
@@ -683,7 +662,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 <h2 id="installation-guides">Installation guides</h2>
 <p>The following installation guides are available to help you get started:</p>
 
-
 <h3 id="install-using-helm-commands">Install using Helm Commands</h3>
 <table>
   <thead>
@@ -699,7 +677,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
       </tr>
   </tbody>
 </table>
-
 
 <h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
@@ -728,7 +705,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
   </tbody>
 </table>
 
-
 <h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
 > installing Materialize.
@@ -756,18 +732,14 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
   </tbody>
 </table>
 
-
-
 ---
 
 ## Quickstart
-
 
 <style>
     red { color: #d33902; }
     redb { color: #d33902; font-weight: 500; }
 </style>
-
 
 Materialize provides always-fresh results while also providing [strong
 consistency guarantees](/get-started/isolation-level/). In Materialize, both
@@ -810,7 +782,6 @@ Emulator does not provide the full experience of using Materialize.
 
 - You can run against your [Self-managed
   Materialize](/self-managed-deployments/).
-
 
 ## Step 0. Open the SQL Shell
 
@@ -941,7 +912,6 @@ generator](/sql/create-source/load-generator/#auction) to create the source.
       --------+-------+------------+--------+---------------------------
        295641 | 737   | 29564      | 72     | 2024-07-25 18:25:42.911+00
       ```
-
 
     * To view the relationship between `auctions` and `bids`, you can join by
       the auction id:
@@ -1163,7 +1133,6 @@ creates:
 > patterns and usage, an existing index may be sufficient, such as in this
 > quickstart. In other use cases, creating an index only on the view(s) from which
 > you will serve results may be preferred.
-
 
 ## Step 6. Subscribe to see results change
 

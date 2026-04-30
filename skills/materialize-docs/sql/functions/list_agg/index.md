@@ -6,8 +6,6 @@ The input values to the aggregate can be [filtered](../filters).
 
 ## Syntax
 
-
-
 ```mzsql
 list_agg ( <value>
   [ORDER BY <col_ref> [ASC | DESC] [NULLS FIRST | NULLS LAST] [, ...]]
@@ -21,7 +19,6 @@ list_agg ( <value>
 | `<value>` | The values to concatenate.  |
 | **ORDER BY** `<col_ref>` [**ASC** \| **DESC**] [**NULLS FIRST** \| **NULLS LAST**] [, ...] | Optional. Specifies the ordering of values within the aggregation. If not specified, incoming rows are not guaranteed any order.  |
 | **FILTER** (WHERE `<filter_clause>`) | Optional. Specifies which rows are sent to the aggregate function. Rows for which the `<filter_clause>` evaluates to true contribute to the aggregation. See [Aggregate function filters](/sql/functions/filters) for details.  |
-
 
 ## Signatures
 

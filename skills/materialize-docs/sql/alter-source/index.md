@@ -10,14 +10,11 @@ Use `ALTER SOURCE` to:
 
 ## Syntax
 
-
 **Add subsource:**
 
 ### Add subsource
 
 To add the specified upstream table(s) to the specified PostgreSQL/MySQL/SQL Server source:
-
-
 
 ```mzsql
 ALTER SOURCE [IF EXISTS] <name>
@@ -34,7 +31,6 @@ ALTER SOURCE [IF EXISTS] <name>
 | **AS** `<subsrc>` | Optional. The name for the subsource in Materialize.  |
 | **WITH (TEXT COLUMNS (`<col>` [, ...]))** | Optional. List of columns to decode as `text` for types that are unsupported in Materialize.  |
 
-
 > **Note:** When you add a new subsource to an existing source ([`ALTER SOURCE ... ADD
 > SUBSOURCE ...`](/sql/alter-source/)), Materialize starts the snapshotting
 > process for the new subsource. During this snapshotting, the data ingestion for
@@ -42,16 +38,11 @@ ALTER SOURCE [IF EXISTS] <name>
 > possible, you can resize the cluster to speed up the snapshotting process and
 > once the process finishes, resize the cluster for steady-state.
 
-
-
-
 **Rename:**
 
 ### Rename
 
 To rename a source:
-
-
 
 ```mzsql
 ALTER SOURCE <name> RENAME TO <new_name>;
@@ -64,15 +55,11 @@ ALTER SOURCE <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the source.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a source:
-
-
 
 ```mzsql
 ALTER SOURCE <name> OWNER TO <new_owner_role>;
@@ -86,15 +73,11 @@ ALTER SOURCE <name> OWNER TO <new_owner_role>;
 To change the owner of a source, you must be the owner of the source and have
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
 
-
-
 **(Re)Set retain history config:**
 
 ### (Re)Set retain history config
 
 To set the retention history for a source:
-
-
 
 ```mzsql
 ALTER SOURCE [IF EXISTS] <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
@@ -106,10 +89,7 @@ ALTER SOURCE [IF EXISTS] <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
 | `<name>` | The name of the source you want to alter.  |
 | `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
 
-
 To reset the retention history to the default for a source:
-
-
 
 ```mzsql
 ALTER SOURCE [IF EXISTS] <name>  RESET (RETAIN HISTORY);
@@ -120,15 +100,11 @@ ALTER SOURCE [IF EXISTS] <name>  RESET (RETAIN HISTORY);
 | --- | --- |
 | `<name>` | The name of the source you want to alter.  |
 
-
-
 **(Re)Set timestamp interval:**
 
 ### (Re)Set timestamp interval
 
 To set the timestamp interval for a source:
-
-
 
 ```mzsql
 ALTER SOURCE [IF EXISTS] <name> SET (TIMESTAMP INTERVAL [=] <interval>);
@@ -140,10 +116,7 @@ ALTER SOURCE [IF EXISTS] <name> SET (TIMESTAMP INTERVAL [=] <interval>);
 | `<name>` | The name of the source you want to alter.  |
 | `<interval>` | The interval at which timestamps are assigned to the data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: `1s`.  |
 
-
 To reset the timestamp interval to the system default for a source:
-
-
 
 ```mzsql
 ALTER SOURCE [IF EXISTS] <name> RESET (TIMESTAMP INTERVAL);
@@ -153,11 +126,6 @@ ALTER SOURCE [IF EXISTS] <name> RESET (TIMESTAMP INTERVAL);
 | Syntax element | Description |
 | --- | --- |
 | `<name>` | The name of the source you want to alter.  |
-
-
-
-
-
 
 ## Context
 
@@ -172,7 +140,6 @@ the schema of the PostgreSQL/MySQL/SQL Server tables that are ingested.
 > the existing subsources for the same source is temporarily blocked. As such, if
 > possible, you can resize the cluster to speed up the snapshotting process and
 > once the process finishes, resize the cluster for steady-state.
-
 
 ### Dropping subsources from a PostgreSQL/MySQL/SQL Server source
 
@@ -200,7 +167,6 @@ ALTER SOURCE pg_src ADD SUBSOURCE tbl_a, tbl_b AS b WITH (TEXT COLUMNS [tbl_a.co
 > the existing subsources for the same source is temporarily blocked. As such, if
 > possible, you can resize the cluster to speed up the snapshotting process and
 > once the process finishes, resize the cluster for steady-state.
-
 
 ### Dropping subsources
 

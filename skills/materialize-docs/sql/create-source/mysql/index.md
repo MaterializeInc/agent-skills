@@ -2,27 +2,19 @@
 Connecting Materialize to a MySQL database for Change Data Capture (CDC).
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
 
-
 Materialize supports MySQL (5.7+) as a real-time data source. To connect to a
 MySQL database, you first need to tweak its configuration to enable
 [GTID-based binary log (binlog) replication](#change-data-capture), and then
 [create a connection](#creating-a-connection) in Materialize that specifies
 access and authentication parameters.
 
-
-
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ## Syntax
 
 > **Note:** Although `schema` and `database` are [synonyms in MySQL](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_schema),
 > the MySQL source documentation and syntax **standardize on `schema`** as the
 > preferred keyword.
-
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -51,7 +43,6 @@ FROM MYSQL CONNECTION <connection_name> [
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
 ### `CONNECTION` options
 
 Field             | Value                           | Description
@@ -71,7 +62,6 @@ Field             | Value                           | Description
 > [Google Cloud SQL](/ingest-data/mysql/google-cloud-sql/),
 > [Self-hosted](/ingest-data/mysql/self-hosted/).
 
-
 The source uses MySQL's binlog replication protocol to **continually ingest
 changes** resulting from `INSERT`, `UPDATE` and `DELETE` operations in the
 upstream database. This process is known as _change data capture_.
@@ -86,95 +76,29 @@ Before creating a source in Materialize, you **must** configure the upstream
 MySQL database for GTID-based binlog replication. Ensure the upstream MySQL
 database has been configured for GTID-based binlog replication:
 
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <table>
 <thead>
 <tr>
 
 <th>MySQL Configuration</th>
 
-
 <th>Value</th>
 
-
 <th>Notes</th>
-
 
 </tr>
 </thead>
 <tbody>
 
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>log_bin</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -182,52 +106,15 @@ database has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>binlog_format</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ROW</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
@@ -235,52 +122,15 @@ database has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>binlog_row_image</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>FULL</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -288,52 +138,15 @@ database has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>gtid_mode</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -341,52 +154,15 @@ database has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>enforce_gtid_consistency</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -394,52 +170,15 @@ database has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>replica_preserve_commit_order</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 Only required when connecting Materialize to a read-replica.
@@ -447,11 +186,8 @@ Only required when connecting Materialize to a read-replica.
 
 </tr>
 
-
 </tbody>
 </table>
-
-
 
 If you're running MySQL using a managed service, additional configuration
 changes might be required. For step-by-step instructions on enabling GTID-based
@@ -462,7 +198,6 @@ binlog replication for your MySQL service, see the integration guides.
 > **Warning:** If Materialize tries to resume replication and finds GTID gaps due to missing
 > binlog files, the source enters an errored state and you have to drop and
 > recreate it.
-
 
 By default, MySQL retains binlog files for **30 days** (i.e., 2592000 seconds)
 before automatically removing them. This is configurable via the
@@ -590,7 +325,6 @@ when the source was created.</p>
 </li>
 </ul>
 
-
 #### Incompatible schema changes
 
 <p>All other schema changes to upstream tables will set the corresponding
@@ -600,7 +334,6 @@ subsource.</p>
 and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
 subsource back to the source. When you add the subsource, it will have the
 updated schema from the corresponding upstream table.</p>
-
 
 ### Supported types
 
@@ -657,7 +390,6 @@ option to exclude any columns that contain unsupported data types.</p>
 </li>
 </ul>
 
-
 ### Truncation
 
 <p>Avoid truncating upstream tables that are being replicated into Materialize.
@@ -688,7 +420,6 @@ once the process finishes, resize the cluster for steady-state.
 > [Google Cloud SQL](/ingest-data/mysql/google-cloud-sql/),
 > [Self-hosted](/ingest-data/mysql/self-hosted/).
 
-
 ### Creating a connection
 
 A connection describes how to connect and authenticate to an external system you
@@ -713,12 +444,9 @@ If your MySQL server is not exposed to the public internet, you can [tunnel the
 connection](/sql/create-connection/#network-security-connections) through an AWS
 PrivateLink service (Materialize Cloud) or an SSH bastion host SSH bastion host.
 
-
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ```mzsql
 CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
@@ -739,7 +467,6 @@ For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
 
-
 **SSH tunnel:**
 ```mzsql
 CREATE CONNECTION ssh_connection TO SSH TUNNEL (
@@ -759,9 +486,6 @@ CREATE CONNECTION mysql_connection TO MYSQL (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check
 [this guide](/ops/network-security/ssh-tunnel/).
-
-
-
 
 ### Creating a source {#create-source-example}
 

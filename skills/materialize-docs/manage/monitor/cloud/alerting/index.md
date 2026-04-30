@@ -24,7 +24,6 @@ Freshness | > 5s | > 1m | Average [lag behind an input](/reference/system-catalo
 
 > **Note:** Customers on legacy cluster sizes should still monitor their Memory usage. Please [contact support](/support/) for questions.
 
-
 ### Custom Thresholds
 
 For the following table, replace the two variables, _X_ and _Y_, by your organization and use case:

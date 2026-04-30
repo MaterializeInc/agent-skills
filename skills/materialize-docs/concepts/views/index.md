@@ -124,8 +124,6 @@ having to perform additional computation.
 > cluster associated with the index is faster since the results are served from
 > memory rather than from storage.
 
-
-
 See also:
 
 - [Indexes](/concepts/indexes)
@@ -135,7 +133,6 @@ See also:
 ### Updating the materialized view definition
 
 > **Public Preview:** This feature is in public preview.
-
 
 You can use [`CREATE REPLACEMENT MATERIALIZED
 VIEW`](/sql/create-materialized-view/) with [`ALTER MATERIALIZED VIEW ... APPLY
@@ -214,8 +211,6 @@ cluster that maintains the view results:
 - Index the materialized view in the serving cluster(s) to serve the results
 from memory.
 
-
-
 **2-tier architecture:**
 
 ![Image of the 2-tier-architecture](/images/2-tier-architecture.svg)
@@ -235,9 +230,6 @@ results from memory.
 > filters](/transform-data/patterns/temporal-filters/), avoid creating
 > materialized views on a shared cluster used for both compute/transformat
 > operations and serving queries. Use indexed views instead.
-
-
-
 
 **1-tier architecture:**
 

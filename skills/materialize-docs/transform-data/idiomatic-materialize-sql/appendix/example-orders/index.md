@@ -88,7 +88,6 @@ SELECT date_trunc('day',order_date) AS order_date,
 FROM orders_view
 GROUP BY date_trunc('day',order_date);
 
-
 CREATE TABLE sales_items (
   week_of date NOT NULL,
   items text[]

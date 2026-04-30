@@ -9,7 +9,6 @@ self-hosted Kafka cluster.
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 ## Before you begin
 
 Before you begin, you must have:
@@ -34,10 +33,7 @@ connect:
 
 Select the option that works best for you.
 
-
-
 **Cloud:**
-
 
 **Privatelink:**
 
@@ -46,7 +42,6 @@ Select the option that works best for you.
 > which can be used to create the target groups for each Kafka broker (step 1),
 > the network load balancer (step 2), the TCP listeners (step 3) and the VPC
 > endpoint service (step 5).
-
 
 This section covers how to create AWS PrivateLink connections
 and retrieve the AWS principal needed to configure the AWS PrivateLink service.
@@ -216,9 +211,6 @@ connection you just configured:
    * For **in-region connections**, the correct availability zone is specified
       for each broker.
 
-
-
-
 **SSH Tunnel:**
 
 Materialize can connect to a Kafka broker, a Confluent Schema Registry server, a
@@ -264,7 +256,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     |-------|---------------------------------------|---------------------------------------|
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
-
 
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
@@ -351,7 +342,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
    If no validation errors are returned, the connection can be used to create a
    source connection.
 
-
 1. In Materialize, create a source connection that uses the SSH tunnel
 connection you configured in the previous section:
 
@@ -361,8 +351,6 @@ connection you configured in the previous section:
     SSH TUNNEL ssh_connection
   );
 ```
-
-
 
 **Allow Materialize IPs:**
 
@@ -391,10 +379,6 @@ connection you configured in the previous section:
     );
     ```
 
-
-
-
-
 **Self-Managed:**
 
 There are various ways to configure your Kafka network to allow Materialize to
@@ -408,8 +392,6 @@ connect:
     Materialize IP addresses.
 
 Select the option that works best for you.
-
-
 
 **SSH Tunnel:**
 
@@ -456,7 +438,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     |-------|---------------------------------------|---------------------------------------|
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
-
 
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
@@ -533,8 +514,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
     If no validation errors are returned, the connection can be used to create a source connection.
 
-
-
 1. In Materialize, create a source connection that uses the SSH tunnel
 connection you configured in the previous section:
 
@@ -544,8 +523,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
   SSH TUNNEL ssh_connection
 );
 ```
-
-
 
 **Allow Materialize IPs:**
 
@@ -564,12 +541,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
         SASL PASSWORD = SECRET kafka_password
     );
     ```
-
-
-
-
-
-
 
 ## Creating a source
 

@@ -33,7 +33,6 @@ cluster at any time.
 > can also run [`ALTER SYSTEM SET cluster`](/sql/alter-system-set) to change the
 > default value.
 
-
 ### `mz_catalog_server` system cluster
 
 A system cluster named `mz_catalog_server` will be pre-installed in every
@@ -90,7 +89,6 @@ The following characteristics apply to the `mz_system` cluster:
   * You cannot drop this cluster.
   * You cannot run `SELECT` or `SUBSCRIBE` queries in this cluster.
 
-
 ## Examples
 
 ```mzsql
@@ -119,7 +117,6 @@ SHOW CLUSTERS LIKE 'auction_%';
 --------------------- | ------------------
  auction_house        |  r1 (25cc)
 ```
-
 
 ## Related pages
 

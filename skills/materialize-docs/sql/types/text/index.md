@@ -15,8 +15,6 @@ Detail | Info
 
 ### Standard
 
-
-
 ```mzsql
 '<text>'
 
@@ -25,7 +23,6 @@ Detail | Info
 | Syntax element | Description |
 | --- | --- |
 | `'<text>'` | A standard string literal. To escape a single quote character (`'`), write two adjacent single quotes. All other characters are taken literally.  |
-
 
 To escape a single quote character (`'`) in a standard string literal, write two
 adjacent single quotes:
@@ -46,8 +43,6 @@ All other characters are taken literally.
 A string literal that is preceded by an `e` or `E` is an "escape" string
 literal:
 
-
-
 ```mzsql
 [e | E] '<escapable_text>'
 
@@ -57,7 +52,6 @@ literal:
 | --- | --- |
 | **[e \| E]** | Optional. Precede the string literal with `e` or `E` to create an escape string literal.  |
 | `'<escapable_text>'` | An escape string literal. Follows the same rules as standard string literals, except that backslash character (`\`) starts an escape sequence. The following escape sequences are recognized: `\b` (backspace), `\f` (form feed), `\n` (newline), `\r` (carriage return), `\t` (tab), `\uXXXX` or `\UXXXXXXXX` (Unicode codepoint), `\\` (literal backslash), `\'` (alternate means of escaping single quote).  |
-
 
 Escape string literals follow the same rules as standard string literals, except
 that backslash character (`\`) starts an escape sequence. The following escape

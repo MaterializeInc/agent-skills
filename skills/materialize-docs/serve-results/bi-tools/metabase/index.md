@@ -32,7 +32,6 @@ level</a> using the following SQL statement:</p>
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
 
-
 ## Refresh rate
 
 By default, the lowest [refresh rate](https://www.metabase.com/docs/latest/users-guide/07-dashboards.html#auto-refresh)

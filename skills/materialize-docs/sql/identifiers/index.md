@@ -17,7 +17,6 @@ e.g., `"123_source"` or `"fun_source_@"`. Inside double quotes, characters are i
 
 > **Note:** The identifiers `"."` and `".."` are not allowed.
 
-
 ## Case sensitivity
 
 Materialize performs case folding (the caseless comparison of text) for identifiers, which means that identifiers are effectively case-insensitive (`foo` is the same as `FOO` is the same as `fOo`). This can cause issues when column names come from data sources which do support case-sensitive names, such as Avro-formatted sources.

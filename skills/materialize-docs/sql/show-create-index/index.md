@@ -8,11 +8,9 @@
 SHOW [REDACTED] CREATE INDEX <index_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available index names, see [`SHOW INDEXES`](/sql/show-indexes).
 

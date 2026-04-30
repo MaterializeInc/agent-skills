@@ -19,7 +19,6 @@ new value, if it exists.
 > **Note:** Using this command is preferred to executing [`CREATE SECRET`](/sql/create-secret) directly, as it avoids leaving the
 > secret's value in your shell history.
 
-
 ### Arguments
 
 Flag                    | Environment variables | Description
@@ -30,7 +29,6 @@ Flag                    | Environment variables | Description
 `--force`               |                       | Overwrite the existing value of the secret, if it exists.
 `--profile=<PROFILE>`   | `MZ_PROFILE`          | Use the specified [authentication profile].
 
-
 ## Global arguments
 
 Argument           | Environment variables     | Description
@@ -40,6 +38,5 @@ Argument           | Environment variables     | Description
 `‑‑no‑color`       | `NO_COLOR`, `MZ_NO_COLOR` | Disable color output.
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
-
 
 [authentication profile]: ../../configuration/#authentication-profiles

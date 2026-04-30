@@ -7,8 +7,6 @@ To align values along arbitrary values, see [`date_bin`].
 
 ## Signatures
 
-
-
 ```mzsql
 date_trunc ( '<time_unit>', <val> )
 
@@ -18,7 +16,6 @@ date_trunc ( '<time_unit>', <val> )
 | --- | --- |
 | `'<time_unit>'` | The time unit to truncate to. Valid values: `microseconds`, `milliseconds`, `second`, `minute`, `hour`, `day`, `week`, `month`, `quarter`, `year`, `decade`, `century`, `millenium`.  |
 | `<val>` | A [`timestamp`](/sql/types/timestamp/), [`timestamp with time zone`](/sql/types/timestamp/), or [`interval`](/sql/types/interval/) value to truncate.  |
-
 
 Parameter | Type | Description
 ----------|------|------------

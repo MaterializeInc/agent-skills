@@ -4,8 +4,6 @@
 
 ## Syntax
 
-
-
 ```mzsql
 CREATE SCHEMA [IF NOT EXISTS] <schema_name>;
 
@@ -15,7 +13,6 @@ CREATE SCHEMA [IF NOT EXISTS] <schema_name>;
 | --- | --- |
 | `IF NOT EXISTS` | If specified, do not generate an error if a schema of the same name already exists. If not specified, throw an error if a schema of the same name already exists.  |
 | `<schema_name>` | A name for the schema. You can specify the database for the schema with a preceding `database_name.schema_name`, e.g. `my_db.my_schema`, otherwise the schema is created in the current database.  |
-
 
 ## Details
 

@@ -3,7 +3,6 @@ Deploy Self-managed Materialize to a local kind cluster.
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; and a license key.
 
-
 The following tutorial uses a local [`kind`](https://kind.sigs.k8s.io/) cluster
 and deploys the following components:
 
@@ -17,7 +16,6 @@ and deploys the following components:
 >   purposes only.
 > - The tutorial uses a Kubernetes metrics server with TLS disabled. In practice,
 >   refer to your organization's official security practices.
-
 
 ## Prerequisites
 
@@ -37,7 +35,6 @@ requirements:
 - 5 CPUs
 - 15GB memory
 
-
 ### Helm 3.2.0+
 
 If you don't have Helm version 3.2.0+ installed, install. For details, see the
@@ -55,14 +52,12 @@ reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/).
 
 Starting in v26.0, Self-Managed Materialize requires a license key.
 
-
 | License key type | Deployment type | Action |
 | --- | --- | --- |
 | Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
 | Community | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
 | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
 | Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
-
 
 ## Installation
 
@@ -73,7 +68,6 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    
    - 5 CPUs
    - 15GB memory
-
 
 1. Open a Terminal window.
 
@@ -112,8 +106,6 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    some sample configuration files. Download the sample configuration files from
    the Materialize repo:
 
-   
-   
    ```shell
    mz_version=v26.20.2
    
@@ -132,19 +124,16 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    These configuration files are for local evaluation/testing purposes only and
    not intended for production use.
 
-
 1. Add your license key:
 
    a. To get your license key:
 
-      
       | License key type | Deployment type | Action |
       | --- | --- | --- |
       | Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
       | Community | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
       | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
       | Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
-
 
    b. Edit `sample-materialize.yaml` to add your license key to the
    `license_key` field in the backend secret.
@@ -163,7 +152,6 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    ---
    ```
 
-
 1. Install the Materialize Helm chart.
 
    1. Add the Materialize Helm chart repository.
@@ -178,8 +166,6 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
       helm repo update materialize
       ```
 
-   
-   
    1. Install the Materialize Operator. The operator will be installed in the
       `materialize` namespace.
    
@@ -190,7 +176,6 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
           --set observability.podMetrics.enabled=true \
           -f sample-values.yaml
       ```
-
 
    1. Verify the installation and check the status:
 
@@ -278,7 +263,6 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 >       the tutorial uses a Kubernetes metrics server with TLS disabled. In practice,
 >       refer to your organization's official security practices.
 
-
       ```shell
       helm install metrics-server metrics-server/metrics-server \
          --namespace kube-system \
@@ -312,7 +296,6 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
        > **Note:** It may take approximately 1-2 minutes for all resources to appear in the
 >        namespace. Allow up to 90 seconds before verifying resource creation with
 >        `kubectl get` commands.
-
 
        ```shell
        kubectl get all -n materialize-environment
@@ -357,7 +340,6 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 
 1. Open the Materialize Console in your browser:
 
-   
    1. Find your console service name.
    
       ```shell
@@ -392,24 +374,19 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    if an error occurs, ensuring a more stable connection. It detects failures by
    monitoring for "portforward.go" error messages.
 
-
       > **Tip:** If you experience long loading screens or unresponsiveness in the Materialize
 >       Console, we recommend increasing the size of the `mz_catalog_server` cluster.
 >       Refer to the [Troubleshooting Console
 >       Unresponsiveness](/self-managed-deployments/troubleshooting/#troubleshooting-console-unresponsiveness)
 >       guide.
 
-
-
 ## Next steps
-
 
 - From the Console, you can get started with the
 [Quickstart](/get-started/quickstart/).
 
 - To start ingesting your own data from an external system like Kafka, MySQL or
   PostgreSQL, see [Ingest data](/ingest-data/).
-
 
 - To enable authentication and authorization, see
   [Security](/security/self-managed/).

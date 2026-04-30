@@ -4,8 +4,6 @@
 
 ## Syntax
 
-
-
 ```mzsql
 INSERT INTO <table_name> [[AS] <alias>] [ ( <col1> [, ...] ) ]
 VALUES ( <expr1> [, ...] ) [, ...] | DEFAULT VALUES | <query>
@@ -21,7 +19,6 @@ VALUES ( <expr1> [, ...] ) [, ...] | DEFAULT VALUES | <query>
 | `DEFAULT VALUES` | Insert a single row using the default value for all columns.  |
 | `<query>` | A [`SELECT`](/sql/select) statement whose returned rows you want to write to the table.  |
 | `RETURNING <output_expr \| *> [, ...]` | Causes `INSERT` to return values based on each inserted row: - `*` to return all columns - `<output_expr> [[AS] <alias>]`. [Aggregate functions](/sql/functions/#aggregate-functions) are not allowed in the `RETURNING` clause.  |
-
 
 ## Details
 

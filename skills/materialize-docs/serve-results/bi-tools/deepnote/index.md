@@ -34,7 +34,6 @@ level</a> using the following SQL statement:</p>
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
 
-
 ## Execute and visualize a query
 
 1. Create a new SQL block.
@@ -66,7 +65,6 @@ connection.</p>
    2. In the **X Axis** options, select the **row_num** column and set the aggregation to **None**.
 
    <img width="1002" alt="Deepnote guide" src="https://github.com/joacoc/materialize/assets/11491779/fdd21c0c-db2f-4096-8d7a-dd38bdfb646d">
-
 
 ### Related pages
 

@@ -2,7 +2,6 @@
 Learn how to integrate Materialize with Large Language Models (LLMs) using MCP
 > **Disambiguation:** This page provides information on the locally-run, separate MCP Server. For documentation on using the new built-in MCP Server endpoints, see: - [MCP Server for Developer](/integrations/mcp-server/mcp-developer/) 
 
-
 The [Model Context Protocol (MCP) Server for Materialize](https://materialize.com/blog/materialize-turns-views-into-tools-for-agents/) lets large language models (LLMs) call your indexed views as real-time tools.
 The MCP Server automatically turns any indexed view with a comment into a callable, typed interface that LLMs can use to fetch structured, up-to-date answers—directly from the database.
 
@@ -39,7 +38,6 @@ You can configure it using CLI flags or environment variables:
 | `--pool-min-size` | `MCP_POOL_MIN_SIZE` | `1`                                                   | Minimum DB pool size                          |
 | `--pool-max-size` | `MCP_POOL_MAX_SIZE` | `10`                                                  | Maximum DB pool size                          |
 | `--log-level`     | `MCP_LOG_LEVEL`     | `INFO`                                                | Logging verbosity                             |
-
 
 ## Define Tools
 

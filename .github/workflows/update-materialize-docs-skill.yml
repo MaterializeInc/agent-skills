@@ -177,6 +177,24 @@ jobs:
         working-directory: materialize
         run: bin/gen-claude-skill ../agent-skills/skills/materialize-docs
 
+      - name: Collapse consecutive blank lines
+        if: steps.target.outputs.should_run == 'true'
+        working-directory: agent-skills
+        # The generator strips Hugo shortcodes around HTML table rows but
+        # leaves the surrounding newlines, producing long runs of blank
+        # lines. Collapse runs of 2+ blank lines down to one. Runs after
+        # generation but before hand-maintained files are restored, so it
+        # only touches generator output.
+        run: |
+          python3 - <<'PY'
+          import re, pathlib
+          for p in pathlib.Path("skills/materialize-docs").rglob("*.md"):
+              t = p.read_text()
+              n = re.sub(r'\n(?:[ \t]*\n){2,}', '\n\n', t)
+              if n != t:
+                  p.write_text(n)
+          PY
+
       - name: Restore hand-maintained files
         if: steps.target.outputs.should_run == 'true'
         working-directory: agent-skills

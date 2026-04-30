@@ -7,17 +7,13 @@ Use `ALTER MATERIALIZED VIEW` to:
 - Change retain history configuration for the materialized view.
 - Replace a materialized view. (*Public preview*)
 
-
 ## Syntax
-
 
 **Rename:**
 
 ### Rename
 
 To rename a materialized view:
-
-
 
 ```mzsql
 ALTER MATERIALIZED VIEW <name> RENAME TO <new_name>;
@@ -30,15 +26,11 @@ ALTER MATERIALIZED VIEW <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the materialized view.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a materialized view:
-
-
 
 ```mzsql
 ALTER MATERIALIZED VIEW <name> OWNER TO <new_owner_role>;
@@ -52,15 +44,11 @@ ALTER MATERIALIZED VIEW <name> OWNER TO <new_owner_role>;
 To change the owner of a materialized view, you must be the owner of the materialized view and have
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
 
-
-
 **(Re)Set retain history config:**
 
 ### (Re)Set retain history config
 
 To set the retention history for a materialized view:
-
-
 
 ```mzsql
 ALTER MATERIALIZED VIEW <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
@@ -72,10 +60,7 @@ ALTER MATERIALIZED VIEW <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
 | `<name>` | The name of the materialized view you want to alter.  |
 | `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
 
-
 To reset the retention history to the default for a materialized view:
-
-
 
 ```mzsql
 ALTER MATERIALIZED VIEW <name> RESET (RETAIN HISTORY);
@@ -86,8 +71,6 @@ ALTER MATERIALIZED VIEW <name> RESET (RETAIN HISTORY);
 | --- | --- |
 | `<name>` | The name of the materialized view you want to alter.  |
 
-
-
 **Replace materialized view:**
 
 ### Replace materialized view
@@ -96,8 +79,6 @@ ALTER MATERIALIZED VIEW <name> RESET (RETAIN HISTORY);
 
 To replace an existing materialized view in-place with a replacement
 materialized view:
-
-
 
 ```mzsql
 ALTER MATERIALIZED VIEW <name> APPLY REPLACEMENT <replacement_materialized_view>;
@@ -108,11 +89,6 @@ ALTER MATERIALIZED VIEW <name> APPLY REPLACEMENT <replacement_materialized_view>
 | --- | --- |
 | `<name>` | The name of the materialized view to replace.  |
 | `<replacement_materialized_view>` | The name of a replacement materialized view specifically created for the target materialized view. See [`CREATE REPLACEMENT MATERIALIZED VIEW <replacement_view>...FOR <name>...`](/sql/create-materialized-view).  |
-
-
-
-
-
 
 ## Details
 
@@ -135,7 +111,6 @@ view and drops the replacement view at the same time.</p>
 <p>Emits a diff representing the changes between the old and new output.</p>
 </li>
 </ul>
-
 
 See [Recommended checks before replacing a
 view](/sql/alter-materialized-view/#recommended-checks-before-replacing-a-view).
@@ -177,8 +152,6 @@ of your original and replacement materialized views.</p>
 original materialized view. If the rate of advancement suggests that catch
 up will take an extended period of time, it is recommended to drop the
 replacement view.</p>
-
-
 
 ## Privileges
 
@@ -244,7 +217,6 @@ APPLY REPLACEMENT winning_bids_replacement;
 For a step-by-step tutorial on replacing a materialized view, see [Replace
 materialized views
 guide](/transform-data/updating-materialized-views/replace-materialized-view/).
-
 
 ## Related pages
 

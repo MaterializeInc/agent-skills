@@ -22,7 +22,6 @@ setup from this repository.
 > - Fork the repo and pin to a specific version; or
 > - Use the code as a reference when developing your own deployment.
 
-
 ## What Gets Created
 
 This example provisions the following infrastructure:
@@ -112,14 +111,12 @@ An active Azure subscription with appropriate permissions to create:
 
 ### License Key
 
-
 | License key type | Deployment type | Action |
 | --- | --- | --- |
 | Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
 | Community | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
 | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
 | Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
-
 
 ## Getting started: Simple example
 
@@ -132,15 +129,12 @@ An active Azure subscription with appropriate permissions to create:
 > - Fork the repo and pin to a specific version; or
 > - Use the code as a reference when developing your own deployment.
 
-
-
 > **Tip:** The simple example used in this tutorial enables [Password
 > authentication](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/azure/examples/simple/main.tf#L340)
 > for the Materialize instance. To use a different authentication method, update
 > [`authenticator_kind`](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/kubernetes/modules/materialize-instance/README.md#input_authenticator_kind).
 > See [Authentication](/security/self-managed/authentication/) for the supported
 > authentication mechanisms.
-
 
 ### Step 1: Set Up the Environment
 
@@ -251,7 +245,6 @@ An active Azure subscription with appropriate permissions to create:
    > **Tip:** Your shell may show an ending marker (such as `%`) because the
 >    output did not end with a newline. Do not include the marker when using the value.
 
-
 1. Configure `kubectl` to connect to your cluster, replacing:
    - `<your-resource-group-name>` with your resource group name; i.e., the
      `resource_group_name` in the Terraform output or in the
@@ -280,8 +273,7 @@ An active Azure subscription with appropriate permissions to create:
    ```bash
    kubectl -n materialize-environment get all
    ```
-   
-   
+
    <p>If you run into an error during deployment, refer to the
    <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
 
@@ -290,13 +282,11 @@ An active Azure subscription with appropriate permissions to create:
 You can connect to Materialize via the Materialize Console or
 PostgreSQL-compatible tools/drivers using the following ports:
 
-
 | Port | Description |
 | --- | --- |
 | 6875 | For SQL connections to the database |
 | 6876 | For HTTP(S) connections to the database |
 | 8080 | For HTTP(S) connections to Materialize Console |
-
 
 #### Connect using the Materialize Console
 
@@ -304,8 +294,6 @@ PostgreSQL-compatible tools/drivers using the following ports:
 > public NLB. You can connect directly using the NLB's DNS name from anywhere
 > on the internet (subject to your `ingress_cidr_blocks` configuration).
 > - **If using a private (internal) NLB:** You can connect from inside the same VPC or from networks that are privately connected to it. Alternatively, use Kubernetes port-forwarding for both SQL and Console.
-
-
 
 Using the `console_load_balancer_ip` and `external_login_password_mz_system`
 from the Terraform output, you can connect to Materialize via the Materialize
@@ -325,7 +313,6 @@ Console.
 >    warning with regards to the certificate. In production, run with
 >    certificates from an official Certificate Authority (CA) rather than
 >    self-signed certificates.
-
 
 1. Log in as `mz_system`, using `external_login_password_mz_system` as the
    password.
@@ -350,8 +337,6 @@ Console.
 > public NLB. You can connect directly using the NLB's DNS name from anywhere
 > on the internet (subject to your `ingress_cidr_blocks` configuration).
 > - **If using a private (internal) NLB:** You can connect from inside the same VPC or from networks that are privately connected to it. Alternatively, use Kubernetes port-forwarding for both SQL and Console.
-
-
 
 Using the `balancerd_load_balancer_ip` and `external_login_password_mz_system`
 from the Terraform output, you can connect to Materialize via
@@ -383,11 +368,9 @@ PostgreSQL-compatible clients/drivers, such as `psql`.
 
 1. Login as one of the created user.
 
-
 ## Customizing Your Deployment
 
 > **Tip:** To reduce cost in your demo environment, you can tweak VM sizes and database tiers in `main.tf`.
-
 
 You can customize each Terraform module independently.
 
@@ -402,7 +385,6 @@ guide](/self-managed-deployments/deployment-guidelines/azure-deployment-guidelin
 
 > **Note:** Autoscaling: Uses Azure's native cluster autoscaler that integrates directly with Azure Virtual Machine Scale Sets for automated node scaling.
 
-
 See also:
 - [Configuring System
   Parameters](/self-managed-deployments/configuration-system-parameters/)
@@ -413,7 +395,6 @@ See also:
 
 ## Cleanup
 
-
 To delete the whole sample infrastructure and deployment (including the
 Materialize operator and Materialize instances and data), run from the Terraform
 directory:
@@ -423,7 +404,6 @@ terraform destroy
 ```
 
 When prompted to proceed, type `yes` to confirm the deletion.
-
 
 ## See Also
 

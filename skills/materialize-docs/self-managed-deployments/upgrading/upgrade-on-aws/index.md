@@ -19,14 +19,11 @@ upgrading the Materialize instances.
 </li>
 </ul>
 
-
 > **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
 > at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
 > permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
 
-
 > **Note:** Downgrading is not supported.
-
 
 ## Prerequisites
 
@@ -40,7 +37,6 @@ upgrading the Materialize instances.
 ## Upgrade process
 
 > **Important:** The following procedure performs a rolling upgrade, where both the old and new Materialize instances are running before the old instances are removed. When performing a rolling upgrade, ensure you have enough resources to support having both the old and new Materialize instances running.
-
 
 ### Step 1: Set up
 
@@ -92,7 +88,6 @@ upgrading the Materialize instances.
 > **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
 > upgrading the Materialize instances.
 
-
 <p>To update your Materialize Helm Chart repository:</p>
 <ol>
 <li>
@@ -105,12 +100,10 @@ upgrading the Materialize instances.
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### Step 3: Upgrade the Materialize Operator
 
 > **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
 > upgrading the Materialize instances.
-
 
 <ol>
 <li>
@@ -151,12 +144,10 @@ Materialize instances.</p>
 </li>
 </ol>
 
-
 ### Step 4: Upgrading Materialize Instances
 
 > **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
 > upgrading the Materialize instances.
-
 
 <p><strong>After</strong> you have upgraded your Materialize Operator, upgrade your
 Materialize instance(s) to the <strong>APP Version</strong> of the Operator. When
@@ -197,7 +188,6 @@ main
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment describe pod -l <span class="nv">app</span><span class="o">=</span>environmentd
 </span></span></code></pre></div></li>
 </ol>
-
 
 ## See also
 

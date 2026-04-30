@@ -30,8 +30,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 TIMESTAMP [(<precision>)] [WITH [OUT] TIME ZONE] '<date_str>' [<time_str>] [<tz_offset>]
 TIMESTAMPTZ [(<precision>)] '<date_str>' [<time_str>] [<tz_offset>]
@@ -46,7 +44,6 @@ TIMESTAMPTZ [(<precision>)] '<date_str>' [<time_str>] [<tz_offset>]
 | `'<date_str>'` | A string representing a date in `Y-M-D`, `Y M-D`, `Y M D` or `YMD` format.  |
 | `<time_str>` | Optional. A string representing a time of day in `H:M:S.NS` format. Can be separated from `<date_str>` by a space or `T`.  |
 | `<tz_offset>` | Optional. The timezone's distance from UTC, in hours, specified as `+HH` or `-HH`.  |
-
 
 ## Details
 

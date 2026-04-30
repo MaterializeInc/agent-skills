@@ -5,7 +5,6 @@ Learn the basics of Materialize.
     redb { color: #d33902; font-weight: 500; }
 </style>
 
-
 Materialize provides always-fresh results while also providing [strong
 consistency guarantees](/get-started/isolation-level/). In Materialize, both
 [indexes](/concepts/indexes/ "Indexes represents query results stored in memory
@@ -47,7 +46,6 @@ Emulator does not provide the full experience of using Materialize.
 
 - You can run against your [Self-managed
   Materialize](/self-managed-deployments/).
-
 
 ## Step 0. Open the SQL Shell
 
@@ -178,7 +176,6 @@ generator](/sql/create-source/load-generator/#auction) to create the source.
       --------+-------+------------+--------+---------------------------
        295641 | 737   | 29564      | 72     | 2024-07-25 18:25:42.911+00
       ```
-
 
     * To view the relationship between `auctions` and `bids`, you can join by
       the auction id:
@@ -400,7 +397,6 @@ creates:
 > patterns and usage, an existing index may be sufficient, such as in this
 > quickstart. In other use cases, creating an index only on the view(s) from which
 > you will serve results may be preferred.
-
 
 ## Step 6. Subscribe to see results change
 

@@ -1,7 +1,6 @@
 # Self-managed release versions
 ## V26 releases
 
-
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
 | v26.20.2 | v26.20.2 | v26.20.2 | 2026-04-18 | See <a href="/releases/#v26202" >v26.20.2 release notes</a> |

@@ -4,7 +4,6 @@ Install Materialize on Azure Kubernetes Service (AKS) using Terraform
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; specifically **block** blob storage on Azure; and a license key.
 
-
 The tutorial deploys Materialize to Azure Kubernetes Service (AKS) with a
 PostgreSQL database as the metadata database and Azure premium block blob
 storage for blob storage. The tutorial uses [Materialize on Azure Terraform
@@ -27,7 +26,6 @@ modules](https://github.com/MaterializeInc/terraform-azurerm-materialize) to:
 > For simplicity, this tutorial stores various secrets in a file as well as prints
 > them to the terminal. In practice, refer to your organization's official
 > security and Terraform/infrastructure practices.
-
 
 ## Prerequisites
 
@@ -65,8 +63,6 @@ Terraform outputs. Alternatively, you can manually specify the name and region.
 If you want to use `jq` and do not have `jq` installed, install.
 
 ### License key
-
-
 
 ## A. Authenticate with Azure
 
@@ -115,15 +111,11 @@ If you want to use `jq` and do not have `jq` installed, install.
 > - Fork the repo and pin to a specific version; or
 > - Use the code as a reference when developing your own deployment.
 
-
-
-
 **Deployed components:**
 
 [Materialize on Azure Terraform
 module](https://github.com/MaterializeInc/terraform-azurerm-materialize) for
 deploys a sample infrastructure on Azure with the following components:
-
 
 | Component | Version |
 | --- | --- |
@@ -138,7 +130,6 @@ deploys a sample infrastructure on Azure with the following components:
 | Load balancers for each Materialize instance | <a href="/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-azure-terraform-module" >v0.3.1+</a> |
 | OpenEBS and NVMe instance storage to enable spill-to-disk | <a href="/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-azure-terraform-module" >v0.4.0+</a> |
 
-
 > **Tip:** The tutorial uses the `main.tf` found in the `examples/simple/` directory,
 > which requires minimal user input. For details on the `examples/simple/`
 > infrastructure configuration (such as the node instance type, etc.), see the
@@ -149,22 +140,13 @@ deploys a sample infrastructure on Azure with the following components:
 > instead. When running with the root `main.tf`, see [Azure required
 > configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-azure/).
 
-
-
 **Releases:**
-
 
 | Terraform version | Notable changes |
 | --- | --- |
 | <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize/releases/tag/v0.6.4" >v0.6.4</a> | <ul> <li>Released as part of v26.0.0.</li> <li>Uses <code>terraform-helm-materialize</code> version <code>v0.1.35</code>.</li> </ul>  |
 
-
-
-
-
 1. Open a Terminal window.
-
-
 
 1. Fork the [Materialize's sample Terraform
    repo](https://github.com/MaterializeInc/terraform-azurerm-materialize).
@@ -175,7 +157,6 @@ deploys a sample infrastructure on Azure with the following components:
    ```bash
    MY_ORGANIZATION=<enter-your-organization>
    ```
-
 
 1. Clone your forked repo and checkout the `v0.8.26` tag. For example,
 
@@ -193,7 +174,6 @@ deploys a sample infrastructure on Azure with the following components:
      git clone --depth 1 -b v0.8.26 https://github.com/${MY_ORGANIZATION}/terraform-azurerm-materialize.git
      ```
 
-
 1. Go to the `examples/simple` folder in the Materialize Terraform repo
    directory.
 
@@ -210,8 +190,6 @@ deploys a sample infrastructure on Azure with the following components:
 >    repository](https://github.com/MaterializeInc/terraform-azurerm-materialize/)
 >    instead. When running with the root `main.tf`, see [Azure required
 >    configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-azure/).
-
-
 
 1. Optional. Create a virtual environment, specifying a path for the new virtual
    environment:
@@ -254,7 +232,6 @@ deploys a sample infrastructure on Azure with the following components:
 >    repository](https://github.com/MaterializeInc/terraform-azurerm-materialize/)
 >    instead. When running with the root `main.tf`, see [Azure required
 >    configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-azure/).
-
 
 1. Initialize the terraform directory.
 
@@ -321,7 +298,6 @@ deploys a sample infrastructure on Azure with the following components:
    starting in v0.3.0, a `cert-manager`. Verify the
    installation and check the status:
 
-   
    **Materialize Operator:**
 
    Verify the installation and check the status:
@@ -342,8 +318,6 @@ deploys a sample infrastructure on Azure with the following components:
    NAME                                                                        DESIRED   CURRENT   READY   AGE
    replicaset.apps/materialize-mydemo-materialize-operator-74d8f549d6          1         1         1       36m
    ```
-
-   
 
    **cert-manager (Starting in version 0.3.0):**
 
@@ -374,9 +348,6 @@ deploys a sample infrastructure on Azure with the following components:
    replicaset.apps/cert-manager-cainjector-664b5878d6   1         1         1       4m23s
    replicaset.apps/cert-manager-webhook-6ddb7bd6c5      1         1         1       4m23s
    ```
-
-   
-   
 
    If you run into an error during deployment, refer to the
    [Troubleshooting](/installation/troubleshooting/).
@@ -425,7 +396,6 @@ deploys a sample infrastructure on Azure with the following components:
 >    Terraform modules, additional considerations may apply when using an updated
 >    Terraform modules to your existing deployments.
 >    See [Materialize on Azure releases](/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-azure-terraform-module) for notable changes.
-
 
 1. Run `terraform plan` with both `.tfvars` files and review the changes to be
    made.
@@ -522,9 +492,6 @@ deploys a sample infrastructure on Azure with the following components:
 
 1. Open the Materialize Console in your browser:
 
-
-   
-
    **Via Network Load Balancer:**
 
    Starting in v0.3.1, for each Materialize instance, Materialize on Azure
@@ -545,8 +512,6 @@ deploys a sample infrastructure on Azure with the following components:
    warning with regards to the certificate. In production, run with certificates
    from an official Certificate Authority (CA) rather than self-signed
    certificates.
-
-   
 
    **Via port forwarding:**
 
@@ -590,19 +555,13 @@ deploys a sample infrastructure on Azure with the following components:
    if an error occurs, ensuring a more stable connection. It detects failures by
    monitoring for "portforward.go" error messages.
 
-
-   
-   
-
    > **Tip:** If you experience long loading screens or unresponsiveness in the Materialize
 >    Console, we recommend increasing the size of the `mz_catalog_server` cluster.
 >    Refer to the [Troubleshooting Console
 >    Unresponsiveness](/self-managed-deployments/troubleshooting/#troubleshooting-console-unresponsiveness)
 >    guide.
 
-
 ## Next steps
-
 
 - From the Console, you can get started with the
 [Quickstart](/get-started/quickstart/).
@@ -610,9 +569,7 @@ deploys a sample infrastructure on Azure with the following components:
 - To start ingesting your own data from an external system like Kafka, MySQL or
   PostgreSQL, see [Ingest data](/ingest-data/).
 
-
 ## Cleanup
-
 
 To delete the whole sample infrastructure and deployment (including the
 Materialize operator and Materialize instances and data), run from the Terraform
@@ -624,10 +581,8 @@ terraform destroy
 
 When prompted to proceed, type `yes` to confirm the deletion.
 
-
   > **Tip:** If the `terraform destroy` command is unable to delete the subnet because it
 >   is in use, you can rerun the `terraform destroy` command.
-
 
 ## See also
 

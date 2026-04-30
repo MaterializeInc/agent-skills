@@ -18,7 +18,6 @@ requiring changes to application logic or tooling.
 >    connection details (host, port, password) when setting up the foreign server
 >    and user mappings in PostgreSQL.
 
-
 1. After you have connected at least once with the new service account to finish
    the new account creation, modify the `fdw_svc_account` role:
 

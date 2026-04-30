@@ -2,8 +2,6 @@
 
 `SELECT` binds SQL queries to named views or materialized views, and allows to interactively query data maintained in Materialize .
 
-
-
 [//]: # "TODO(morsapaes) More than adapting this to the new architecture,
 rewrite the page entirely at some point."
 
@@ -13,8 +11,6 @@ queries to named [views](../create-view) or [materialized views](../create-mater
 on the underlying relations based on common query patterns.
 
 ## Syntax
-
-
 
 ```mzsql
 [WITH <cte_binding> [, ...]]
@@ -50,12 +46,9 @@ SELECT [ALL | DISTINCT [ON ( <col_ref> [, ...] )]]
 | **INTERSECT** [**ALL** \| **DISTINCT**] `<another_select_stmt>` | Optional. Records present in both `select_stmt` and `another_select_stmt`. `DISTINCT` returns only unique rows from these results (implied default). With `ALL` specified, each record occurs a number of times equal to the lesser of the times it occurs in each input statement.  |
 | **EXCEPT** [**ALL** \| **DISTINCT**] `<another_select_stmt>` | Optional. Records present in `select_stmt` but not in `another_select_stmt`. `DISTINCT` returns only unique rows from these results (implied default). With `ALL` specified, each record occurs a number of times equal to the times it occurs in `select_stmt` less the times it occurs in `another_select_stmt`, or not at all if the former is greater than latter.  |
 
-
 ### Common table expressions (CTEs)
 
 #### Regular CTEs
-
-
 
 ```mzsql
 WITH <cte_ident> [( <col_ident> [, ...] )] AS ( <select_stmt> )
@@ -70,10 +63,7 @@ WITH <cte_ident> [( <col_ident> [, ...] )] AS ( <select_stmt> )
 | ( `<col_ident>` [, ...] ) | Optional. Rename the CTE's columns to the list of identifiers. The number of identifiers must match the number of columns returned by the CTE's `select_stmt`.  |
 | **AS** ( `<select_stmt>` ) | The `SELECT` statement that defines the CTE. Any `cte_ident` alias can be referenced in subsequent `cte_binding` definitions and in the final `select_stmt`.  |
 
-
 #### Recursive CTEs
-
-
 
 ```mzsql
 WITH MUTUALLY RECURSIVE
@@ -89,7 +79,6 @@ WITH MUTUALLY RECURSIVE
 | **(RETURN AT \| ERROR AT) RECURSION LIMIT** `<limit>` | Optional. Control the recursion behavior:  \| Option \| Description \| \|--------\|-------------\| \| `RETURN AT RECURSION LIMIT <limit>` \| Stop the fixpoint computation after `<limit>` iterations and use the current values computed for each recursive CTE binding in the `select_stmt`. Useful when debugging and validating the correctness of recursive queries. \| \| `ERROR AT RECURSION LIMIT <limit>` \| Stop the fixpoint computation after `<limit>` iterations and fail the query with an error. A good safeguard against accidentally running a non-terminating dataflow in production clusters. \|  |
 | `<cte_ident>` ( `<col_ident>` `<col_type>` [, ...] ) | A binding that gives the SQL fragment defined under `select_stmt` a `cte_ident` alias. Unlike regular CTEs, a recursive CTE binding must explicitly state its type as a comma-separated list of (`col_ident` `col_type`) pairs. This alias can be used in the same binding or in all other (preceding and subsequent) bindings in the enclosing recursive CTE block.  |
 | **AS** ( `<select_stmt>` ) | The `SELECT` statement that defines the recursive CTE. Any `cte_ident` alias can be referenced in all `recursive_cte_binding` definitions that live under the same block, as well as in the final `select_stmt` for that block.  |
-
 
 For details and examples, see the [Recursive CTEs](/sql/select/recursive-ctes) page.
 
@@ -132,7 +121,6 @@ SET cluster = <cluster name>;
 ```
 
 Materialize will remove the dataflow as soon as it has returned the query results to you.
-
 
 #### Known limitations
 
@@ -284,12 +272,9 @@ The privileges required to execute this statement are:
 - [`CREATE MATERIALIZED VIEW`](../create-materialized-view)
 - [`SHOW FULL VIEWS`](../show-views)
 
-
-
 ---
 
 ## JOIN
-
 
 `JOIN` lets you combine two or more table expressions into a single table
 expression.
@@ -305,8 +290,6 @@ i.e. we support all types of SQL joins in all of the conditions you would
 expect.
 
 ## Syntax
-
-
 
 ```mzsql
 <select_pred>
@@ -327,7 +310,6 @@ expect.
 | **USING** ( `<col_ref>` [, ...] ) [**AS** `<join_using_alias>`] | Optional. If the join condition does not require table-level qualification (i.e. joining tables on columns with the same name), the columns to join the tables on. For example, `USING (customer_id)`. The optional `AS` clause provides a table alias for the join columns. The columns will remain referenceable by their original names. For example, given `lhs JOIN rhs USING (c) AS joint`, the column `c` will be referenceable as `lhs.c`, `rhs.c`, and `joint.c`.  |
 | **ON** `<expression>` | Optional. The condition on which to join the tables. For example `ON purchase.customer_id = customer.id`.  |
 | `<select_post>` | The remaining [`SELECT`](/sql/select) clauses you want to use, e.g. `...WHERE expr GROUP BY col_ref HAVING expr`.  |
-
 
 **Note**: It's possible to join together table expressions as inner joins without using this clause whatsoever, e.g. `SELECT cols... FROM t1, t2 WHERE t1.x = t2.x GROUP BY cols...`
 
@@ -362,7 +344,6 @@ left-hand row according to the usual rules of the selected join type.
 > plan via the [`EXPLAIN PLAN`](/sql/explain-plan/) statement. In many common patterns
 > involving `LATERAL` joins, Materialize can optimize away the join entirely.
 
-
 As a simple example, the following query uses `LATERAL` to count from 1 to `x`
 for all the values of `x` in `xs`.
 
@@ -382,7 +363,6 @@ SELECT * FROM
 
 For a real-world example of a `LATERAL` subquery, see the [Top-K by group
 idiom](/transform-data/idiomatic-materialize-sql/top-k/).
-
 
 ## Examples
 
@@ -533,17 +513,13 @@ diagram shows how cross joins form the Cartesian product.
 - [`SELECT`](/sql/select)
 - [`CREATE VIEW`](/sql/create-view)
 
-
 ---
 
 ## Recursive CTEs
 
-
 Recursive CTEs operate on the recursively-defined structures like trees or graphs implied from queries over your data.
 
 ## Syntax
-
-
 
 ```mzsql
 WITH MUTUALLY RECURSIVE
@@ -559,7 +535,6 @@ WITH MUTUALLY RECURSIVE
 | **(RETURN AT \| ERROR AT) RECURSION LIMIT** `<limit>` | Optional. Control the recursion behavior:  \| Option \| Description \| \|--------\|-------------\| \| `RETURN AT RECURSION LIMIT <limit>` \| Stop the fixpoint computation after `<limit>` iterations and use the current values computed for each recursive CTE binding in the `select_stmt`. Useful when debugging and validating the correctness of recursive queries. \| \| `ERROR AT RECURSION LIMIT <limit>` \| Stop the fixpoint computation after `<limit>` iterations and fail the query with an error. A good safeguard against accidentally running a non-terminating dataflow in production clusters. \|  |
 | `<cte_ident>` ( `<col_ident>` `<col_type>` [, ...] ) | A binding that gives the SQL fragment defined under `select_stmt` a `cte_ident` alias. Unlike regular CTEs, a recursive CTE binding must explicitly state its type as a comma-separated list of (`col_ident` `col_type`) pairs. This alias can be used in the same binding or in all other (preceding and subsequent) bindings in the enclosing recursive CTE block.  |
 | **AS** ( `<select_stmt>` ) | The `SELECT` statement that defines the recursive CTE. Any `cte_ident` alias can be referenced in all `recursive_cte_binding` definitions that live under the same block, as well as in the final `select_stmt` for that block.  |
-
 
 ## Details
 
@@ -601,14 +576,12 @@ When the set of changes for all bindings becomes empty, the recursive computatio
 >    This most likely will manifest in spikes of the cluster resources allocated to your recursive dataflows.
 >    See [an example](#queries-with-update-locality) below.
 
-
 ## Examples
 
 Let's consider a very simple schema consisting of `users` that belong to a
 hierarchy of geographical `areas` and exchange `transfers` between each other.
 Use the [SQL Shell](/console/) to run the sequence of
 commands below.
-
 
 ### Example schema
 
@@ -679,7 +652,6 @@ of the `SUBSCRIBE` using **Stop streaming**.
 
 > **Note:** Depending on your base data, the number of records in the `connected` result might get close to the square of the number of `users`.
 
-
 ### Strongly connected components
 
 Another thing that you might be interested in is identifying maximal sub-graphs where every pair of `users` are `connected` (the so-called [_strongly connected components (SCCs)_](https://en.wikipedia.org/wiki/Strongly_connected_component)) of the graph defined above.
@@ -717,7 +689,6 @@ When you’re done, cancel out of the `SUBSCRIBE` using **Stop streaming**.
 
 > **Note:** The `strongly_connected_components` definition given above is not recursive, but relies on the recursive CTEs from the `connected` definition.
 > If you don't need to keep track of the `connected` contents for other reasons, you can use [this alternative SCC definition](https://twitter.com/frankmcsherry/status/1628519795971727366) which computes SCCs directly using repeated forward and backward label propagation.
-
 
 ### Aggregations over a hierarchy
 
@@ -833,7 +804,6 @@ RETURN AT RECURSION LIMIT $n -- where $n = 1, 2, 3, ...
 
 and observe how the result changes after `$n` iterations.
 
-
 **After 1 iteration:**
 ```text
  src_id | dst_id
@@ -861,8 +831,6 @@ and observe how the result changes after `$n` iterations.
  ...
 ```
 
-
-
 Changing the `UNION` to `UNION ALL` in the `connected` definition caused a full copy of `transfer` to be added to the current value of `connected` in each iteration!
 Consequently, `connected` never stops growing and the recursive CTE computation never reaches a fixpoint.
 
@@ -871,7 +839,6 @@ Consequently, `connected` never stops growing and the recursive CTE computation 
 The examples presented so far have the following "update locality" property:
 
 > **Note:** A change in a source collection will usually cause a _bounded amount_ of changes to the contents of the recursive CTE bindings derived after each iteration.
-
 
 For example:
 

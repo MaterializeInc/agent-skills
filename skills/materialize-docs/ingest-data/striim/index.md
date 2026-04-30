@@ -78,7 +78,6 @@ cluster. Next, you'll configure Materialize to consume this data.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-
 1. In the [SQL Shell](/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CONNECTION`](/sql/create-connection/)
    command to create connection objects with access and authentication details

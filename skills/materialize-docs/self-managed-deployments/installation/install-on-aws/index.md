@@ -13,7 +13,6 @@ a metadata database; blob storage; and a license key.
 deploys a complete Materialize environment on AWS using the modular Terraform
 setup from this repository.
 
-
 > **Warning:** The Terraform modules used in this tutorial are intended for
 > evaluation/demonstration purposes and for serving as a template when building
 > your own production deployment. The modules should not be directly relied upon
@@ -22,8 +21,6 @@ setup from this repository.
 > deployment, either:
 > - Fork the repo and pin to a specific version; or
 > - Use the code as a reference when developing your own deployment.
-
-
 
 ## What Gets Created
 
@@ -87,7 +84,6 @@ This example provisions the following infrastructure:
 | 8080 | For HTTP(S) connections to Materialize Console |
  |
 
-
 ## Prerequisites
 
 ### AWS Account Requirements
@@ -106,9 +102,7 @@ An active AWS account with appropriate permissions to create:
 - [kubectl](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html)
 - [Helm 3.2.0+](https://helm.sh/docs/intro/install/)
 
-
 ### License Key
-
 
 | License key type | Deployment type | Action |
 | --- | --- | --- |
@@ -116,7 +110,6 @@ An active AWS account with appropriate permissions to create:
 | Community | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
 | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
 | Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
-
 
 ## Getting started: Simple example
 
@@ -129,14 +122,12 @@ An active AWS account with appropriate permissions to create:
 > - Fork the repo and pin to a specific version; or
 > - Use the code as a reference when developing your own deployment.
 
-
 > **Tip:** The simple example used in this tutorial enables [Password
 > authentication](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/aws/examples/simple/main.tf#L380)
 > for the Materialize instance. To use a different authentication method, update
 > [`authenticator_kind`](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/kubernetes/modules/materialize-instance/README.md#input_authenticator_kind).
 > See [Authentication](/security/self-managed/authentication/) for the supported
 > authentication mechanisms.
-
 
 ### Step 1: Set Up the Environment
 
@@ -219,7 +210,6 @@ An active AWS account with appropriate permissions to create:
 >    ```
 >    Then, re-apply the Terraform configuration.
 
-
 1. From the output, you will need the following fields to connect using the
    Materialize Console and PostgreSQL-compatible clients/drivers:
    - `nlb_dns_name`
@@ -231,8 +221,6 @@ An active AWS account with appropriate permissions to create:
 
    > **Tip:** Your shell may show an ending marker (such as `%`) because the
 >    output did not end with a newline. Do not include the marker when using the value.
-
-
 
 1. Configure `kubectl` to connect to your cluster, replacing:
 
@@ -263,8 +251,7 @@ An active AWS account with appropriate permissions to create:
    ```bash
    kubectl -n materialize-environment get all
    ```
-   
-   
+
    <p>If you run into an error during deployment, refer to the
    <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
 
@@ -274,14 +261,11 @@ Using the `nlb_dns_name` and `external_login_password_mz_system` from the Terraf
 output, you can connect to Materialize via the Materialize Console or
 PostgreSQL-compatible tools/drivers using the following ports:
 
-
 | Port | Description |
 | --- | --- |
 | 6875 | For SQL connections to the database |
 | 6876 | For HTTP(S) connections to the database |
 | 8080 | For HTTP(S) connections to Materialize Console |
-
-
 
 #### Connect to the Materialize Console
 
@@ -289,8 +273,6 @@ PostgreSQL-compatible tools/drivers using the following ports:
 > public NLB. You can connect directly using the NLB's DNS name from anywhere
 > on the internet (subject to your `ingress_cidr_blocks` configuration).
 > - **If using a private (internal) NLB:** You can connect from inside the same VPC or from networks that are privately connected to it. Alternatively, use Kubernetes port-forwarding for both SQL and Console.
-
-
 
 1. To connect to the Materialize Console, open a browser to
     `https://<nlb_dns_name>:8080`, substituting your `<nlb_dns_name>`.
@@ -305,7 +287,6 @@ PostgreSQL-compatible tools/drivers using the following ports:
 >    warning with regards to the certificate. In production, run with
 >    certificates from an official Certificate Authority (CA) rather than
 >    self-signed certificates.
-
 
 1. Log in as `mz_system`, using `external_login_password_mz_system` as the
    password.
@@ -330,8 +311,6 @@ PostgreSQL-compatible tools/drivers using the following ports:
 > public NLB. You can connect directly using the NLB's DNS name from anywhere
 > on the internet (subject to your `ingress_cidr_blocks` configuration).
 > - **If using a private (internal) NLB:** You can connect from inside the same VPC or from networks that are privately connected to it. Alternatively, use Kubernetes port-forwarding for both SQL and Console.
-
-
 
 1. To connect using `psql`, in the connection string, specify:
 
@@ -365,7 +344,6 @@ PostgreSQL-compatible tools/drivers using the following ports:
 > **Tip:** To reduce cost in your demo environment, you can tweak subnet CIDRs
 > and instance types in `main.tf`.
 
-
 You can customize each Terraform module independently.
 
 - For details on the Terraform modules, see both the [top
@@ -388,7 +366,6 @@ See also:
 
 ## Cleanup
 
-
 To delete the whole sample infrastructure and deployment (including the
 Materialize operator and Materialize instances and data), run from the Terraform
 directory:
@@ -398,8 +375,6 @@ terraform destroy
 ```
 
 When prompted to proceed, type `yes` to confirm the deletion.
-
-
 
 ## See Also
 

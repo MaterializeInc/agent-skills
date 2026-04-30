@@ -16,8 +16,6 @@ bytes.
 
 ## Syntax
 
-
-
 ```mzsql
 UUID '<uuid_str>'
 
@@ -26,7 +24,6 @@ UUID '<uuid_str>'
 | Syntax element | Description |
 | --- | --- |
 | `'<uuid_str>'` | A UUID string. The standard form consists of five groups of lowercase hexadecimal digits separated by hyphens: `8-4-4-4-12` digits. Materialize also accepts UUID input where hyphens are omitted, or where some or all hexadecimal digits are uppercase. Materialize will always output UUIDs in the standard form.  |
-
 
 The standard form of a UUID consists of five groups of lowercase hexadecimal
 digits separated by hyphens, where the first group contains 8 digits, the next

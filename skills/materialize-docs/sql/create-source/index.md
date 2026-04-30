@@ -2,16 +2,12 @@
 
 `CREATE SOURCE` connects Materialize to an external data source.
 
-
-
 A [source](/concepts/sources/) describes an external system you want Materialize to read data from, and provides details about how to decode and interpret that data.
 
 ## Syntax summary
 
 <!--"Docs Note: Using include-example shortcode instead of include-syntax since only want the code snippet on this page."
 -->
-
-
 
 **PostgreSQL (New):**
 
@@ -25,7 +21,6 @@ FROM POSTGRES CONNECTION <connection_name> (PUBLICATION '<publication_name>')
 ```
 
 For details, see [CREATE SOURCE: PostgreSQL (New Syntax)](/sql/create-source/postgres-v2/).
-
 
 **PostgreSQL (Legacy):**
 
@@ -64,7 +59,6 @@ FROM MYSQL CONNECTION <connection_name> [
 
 For details, see [CREATE SOURCE: MySQL](/sql/create-source/mysql/).
 
-
 **SQL Server (New):**
 
 <no value>```mzsql
@@ -75,8 +69,6 @@ FROM SQL SERVER CONNECTION <connection_name>
 ```
 
 For details, see [CREATE SOURCE: SQL Server (New Syntax)](/sql/create-source/sql-server-v2/).
-
-
 
 **SQL Server (Legacy):**
 
@@ -93,11 +85,7 @@ FROM SQL SERVER CONNECTION <connection_name>
 
 For details, see [CREATE SOURCE: SQL Server(Legacy)](/sql/create-source/sql-server/).
 
-
-
 **Kafka/Redpanda:**
-
-
 
 **Format Avro:**
 
@@ -132,8 +120,6 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
 
 ```
 
-
-
 **Format JSON:**
 
 <no value>```mzsql
@@ -159,8 +145,6 @@ FORMAT JSON
 [WITH (RETAIN HISTORY FOR <retention_period>)]
 
 ```
-
-
 
 **Format TEXT/BYTES:**
 
@@ -188,8 +172,6 @@ FORMAT TEXT | BYTES
 
 ```
 
-
-
 **Format CSV:**
 
 <no value>```mzsql
@@ -215,7 +197,6 @@ FORMAT CSV WITH <n> COLUMNS | WITH HEADER [ ( <col_name> [, ...] ) ]
 [WITH (RETAIN HISTORY FOR <retention_period>)]
 
 ```
-
 
 **Format Protobuf:**
 
@@ -247,7 +228,6 @@ FORMAT PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
 [WITH (RETAIN HISTORY FOR <retention_period>)]
 
 ```
-
 
 **KEY FORMAT VALUE FORMAT:**
 
@@ -288,12 +268,7 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 
 ```
 
-
-
-
-
 For details, see [CREATE SOURCE: Kafka/Redpanda](/sql/create-source/kafka/).
-
 
 **Webhook:**
 
@@ -314,9 +289,6 @@ FROM WEBHOOK
 ```
 
 For details, see [CREATE SOURCE: Webhook](/sql/create-source/webhook/).
-
-
-
 
 ## Privileges
 
@@ -373,8 +345,6 @@ The following guides step you through setting up sources:
 
 </div>
 
-
-
 ## Best practices
 
 ### Separate cluster(s) for sources
@@ -399,8 +369,6 @@ align with the steady-state ingestion.</p>
 </li>
 </ul>
 
-
-
 ### Sizing a source
 
 Some sources are low traffic and require relatively few resources to handle data ingestion, while others are high traffic and require hefty resource allocations. The cluster in which you place a source determines the amount of CPU, memory, and disk available to the source.
@@ -423,7 +391,6 @@ the cluster. Colocating multiple sources onto the same cluster can be more
 resource efficient when you have many low-traffic sources that occasionally need
 some burst capacity.
 
-
 ## Related pages
 
 - [Sources](/concepts/sources/)
@@ -431,24 +398,16 @@ some burst capacity.
 - [`SHOW COLUMNS`](/sql/show-columns/)
 - [`SHOW CREATE SOURCE`](/sql/show-create-source/)
 
-
-
 ---
 
 ## Appendix: Load generator
 
-
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
-
 
 Load generator sources produce synthetic data for use in demos and performance
 tests.
 
-
-
 ## Syntax
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -496,7 +455,6 @@ FOR ALL TABLES
 | **FOR ALL TABLES** | Creates subsources for all tables in the load generator.  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress subsource for the source. If this is not specified, the subsource will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
-
 
 ## Description
 
@@ -558,7 +516,6 @@ create the following subsources:
 The organizations, users, and accounts are fixed at the time the source
 is created. Each tick interval, either a new auction is started, or a new bid
 is placed in the currently ongoing auction.
-
 
 ### Marketing
 
@@ -845,29 +802,21 @@ ORDER BY
 [`timestamp with time zone`]: /sql/types/timestamp
 [feature request]: https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests
 
-
 ---
 
 ## CREATE SOURCE: Kafka/Redpanda
 
-
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
-
-
 
 To connect to a Kafka/Redpanda broker (and optionally a schema registry), you
 first need to [create a connection](#prerequisite-creating-a-connection) that specifies
 access and authentication parameters. Once created, a connection is **reusable**
 across multiple `CREATE SOURCE` and `CREATE SINK` statements. 
 
-
 > **Note:** The same syntax, supported formats and features can be used to connect to a
 > [Redpanda](/integrations/redpanda/) broker.
 
-
 ## Syntax
-
-
 
 **Format Avro:**
 ### Format Avro
@@ -875,8 +824,6 @@ across multiple `CREATE SOURCE` and `CREATE SINK` statements.
 Materialize can decode Avro messages by integrating with a schema registry to
 retrieve a schema, and automatically determine the columns and data types to use
 in the source.
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -927,8 +874,6 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
-
 #### Schema versioning
 
 The _latest_ schema is retrieved using the [`TopicNameStrategy`](https://docs.confluent.io/current/schema-registry/serdes-develop/index.html) strategy at the time the `CREATE SOURCE` statement is issued.
@@ -947,16 +892,12 @@ Materialize supports all [Avro
 types](https://avro.apache.org/docs/++version++/specification/), _except for_
 recursive types and union types in arrays.
 
-
-
 **Format JSON:**
 ### Format JSON
 
 Materialize can decode JSON messages into a single column named `data` with type
 `jsonb`. Refer to the [`jsonb` type](/sql/types/jsonb) documentation for the
 supported operations on this type.
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -998,7 +939,6 @@ FORMAT JSON
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
 If your JSON messages have a consistent shape, we recommend creating a parsing
 [view](/concepts/views) that maps the individual fields to
 columns with the required data types:
@@ -1016,12 +956,9 @@ CREATE VIEW my_typed_source AS
 To avoid doing this task manually, you can use [this **JSON parsing
 widget**](/sql/types/jsonb/#parsing).
 
-
 #### Schema registry integration
 
 Retrieving schemas from a schema registry is not supported yet for JSON-formatted sources. This means that Materialize cannot decode messages serialized using the [JSON Schema](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/serdes-json.html#json-schema-serializer-and-deserializer) serialization format (`JSON_SR`).
-
-
 
 **Format TEXT/BYTES:**
 ### Format Text/Bytes
@@ -1034,9 +971,6 @@ Materialize can:
 - Read raw bytes without applying any formatting or decoding. Raw byte-formatted
 sources have a single column, by default named `data`. For details on encodings
 and casting, check the [`bytea`](/sql/types/bytea/) documentation.
-
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -1078,16 +1012,11 @@ FORMAT TEXT | BYTES
 | `EXPOSE PROGRESS AS <progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | `WITH (<with_option> [, ...])` | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
-
-
 **Format CSV:**
 ### Format CSV
 
 Materialize can parse CSV-formatted data. The data in CSV sources is read as
 [`text`](/sql/types/text).
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name> ( <col_name> [, ...] )
@@ -1129,17 +1058,12 @@ FORMAT CSV WITH <n> COLUMNS | WITH HEADER [ ( <col_name> [, ...] ) ]
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
-
-
 **Format Protobuf:**
 ### Format Protobuf
 
 Materialize can decode Protobuf messages by integrating with a schema registry
 or parsing an inline schema to retrieve a `.proto` schema definition. It can
 then automatically define the columns and data types to use in the source.
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -1186,7 +1110,6 @@ FORMAT PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
 Unlike Avro, Protobuf does not serialize a schema with the message, so Materialize expects:
 
 * A `FileDescriptorSet` that encodes the Protobuf message schema. You can generate the `FileDescriptorSet` with [`protoc`](https://grpc.io/docs/protoc-installation/), for example:
@@ -1221,15 +1144,11 @@ Materialize supports all [well-known](https://developers.google.com/protocol-buf
 
 When using a schema registry with Protobuf sources, the registered schemas must contain exactly one `Message` definition.
 
-
-
 **KEY FORMAT VALUE FORMAT:**
 ### KEY FORMAT VALUE FORMAT
 By default, the message key is decoded using the same format as the message
 value. However, you can set the key and value encodings explicitly using the
 `KEY FORMAT ... VALUE FORMAT`.
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -1285,11 +1204,6 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
-
-
-
-
 ## Envelopes
 
 In addition to determining how to decode incoming records, Materialize also needs to understand how to interpret them. Whether a new record inserts, updates, or deletes existing data in Materialize depends on the `ENVELOPE` specified in the `CREATE SOURCE` statement.
@@ -1327,7 +1241,6 @@ The upsert envelope treats all records as having a **key** and a **value**, and 
 >   maintaining the source. We recommend using a standard-sized cluster, rather
 >   than a legacy-sized cluster, to automatically spill the workload to disk. See
 >   [spilling to disk](#spilling-to-disk) for details.
-
 
 #### Null keys
 
@@ -1392,7 +1305,6 @@ WHERE error IS NULL;
   <strong class="gutter">NOTE:</strong> Currently, Materialize only supports Avro-encoded Debezium records. If you're interested in JSON support, please reach out in the community Slack or submit a <a href="https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests">feature request</a>.
 </div>
 
-
 Materialize provides a dedicated envelope (`ENVELOPE DEBEZIUM`) to decode Kafka
 messages produced by [Debezium](https://debezium.io/). For example:
 
@@ -1415,7 +1327,6 @@ This envelope treats all records as [change events](https://debezium.io/document
  **Update** | If the `before` and `after` fields are _non-null_, the record represents an upstream [`update` event](https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-update-events), and Materialize updates the existing record with the new value.
  **Delete** | If the `after` field is _null_, the record represents an upstream [`delete` event](https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-delete-events), and Materialize deletes the record.
 
-
 > **Note:** - This envelope can lead to high memory utilization in the cluster maintaining
 >   the source. Materialize can automatically offload processing to
 >   disk as needed. See [spilling to disk](#spilling-to-disk) for details.
@@ -1423,7 +1334,6 @@ This envelope treats all records as [change events](https://debezium.io/document
 >   before and after the change event, which is **not guaranteed** for every
 >   Debezium connector. For more details, check the [Debezium integration
 >   guide](/integrations/debezium/).
-
 
 #### Truncation
 
@@ -1438,8 +1348,6 @@ The envelope exposes the `before` and `after` value fields from change events.
 Debezium may produce duplicate records if the connector is interrupted. Materialize makes a best-effort attempt to detect and filter out duplicates.
 
 ## Features
-
-
 
 ### Spilling to disk
 
@@ -1636,7 +1544,6 @@ If you need to limit the amount of data maintained as state after source
 creation, consider using [temporal filters](/sql/patterns/temporal-filters/)
 instead.
 
-
 ### Monitoring source progress
 
 By default, Kafka sources expose progress metadata as a subsource that you can
@@ -1689,7 +1596,6 @@ more up-to-date information.
 > Materialize does not participate in the consumer group protocol nor does it
 > recover on restart by reading the committed offsets. The committed offsets are
 > provided solely for the benefit of Kafka monitoring tools.
-
 
 Committed offsets are associated with a consumer group specific to the source.
 The ID of the consumer group consists of the prefix configured with the [`GROUP
@@ -1745,7 +1651,6 @@ statements. For more details on creating connections, check the
 
 #### Broker
 
-
 **SSL:**
 ```mzsql
 CREATE SECRET kafka_ssl_key AS '<BROKER_SSL_KEY>';
@@ -1771,17 +1676,12 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 );
 ```
 
-
-
 If your Kafka broker is not exposed to the public internet, you can [tunnel the connection](/sql/create-connection/#network-security-connections)
 through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host:
-
 
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ```mzsql
 CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
@@ -1802,7 +1702,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
-
 
 **SSH tunnel:**
 
@@ -1826,10 +1725,7 @@ BROKERS (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
 
-
-
 #### Confluent Schema Registry
-
 
 **SSL:**
 ```mzsql
@@ -1858,18 +1754,13 @@ CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
 );
 ```
 
-
-
 If your Confluent Schema Registry server is not exposed to the public internet,
 you can [tunnel the connection](/sql/create-connection/#network-security-connections)
 through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host:
 
-
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ```mzsql
 CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
@@ -1908,10 +1799,7 @@ CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
 
-
-
 ### Creating a source
-
 
 **Avro:**
 
@@ -1922,7 +1810,6 @@ CREATE SOURCE avro_source
   FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
   FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection;
 ```
-
 
 **JSON:**
 
@@ -1946,7 +1833,6 @@ parsing view on top of your Kafka source that maps the individual fields to
 columns with the required data types. To avoid doing this tedious task
 manually, you can use [this **JSON parsing widget**](/sql/types/jsonb/#parsing)!
 
-
 **Text/bytes:**
 
 ```mzsql
@@ -1956,7 +1842,6 @@ CREATE SOURCE text_source
   ENVELOPE UPSERT;
 ```
 
-
 **CSV:**
 
 ```mzsql
@@ -1964,7 +1849,6 @@ CREATE SOURCE csv_source (col_foo, col_bar, col_baz)
   FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
   FORMAT CSV WITH 3 COLUMNS;
 ```
-
 
 **Protobuf:**
 
@@ -2013,9 +1897,6 @@ schema with the message, so before creating a source you must:
     FORMAT PROTOBUF MESSAGE 'Batch' USING SCHEMA '\x0a300a0d62696...';
   ```
 
-
-
-
 ## Related pages
 
 - [`CREATE SECRET`](/sql/create-secret)
@@ -2025,14 +1906,11 @@ schema with the message, so before creating a source you must:
 - [`DROP SOURCE`](/sql/drop-source)
 - [Using Debezium](/integrations/debezium/)
 
-
 ---
 
 ## CREATE SOURCE: MySQL
 
-
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
-
 
 Materialize supports MySQL (5.7+) as a real-time data source. To connect to a
 MySQL database, you first need to tweak its configuration to enable
@@ -2040,20 +1918,13 @@ MySQL database, you first need to tweak its configuration to enable
 [create a connection](#creating-a-connection) in Materialize that specifies
 access and authentication parameters.
 
-
-
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ## Syntax
 
 > **Note:** Although `schema` and `database` are [synonyms in MySQL](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_schema),
 > the MySQL source documentation and syntax **standardize on `schema`** as the
 > preferred keyword.
-
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -2082,7 +1953,6 @@ FROM MYSQL CONNECTION <connection_name> [
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
 ### `CONNECTION` options
 
 Field             | Value                           | Description
@@ -2102,7 +1972,6 @@ Field             | Value                           | Description
 > [Google Cloud SQL](/ingest-data/mysql/google-cloud-sql/),
 > [Self-hosted](/ingest-data/mysql/self-hosted/).
 
-
 The source uses MySQL's binlog replication protocol to **continually ingest
 changes** resulting from `INSERT`, `UPDATE` and `DELETE` operations in the
 upstream database. This process is known as _change data capture_.
@@ -2117,95 +1986,29 @@ Before creating a source in Materialize, you **must** configure the upstream
 MySQL database for GTID-based binlog replication. Ensure the upstream MySQL
 database has been configured for GTID-based binlog replication:
 
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <table>
 <thead>
 <tr>
 
 <th>MySQL Configuration</th>
 
-
 <th>Value</th>
 
-
 <th>Notes</th>
-
 
 </tr>
 </thead>
 <tbody>
 
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>log_bin</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -2213,52 +2016,15 @@ database has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>binlog_format</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ROW</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
@@ -2266,52 +2032,15 @@ database has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>binlog_row_image</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>FULL</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -2319,52 +2048,15 @@ database has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>gtid_mode</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -2372,52 +2064,15 @@ database has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>enforce_gtid_consistency</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 
@@ -2425,52 +2080,15 @@ database has been configured for GTID-based binlog replication:
 
 </tr>
 
-
-
-
-
-
-
-
 <tr>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 <code>replica_preserve_commit_order</code>
 </td>
 
-
-
-
-
-  
-  
-
-  
-  
-
 <td>
 <code>ON</code>
 </td>
-
-
-
-
-
-  
-  
-
-  
-  
 
 <td>
 Only required when connecting Materialize to a read-replica.
@@ -2478,11 +2096,8 @@ Only required when connecting Materialize to a read-replica.
 
 </tr>
 
-
 </tbody>
 </table>
-
-
 
 If you're running MySQL using a managed service, additional configuration
 changes might be required. For step-by-step instructions on enabling GTID-based
@@ -2493,7 +2108,6 @@ binlog replication for your MySQL service, see the integration guides.
 > **Warning:** If Materialize tries to resume replication and finds GTID gaps due to missing
 > binlog files, the source enters an errored state and you have to drop and
 > recreate it.
-
 
 By default, MySQL retains binlog files for **30 days** (i.e., 2592000 seconds)
 before automatically removing them. This is configurable via the
@@ -2621,7 +2235,6 @@ when the source was created.</p>
 </li>
 </ul>
 
-
 #### Incompatible schema changes
 
 <p>All other schema changes to upstream tables will set the corresponding
@@ -2631,7 +2244,6 @@ subsource.</p>
 and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
 subsource back to the source. When you add the subsource, it will have the
 updated schema from the corresponding upstream table.</p>
-
 
 ### Supported types
 
@@ -2688,7 +2300,6 @@ option to exclude any columns that contain unsupported data types.</p>
 </li>
 </ul>
 
-
 ### Truncation
 
 <p>Avoid truncating upstream tables that are being replicated into Materialize.
@@ -2719,7 +2330,6 @@ once the process finishes, resize the cluster for steady-state.
 > [Google Cloud SQL](/ingest-data/mysql/google-cloud-sql/),
 > [Self-hosted](/ingest-data/mysql/self-hosted/).
 
-
 ### Creating a connection
 
 A connection describes how to connect and authenticate to an external system you
@@ -2744,12 +2354,9 @@ If your MySQL server is not exposed to the public internet, you can [tunnel the
 connection](/sql/create-connection/#network-security-connections) through an AWS
 PrivateLink service (Materialize Cloud) or an SSH bastion host SSH bastion host.
 
-
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ```mzsql
 CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
@@ -2770,7 +2377,6 @@ For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
 
-
 **SSH tunnel:**
 ```mzsql
 CREATE CONNECTION ssh_connection TO SSH TUNNEL (
@@ -2790,9 +2396,6 @@ CREATE CONNECTION mysql_connection TO MYSQL (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check
 [this guide](/ops/network-security/ssh-tunnel/).
-
-
-
 
 ### Creating a source {#create-source-example}
 
@@ -2883,25 +2486,19 @@ ALTER SOURCE mz_source ADD SUBSOURCE table_1;
   - [Google Cloud SQL](/ingest-data/mysql/google-cloud-sql/)
   - [Self-hosted](/ingest-data/mysql/self-hosted/)
 
-
 ---
 
 ## CREATE SOURCE: PostgreSQL (Legacy Syntax)
 
-
 > **Disambiguation:** This page reflects the legacy syntax, which requires downtime to handle upstream DDL changes. For the new syntax which can handle adding or dropping columns to the upstream tables without downtime, see the [new reference page](/sql/create-source/postgres-v2).
 
-
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
-
 
 Materialize supports PostgreSQL (11+) as a data source. To connect to a
 PostgreSQL instance, you first need to [create a connection](#creating-a-connection)
 that specifies access and authentication parameters.
 Once created, a connection is **reusable** across multiple `CREATE SOURCE`
 statements.
-
-
 
 > **Warning:** Before creating a PostgreSQL source, you must set up logical replication in the
 > upstream database. For step-by-step instructions, see the integration guide for
@@ -2912,14 +2509,9 @@ statements.
 > [Google Cloud SQL](/ingest-data/postgres-google-cloud-sql/),
 > [Self-hosted](/ingest-data/postgres-self-hosted/).
 
-
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
 
-
-
 ## Syntax
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -2947,7 +2539,6 @@ FROM POSTGRES CONNECTION <connection_name> (
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables in the publication. \| \| `SCHEMAS ( <schema1> [, ...] )` \| Create subsources for specific schemas in the publication. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables in the publication. \|  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
-
 
 ## Features
 
@@ -3046,7 +2637,6 @@ same source across multiple materializations.
 > </li>
 > </ul>
 
-
 ##### PostgreSQL schemas
 
 `CREATE SOURCE` will attempt to create each upstream table in the same schema as
@@ -3117,7 +2707,6 @@ when the source was created.</p>
 </li>
 </ul>
 
-
 #### Incompatible schema changes
 
 <p>All other schema changes to upstream tables will set the corresponding
@@ -3126,7 +2715,6 @@ source.</p>
 <p>To handle incompatible <a href="#schema-changes" >schema changes</a>, use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> and <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to first drop the affected subsource, and
 then add the table back to the source. When you add the subsource, it will
 have the updated schema from the corresponding upstream table.</p>
-
 
 ### Publication membership
 
@@ -3140,7 +2728,6 @@ it before Materialize notices that the table was removed. In this case,
 Materialize can no longer provide any consistency guarantees about the data
 we present from the table and, unfortunately, is wholly unaware that this
 occurred.</p>
-
 
 To mitigate this issue, if you need to drop and re-add a table to a
 publication, ensure that you remove the table/subsource from the source
@@ -3198,7 +2785,6 @@ output.</p>
 </li>
 </ul>
 
-
 ### Truncation
 
 <p>Avoid truncating upstream tables that are being replicated into Materialize.
@@ -3222,7 +2808,6 @@ so inheriting tables&rsquo; data will only be ingested as part of the inheriting
 table, i.e. in Materialize, the data will not be returned when serving
 <code>SELECT</code>s from the inherited table.</p>
 
-
 You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
@@ -3240,7 +2825,6 @@ create a new view (materialized or non-) that unions the new table.
 > [Azure DB](/ingest-data/postgres-azure-db/),
 > [Google Cloud SQL](/ingest-data/postgres-google-cloud-sql/),
 > [Self-hosted](/ingest-data/postgres-self-hosted/).
-
 
 ### Creating a connection
 
@@ -3268,12 +2852,9 @@ If your PostgreSQL server is not exposed to the public internet, you can
 [tunnel the connection](/sql/create-connection/#network-security-connections)
 through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host.
 
-
 **AWS PrivateLink:**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ```mzsql
 CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
@@ -3299,7 +2880,6 @@ For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
 
-
 **SSH tunnel:**
 ```mzsql
 CREATE CONNECTION ssh_connection TO SSH TUNNEL (
@@ -3321,9 +2901,6 @@ CREATE CONNECTION pg_connection TO POSTGRES (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check
 [this guide](/ops/network-security/ssh-tunnel/).
-
-
-
 
 ### Creating a source {#create-source-example}
 
@@ -3416,27 +2993,16 @@ addition to dropping any state that Materialize previously had for the table.
 [`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
 [`money`]: https://www.postgresql.org/docs/current/datatype-money.html
 
-
 ---
 
 ## CREATE SOURCE: PostgreSQL (New Syntax)
 
-
-
-
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/postgres/).
-
-
-
-
-
-
 
 Creates a new source from PostgreSQL.  Materialize
 supports creating sources from PostgreSQL version 11&#43;.  Once a new source is created, you can <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> from the source
 to create the corresponding tables in Materialize and start the data ingestion
 process.
-
 
 ## Prerequisites
 
@@ -3463,11 +3029,9 @@ process.
 <p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
 guides</a>.</p>
 
-
 ## Syntax
 
 To create a source from an external PostgreSQL:
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <source_name>
@@ -3484,7 +3048,6 @@ FROM POSTGRES CONNECTION <connection_name> (PUBLICATION '<publication_name>')
 | **IN CLUSTER** `<cluster_name>` | *Optional.* The [cluster](/sql/create-cluster) to maintain this source. Otherwise, the source will be created in the active cluster.  {{< tip >}} If possible, use a cluster dedicated just for sources. See also [Operational guidelines](/manage/operational-guidelines/#sources). {{< /tip >}}  |
 | `<connection_name>` | The name of the PostgreSQL connection to use for the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#postgresql) documentation page.  A connection is **reusable** across multiple `CREATE SOURCE` statements.  |
 | `<publication_name>` | The name of the PostgreSQL publication to associate with the source. For details on creating a publication in your PostgreSQL database, see the [integration guides for your PostgreSQL](/ingest-data/postgres/#integration-guides).  |
-
 
 ## Details
 
@@ -3573,7 +3136,6 @@ Materialize can no longer provide any consistency guarantees about the data
 we present from the table and, unfortunately, is wholly unaware that this
 occurred.</p>
 
-
 To mitigate this issue, if you need to drop and re-add a table to a
 publication, ensure that you remove the table/subsource from the source
 <em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.
@@ -3602,7 +3164,6 @@ SELECT id, replication_slot FROM mz_internal.mz_postgres_sources;
   u8     | materialize_7f8a72d0bf2a4b6e9ebc4e61ba769b71
 ```
 
-
 > **Tip:** <ul>
 > <li>
 > <p>For PostgreSQL 13+, set a reasonable value
@@ -3622,7 +3183,6 @@ SELECT id, replication_slot FROM mz_internal.mz_postgres_sources;
 > unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
 > </li>
 > </ul>
-
 
 ## Examples
 
@@ -3651,11 +3211,7 @@ SELECT id, replication_slot FROM mz_internal.mz_postgres_sources;
 <p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
 guides</a>.</p>
 
-
-
 ### Create a source {#create-source-example}
-
-
 
 Once you have configured the upstream PostgreSQL, network security, and
 created the connection, you can create the source. In this example, the
@@ -3710,7 +3266,6 @@ COMMIT;
 
 For more information, see [`CREATE TABLE`](/sql/create-table/).
 
-
 ## Related pages
 
 - [`CREATE TABLE`](/sql/create-table/)
@@ -3721,21 +3276,15 @@ For more information, see [`CREATE TABLE`](/sql/create-table/).
 [`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
 [`money`]: https://www.postgresql.org/docs/current/datatype-money.html
 
-
 ---
 
 ## CREATE SOURCE: SQL Server
 
-
-
-
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/sql-server/).
-
 
 ## Prerequisites
 
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
-
 
 Materialize supports SQL Server (2016+) as a real-time data source. To connect to a
 SQL Server database, you first need to tweak its configuration to enable [Change Data
@@ -3744,11 +3293,7 @@ and [`SNAPSHOT` transaction isolation](https://learn.microsoft.com/en-us/dotnet/
 for the database that you would like to replicate. Then [create a connection](#prerequisite-creating-a-connection-to-sql-server)
 in Materialize that specifies access and authentication parameters.
 
-
-
 ## Syntax
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -3763,7 +3308,6 @@ FROM SQL SERVER CONNECTION <connection_name>
 | **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
 | **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
 | **CONNECTION** `<connection_name>` | The name of the SQL Server connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#sql-server) documentation page.  |
-
 
 ## Ingesting data
 
@@ -3840,7 +3384,6 @@ Field     | Type                          | Details
 ----------|-------------------------------|--------------
 `lsn`     | [`bytea`](/sql/types/bytea/)  | The upper-bound [Log Sequence Number](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-log-architecture-and-management-guide) replicated thus far into Materialize.
 
-
 And can be queried using:
 
 ```mzsql
@@ -3856,7 +3399,6 @@ ingestion progress and debugging related issues, see [Troubleshooting](/ops/trou
 
 > **Important:** Before creating a SQL Server source, you must enable Change Data Capture and
 > `SNAPSHOT` transaction isolation in the upstream database.
-
 
 ### Creating a source {#create-source-example}
 
@@ -3885,7 +3427,6 @@ If your SQL Server instance is not exposed to the public internet, you can
 [tunnel the connection](/sql/create-connection/#network-security-connections)
 through and SSH bastion host.
 
-
 **SSH tunnel:**
 ```mzsql
 CREATE CONNECTION ssh_connection TO SSH TUNNEL (
@@ -3907,9 +3448,6 @@ CREATE CONNECTION sqlserver_connection TO SQL SERVER (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check
 [this guide](/ops/network-security/ssh-tunnel/).
-
-
-
 
 #### Creating the source in Materialize
 
@@ -3938,14 +3476,11 @@ CREATE TABLE items FROM SOURCE mz_source(REFERENCE dbo.items);
 - [`CREATE CONNECTION`](/sql/create-connection)
 - [`CREATE SOURCE`](../)
 
-
 ---
 
 ## CREATE SOURCE: SQL Server
 
-
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
-
 
 Materialize supports SQL Server (2016+) as a real-time data source. To connect to a
 SQL Server database, you first need to tweak its configuration to enable [Change Data
@@ -3954,11 +3489,7 @@ and [`SNAPSHOT` transaction isolation](https://learn.microsoft.com/en-us/dotnet/
 for the database that you would like to replicate. Then [create a connection](#creating-a-connection)
 in Materialize that specifies access and authentication parameters.
 
-
-
 ## Syntax
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -3981,7 +3512,6 @@ FROM SQL SERVER CONNECTION <connection_name>
 | **TEXT COLUMNS** ( `<col1>` [, ...] ) | Optional. If specified, decode data from the specified columns in the subsource(s) as `text` for the listed column(s), such as for unsupported data types.  |
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables with CDC enabled in all schemas upstream. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables upstream. Requires fully-qualified table names (`<schema1>.<table1>`). \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
-
 
 ## Creating a source
 
@@ -4048,7 +3578,6 @@ Field     | Type                          | Details
 ----------|-------------------------------|--------------
 `lsn`     | [`bytea`](/sql/types/bytea/)  | The upper-bound [Log Sequence Number](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-log-architecture-and-management-guide) replicated thus far into Materialize.
 
-
 And can be queried using:
 
 ```mzsql
@@ -4075,7 +3604,6 @@ Materialize supports schema changes in the upstream database as follows:
 > [SQL Server: Source versioning
 > guide](/ingest-data/sql-server/source-versioning/).
 
-
 - Adding columns to tables. Materialize will **not ingest** new columns added
   upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to first
   drop the affected subsource, and then add the table back to the source using
@@ -4087,7 +3615,6 @@ Materialize supports schema changes in the upstream database as follows:
 - Adding or removing `NOT NULL` constraints to tables that were nullable when
   the source was created.
 
-
 #### Incompatible schema changes
 
 All other schema changes to upstream tables will set the corresponding subsource
@@ -4098,7 +3625,6 @@ and [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to first drop the
 affected subsource, and then add the table back to the source. When you add the
 subsource, it will have the updated schema from the corresponding upstream
 table.
-
 
 ### Supported types
 
@@ -4168,7 +3694,6 @@ value when said column is updated.</p>
 </li>
 </ul>
 
-
 ### Timestamp Rounding
 
 The `time`, `datetime2`, and `datetimeoffset` types in SQL Server have a default
@@ -4228,7 +3753,6 @@ once the process finishes, resize the cluster for steady-state.
 > **Important:** Before creating a SQL Server source, you must enable Change Data Capture and
 > `SNAPSHOT` transaction isolation in the upstream database.
 
-
 ### Creating a connection
 
 A connection describes how to connect and authenticate to an external system you
@@ -4254,7 +3778,6 @@ If your SQL Server instance is not exposed to the public internet, you can
 [tunnel the connection](/sql/create-connection/#network-security-connections)
 through and SSH bastion host.
 
-
 **SSH tunnel:**
 ```mzsql
 CREATE CONNECTION ssh_connection TO SSH TUNNEL (
@@ -4276,9 +3799,6 @@ CREATE CONNECTION sqlserver_connection TO SQL SERVER (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check
 [this guide](/ops/network-security/ssh-tunnel/).
-
-
-
 
 ### Creating a source {#create-source-example}
 
@@ -4346,22 +3866,15 @@ ALTER SOURCE mz_source ADD SUBSOURCE table_1;
 - [`CREATE CONNECTION`](/sql/create-connection)
 - [`CREATE SOURCE`](../)
 
-
 ---
 
 ## CREATE SOURCE: Webhook
 
-
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
-
 
 Webhook sources expose a [public URL](#webhook-url) that allows your applications to push webhook events into Materialize.
 
-
-
 ## Syntax
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -4389,7 +3902,6 @@ FROM WEBHOOK
 | `INCLUDE HEADERS [ ( [NOT] <header_name> [, [NOT] <header_name> ... ] ) ]` | Optional. Include a column named `headers` of type `map[text => text]` containing the headers of the request. To exclude specific header fields from the mapping, use the `NOT` option. This can be useful if you need to accept a dynamic list of fields but want to exclude sensitive information like authorization.  |
 | `CHECK ( [WITH ( ... )] <check_expression> )` | Optional. Specify a boolean expression that is used to validate each request received by the source. Without a `CHECK` statement, **all requests will be accepted**. To prevent bad actors from injecting data into your source, it is **strongly encouraged** that you define a `CHECK` statement with your webhook sources.  |
 | `WITH ( <BODY\|HEADERS\|SECRET <secret_name>> [AS <alias>] [BYTES] [, ...])` | Optional. Provide columns to the check expression. The headers and body of the request are only subject to validation if `WITH ( BODY, HEADERS, ... )` is specified as part of the `CHECK` statement. By default, the type of `body` used for validation is `text`, regardless of the `BODY FORMAT` you specified for the source.  - `BODY`: Provide a `body` column to the check expression. The column can be renamed with the optional **AS** `<alias>` statement, and the data type can be changed to `bytea` with the optional **BYTES** keyword. - `HEADERS`: Provide a column `headers` to the check expression. The column can be renamed with the optional **AS** `<alias>` statement, and the data type can be changed to `map[text => bytea]` with the optional **BYTES** keyword. - `SECRET <secret_name>`: Securely provide a [`SECRET`](/sql/create-secret) to the check expression. The `constant_time_eq` validation function **does not support** fully qualified secret names: if the secret is in a different namespace to the source, the column can be renamed with the optional **AS** `<alias>` statement. The data type can also be changed to `bytea` using the optional **BYTES** keyword.  |
-
 
 ## Supported formats
 
@@ -4431,7 +3943,6 @@ A breakdown of each component is as follows:
 > **Note:** This is a public URL that is open to the internet and has no security. To
 > validate that requests are legitimate, see [Validating requests](#validating-requests).
 > For limits imposed on this endpoint, see [Request limits](#request-limits).
-
 
 ## Features
 
@@ -4487,7 +3998,6 @@ the `headers` map column.
 > **Warning:** Without a `CHECK` statement, **all requests will be accepted**. To prevent bad
 > actors from injecting data into your source, it is **strongly encouraged** that
 > you define a `CHECK` statement with your webhook sources.
-
 
 It's common for applications using webhooks to provide a method for validating a
 request is legitimate. You can specify an expression to do this validation for
@@ -4556,7 +4066,6 @@ LIMIT 10;
 > **Note:** It's not possible to use secrets in a `SELECT` statement, so you'll need to
 > provide these values as raw text for debugging.
 
-
 ### Handling duplicated and partial events
 
 Given any number of conditions, e.g. a network hiccup, it's possible for your application to send
@@ -4600,7 +4109,6 @@ CREATE MATERIALIZED VIEW my_build_jobs_merged AS (
 
 > **Note:** When casting from `text` to `timestamp` you should prefer to use the [`try_parse_monotonic_iso8601_timestamp`](/sql/functions/pushdown/)
 > function, which enables [temporal filter pushdown](/transform-data/patterns/temporal-filters/#temporal-filter-pushdown).
-
 
 ### Handling batch events
 

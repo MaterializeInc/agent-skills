@@ -6,7 +6,6 @@ to Materialize using the [SQL Server Source](/sql/create-source/sql-server/).
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 ## Before you begin
 
 - Make sure you are running SQL Server 2016 or higher with  Change Data Capture
@@ -28,13 +27,11 @@ which is not readily available on older versions of SQL Server.
   WHERE servicename LIKE 'SQL Server Agent%';
   ```
 
-
 ## A. Configure SQL Server
 
 > **Note:** To configure SQL Server for data ingestion into Materialize, you must be a user
 > with privileges to enable CDC and create/manage login, users, roles, and
 > privileges.
-
 
 ### 1. Create a Materialize user in SQL Server.
 
@@ -129,7 +126,6 @@ GO -- The GO terminator may be unsupported or unnecessary for your client.
 
 For guidance on enabling `SNAPSHOT` transaction isolation, see the [SQL Server documentation](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sys-sp-cdc-enable-table-transact-sql)
 
-
 ### 4. Enable Change-Data-Capture for the tables.
 
 Enable Change Data Capture for each table you wish to replicate (replace
@@ -147,13 +143,11 @@ EXEC sys.sp_cdc_enable_table
 GO -- The GO terminator may be unsupported or unnecessary for your client.
 ```
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your SQL Server instance is publicly accessible, **you can
 > skip this step**. For production scenarios, we recommend configuring one of the
 > network security options below.
-
 
 There are various ways to configure your database's network to allow Materialize
 to connect:
@@ -167,8 +161,6 @@ to connect:
 
 Select the option that works best for you.
 
-
-
 **Allow Materialize IPs:**
 
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -181,8 +173,6 @@ Select the option that works best for you.
 
 1. Update your database firewall rules to allow traffic from each IP address
    from the previous step.
-
-
 
 **Use AWS PrivateLink:**
 
@@ -293,8 +283,6 @@ option.
       show up, so you would need to wait for the endpoint service connection to
       be ready before you create a source.
 
-
-
 **Use an SSH tunnel:**
 
 To create an SSH tunnel from Materialize to your database, you launch an VM to
@@ -327,10 +315,6 @@ traffic from the bastion host.
 1. Update your database firewall rules to allow traffic from the SSH bastion
    host.
 
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -339,7 +323,6 @@ traffic from the bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 In Materialize, a [cluster](/concepts/clusters/) is an isolated
 environment, similar to a virtual warehouse in Snowflake. When you create a
@@ -367,14 +350,10 @@ your SQL Server database.
     Once the snapshot is finished, you can readjust the size of the cluster to fit
     the volume of changes being replicated from your upstream SQL Server database.
 
-
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -403,8 +382,6 @@ your networking configuration.
     ```
 
     - Replace `<host>` with your SQL Server endpoint, and `<database>` with the database you'd like to connect to.
-
-
 
 **Use an AWS Privatelink (Cloud-only):**
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -520,8 +497,6 @@ details for Materialize to use:
 
     AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql) command for details.
 
-
-
 **Use an SSH tunnel:**
 
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -581,16 +556,11 @@ details for Materialize to use:
 
     - Replace `<host>` with your SQL Server endpoint.
 
-
-
-
-
 ### 3. Start ingesting data
 
 > **Note:** For a new SQL Server source, if none of the replicating tables
 > are receiving write queries, snapshotting may take up to an additional 5 minutes
 > to complete. For details, see [snapshot latency for inactive databases](#snapshot-latency-for-inactive-databases)
-
 
 Use the [`CREATE SOURCE`](/sql/create-source/) command to connect
 Materialize to your SQL Server instance and start ingesting data:
@@ -609,10 +579,8 @@ CREATE SOURCE mz_source
   COLUMNS` options. Check out the [reference
   documentation](#supported-types) for guidance.
 
-
 After source creation, refer to [schema changes
 considerations](#schema-changes) for information on handling upstream schema changes.
-
 
 ### 4. Right-size the cluster
 
@@ -646,7 +614,6 @@ accordingly.
     (1 row)
     ```
 
-
 ## D. Explore your data
 
 With Materialize ingesting your SQL Server data into durable storage, you can
@@ -666,7 +633,6 @@ new data arrives, and serving results efficiently.
 - Check out the [tools and integrations](/integrations/) supported by
   Materialize.
 
-
 ## Considerations
 
 ### Schema changes
@@ -682,7 +648,6 @@ Materialize supports schema changes in the upstream database as follows:
 > [SQL Server: Source versioning
 > guide](/ingest-data/sql-server/source-versioning/).
 
-
 - Adding columns to tables. Materialize will **not ingest** new columns added
   upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to first
   drop the affected subsource, and then add the table back to the source using
@@ -694,7 +659,6 @@ Materialize supports schema changes in the upstream database as follows:
 - Adding or removing `NOT NULL` constraints to tables that were nullable when
   the source was created.
 
-
 #### Incompatible schema changes
 
 All other schema changes to upstream tables will set the corresponding subsource
@@ -705,7 +669,6 @@ and [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to first drop the
 affected subsource, and then add the table back to the source. When you add the
 subsource, it will have the updated schema from the corresponding upstream
 table.
-
 
 ### Supported types
 
@@ -774,7 +737,6 @@ value when said column is updated.</p>
 </ul>
 </li>
 </ul>
-
 
 ### Timestamp Rounding
 

@@ -5,10 +5,8 @@ How to propagate Change Data Capture (CDC) data from a PostgreSQL database to Ma
 > recommend** using the native [PostgreSQL](/sql/create-source/postgres/) source
 > instead.
 
-
 For help getting started with your own data, you can schedule a [free guided
 trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 Change Data Capture (CDC) allows you to track and propagate changes in a
 PostgreSQL database to downstream consumers based on its Write-Ahead Log
@@ -32,7 +30,6 @@ to Kafka using Kafka Connect-compatible connectors.
 Before deploying a Debezium connector, you need to ensure that the upstream
 database is configured to support [logical replication](https://www.postgresql.org/docs/current/logical-replication.html).
 
-
 **Self-hosted:**
 
 As a _superuser_:
@@ -50,8 +47,6 @@ As a _superuser_:
     can affect database performance.
 
 1. Restart the database so all changes can take effect.
-
-
 
 **AWS RDS:**
 
@@ -73,14 +68,11 @@ As a _superuser_ (`rds_superuser`):
 
 1. Restart the database so all changes can take effect.
 
-
-
 **AWS Aurora:**
 
 > **Note:** Aurora Serverless (v1) [does **not** support](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless.html#aurora-serverless.limitations)
 > logical replication, so it's not possible to use this service with
 > Materialize.
-
 
 We recommend following the [AWS Aurora](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraPostgreSQL.Replication.Logical.html#AuroraPostgreSQL.Replication.Logical.Configure)
 documentation for detailed information on logical replication configuration and
@@ -108,8 +100,6 @@ As a _superuser_:
 
 1. Restart the database so all changes can take effect.
 
-
-
 **Azure DB:**
 
 We recommend following the [Azure DB for PostgreSQL](https://docs.microsoft.com/en-us/azure/postgresql/flexible-server/concepts-logical#pre-requisites-for-logical-replication-and-logical-decoding)
@@ -124,8 +114,6 @@ best practices.
    find these addresses by querying the `mz_egress_ips` table in Materialize.
 
 1. Restart the database so all changes can take effect.
-
-
 
 **Cloud SQL:**
 
@@ -143,10 +131,6 @@ list of allowed IP addresses. You can find these addresses by querying the
 `mz_egress_ips` table in Materialize.
 
 1. Restart the database so all changes can take effect.
-
-
-
-
 
 Once logical replication is enabled:
 
@@ -181,8 +165,6 @@ by adding it to Kafka Connect.
 
 > **Warning:** If you deploy the PostgreSQL Debezium connector in [Confluent Cloud](https://docs.confluent.io/cloud/current/connectors/cc-mysql-source-cdc-debezium.html),
 > you **must** override the default value of `After-state only` to `false`.
-
-
 
 **Debezium 1.5+:**
 
@@ -241,7 +223,6 @@ by adding it to Kafka Connect.
       --from-beginning \
       --topic pg_repl.public.table1
     ```
-
 
 **Debezium 2.0+:**
 
@@ -320,15 +301,11 @@ by adding it to Kafka Connect.
       --topic pg_repl.public.table1
     ```
 
-
-
-
 ### C. Create a source
 
 <div class="note">
   <strong class="gutter">NOTE:</strong> Currently, Materialize only supports Avro-encoded Debezium records. If you're interested in JSON support, please reach out in the community Slack or submit a <a href="https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests">feature request</a>.
 </div>
-
 
 Debezium emits change events using an envelope that contains detailed
 information about upstream database operations, like the `before` and `after`
@@ -361,7 +338,6 @@ CREATE VIEW cnt_table1 AS
     FROM kafka_repl
     GROUP BY field1;
 ```
-
 
 ### E. Create an index on the view
 

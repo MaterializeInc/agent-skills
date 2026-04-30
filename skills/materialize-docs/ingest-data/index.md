@@ -2,8 +2,6 @@
 
 Best practices for ingesting data into Materialize from external systems.
 
-
-
 You can ingest data into Materialize from various external systems:
 
 <div class="multilinkbox">
@@ -46,8 +44,6 @@ You can ingest data into Materialize from various external systems:
 
 </div>
 
-
-
 ## Sources and clusters
 
 Materialize ingests data from external systems using
@@ -56,7 +52,6 @@ Materialize ingests data from external systems using
 data.
 
 > **Tip:** If possible, dedicate a cluster just for sources.
-
 
 ## Snapshotting
 
@@ -149,7 +144,6 @@ data from the upstream system.
 > using the same cluster for sources and other objects, such as sinks, etc.
 > See [Best practices](#best-practices) for more details.
 
-
 ### Process
 
 During hydration, data from Materialize's storage layer is read to reconstruct
@@ -227,7 +221,6 @@ this process.</p>
 <p>Once the initial snapshot has completed, you can resize the cluster for steady
 state.</p>
 
-
 #### Right-size the cluster for steady-state
 
 Once the initial snapshot has completed, you can
@@ -247,26 +240,20 @@ ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
 > resizing](/sql/alter-cluster/#zero-downtime-cluster-resizing) about automating
 > this process.
 
-
-
 ## See also
 
 - [Monitoring data ingestion](/ingest-data/monitoring-data-ingestion)
 - [Troubleshooting data ingestion](/ingest-data/troubleshooting)
 
-
-
 ---
 
 ## Amazon EventBridge
-
 
 This guide walks through the steps to ingest data from [Amazon EventBridge](https://aws.amazon.com/eventbridge/)
 into Materialize using the [Webhook source](/sql/create-source/webhook/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -280,7 +267,6 @@ Ensure that you have:
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 To create a cluster in Materialize, use the [`CREATE CLUSTER` command](/sql/create-cluster):
 
@@ -345,7 +331,6 @@ system table.
 > actors from injecting data into your source, it is **strongly encouraged** that
 > you define a `CHECK` statement with your webhook sources.
 
-
 The above webhook source uses [basic authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#basic_authentication_scheme).
 This enables a simple and rudimentary way to grant authorization to your webhook source.
 
@@ -389,7 +374,6 @@ to map the individual fields to columns with the required data types.
 
 Manually parsing JSON-formatted data in SQL can be tedious. You can use the [interactive JSON parser widget](https://materialize.com/docs/sql/types/jsonb/#parsing) to automatically turn a sample JSON payload into a parsing view with the individual fields mapped to columns.
 
-
 ### Timestamp handling
 
 We highly recommend using the [`try_parse_monotonic_iso8601_timestamp`](/transform-data/patterns/temporal-filters/#temporal-filter-pushdown)
@@ -411,11 +395,9 @@ serving results efficiently. For more details, check out the
 [Amazon EventBridge documentation](https://docs.aws.amazon.com/eventbridge/) and the
 [webhook source reference documentation](/sql/create-source/webhook/).
 
-
 ---
 
 ## AWS PrivateLink connections (Cloud-only)
-
 
 Materialize can connect to a Kafka broker, a Confluent Schema Registry server, a
 PostgreSQL database, or a MySQL database through an [AWS PrivateLink](https://aws.amazon.com/privatelink/)
@@ -426,14 +408,12 @@ retrieve the AWS principal needed to configure the AWS PrivateLink service.
 
 ## Create an AWS PrivateLink connection
 
-
 **Kafka on AWS:**
 
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the Terraform module repositories for [Amazon MSK](https://github.com/MaterializeInc/terraform-aws-msk-privatelink)
 > and [self-managed Kafka clusters](https://github.com/MaterializeInc/terraform-aws-kafka-privatelink).
-
 
 This section covers how to create AWS PrivateLink connections
 and retrieve the AWS principal needed to configure the AWS PrivateLink service.
@@ -603,15 +583,11 @@ connection you just configured:
    * For **in-region connections**, the correct availability zone is specified
       for each broker.
 
-
-
-
 **PostgreSQL on AWS:**
 
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
-
 
 1. #### Create target groups
     Create a dedicated [target group](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-target-group.html) for your RDS or Aurora or Aurora instance with the following details:
@@ -751,15 +727,11 @@ CREATE CONNECTION pg_connection TO POSTGRES (
 
 This PostgreSQL connection can then be reused across multiple [`CREATE SOURCE`](https://materialize.com/docs/sql/create-source/postgres/) statements.
 
-
-
-
 **MySQL on AWS:**
 
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
-
 
 1. #### Create target groups
     Create a dedicated [target group](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-target-group.html) for your RDS instance with the following details:
@@ -899,11 +871,6 @@ CREATE CONNECTION mysql_connection TO MYSQL (
 
 This MySQL connection can then be reused across multiple [`CREATE SOURCE`](https://materialize.com/docs/sql/create-source/mysql/) statements.
 
-
-
-
-
-
 ## Related pages
 
 - [`CREATE SECRET`](/sql/create-secret)
@@ -916,15 +883,12 @@ This MySQL connection can then be reused across multiple [`CREATE SOURCE`](https
   MSK](/ingest-data/kafka/amazon-msk), [Redpanda
   Cloud](/ingest-data/redpanda/redpanda-cloud/)
 
-
 ---
 
 ## CockroachDB CDC using Kafka and Changefeeds
 
-
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 Change Data Capture (CDC) allows you to track and propagate changes in a
 CockroachDB database to downstream consumers. In this guide, we’ll cover how to
@@ -985,7 +949,6 @@ for transformation.
    Materialize expects. Each table will produce data to a dedicated Kafka
    topic, which can then be consumed by Materialize.
 
-
 For detailed instructions on configuring your CockroachDB instance for CDC,
 refer to the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stable/create-changefeed).
 
@@ -997,7 +960,6 @@ refer to the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stab
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -1030,9 +992,7 @@ topics in your Kafka (or Kafka-API compatible) broker.
     ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
     ```
 
-
 ### 2. Create a connection
-
 
 Now that you've created an ingestion cluster, you can connect Materialize to
 your Kafka broker and start ingesting data. The exact steps depend on your
@@ -1118,7 +1078,6 @@ observability features in the [Materialize Console](/console/).
    If the source fails to transition to this state, check the
    [ingestion troubleshooting guide](/ingest-data/troubleshooting/).
 
-
 ### 5. Create a view
 
 A [view](/concepts/views/) saves a query under a name to provide a shorthand for
@@ -1132,7 +1091,6 @@ CREATE VIEW cnt_table1 AS
     FROM kafka_repl
     GROUP BY field1;
 ```
-
 
 ### 6. Create an index on the view
 
@@ -1153,7 +1111,6 @@ CREATE INDEX idx_cnt_table1_field1 ON cnt_table1(field1);
 For best practices on when to index a view, see
 [Indexes](/concepts/indexes/) and [Views](/concepts/views/).
 
-
 ## Next steps
 
 With Materialize ingesting your CockroachDB data into durable storage, you can
@@ -1173,11 +1130,9 @@ new data arrives, and serving results efficiently.
 - Check out the [tools and integrations](/integrations/) supported by
   Materialize.
 
-
 ---
 
 ## Debezium
-
 
 You can use [Debezium](https://debezium.io/) to propagate Change Data Capture
 (CDC) data to Materialize from databases that are not supported via native
@@ -1206,7 +1161,6 @@ Capture (CDC) data to Materialize.
   <strong class="gutter">NOTE:</strong> Currently, Materialize only supports Avro-encoded Debezium records. If you're interested in JSON support, please reach out in the community Slack or submit a <a href="https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests">feature request</a>.
 </div>
 
-
 Debezium captures row-level changes resulting from `INSERT`, `UPDATE`, and
 `DELETE` operations in the upstream database and publishes them as events to
 Kafka (and other Kafka API-compatible brokers) using Kafka Connect-compatible
@@ -1214,13 +1168,9 @@ connectors. For more details on CDC support in Materialize, check the
 [Kafka source](/sql/create-source/kafka/#debezium-envelope) reference
 documentation.
 
-
 ---
 
 ## Fivetran
-
-
-
 
 [Fivetran](https://www.fivetran.com/) is a cloud-based automated data movement platform for
 extracting, loading and transforming data from a wide variety of connectors.
@@ -1305,18 +1255,15 @@ and 5 minutes for all other plans. The lowest sync frequency is 24 hours. You ca
 sync scheduling in the
 [Fivetran docs](https://fivetran.com/docs/core-concepts/syncoverview#syncfrequencyandscheduling).
 
-
 ---
 
 ## HubSpot
-
 
 This guide walks through the steps to ingest data from [HubSpot](https://www.hubspot.com/)
 into Materialize using the [Webhook source](/sql/create-source/webhook/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ### Before you begin
 
@@ -1330,7 +1277,6 @@ Ensure that you have:
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 To create a cluster in Materialize, use the [`CREATE CLUSTER` command](/sql/create-cluster):
 
@@ -1395,7 +1341,6 @@ system table.
 > **Warning:** Without a `CHECK` statement, **all requests will be accepted**. To prevent bad
 > actors from injecting data into your source, it is **strongly encouraged** that
 > you define a `CHECK` statement with your webhook sources.
-
 
 The `CHECK` clause defines how to validate each request. At the time of writing,
 HubSpot supports API key authentication, which you can use to validate
@@ -1488,7 +1433,6 @@ FROM hubspot_source;
 
 Manually parsing JSON-formatted data in SQL can be tedious. You can use the [interactive JSON parser widget](https://materialize.com/docs/sql/types/jsonb/#parsing) to automatically turn a sample JSON payload into a parsing view with the individual fields mapped to columns.
 
-
 ### Timestamp handling
 
 We highly recommend using the [`try_parse_monotonic_iso8601_timestamp`](/transform-data/patterns/temporal-filters/#temporal-filter-pushdown)
@@ -1510,11 +1454,9 @@ serving results efficiently. For more details, check out the
 [HubSpot documentation](https://knowledge.hubspot.com/workflows/how-do-i-use-webhooks-with-hubspot-workflows) and the
 [webhook source reference documentation](/sql/create-source/webhook/).
 
-
 ---
 
 ## Kafka
-
 
 Materialize provides native connector for Kafka message broker. To ingest data
 from Kafka, you need to
@@ -1548,7 +1490,6 @@ Envelope | Action
 **Debezium** | Treats data as wrapped in a "diff envelope" that indicates whether the record is an insertion, deletion, or update. The Debezium envelope is only supported by sources published to Kafka by Debezium.<br/><br/>For more information, see [`CREATE SOURCE`: Kafka - Debezium envelope](/sql/create-source/kafka/#debezium-envelope).
 **Upsert** | Treats data as having a key and a value. New records with non-null value that have the same key as a preexisting record in the dataflow will replace the preexisting record. New records with null value that have the same key as preexisting record will cause the preexisting record to be deleted. <br/><br/>For more information, see [`CREATE SOURCE`: Kafka - Upsert envelope](/sql/create-source/kafka/#upsert-envelope).
 
-
 ## Integration guides
 
 - [Amazon MSK](/ingest-data/kafka/amazon-msk/)
@@ -1561,11 +1502,9 @@ Envelope | Action
 - [Redpanda Cloud](/ingest-data/redpanda/redpanda-cloud/)
 - [Redpanda Self-hosted](/ingest-data/redpanda/)
 
-
 ---
 
 ## MongoDB
-
 
 Using Change Data Capture (CDC), you can track and propagate changes from
 MongoDB to downstream consumers. This guide outlines how to ingest data from a
@@ -1633,7 +1572,6 @@ The architecture consists of the following components:
 
 > **Important:** For Debezium to capture changes, your MongoDB deployment must be configured as a
 > replica set or a sharded cluster.
-
 
 Create a user (e.g., `debezium_materialize_user`) with the necessary permissions
 to read from the database. Depending on the connector's
@@ -1708,7 +1646,6 @@ Register the MongoDB connector with the following configuration:
 > forces Debezium to send the entire document state for every change, which allows
 > Materialize to use the `UPSERT` envelope.
 
-
 1. Create a `dbz_mongodb_connector.json` file with your connector configuration:
 
    ```json
@@ -1761,7 +1698,6 @@ Register the MongoDB connector with the following configuration:
 >    NumberDecimal("2.25")`.
 >    If you cannot enforce a consistent BSON type, you can omit the unwrap.
 
-
 2. Register the connector with Kafka Connect:
 
    ```bash
@@ -1772,14 +1708,12 @@ Register the MongoDB connector with the following configuration:
 
    Replace `<your-host>` with your Kafka Connect hostname or IP address.
 
-
 ## C. Ingest data in Materialize
 
 ### 1. Create the Kafka and CSR connections.
 
 In Materialize, Create the [Kafka connection](/sql/create-connection/#kafka) and the [Confluent
 Schema Registry connection](/sql/create-connection/#confluent-schema-registry)
-
 
 1. Create the [Kafka connection](/sql/create-connection/#kafka). For example,   if using `SASL_PLAINTEXT`:
 
@@ -1833,7 +1767,6 @@ Query the data using standard SQL.
 
   > **Note:** The query includes the Kafka message `id` field as a column in the table.
 
-
   ```none
               id            |           _id            | item_id |         item          | price | currency
   --------------------------+--------------------------+---------+-----------------------+-------+----------
@@ -1847,7 +1780,6 @@ Query the data using standard SQL.
 >   string in the `after` field in `mdb_items`. You can create a [parsing
 >   view](/sql/types/jsonb/#parsing) to map the individual document fields to columns instead.
 
-
 - To query the mdb_orders:
 
   ```mzsql
@@ -1855,7 +1787,6 @@ Query the data using standard SQL.
   ```
 
   > **Note:** The query includes the Kafka message `id` field as a column in the table.
-
 
   ```none
               id            |           _id            | order_id |       order_date        |         item          | quantity |   status
@@ -1871,17 +1802,14 @@ Query the data using standard SQL.
 >   view](/sql/types/jsonb/#parsing) to map the individual document fields to
 >   columns instead.
 
-
 ## Troubleshooting
 
 See also: [Debezium documentation on the MongoDB
 Connector](https://debezium.io/documentation/reference/stable/connectors/mongodb.html#mongodb-when-things-go-wrong)
 
-
 ---
 
 ## Monitoring data ingestion
-
 
 ## Monitoring the snapshotting progress
 
@@ -2005,11 +1933,9 @@ of the system restart. This is expected behavior. As a result, you should
 restrict your attention to how these statistics evolve over time, and not their
 absolute values at any moment in time.
 
-
 ---
 
 ## MySQL
-
 
 ## Change Data Capture (CDC)
 
@@ -2038,7 +1964,6 @@ gives you the following benefits:
 > **Note:** MySQL-compatible database systems are not guaranteed to work with the MySQL
 > source out-of-the-box. [MariaDB](https://mariadb.org/), [Vitess](https://vitess.io/)
 > and [PlanetScale](https://planetscale.com/) are currently **not supported**.
-
 
 The MySQL source requires **MySQL 5.7+** and is compatible with most common
 MySQL hosted services.
@@ -2081,7 +2006,6 @@ when the source was created.</p>
 </li>
 </ul>
 
-
 #### Incompatible schema changes
 
 <p>All other schema changes to upstream tables will set the corresponding
@@ -2091,7 +2015,6 @@ subsource.</p>
 and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
 subsource back to the source. When you add the subsource, it will have the
 updated schema from the corresponding upstream table.</p>
-
 
 ### Supported types
 
@@ -2148,7 +2071,6 @@ option to exclude any columns that contain unsupported data types.</p>
 </li>
 </ul>
 
-
 ### Truncation
 
 <p>Avoid truncating upstream tables that are being replicated into Materialize.
@@ -2169,11 +2091,9 @@ the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
 
-
 ---
 
 ## PostgreSQL
-
 
 ## Change Data Capture (CDC)
 
@@ -2217,7 +2137,6 @@ The following integration guides are available:
 <li><a href="/ingest-data/postgres/neon/" >Neon</a></li>
 <li><a href="/ingest-data/postgres/self-hosted/" >Self-hosted PostgreSQL</a></li>
 </ul>
-
 
 ## Considerations
 
@@ -2394,12 +2313,9 @@ progress reporting in the Console.</p>
 <p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
 date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
-
-
 ---
 
 ## Redpanda
-
 
 [//]: # "TODO(morsapaes) The Kafka guides need to be rewritten for consistency
 with the Postgres ones. We should include spill to disk in the guidance then."
@@ -2410,7 +2326,6 @@ Kafka sources.
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Configuration
 
@@ -2434,18 +2349,15 @@ Materialize supports **Redpanda 24.1+** and is compatible with most common Redpa
 - [`CREATE SOURCE`](/sql/create-source/kafka/)
 - [`CREATE SINK`](/sql/create-sink/)
 
-
 ---
 
 ## RudderStack
-
 
 This guide walks through the steps to ingest data from [RudderStack](https://rudderstack.com/)
 into Materialize using the [Webhook source](/sql/create-source/webhook/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -2460,7 +2372,6 @@ Ensure that you have:
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 To create a cluster in Materialize, use the [`CREATE CLUSTER` command](/sql/create-cluster):
 
@@ -2524,7 +2435,6 @@ system table.
 > **Warning:** Without a `CHECK` statement, **all requests will be accepted**. To prevent bad
 > actors from injecting data into your source, it is **strongly encouraged** that
 > you define a `CHECK` statement with your webhook sources.
-
 
 The above webhook source uses [basic authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#basic_authentication_scheme).
 This enables a simple and rudimentary way to grant authorization to your webhook source.
@@ -2595,7 +2505,6 @@ CREATE VIEW json_parsed AS
 
 Manually parsing JSON-formatted data in SQL can be tedious. You can use the [interactive JSON parser widget](https://materialize.com/docs/sql/types/jsonb/#parsing) to automatically turn a sample JSON payload into a parsing view with the individual fields mapped to columns.
 
-
 ### Timestamp handling
 
 We highly recommend using the [`try_parse_monotonic_iso8601_timestamp`](/transform-data/patterns/temporal-filters/#temporal-filter-pushdown)
@@ -2617,18 +2526,15 @@ serving results efficiently. For more details, check out the
 [Rudderstack documentation](https://rudderstack.com/docs/) and the
 [webhook source reference documentation](/sql/create-source/webhook/).
 
-
 ---
 
 ## Segment
-
 
 This guide walks through the steps to ingest data from [Segment](https://segment.com/)
 into Materialize using the [Webhook source](/sql/create-source/webhook/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ### Before you begin
 
@@ -2642,7 +2548,6 @@ Ensure that you have:
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 To create a cluster in Materialize, use the [`CREATE CLUSTER` command](/sql/create-cluster):
 
@@ -2704,7 +2609,6 @@ system table.
 > actors from injecting data into your source, it is **strongly encouraged** that
 > you define a `CHECK` statement with your webhook sources.
 
-
 The `CHECK` clause defines how to validate each request. At the time of writing,
 Segment validates requests by signing them with an HMAC in the `X-Signature`
 request header. The HMAC is a hex-encoded SHA1 hash using the secret
@@ -2759,7 +2663,6 @@ mapping:
 >  3. In **Shared Secret**, enter the secret created in the **Step 2**.
 >  4. Click **Save Changes**.
 
-
 ## Step 6. Validate incoming data
 
 With the source set up in Materialize and the webhook destination configured in
@@ -2781,8 +2684,6 @@ Segment, you can now query the incoming data:
 Webhook data is ingested as a JSON blob. We recommend creating a parsing view on
 top of your webhook source that uses [`jsonb` operators](/sql/types/jsonb/#operators)
 to map the individual fields to columns with the required data types.
-
-
 
 **Page:**
 ```mzsql
@@ -2806,7 +2707,6 @@ CREATE VIEW parse_segment AS SELECT
     body->>'version' AS version
 FROM segment_source;
 ```
-
 
 **Track:**
 
@@ -2833,8 +2733,6 @@ CREATE VIEW parse_segment AS SELECT
     try_parse_monotonic_iso8601_timestamp(body->>'originalTimestamp') AS original_timestamp
 FROM segment_source;
 ```
-
-
 
 **Identity:**
 ```mzsql
@@ -2865,10 +2763,7 @@ CREATE VIEW parse_segment AS SELECT
 FROM segment_source;
 ```
 
-
-
 Manually parsing JSON-formatted data in SQL can be tedious. You can use the [interactive JSON parser widget](https://materialize.com/docs/sql/types/jsonb/#parsing) to automatically turn a sample JSON payload into a parsing view with the individual fields mapped to columns.
-
 
 ### Timestamp handling
 
@@ -2891,18 +2786,15 @@ serving results efficiently. For more details, check out the
 [Segment documentation](https://segment.com/docs/connections/destinations/catalog/actions-webhook/) and the
 [webhook source reference documentation](/sql/create-source/webhook/).
 
-
 ---
 
 ## SnowcatCloud
-
 
 This guide walks through the steps to ingest data from [SnowcatCloud](https://www.snowcatcloud.com/)
 into Materialize using the [Webhook source](/sql/create-source/webhook/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -2917,7 +2809,6 @@ Ensure that you have:
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 To create a cluster in Materialize, use the [`CREATE CLUSTER` command](/sql/create-cluster):
 
@@ -2981,7 +2872,6 @@ system table.
 > **Warning:** Without a `CHECK` statement, **all requests will be accepted**. To prevent bad
 > actors from injecting data into your source, it is **strongly encouraged** that
 > you define a `CHECK` statement with your webhook sources.
-
 
 The above webhook source uses [basic authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication#basic_authentication_scheme).
 This enables a simple and rudimentary way to grant authorization to your webhook source.
@@ -3192,11 +3082,9 @@ serving results efficiently. For more details, check out the
 [SnowcatCloud documentation](https://docs.snowcatcloud.com/) and the
 [webhook source reference documentation](/sql/create-source/webhook/).
 
-
 ---
 
 ## SQL Server
-
 
 ## Change Data Capture (CDC)
 
@@ -3243,7 +3131,6 @@ Materialize supports schema changes in the upstream database as follows:
 > [SQL Server: Source versioning
 > guide](/ingest-data/sql-server/source-versioning/).
 
-
 - Adding columns to tables. Materialize will **not ingest** new columns added
   upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to first
   drop the affected subsource, and then add the table back to the source using
@@ -3255,7 +3142,6 @@ Materialize supports schema changes in the upstream database as follows:
 - Adding or removing `NOT NULL` constraints to tables that were nullable when
   the source was created.
 
-
 #### Incompatible schema changes
 
 All other schema changes to upstream tables will set the corresponding subsource
@@ -3266,7 +3152,6 @@ and [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to first drop the
 affected subsource, and then add the table back to the source. When you add the
 subsource, it will have the updated schema from the corresponding upstream
 table.
-
 
 ### Supported types
 
@@ -3336,7 +3221,6 @@ value when said column is updated.</p>
 </li>
 </ul>
 
-
 ### Timestamp Rounding
 
 The `time`, `datetime2`, and `datetimeoffset` types in SQL Server have a default
@@ -3391,12 +3275,9 @@ the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
 
-
 ---
 
 ## SSH tunnel connections
-
-
 
 **Cloud:**
 Materialize can connect to a Kafka broker, a Confluent Schema Registry server, a
@@ -3442,7 +3323,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     |-------|---------------------------------------|---------------------------------------|
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
-
 
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
@@ -3529,7 +3409,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
    If no validation errors are returned, the connection can be used to create a
    source connection.
 
-
 **Self-Managed:**
 Materialize can connect to a Kafka broker, a Confluent Schema Registry server, a
 PostgreSQL database, or a MySQL database through an SSH tunnel connection. In
@@ -3574,7 +3453,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     |-------|---------------------------------------|---------------------------------------|
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
-
 
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
@@ -3651,14 +3529,9 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
     If no validation errors are returned, the connection can be used to create a source connection.
 
-
-
-
-
 ## Create a source connection
 
 In Materialize, create a source connection that uses the SSH tunnel connection you configured in the previous section:
-
 
 **Kafka:**
 ```mzsql
@@ -3670,7 +3543,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 
 You can reuse this Kafka connection across multiple [`CREATE
 SOURCE`](/sql/create-source/kafka/) statements.
-
 
 **PostgreSQL:**
 ```mzsql
@@ -3696,7 +3568,6 @@ CREATE SOURCE mz_source
   FOR ALL TABLES;
 ```
 
-
 **MySQL:**
 ```mzsql
 CREATE SECRET mysqlpass AS '<POSTGRES_PASSWORD>';
@@ -3710,10 +3581,6 @@ CREATE CONNECTION mysql_connection TO MYSQL (
 You can reuse this MySQL connection across multiple [`CREATE SOURCE`](/sql/create-source/postgres/)
 statements.
 
-
-
-
-
 ## Related pages
 
 - [`CREATE SECRET`](/sql/create-secret)
@@ -3722,11 +3589,9 @@ statements.
 - [`CREATE SOURCE`: MySQL](/sql/create-source/mysql)
 - [`CREATE SOURCE`: PostgreSQL](/sql/create-source/postgres/)
 
-
 ---
 
 ## Static IP addresses (Cloud-only)
-
 
 Each Materialize Cloud region is associated with a unique set of static egress
 [Classless Inter-Domain Routing (CIDR)](https://aws.amazon.com/what-is/cidr/)
@@ -3735,7 +3600,6 @@ region will originate from an IP address in the provided blocks.
 
 > **Note:** On rare occasion, we may need to change the static egress CIDR blocks associated
 > with a region. We make every effort to provide advance notice of such changes.
-
 
 When connecting Materialize to services in your private networks (e.g., Kafka,
 PostgreSQL, MySQL), you must configure any firewalls to allow connections from
@@ -3750,7 +3614,6 @@ Region          | CIDR
 `aws/us-west-2` | 52.37.108.9/32
 `aws/eu-west-1` | 108.128.128.96/27
 `aws/eu-west-1` | 54.229.252.215/32
-
 
 ## Fetching static egress IPs addresses
 
@@ -3782,11 +3645,9 @@ curl -s 'https://<host-address>/api/sql' \
     jq -r '.results[].rows[][]'
 ```
 
-
 ---
 
 ## Striim Cloud
-
 
 [Striim](https://www.striim.com/) is a real-time data integration platform that
 offers a variety of connectors for databases, messaging systems, and other data
@@ -3866,7 +3727,6 @@ cluster. Next, you'll configure Materialize to consume this data.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-
 1. In the [SQL Shell](/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CONNECTION`](/sql/create-connection/)
    command to create connection objects with access and authentication details
@@ -3922,18 +3782,15 @@ cluster. Next, you'll configure Materialize to consume this data.
 - [`CREATE CONNECTION`](/sql/create-connection/)
 - [`CREATE SOURCE`: Kafka](/sql/create-source/kafka/)
 
-
 ---
 
 ## Stripe
-
 
 This guide walks through the steps to ingest data from [Stripe](https://stripe.com/)
 into Materialize using the [Webhook source](/sql/create-source/webhook/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ### Before you begin
 
@@ -3945,7 +3802,6 @@ Ensure that you have a Stripe account.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 To create a cluster in Materialize, use the [`CREATE CLUSTER` command](/sql/create-cluster):
 
@@ -4028,7 +3884,6 @@ system table.
 > actors from injecting data into your source, it is **strongly encouraged** that
 > you define a `CHECK` statement with your webhook sources.
 
-
 The `CHECK` clause defines how to validate each request. For details on the
 Stripe signing scheme, check out the [Stripe documentation](https://stripe.com/docs/webhooks#verify-manually).
 
@@ -4083,7 +3938,6 @@ FROM stripe_source;
 
 Manually parsing JSON-formatted data in SQL can be tedious. You can use the [interactive JSON parser widget](https://materialize.com/docs/sql/types/jsonb/#parsing) to automatically turn a sample JSON payload into a parsing view with the individual fields mapped to columns.
 
-
 ### Timestamp handling
 
 We highly recommend using the [`try_parse_monotonic_iso8601_timestamp`](/transform-data/patterns/temporal-filters/#temporal-filter-pushdown)
@@ -4105,11 +3959,9 @@ serving results efficiently. For more details, check out the
 [Stripe documentation](https://stripe.com/docs/webhooks) and the
 [webhook source reference documentation](/sql/create-source/webhook/).
 
-
 ---
 
 ## Troubleshooting
-
 
 As you wire up data ingestion in Materialize, you might run into some snags or
 unexpected scenarios. This guide collects common questions around data ingestion
@@ -4122,7 +3974,6 @@ troubleshooting](/transform-data/troubleshooting) guide instead.
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Why isn't my source ingesting data?
 
@@ -4138,7 +3989,6 @@ table:
 SELECT * FROM mz_internal.mz_source_statuses
 WHERE name = <SOURCE_NAME>;
 ```
-
 
 | Status        | Description/recommendation                                                                                                                                             |
 |---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -4188,7 +4038,6 @@ the upstream database, the number of tables (more tables can be parallelized in 
   </tbody>
 </table>
 
-
 To determine whether your source has completed ingesting the initial snapshot,
 you can query the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
 system catalog table:
@@ -4235,7 +4084,6 @@ the upstream database, the number of tables (more tables can be parallelized in 
   </tbody>
 </table>
 
-
 To speed up the snapshotting process, you can scale up the [size of the cluster
 ](/sql/alter-cluster/#alter-cluster-size) used for snapshotting, then scale it
 back down once the snapshot completes.
@@ -4252,7 +4100,6 @@ this process.</p>
 </blockquote>
 <p>Once the initial snapshot has completed, you can resize the cluster for steady
 state.</p>
-
 
 For upsert sources, a larger cluster can not only speed up snapshotting, but may
 also be necessary to support increased memory usage during the process. For more
@@ -4277,11 +4124,9 @@ the cluster for steady-state.
 - [Postgres troubleshooting guides](/ingest-data/postgres/troubleshooting/)
 - [MySQL troubleshooting guides](/ingest-data/mysql/troubleshooting/)
 
-
 ---
 
 ## Webhooks quickstart
-
 
 Webhook sources let your applications push webhook events into Materialize. This
 quickstart uses an embedded **webhook event generator** that makes it easier for
@@ -4289,7 +4134,6 @@ you to learn and prototype with no external dependencies.
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -4444,7 +4288,6 @@ to shape the events.
       .map((log, index) => `<p key="${index}">${log}</p>`)
       .join("");
 
-    
     updateLogDisplay();
 
     console.log("URL:", webhookURLInput.value);
@@ -4503,7 +4346,6 @@ to shape the events.
     generationInterval = null;
   }
 
-  
   function updateLogDisplay() {
     logOutputDiv.style.display = logs.length > 0 ? "block" : "none";
   }
@@ -4512,7 +4354,6 @@ to shape the events.
   stopButton.addEventListener("click", stopGeneration);
   updateLogDisplay();
 
-  
   jsonSchemaTextarea.addEventListener("blur", formatJSON);
 
   function formatJSON() {
@@ -4572,7 +4413,6 @@ to shape the events.
   };
 </script>
 
-
 In the SQL Shell, validate that the source is ingesting data:
 
 ```mzsql
@@ -4596,7 +4436,6 @@ generator, the data will look like:
 ## Step 4. Parse JSON
 
 Manually parsing JSON-formatted data in SQL can be tedious. You can use the [interactive JSON parser widget](https://materialize.com/docs/sql/types/jsonb/#parsing) to automatically turn a sample JSON payload into a parsing view with the individual fields mapped to columns.
-
 
 Webhook data is ingested as a JSON blob. We recommend creating a parsing view on
 top of your webhook source that uses [jsonb operators](/sql/types/jsonb/#operators)

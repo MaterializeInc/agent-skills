@@ -8,7 +8,6 @@ region will originate from an IP address in the provided blocks.
 > **Note:** On rare occasion, we may need to change the static egress CIDR blocks associated
 > with a region. We make every effort to provide advance notice of such changes.
 
-
 When connecting Materialize to services in your private networks (e.g., Kafka,
 PostgreSQL, MySQL), you must configure any firewalls to allow connections from
 all CIDR blocks associated with your region. **Connections may originate from
@@ -22,7 +21,6 @@ Region          | CIDR
 `aws/us-west-2` | 52.37.108.9/32
 `aws/eu-west-1` | 108.128.128.96/27
 `aws/eu-west-1` | 54.229.252.215/32
-
 
 ## Fetching static egress IPs addresses
 

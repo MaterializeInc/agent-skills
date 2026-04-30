@@ -3,7 +3,6 @@ Manage/configure network policies to restrict access to a Materialize region usi
 > **Tip:** We recommend using [Terraform](https://registry.terraform.io/providers/MaterializeInc/materialize/latest/docs/resources/network_policy)
 > to configure and manage network policies.
 
-
 By default, Materialize is available on the public internet without any
 network-layer access control. As an **administrator** of a Materialize
 organization, you can configure network policies to restrict access to a
@@ -13,7 +12,6 @@ Materialize region using IP-based rules.
 
 > **Note:** Network policies are applied **globally** (i.e., at the region level) and rules
 > can only be configured for **ingress traffic**.
-
 
 To create a new network policy, use the [`CREATE NETWORK POLICY`](/sql/create-network-policy)
 statement to provide a list of rules for allowed ingress traffic.

@@ -2,8 +2,6 @@
 
 Connecting Materialize to a PostgreSQL database for Change Data Capture (CDC).
 
-
-
 ## Change Data Capture (CDC)
 
 Materialize supports PostgreSQL as a real-time data source. The
@@ -46,7 +44,6 @@ The following integration guides are available:
 <li><a href="/ingest-data/postgres/neon/" >Neon</a></li>
 <li><a href="/ingest-data/postgres/self-hosted/" >Self-hosted PostgreSQL</a></li>
 </ul>
-
 
 ## Considerations
 
@@ -223,13 +220,9 @@ progress reporting in the Console.</p>
 <p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
 date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
-
-
-
 ---
 
 ## FAQ: PostgreSQL sources
-
 
 This page addresses common questions and challenges when working with PostgreSQL
 sources in Materialize. For general ingestion questions/troubleshooting, see:
@@ -245,7 +238,6 @@ column values in change events. If for your trial/POC (Proof-of-concept) you can
 
   > **Note:** With the Outbox pattern, you will need to implement dual writes so that all changes apply to both the original and shadow tables.
 
-
   With the Outbox pattern, you create duplicate "shadow" tables for the ones you
   want to replicate and set the shadow tables to `REPLICA IDENTITY FULL`. You
   can then use these shadow tables for Materialize instead of the originals.
@@ -254,7 +246,6 @@ column values in change events. If for your trial/POC (Proof-of-concept) you can
 
   > **Note:** With the Sidecar pattern, you will need to keep the sidecar in sync with the
 >   source database (e.g., via logical replication or ETL processes).
-
 
   With the Sidecar pattern, you create a separate PostgreSQL instance as an
   integration layer. That is, in the sidecar instance, you recreate the tables
@@ -280,18 +271,13 @@ output.</p>
 </li>
 </ul>
 
-
 See also: [PostgreSQL considerations](/ingest-data/postgres/#considerations).
-
 
 ---
 
 ## Guide: Handle upstream schema changes with zero downtime
 
-
-
 > **Note:** - Changing column types is currently unsupported.
-
 
 Materialize allows you to handle certain types of upstream
 table schema changes seamlessly, specifically:
@@ -346,7 +332,6 @@ INSERT INTO T (A) VALUES
 <p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
 guides</a>.</p>
 
-
 ## Create a source using the new syntax
 
 In Materialize, create a source using the updated [`CREATE SOURCE`
@@ -368,7 +353,6 @@ source](#create-a-table-from-the-source).
 > **Note:** The [legacy syntax](/sql/create-source/postgres/) is still supported. However,
 > the legacy syntax doesn't support upstream schema changes.
 
-
 ## Create a table from the source
 To start ingesting specific tables from your source database, you can create a
 table in Materialize. We'll add it into the v1 schema in Materialize.
@@ -387,7 +371,6 @@ snapshot](/ingest-data/#snapshotting) of table `v1.T` will begin.
 > the source is temporarily blocked. As before, you can monitor progress for the
 > snapshot operation on the overview page for the source in the Materialize
 > console.
-
 
 ## Create a view on top of the table.
 
@@ -437,8 +420,6 @@ The [snapshotting](/ingest-data/#snapshotting) of table `v2.T` will begin.
 > snapshot operation on the overview page for the source in the Materialize
 > console.
 
-
-
 When the new `v2.T` table has finished snapshotting, create a new materialized
 view `matview` in the new schema.  Since the new `v2.matview` is referencing the
 new `v2.T`, it can reference column `B`:
@@ -469,7 +450,6 @@ CREATE TABLE v3.T
 > snapshot operation on the overview page for the source in the Materialize
 > console.
 
-
 ### B. Drop a column in your upstream PostgreSQL database
 
 In your upstream PostgreSQL database, drop the column `B` from the table `T`:
@@ -483,18 +463,15 @@ Dropping the column B will have no effect on `v3.T`. However, the drop affects
 read from either, Materialize will report an error that the source table schema
 has been altered.
 
-
 ---
 
 ## Ingest data from AlloyDB
-
 
 This page shows you how to stream data from [AlloyDB for PostgreSQL](https://cloud.google.com/alloydb)
 to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -507,7 +484,6 @@ to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 or your preferred SQL client.</p>
 </li>
 </ul>
-
 
 If you don't already have an AlloyDB instance, creating one involves several
 steps, including configuring your cluster and setting up network connections.
@@ -578,15 +554,11 @@ all tables in the schema instead of naming the specific tables:</p>
 </span></span></code></pre></div></li>
 </ol>
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your AlloyDB instance is publicly accessible, **you
 > can skip this step**. For production scenarios, we recommend configuring one of
 > the network security options below.
-
-
-
 
 **Cloud:**
 
@@ -605,8 +577,6 @@ Materialize with AlloyDB:
 - **Use an SSH tunnel:** For private networks, use an SSH tunnel to connect
     Materialize to AlloyDB.
 
-
-
 **Allow Materialize IPs:**
 
 1. In the [Materialize console's SQL Shell](/console/),
@@ -619,8 +589,6 @@ Materialize with AlloyDB:
 
 1. Update your Google Cloud firewall rules to allow traffic to your AlloyDB auth
    proxy instance from each IP address from the previous step.
-
-
 
 **Use an SSH tunnel:**
 
@@ -657,12 +625,6 @@ network to allow traffic from the bastion host.
 1. Update your Google Cloud firewall rules to allow traffic to your AlloyDB auth
    proxy instance from the SSH bastion host.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 To establish authorized and secure connections to an AlloyDB instance, an
@@ -690,15 +652,10 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. Update your Google Cloud firewall rules to allow traffic to your AlloyDB auth
    proxy instance from Materialize IPs.
-
-
 
 **Use an SSH tunnel:**
 
@@ -723,14 +680,6 @@ network to allow traffic from the bastion host.
 1. Update your Google Cloud firewall rules to allow traffic to your AlloyDB auth
    proxy instance from the SSH bastion host.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -739,7 +688,6 @@ network to allow traffic from the bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 <p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -767,13 +715,10 @@ size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>AL
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -801,14 +746,10 @@ use:
 
    ```
 
-   
    - Replace `<host>` with your PostgreSQL endpoint.
    
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
-
-
-
 
 **Use an SSH tunnel:**
 
@@ -853,7 +794,6 @@ CONNECTION`](/sql/validate-connection) command:
 
    ```   If no validation error is returned, move to the next step.
 
-
 1. Use the [`CREATE SECRET`](/sql/create-secret/) command to securely store the
 password for the `materialize` PostgreSQL user you created
 [earlier](#2-create-a-publication-and-a-replication-user):
@@ -881,10 +821,6 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
-
-
-
-
 ### 3. Start ingesting data
 
 {{< tip >}}
@@ -909,7 +845,6 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 {{< /tabs >}}
-
 
 ### 4. Monitor the ingestion status
 
@@ -976,7 +911,6 @@ dataset and the size of the cluster the source is running in.</p>
 </li>
 </ol>
 
-
 ### 5. Right-size the cluster
 
 <p>After the snapshotting phase, Materialize starts ingesting change events from
@@ -1039,7 +973,6 @@ your ingestion cluster.</p>
 </li>
 </ol>
 
-
 ## D. Explore your data
 
 <p>With Materialize ingesting your PostgreSQL data into durable storage, you can
@@ -1064,7 +997,6 @@ or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external messa
 Materialize.</p>
 </li>
 </ul>
-
 
 ## Considerations
 
@@ -1241,19 +1173,15 @@ progress reporting in the Console.</p>
 <p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
 date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
-
-
 ---
 
 ## Ingest data from Amazon Aurora
-
 
 This page shows you how to stream data from [Amazon Aurora for PostgreSQL](https://aws.amazon.com/rds/aurora/)
 to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -1267,12 +1195,10 @@ or your preferred SQL client.</p>
 </li>
 </ul>
 
-
 > **Warning:** There is a known issue with Aurora PostgreSQL 16.1 that can cause logical replication to fail with the following error:
 > - `postgres: sql client error: db error: ERROR: could not map filenumber "base/16402/3147867235" to relation OID`
 > This is due to a bug in Aurora's implementation of logical replication in PostgreSQL 16.1, where the system fails to correctly fetch relation metadata from the catalogs. If you encounter these errors, you should upgrade your Aurora PostgreSQL instance to a newer minor version (16.2 or later).
 > For more information, see [this AWS discussion](https://repost.aws/questions/QU4RXUrLNQS_2oSwV34pmwww/error-could-not-map-filenumber-after-aurora-upgrade-to-16-1).
-
 
 ## A. Configure Amazon Aurora
 
@@ -1287,7 +1213,6 @@ To enable logical replication in Aurora, see the
 > **Note:** Aurora Serverless (v1) [does **not** support](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless.html#aurora-serverless.limitations)
 > logical replication, so it's not possible to use this service with
 > Materialize.
-
 
 ### 2. Create a publication and a replication user
 
@@ -1348,15 +1273,11 @@ all tables in the schema instead of naming the specific tables:</p>
 </span></span></code></pre></div></li>
 </ol>
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your Aurora instance is publicly accessible, **you can
 > skip this step**. For production scenarios, we recommend configuring one of the
 > network security options below.
-
-
-
 
 **Cloud:**
 
@@ -1373,8 +1294,6 @@ to connect:
 
 - **Use an SSH tunnel:** If your database is running in a private network, you
     can use an SSH tunnel to connect Materialize to the database.
-
-
 
 **Allow Materialize IPs:**
 
@@ -1394,8 +1313,6 @@ to connect:
     - Set **Type** to **PostgreSQL**.
     - Set **Source** to the IP address in CIDR notation.
 
-
-
 **Use AWS PrivateLink:**
 
 [AWS PrivateLink](https://aws.amazon.com/privatelink/) lets you connect
@@ -1408,7 +1325,6 @@ Aurora via the network load balancer.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
-
 
 1. Get the IP address of your Aurora instance.
 
@@ -1490,8 +1406,6 @@ Aurora via the network load balancer.
    make sure that the [health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html)
    are reporting the targets as healthy.
 
-
-
 **Use an SSH tunnel:**
 
 To create an SSH tunnel from Materialize to your database, you launch an
@@ -1502,7 +1416,6 @@ network to allow traffic from the bastion host.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of resources for an SSH tunnel. For more details, see the
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
-
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
     to serve as your SSH bastion host.
@@ -1542,12 +1455,6 @@ network to allow traffic from the bastion host.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -1569,9 +1476,6 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. In the AWS Management Console, [add an inbound rule to your Aurora security group](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/changing-security-group.html#add-remove-instance-security-groups)
@@ -1581,8 +1485,6 @@ database.</p>
 
     - Set **Type** to **PostgreSQL**.
     - Set **Source** to the IP address in CIDR notation.
-
-
 
 **Use an SSH tunnel:**
 
@@ -1594,7 +1496,6 @@ network to allow traffic from the bastion host.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of resources for an SSH tunnel. For more details, see the
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
-
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
     to serve as your SSH bastion host.
@@ -1618,14 +1519,6 @@ network to allow traffic from the bastion host.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -1634,8 +1527,6 @@ network to allow traffic from the bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
-
 
 <p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -1663,13 +1554,10 @@ size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>AL
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -1710,9 +1598,6 @@ use:
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
 
-
-
-
 **Use AWS PrivateLink (Cloud-only):**
 
 1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
@@ -1737,7 +1622,6 @@ AWS PrivateLink connection:   ```mzsql
      subnet, look for **Availability Zone ID** (e.g., `use1-az6`),
      not **Availability Zone** (e.g., `us-east-1d`).
 
-
 1. Retrieve the AWS principal for the AWS PrivateLink connection you just created:
    ```mzsql
    SELECT principal
@@ -1754,9 +1638,7 @@ AWS PrivateLink connection:   ```mzsql
     arn:aws:iam::664411391173:role/mz_20273b7c-2bbe-42b8-8c36-8cc179e9bbc3_u1
    ```
 
-
 1. Update your VPC endpoint service to [accept connections from the AWS principal](https://docs.aws.amazon.com/vpc/latest/privatelink/add-endpoint-service-permissions.html).
-
 
 1. If your AWS PrivateLink service is configured to require acceptance of
 connection requests, [manually approve the connection request from
@@ -1764,14 +1646,12 @@ Materialize](https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoi
    **Note:** It can take some time for the connection request to show up. Do
 not move on to the next step until you've approved the connection.
 
-
 1. Validate the AWS PrivateLink connection you created using the [`VALIDATE
 CONNECTION`](/sql/validate-connection) command:
    ```mzsql
    VALIDATE CONNECTION privatelink_svc;
 
    ```   If no validation error is returned, move to the next step.
-
 
 1. Use the [`CREATE SECRET`](/sql/create-secret/) command to securely store the
 password for the `materialize` PostgreSQL user you created
@@ -1800,8 +1680,6 @@ details for Materialize to use:
    
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
-
-
 
 **Use an SSH tunnel:**
 
@@ -1854,7 +1732,6 @@ CONNECTION`](/sql/validate-connection) command:
 
    ```   If no validation error is returned, move to the next step.
 
-
 1. Use the [`CREATE SECRET`](/sql/create-secret/) command to securely store the
 password for the `materialize` PostgreSQL user you created
 [earlier](#2-create-a-publication-and-a-replication-user):
@@ -1884,11 +1761,6 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
-
-
-
-
-
 ### 3. Start ingesting data
 
 {{< tip >}}
@@ -1913,7 +1785,6 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 {{< /tabs >}}
-
 
 ### 4. Monitor the ingestion status
 
@@ -1980,7 +1851,6 @@ dataset and the size of the cluster the source is running in.</p>
 </li>
 </ol>
 
-
 ### 5. Right-size the cluster
 
 <p>After the snapshotting phase, Materialize starts ingesting change events from
@@ -2043,7 +1913,6 @@ your ingestion cluster.</p>
 </li>
 </ol>
 
-
 ## D. Explore your data
 
 <p>With Materialize ingesting your PostgreSQL data into durable storage, you can
@@ -2068,7 +1937,6 @@ or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external messa
 Materialize.</p>
 </li>
 </ul>
-
 
 ## Considerations
 
@@ -2245,19 +2113,15 @@ progress reporting in the Console.</p>
 <p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
 date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
-
-
 ---
 
 ## Ingest data from Amazon RDS
-
 
 This page shows you how to stream data from [Amazon RDS for PostgreSQL](https://aws.amazon.com/rds/postgresql/)
 to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -2270,7 +2134,6 @@ to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 or your preferred SQL client.</p>
 </li>
 </ul>
-
 
 ## A. Configure Amazon RDS
 
@@ -2401,15 +2264,11 @@ all tables in the schema instead of naming the specific tables:</p>
 </span></span></code></pre></div></li>
 </ol>
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your RDS instance is publicly accessible, **you can
 > skip this step**. For production scenarios, we recommend configuring one of the
 > network security options below.
-
-
-
 
 **Cloud:**
 
@@ -2426,8 +2285,6 @@ to connect:
 
 - **Use an SSH tunnel:** If your database is running in a private network, you
     can use an SSH tunnel to connect Materialize to the database.
-
-
 
 **Allow Materialize IPs:**
 
@@ -2447,8 +2304,6 @@ to connect:
     - Set **Type** to **PostgreSQL**.
     - Set **Source** to the IP address in CIDR notation.
 
-
-
 **Use AWS PrivateLink:**
 
 [AWS PrivateLink](https://aws.amazon.com/privatelink/) lets you connect
@@ -2461,7 +2316,6 @@ RDS via the network load balancer.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
-
 
 1. Get the IP address of your RDS instance. You'll need this address to register
    your RDS instance as the target for the network load balancer in the next
@@ -2542,8 +2396,6 @@ RDS via the network load balancer.
    make sure that the [health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html)
    are reporting the targets as healthy.
 
-
-
 **Use an SSH tunnel:**
 
 To create an SSH tunnel from Materialize to your database, you launch an
@@ -2554,7 +2406,6 @@ network to allow traffic from the bastion host.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of resources for an SSH tunnel. For more details, see the
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
-
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
    to serve as your SSH bastion host.
@@ -2594,12 +2445,6 @@ network to allow traffic from the bastion host.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -2621,9 +2466,6 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. In the AWS Management Console, [add an inbound rule to your RDS security group](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/changing-security-group.html#add-remove-instance-security-groups)
@@ -2633,8 +2475,6 @@ database.</p>
 
     - Set **Type** to **PostgreSQL**.
     - Set **Source** to the IP address in CIDR notation.
-
-
 
 **Use an SSH tunnel:**
 
@@ -2646,7 +2486,6 @@ network to allow traffic from the bastion host.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of resources for an SSH tunnel. For more details, see the
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
-
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
     to serve as your SSH bastion host.
@@ -2670,14 +2509,6 @@ network to allow traffic from the bastion host.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -2686,7 +2517,6 @@ network to allow traffic from the bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 <p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -2714,12 +2544,10 @@ size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>AL
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
 
 **Allow Materialize IPs:**
 
@@ -2753,9 +2581,6 @@ use:
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
 
-
-
-
 **Use AWS PrivateLink (Cloud-only):**
 
 1. In the [SQL Shell](https://console.materialize.com/), or your preferred SQL
@@ -2784,7 +2609,6 @@ CONNECTION`](/sql/create-connection/#aws-privatelink) command to create an
      Console and click the subnets under **Connectivity & security**. For each
      subnet, look for **Availability Zone ID** (e.g., `use1-az6`), not
      **Availability Zone** (e.g., `us-east-1d`).
-
 
    ↔️ **Cross-region connections**
    
@@ -2820,9 +2644,7 @@ CONNECTION`](/sql/create-connection/#aws-privatelink) command to create an
     arn:aws:iam::664411391173:role/mz_20273b7c-2bbe-42b8-8c36-8cc179e9bbc3_u1
    ```
 
-
 1. Update your VPC endpoint service to [accept connections from the AWS principal](https://docs.aws.amazon.com/vpc/latest/privatelink/add-endpoint-service-permissions.html).
-
 
 1. If your AWS PrivateLink service is configured to require acceptance of
 connection requests, [manually approve the connection request from
@@ -2830,14 +2652,12 @@ Materialize](https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoi
    **Note:** It can take some time for the connection request to show up. Do
 not move on to the next step until you've approved the connection.
 
-
 1. Validate the AWS PrivateLink connection you created using the [`VALIDATE
 CONNECTION`](/sql/validate-connection) command:
    ```mzsql
    VALIDATE CONNECTION privatelink_svc;
 
    ```   If no validation error is returned, move to the next step.
-
 
 1. Use the [`CREATE SECRET`](/sql/create-secret/) command to securely store the
 password for the `materialize` PostgreSQL user you created
@@ -2866,8 +2686,6 @@ details for Materialize to use:
    
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
-
-
 
 **Use an SSH tunnel:**
 
@@ -2920,7 +2738,6 @@ CONNECTION`](/sql/validate-connection) command:
 
    ```   If no validation error is returned, move to the next step.
 
-
 1. Use the [`CREATE SECRET`](/sql/create-secret/) command to securely store the
 password for the `materialize` PostgreSQL user you created
 [earlier](#2-create-a-publication-and-a-replication-user):
@@ -2950,11 +2767,6 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
-
-
-
-
-
 ### 3. Start ingesting data
 
 {{< tip >}}
@@ -2979,7 +2791,6 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 {{< /tabs >}}
-
 
 ### 4. Monitor the ingestion status
 
@@ -3046,7 +2857,6 @@ dataset and the size of the cluster the source is running in.</p>
 </li>
 </ol>
 
-
 ### 5. Right-size the cluster
 
 <p>After the snapshotting phase, Materialize starts ingesting change events from
@@ -3109,7 +2919,6 @@ your ingestion cluster.</p>
 </li>
 </ol>
 
-
 ## D. Explore your data
 
 <p>With Materialize ingesting your PostgreSQL data into durable storage, you can
@@ -3134,7 +2943,6 @@ or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external messa
 Materialize.</p>
 </li>
 </ul>
-
 
 ## Considerations
 
@@ -3311,19 +3119,15 @@ progress reporting in the Console.</p>
 <p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
 date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
-
-
 ---
 
 ## Ingest data from Azure DB
-
 
 This page shows you how to stream data from [Azure DB for PostgreSQL](https://azure.microsoft.com/en-us/products/postgresql)
 to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -3336,7 +3140,6 @@ to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 or your preferred SQL client.</p>
 </li>
 </ul>
-
 
 ## A. Configure Azure DB
 
@@ -3403,15 +3206,11 @@ all tables in the schema instead of naming the specific tables:</p>
 </span></span></code></pre></div></li>
 </ol>
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your AzureDB instance is publicly accessible, **you
 > can skip this step**. For production scenarios, we recommend configuring one of
 > the network security options below.
-
-
-
 
 **Cloud:**
 
@@ -3427,8 +3226,6 @@ to connect:
 
 Select the option that works best for you.
 
-
-
 **Allow Materialize IPs:**
 
 1. In the [Materialize console's SQL Shell](/console/),
@@ -3441,8 +3238,6 @@ Select the option that works best for you.
 
 1. Update your [Azure DB firewall rules](https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure?view=azuresql)
    to allow traffic from each IP address from the previous step.
-
-
 
 **Use an SSH tunnel:**
 
@@ -3478,12 +3273,6 @@ to serve as your SSH bastion host.
 1. Update your [Azure DB firewall rules](https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure?view=azuresql)
    to allow traffic from the SSH bastion host.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -3505,15 +3294,10 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. Update your [Azure DB firewall rules](https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure?view=azuresql)
    to allow traffic from Materialize IPs.
-
-
 
 **Use an SSH tunnel:**
 
@@ -3537,14 +3321,6 @@ to serve as your SSH bastion host.
 1. Update your [Azure DB firewall rules](https://learn.microsoft.com/en-us/azure/azure-sql/database/firewall-configure?view=azuresql)
    to allow traffic from the SSH bastion host.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -3553,7 +3329,6 @@ to serve as your SSH bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 <p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -3581,13 +3356,10 @@ size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>AL
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -3615,14 +3387,10 @@ use:
 
    ```
 
-   
    - Replace `<host>` with your PostgreSQL endpoint.
    
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
-
-
-
 
 **Use an SSH tunnel:**
 
@@ -3667,7 +3435,6 @@ CONNECTION`](/sql/validate-connection) command:
 
    ```   If no validation error is returned, move to the next step.
 
-
 1. Use the [`CREATE SECRET`](/sql/create-secret/) command to securely store the
 password for the `materialize` PostgreSQL user you created
 [earlier](#2-create-a-publication-and-a-replication-user):
@@ -3695,10 +3462,6 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
-
-
-
-
 ### 3. Start ingesting data
 
 {{< tip >}}
@@ -3723,7 +3486,6 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 {{< /tabs >}}
-
 
 ### 4. Monitor the ingestion status
 
@@ -3790,7 +3552,6 @@ dataset and the size of the cluster the source is running in.</p>
 </li>
 </ol>
 
-
 ### 5. Right-size the cluster
 
 <p>After the snapshotting phase, Materialize starts ingesting change events from
@@ -3853,7 +3614,6 @@ your ingestion cluster.</p>
 </li>
 </ol>
 
-
 ## D. Explore your data
 
 <p>With Materialize ingesting your PostgreSQL data into durable storage, you can
@@ -3878,7 +3638,6 @@ or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external messa
 Materialize.</p>
 </li>
 </ul>
-
 
 ## Considerations
 
@@ -4055,20 +3814,15 @@ progress reporting in the Console.</p>
 <p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
 date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
-
-
 ---
 
 ## Ingest data from Google Cloud SQL
-
 
 This page shows you how to stream data from [Google Cloud SQL for PostgreSQL](https://cloud.google.com/sql/postgresql)
 to Materialize using the[PostgreSQL source](/sql/create-source/postgres/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
-
 
 ## Before you begin
 
@@ -4081,7 +3835,6 @@ to Materialize using the[PostgreSQL source](/sql/create-source/postgres/).
 or your preferred SQL client.</p>
 </li>
 </ul>
-
 
 ## A. Configure Google Cloud SQL
 
@@ -4148,15 +3901,11 @@ all tables in the schema instead of naming the specific tables:</p>
 </span></span></code></pre></div></li>
 </ol>
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your Google Cloud SQL instance is publicly
 > accessible, **you can skip this step**. For production scenarios, we recommend
 > configuring one of the network security options below.
-
-
-
 
 **Cloud:**
 
@@ -4172,8 +3921,6 @@ to connect:
 
 Select the option that works best for you.
 
-
-
 **Allow Materialize IPs:**
 
 1. In the [Materialize console's SQL Shell](/console/),
@@ -4186,8 +3933,6 @@ Select the option that works best for you.
 
 1. Update your Google Cloud SQL firewall rules to allow traffic from each IP
    address from the previous step.
-
-
 
 **Use an SSH tunnel:**
 
@@ -4223,12 +3968,6 @@ network to allow traffic from the bastion host.
 1. Update your Google Cloud SQL firewall rules to allow traffic from the SSH
 bastion host.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -4250,15 +3989,10 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. Update your Google Cloud SQL firewall rules to allow traffic from Materialize
    IPs.
-
-
 
 **Use an SSH tunnel:**
 
@@ -4282,14 +4016,6 @@ network to allow traffic from the bastion host.
 1. Update your Google Cloud SQL firewall rules to allow traffic from the SSH
 bastion host.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -4298,7 +4024,6 @@ bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 <p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -4326,13 +4051,10 @@ size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>AL
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
@@ -4359,13 +4081,10 @@ use:
 
    ```
 
-   
    - Replace `<host>` with your PostgreSQL endpoint.
    
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
-
-
 
 **Use an SSH tunnel:**
 
@@ -4410,7 +4129,6 @@ CONNECTION`](/sql/validate-connection) command:
 
    ```   If no validation error is returned, move to the next step.
 
-
 1. Use the [`CREATE SECRET`](/sql/create-secret/) command to securely store the
 password for the `materialize` PostgreSQL user you created
 [earlier](#2-create-a-publication-and-a-replication-user):
@@ -4438,11 +4156,6 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
-
-
-
-
-
 ### 3. Start ingesting data
 
 {{< tip >}}
@@ -4467,7 +4180,6 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 {{< /tabs >}}
-
 
 ### 4. Monitor the ingestion status
 
@@ -4534,7 +4246,6 @@ dataset and the size of the cluster the source is running in.</p>
 </li>
 </ol>
 
-
 ### 5. Right-size the cluster
 
 <p>After the snapshotting phase, Materialize starts ingesting change events from
@@ -4597,7 +4308,6 @@ your ingestion cluster.</p>
 </li>
 </ol>
 
-
 ## D. Explore your data
 
 <p>With Materialize ingesting your PostgreSQL data into durable storage, you can
@@ -4622,7 +4332,6 @@ or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external messa
 Materialize.</p>
 </li>
 </ul>
-
 
 ## Considerations
 
@@ -4799,16 +4508,12 @@ progress reporting in the Console.</p>
 <p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
 date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
-
-
 ---
 
 ## Ingest data from Neon
 
-
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 [Neon](https://neon.tech) is a fully managed serverless PostgreSQL provider. It
 separates compute and storage to offer features like **autoscaling**,
@@ -4835,7 +4540,6 @@ Console.
 > **Warning:** Enabling logical replication applies **globally** to all databases in your Neon
 > project, and **cannot be reverted**. It also **restarts all computes**, which
 > means that any active connections are dropped and have to reconnect.
-
 
 Materialize uses PostgreSQL's [logical replication](https://www.postgresql.org/docs/current/logical-replication.html)
 protocol to track changes in your database and propagate them to Materialize.
@@ -4918,7 +4622,6 @@ role, which has the required `REPLICATION` privilege.
    While you can use the default user for replication, we recommend creating a
    dedicated user for security reasons.
 
-    
 **Neon CLI:**
 
 Use the [`roles create` CLI command](https://neon.tech/docs/reference/cli-roles)
@@ -4927,8 +4630,6 @@ to create a new role.
 ```bash
 neon roles create --name materialize
 ```
-
-
 
 **Neon Console:**
 
@@ -4941,8 +4642,6 @@ neon roles create --name materialize
 7. In the role creation dialog, specify the role name as "materialize".
 8. Click **Create**. The role is created, and you are provided with the
 password for the role.
-
-
 
 **API:**
 
@@ -4960,10 +4659,6 @@ curl 'https://console.neon.tech/api/v2/projects/<project_id>/branches/<branch_id
 }
 }' | jq
 ```
-
-
-
-    
 
 4. Grant the user the required permissions on the schema(s) you want to
    replicate:
@@ -4985,9 +4680,6 @@ curl 'https://console.neon.tech/api/v2/projects/<project_id>/branches/<branch_id
 > **Note:** If you are prototyping and your Neon instance is publicly accessible, **you can
 > skip this step**. For production scenarios, we recommend using [**IP Allow**](https://neon.tech/docs/introduction/ip-allow)
 > to limit the IP addresses that can connect to your Neon instance.
-
-
-
 
 **Cloud:**
 
@@ -5011,14 +4703,11 @@ will need to allow inbound traffic from Materialize IP addresses.
    3. Select **IP Allow**.
    4. Add each Materialize IP address to the list.
 
-
-
 **Self-Managed:**
 
 > **Note:** If you are prototyping and your Neon instance is publicly accessible, **you can
 > skip this step**. For production scenarios, we recommend using [**IP Allow**](https://neon.tech/docs/introduction/ip-allow)
 > to limit the IP addresses that can connect to your Neon instance.
-
 
 If you use Neon's [**IP Allow**](https://neon.tech/docs/introduction/ip-allow)
 feature to limit the IP addresses that can connect to your Neon instance, you
@@ -5030,9 +4719,6 @@ will need to allow inbound traffic from Materialize IP addresses.
    2. On the Neon **Dashboard**, select **Settings**.
    3. Select **IP Allow**.
    4. Add Materialize IP addresses to the list.
-
-
-
 
 ## C. Ingest data in Materialize
 
@@ -5046,7 +4732,6 @@ preferred SQL client connected to Materialize.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 <p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -5074,7 +4759,6 @@ size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>AL
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
@@ -5089,7 +4773,6 @@ your networking configuration.
 
     You can access the password for your Neon user from
     the **Connection Details** widget on the Neon **Dashboard**.
-
 
 2. Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create a
    connection object with access and authentication details for Materialize to
@@ -5145,7 +4828,6 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 {{< /tabs >}}
-
 
 ### 4. Monitor the ingestion status
 
@@ -5212,7 +4894,6 @@ dataset and the size of the cluster the source is running in.</p>
 </li>
 </ol>
 
-
 ### 5. Right-size the cluster
 
 <p>After the snapshotting phase, Materialize starts ingesting change events from
@@ -5275,7 +4956,6 @@ your ingestion cluster.</p>
 </li>
 </ol>
 
-
 ## D. Explore your data
 
 <p>With Materialize ingesting your PostgreSQL data into durable storage, you can
@@ -5300,7 +4980,6 @@ or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external messa
 Materialize.</p>
 </li>
 </ul>
-
 
 ## Considerations
 
@@ -5477,19 +5156,15 @@ progress reporting in the Console.</p>
 <p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
 date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
-
-
 ---
 
 ## Ingest data from self-hosted PostgreSQL
-
 
 This page shows you how to stream data from a self-hosted PostgreSQL database to
 Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -5502,7 +5177,6 @@ Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 or your preferred SQL client.</p>
 </li>
 </ul>
-
 
 ## A. Configure PostgreSQL
 
@@ -5593,15 +5267,11 @@ all tables in the schema instead of naming the specific tables:</p>
 </span></span></code></pre></div></li>
 </ol>
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your PostgreSQL instance is publicly
 > accessible, **you can skip this step**. For production scenarios, we recommend
 > configuring one of the network security options below.
-
-
-
 
 **Cloud:**
 
@@ -5617,8 +5287,6 @@ to connect:
 
 Select the option that works best for you.
 
-
-
 **Allow Materialize IPs:**
 
 1. In the [Materialize console's SQL Shell](/console/),
@@ -5631,8 +5299,6 @@ Select the option that works best for you.
 
 1. Update your database firewall rules to allow traffic from each IP address
    from the previous step.
-
-
 
 **Use AWS PrivateLink:**
 
@@ -5740,7 +5406,6 @@ option.
       show up, so you would need to wait for the endpoint service connection to
       be ready before you create a source.
 
-
 **Use an SSH tunnel:**
 
 To create an SSH tunnel from Materialize to your database, you launch an VM to
@@ -5774,12 +5439,6 @@ traffic from the bastion host.
 1. Update your database firewall rules to allow traffic from the SSH bastion
    host.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -5801,14 +5460,9 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. Update your database firewall rules to allow traffic from Materialize.
-
-
 
 **Use an SSH tunnel:**
 
@@ -5831,14 +5485,6 @@ traffic from the bastion host.
 1. Update your database firewall rules to allow traffic from the SSH bastion
    host.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -5847,7 +5493,6 @@ traffic from the bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 <p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -5875,13 +5520,10 @@ size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>AL
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -5909,14 +5551,10 @@ use:
 
    ```
 
-   
    - Replace `<host>` with your PostgreSQL endpoint.
    
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
-
-
-
 
 **Use AWS PrivateLink (Cloud-only):**
 
@@ -5947,8 +5585,6 @@ details for Materialize to use:
    
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
-
-
 
 **Use an SSH tunnel:**
 
@@ -6001,7 +5637,6 @@ CONNECTION`](/sql/validate-connection) command:
 
    ```   If no validation error is returned, move to the next step.
 
-
 1. Use the [`CREATE SECRET`](/sql/create-secret/) command to securely store the
 password for the `materialize` PostgreSQL user you created
 [earlier](#2-create-a-publication-and-a-replication-user):
@@ -6029,10 +5664,6 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
 
-
-
-
-
 ### 3. Start ingesting data
 
 {{< tip >}}
@@ -6057,7 +5688,6 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 {{< /tabs >}}
-
 
 ### 4. Monitor the ingestion status
 
@@ -6124,7 +5754,6 @@ dataset and the size of the cluster the source is running in.</p>
 </li>
 </ol>
 
-
 ### 5. Right-size the cluster
 
 <p>After the snapshotting phase, Materialize starts ingesting change events from
@@ -6187,7 +5816,6 @@ your ingestion cluster.</p>
 </li>
 </ol>
 
-
 ## D. Explore your data
 
 <p>With Materialize ingesting your PostgreSQL data into durable storage, you can
@@ -6212,7 +5840,6 @@ or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external messa
 Materialize.</p>
 </li>
 </ul>
-
 
 ## Considerations
 
@@ -6389,22 +6016,17 @@ progress reporting in the Console.</p>
 <p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
 date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
-
-
 ---
 
 ## PostgreSQL CDC using Kafka and Debezium
-
 
 > **Warning:** You can use [Debezium](https://debezium.io/) to propagate Change Data Capture
 > (CDC) data to Materialize from a PostgreSQL database, but we **strongly
 > recommend** using the native [PostgreSQL](/sql/create-source/postgres/) source
 > instead.
 
-
 For help getting started with your own data, you can schedule a [free guided
 trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 Change Data Capture (CDC) allows you to track and propagate changes in a
 PostgreSQL database to downstream consumers based on its Write-Ahead Log
@@ -6428,7 +6050,6 @@ to Kafka using Kafka Connect-compatible connectors.
 Before deploying a Debezium connector, you need to ensure that the upstream
 database is configured to support [logical replication](https://www.postgresql.org/docs/current/logical-replication.html).
 
-
 **Self-hosted:**
 
 As a _superuser_:
@@ -6446,8 +6067,6 @@ As a _superuser_:
     can affect database performance.
 
 1. Restart the database so all changes can take effect.
-
-
 
 **AWS RDS:**
 
@@ -6469,14 +6088,11 @@ As a _superuser_ (`rds_superuser`):
 
 1. Restart the database so all changes can take effect.
 
-
-
 **AWS Aurora:**
 
 > **Note:** Aurora Serverless (v1) [does **not** support](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/aurora-serverless.html#aurora-serverless.limitations)
 > logical replication, so it's not possible to use this service with
 > Materialize.
-
 
 We recommend following the [AWS Aurora](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/AuroraPostgreSQL.Replication.Logical.html#AuroraPostgreSQL.Replication.Logical.Configure)
 documentation for detailed information on logical replication configuration and
@@ -6504,8 +6120,6 @@ As a _superuser_:
 
 1. Restart the database so all changes can take effect.
 
-
-
 **Azure DB:**
 
 We recommend following the [Azure DB for PostgreSQL](https://docs.microsoft.com/en-us/azure/postgresql/flexible-server/concepts-logical#pre-requisites-for-logical-replication-and-logical-decoding)
@@ -6520,8 +6134,6 @@ best practices.
    find these addresses by querying the `mz_egress_ips` table in Materialize.
 
 1. Restart the database so all changes can take effect.
-
-
 
 **Cloud SQL:**
 
@@ -6539,10 +6151,6 @@ list of allowed IP addresses. You can find these addresses by querying the
 `mz_egress_ips` table in Materialize.
 
 1. Restart the database so all changes can take effect.
-
-
-
-
 
 Once logical replication is enabled:
 
@@ -6577,8 +6185,6 @@ by adding it to Kafka Connect.
 
 > **Warning:** If you deploy the PostgreSQL Debezium connector in [Confluent Cloud](https://docs.confluent.io/cloud/current/connectors/cc-mysql-source-cdc-debezium.html),
 > you **must** override the default value of `After-state only` to `false`.
-
-
 
 **Debezium 1.5+:**
 
@@ -6637,7 +6243,6 @@ by adding it to Kafka Connect.
       --from-beginning \
       --topic pg_repl.public.table1
     ```
-
 
 **Debezium 2.0+:**
 
@@ -6716,15 +6321,11 @@ by adding it to Kafka Connect.
       --topic pg_repl.public.table1
     ```
 
-
-
-
 ### C. Create a source
 
 <div class="note">
   <strong class="gutter">NOTE:</strong> Currently, Materialize only supports Avro-encoded Debezium records. If you're interested in JSON support, please reach out in the community Slack or submit a <a href="https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests">feature request</a>.
 </div>
-
 
 Debezium emits change events using an envelope that contains detailed
 information about upstream database operations, like the `before` and `after`
@@ -6758,7 +6359,6 @@ CREATE VIEW cnt_table1 AS
     GROUP BY field1;
 ```
 
-
 ### E. Create an index on the view
 
 In Materialize, [indexes](/concepts/indexes) on views compute and, as new data
@@ -6778,12 +6378,9 @@ CREATE INDEX idx_cnt_table1_field1 ON cnt_table1(field1);
 For best practices on when to index a view, see
 [Indexes](/concepts/indexes/) and [Views](/concepts/views/).
 
-
-
 ---
 
 ## Troubleshooting
-
 
 This section contains troubleshooting guides for specific errors you may
 encounter when using PostgreSQL sources in Materialize. These guides focus on
@@ -6802,11 +6399,9 @@ common questions about PostgreSQL sources, see the [FAQ](/ingest-data/postgres/f
 | [Connection Closed](/ingest-data/postgres/connection-closed/) | Resolve unexpected networking connection terminations between Materialize and PostgreSQL |
 | [Replication slot is active](/ingest-data/postgres/replication-slot-active/) | Resolve errors when Materialize attempts to use a replication slot that is already in use by another active connection |
 
-
 ---
 
 ## Troubleshooting: Connection closed
-
 
 This guide helps you troubleshoot and resolve the "connection closed" error that
 can occur with PostgreSQL sources in Materialize.
@@ -6826,7 +6421,6 @@ replicate data from PostgreSQL was closed, interrupting the replication process.
 > **Note:** This error is known to occur during Materialize maintenance windows and can be
 > safely ignored if that is the case. Sources will automatically reconnect after
 > maintenance is complete.
-
 
 ## Common causes
 
@@ -6963,7 +6557,6 @@ max_connections = 200
 > **Note:** Increasing max_connections may require more shared memory. You may also need to
 > adjust `shared_buffers` and other memory settings.
 
-
 **4. Review and update SSL certificates**
 
 If using SSL, verify certificate validity:
@@ -7036,11 +6629,9 @@ You have full control over connection settings:
   connections
 - Consider using dedicated hardware or VMs for database hosting
 
-
 ---
 
 ## Troubleshooting: Replication slot is active
-
 
 This guide helps you troubleshoot and resolve the "replication slot... is active"
 error that can occur with PostgreSQL sources in Materialize.
@@ -7143,7 +6734,6 @@ connections, you can terminate the stale connection in PostgreSQL:
 > **Warning:** Only terminate connections if you're certain they are stale. Terminating an
 > active replication connection will interrupt data ingestion.
 
-
 ```sql
 -- First, identify the PID from the error message or from pg_replication_slots
 -- Replace <slot_name> with the replication slot name shown in the error message
@@ -7186,11 +6776,9 @@ FROM mz_internal.mz_source_statuses;
   source restarts, allow sufficient time for PostgreSQL to release connections
   before restarting.
 
-
 ---
 
 ## Troubleshooting: Slot overcompacted
-
 
 This guide helps you troubleshoot and resolve the "slot overcompacted" error that
 can occur with PostgreSQL sources in Materialize.
@@ -7278,7 +6866,6 @@ ORDER BY age DESC;
 
 > **Warning:** This will cause Materialize to take a new snapshot, which may take
 > time and temporarily increase load on your PostgreSQL database.
-
 
 Once a slot has been overcompacted, the data is permanently lost from the WAL.
 You must **drop and recreate the source**. Dropping the source will also drop

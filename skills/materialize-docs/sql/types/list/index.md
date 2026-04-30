@@ -11,8 +11,6 @@ be other lists, known as "layered lists."
 
 ## Syntax
 
-
-
 ```mzsql
 LIST [ <element> [, ...] ]
 LIST ( <query> )
@@ -23,7 +21,6 @@ LIST ( <query> )
 | --- | --- |
 | **LIST** [ `<element>` [, ...] ] | Construct a list from a comma-separated list of elements. All elements must be of the same type. You can nest `LIST` constructors to create layered lists, or elide the `LIST` keyword from interior list expressions.  |
 | **LIST** ( `<query>` ) | Construct a list from the results of a subquery. The subquery must return a single column. Note that parentheses are used rather than square brackets in this form.  |
-
 
 ## List functions + operators
 
@@ -52,7 +49,6 @@ Operator | Description
 <code>listelementany &vert;&vert; listany</code> | Prepend the element to the list.
 <code>listany @&gt; listany</code> | Check if the first list contains all elements of the second list.
 <code>listany &lt;@ listany</code> | Check if all elements of the first list are contained in the second list.
-
 
 ### Functions
 
@@ -538,16 +534,6 @@ SELECT '{{1.5,NULL},{2.25}}'::numeric(38,2) list list AS text_to_list;
 > **Note:** Like [array containment operators in PostgreSQL](https://www.postgresql.org/docs/current/functions-array.html#FUNCTIONS-ARRAY),
 > list containment operators in Materialize **do not** account for duplicates.
 
-
-
-
-
-
-
-
-
-
-
 ```mzsql
 SELECT LIST[1,4,3] @> LIST[3,1] AS contains;
 ```
@@ -565,7 +551,6 @@ SELECT LIST[2,7] <@ LIST[1,7,4,2,6] AS is_contained_by;
 -----------------
  t
 ```
-
 
 ```mzsql
 SELECT LIST[7,3,1] @> LIST[1,3,3,3,3,7] AS contains;

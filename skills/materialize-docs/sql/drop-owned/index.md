@@ -6,7 +6,6 @@ Any privileges granted to the given roles on objects will also be revoked.
 > **Note:** Unlike [PostgreSQL](https://www.postgresql.org/docs/current/sql-drop-owned.html), Materialize drops
 > all objects across all databases, including the database itself.
 
-
 ## Syntax
 
 ```mzsql

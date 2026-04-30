@@ -3,7 +3,6 @@ How to add a column, or drop a column, from your source PostgreSQL database, wit
 
 > **Note:** - Changing column types is currently unsupported.
 
-
 Materialize allows you to handle certain types of upstream
 table schema changes seamlessly, specifically:
 
@@ -57,7 +56,6 @@ INSERT INTO T (A) VALUES
 <p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
 guides</a>.</p>
 
-
 ## Create a source using the new syntax
 
 In Materialize, create a source using the updated [`CREATE SOURCE`
@@ -79,7 +77,6 @@ source](#create-a-table-from-the-source).
 > **Note:** The [legacy syntax](/sql/create-source/postgres/) is still supported. However,
 > the legacy syntax doesn't support upstream schema changes.
 
-
 ## Create a table from the source
 To start ingesting specific tables from your source database, you can create a
 table in Materialize. We'll add it into the v1 schema in Materialize.
@@ -98,7 +95,6 @@ snapshot](/ingest-data/#snapshotting) of table `v1.T` will begin.
 > the source is temporarily blocked. As before, you can monitor progress for the
 > snapshot operation on the overview page for the source in the Materialize
 > console.
-
 
 ## Create a view on top of the table.
 
@@ -148,8 +144,6 @@ The [snapshotting](/ingest-data/#snapshotting) of table `v2.T` will begin.
 > snapshot operation on the overview page for the source in the Materialize
 > console.
 
-
-
 When the new `v2.T` table has finished snapshotting, create a new materialized
 view `matview` in the new schema.  Since the new `v2.matview` is referencing the
 new `v2.T`, it can reference column `B`:
@@ -179,7 +173,6 @@ CREATE TABLE v3.T
 > the source is temporarily blocked. As before, you can monitor progress for the
 > snapshot operation on the overview page for the source in the Materialize
 > console.
-
 
 ### B. Drop a column in your upstream PostgreSQL database
 

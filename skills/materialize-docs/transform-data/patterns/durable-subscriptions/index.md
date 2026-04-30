@@ -20,8 +20,6 @@ application following a connection disruption, you can:
 
 ## History retention period
 
-
-
 By default, all user-defined sources, tables, materialized views, and indexes
 keep track of the most recent version of their underlying data. To gracefully
 recover from connection disruptions and enable lossless, _durable
@@ -31,7 +29,6 @@ that the subscription depends on to **retain history**.
 > **Important:** Configuring indexes to retain history is not recommended. Instead, consider
 > creating a materialized view for your subscription query and configuring the
 > history retention period on that view.
-
 
 To configure the history retention period for sources, tables and materialized
 views, use the `RETAIN HISTORY` option in its `CREATE` statement. This value can
@@ -75,7 +72,6 @@ See also [Considerations](#considerations).
 > not recommended. Instead, consider creating a materialized view for your
 > subscription query and configuring the history retention period on that view.
 > See [Considerations](#considerations).
-
 
 To set the history retention period for [sources](/sql/create-source/),
 [tables](/sql/create-table/), and [materialized

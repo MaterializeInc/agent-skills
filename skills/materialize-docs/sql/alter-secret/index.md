@@ -8,14 +8,11 @@ Use `ALTER SECRET` to:
 
 ## Syntax
 
-
 **Change value:**
 
 ### Change value
 
 To change the value of a secret:
-
-
 
 ```mzsql
 ALTER SECRET [IF EXISTS] <name> AS <value>;
@@ -27,15 +24,11 @@ ALTER SECRET [IF EXISTS] <name> AS <value>;
 | `<name>` | The identifier of the secret you want to alter.  |
 | `<value>` | The new value for the secret. The _value_ expression may not reference any relations, and must be implicitly castable to `bytea`.  |
 
-
-
 **Rename:**
 
 ### Rename
 
 To rename a secret:
-
-
 
 ```mzsql
 ALTER SECRET [IF EXISTS] <name> RENAME TO <new_name>;
@@ -48,15 +41,11 @@ ALTER SECRET [IF EXISTS] <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the secret.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a secret:
-
-
 
 ```mzsql
 ALTER SECRET [IF EXISTS] <name> OWNER TO <new_owner_role>;
@@ -69,10 +58,6 @@ ALTER SECRET [IF EXISTS] <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the secret.  |
 To change the owner, you must be a current owner as well as have membership in
 the `<new_owner_role>`.
-
-
-
-
 
 ## Details
 

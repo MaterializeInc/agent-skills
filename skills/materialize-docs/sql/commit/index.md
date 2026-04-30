@@ -98,7 +98,6 @@ queries in the transaction.
 > **Note:** The transaction will additionally hold back normal compaction of the objects,
 > potentially increasing memory usage for very long running transactions.
 
-
 ## See also
 
 - [`BEGIN`]

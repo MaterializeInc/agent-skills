@@ -5,7 +5,6 @@ How to use dbt for slim deployments.
 > checking the code in to **version control** and setting up an **automated
 > workflow** to control the deployment of changes.
 
-
 [//]: # "TODO(morsapaes) Consider moving demos to template repo."
 
 On each run, dbt generates [artifacts](https://docs.getdbt.com/reference/artifacts/dbt-artifacts)
@@ -18,10 +17,8 @@ We recommend using the slim deployment pattern when you want to reduce
 development idle time and CI costs in development environments. For
 production deployments, you should prefer the [blue/green deployment pattern](/manage/dbt/blue-green-deployments/).
 
-
 > **Note:** Check [this demo](https://github.com/morsapaes/dbt-ci-templates) for a sample
 > end-to-end workflow using GitHub and GitHub Actions.
-
 
 1. Fetch the production `manifest.json` file into the CI environment:
 

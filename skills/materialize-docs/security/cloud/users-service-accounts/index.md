@@ -2,8 +2,6 @@
 
 Manage users and service accounts.
 
-
-
 As an administrator of a Materialize organization, you can manage the users and
 apps (via service accounts) that can access your Materialize organization and
 resources.
@@ -17,7 +15,6 @@ assigned an organization role:
 | --- | --- |
 | <strong>Organization Admin</strong> | <ul> <li> <p><strong>Console access</strong>: Has access to all Materialize console features, including administrative features (e.g., invite users, create service accounts, manage billing, and organization settings).</p> </li> <li> <p><strong>Database access</strong>: Has <red><strong>superuser</strong></red> privileges in the database.</p> </li> </ul>  |
 | <strong>Organization Member</strong> | <ul> <li> <p><strong>Console access</strong>: Has no access to Materialize console administrative features.</p> </li> <li> <p><strong>Database access</strong>: Inherits role-level privileges defined by the <code>PUBLIC</code> role; may also have additional privileges via grants or default privileges. See <a href="/security/cloud/access-control/#roles-and-privileges" >Access control control</a>.</p> </li> </ul>  |
-
 
 > **Note:** - The first user for an organization is automatically assigned the
 >   **Organization Admin** role.
@@ -50,7 +47,6 @@ users](./invite-users/).
 > **Tip:** As a best practice, we recommend you use service accounts to connect external
 > applications and services to Materialize.
 
-
 As an **Organization admin**, you can create a new service account via
 the [Materialize Console](/console/) or via
 [Terraform](/manage/terraform/).
@@ -59,7 +55,6 @@ the [Materialize Console](/console/) or via
 > the account.
 > - The first time the account connects, a database role with the same name as the
 > specified service account **User** is created, and the service account creation is complete.
-
 
 For instructions on creating a new service account in your Materialize
 organization, see [Create service accounts](./create-service-accounts/).
@@ -83,12 +78,9 @@ guide](./sso/).
 - [Manage with dbt](/manage/dbt/)
 - [Manage with Terraform](/manage/terraform/)
 
-
-
 ---
 
 ## Configure single sign-on (SSO)
-
 
 As an **administrator** of a Materialize organization, you can configure single
 sign-on (SSO) as an additional layer of account security using your existing
@@ -101,7 +93,6 @@ all systems in your organization.
 > **Note:** Single sign-on in Materialize only supports authentication into the Materialize
 > console. Permissions within the database are handled separately using
 > [role-based access control](/security/cloud/access-control/).
-
 
 ## Before you begin
 
@@ -116,22 +107,17 @@ To make Materialize metadata available to Datadog, you must configure and run th
 
 * Navigate to **Account** > **Account Settings** > **SSO**.
 
-
 **OpenID Connect:**
 
 * Click **Add New** and choose the `OpenID Connect` connection type.
 
 * Add the issuer URL, client ID, and secret key provided by your identity provider.
 
-
 **SAML:**
 
 * Click **Add New** and choose the `SAML` connection type.
 
 * Add the SSO endpoint and public certificate provided by your identity provider.
-
-
-
 
 * Optionally, add the SSO domain provided by your identity provider. Click **Proceed**.
 
@@ -141,8 +127,7 @@ To make Materialize metadata available to Datadog, you must configure and run th
   | --- | --- |
   | <strong>Organization Admin</strong> | <ul> <li> <p><strong>Console access</strong>: Has access to all Materialize console features, including administrative features (e.g., invite users, create service accounts, manage billing, and organization settings).</p> </li> <li> <p><strong>Database access</strong>: Has <red><strong>superuser</strong></red> privileges in the database.</p> </li> </ul>  |
   | <strong>Organization Member</strong> | <ul> <li> <p><strong>Console access</strong>: Has no access to Materialize console administrative features.</p> </li> <li> <p><strong>Database access</strong>: Inherits role-level privileges defined by the <code>PUBLIC</code> role; may also have additional privileges via grants or default privileges. See <a href="/security/cloud/access-control/#roles-and-privileges" >Access control control</a>.</p> </li> </ul>  |
-  
-  
+
   > **Note:** - The first user for an organization is automatically assigned the
   >   **Organization Admin** role.
   > - An [Organization
@@ -153,7 +138,6 @@ To make Materialize metadata available to Datadog, you must configure and run th
   > - Users/service accounts can be granted additional database roles and privileges
   >   as needed.
 
-
 ## Next steps
 
 The organization role for a user/service account determines the default level of
@@ -162,11 +146,9 @@ access control
 (RBAC)](/security/cloud/access-control/#role-based-access-control-rbac) to
 control access for that account.
 
-
 ---
 
 ## Create service accounts
-
 
 It's a best practice to use service accounts (i.e., non-human users) to connect
 external applications and services to Materialize. As an **administrator** of a
@@ -182,7 +164,6 @@ More granular permissions for the service account can then be configured using
 > - The first time the account connects, a database role with the same name as the
 > specified service account **User** is created, and the service account creation is complete.
 
-
 ## Materialize Console
 
 1. [Log in to the Materialize Console](/console/).
@@ -191,14 +172,12 @@ More granular permissions for the service account can then be configured using
 
 1. In the **New app password** modal, specify the type and required field(s):
 
-   
    | Field | Details |
    | --- | --- |
    | <strong>Type</strong> | Select <strong>Service</strong> |
    | <strong>Name</strong> | Specify a descriptive name. |
    | <strong>User</strong> | Specify a service account user name. If the specified account user does not exist, it will be automatically created the <strong>first time</strong> the application connects with the user name and password. |
    | <strong>Roles</strong> | <p>Select the organization role:</p> <table>   <thead>       <tr>           <th>Organization role</th>           <th>Description</th>       </tr>   </thead>   <tbody>       <tr>           <td><strong>Organization Admin</strong></td>           <td><ul> <li> <p><strong>Console access</strong>: Has access to all Materialize console features, including administrative features (e.g., invite users, create service accounts, manage billing, and organization settings).</p> </li> <li> <p><strong>Database access</strong>: Has <red><strong>superuser</strong></red> privileges in the database.</p> </li> </ul></td>       </tr>       <tr>           <td><strong>Organization Member</strong></td>           <td><ul> <li> <p><strong>Console access</strong>: Has no access to Materialize console administrative features.</p> </li> <li> <p><strong>Database access</strong>: Inherits role-level privileges defined by the <code>PUBLIC</code> role; may also have additional privileges via grants or default privileges. See <a href="/security/cloud/access-control/#roles-and-privileges" >Access control control</a>.</p> </li> </ul></td>       </tr>   </tbody> </table> <blockquote> <p><strong>Note:</strong> - The first user for an organization is automatically assigned the <strong>Organization Admin</strong> role.</p> <ul> <li>An <a href="/security/cloud/users-service-accounts/#organization-roles" >Organization Admin</a> has <red><strong>superuser</strong></red> privileges in the database. Following the principle of least privilege, only assign <strong>Organization Admin</strong> role to those users who require superuser privileges.</li> <li>Users/service accounts can be granted additional database roles and privileges as needed.</li> </ul> </blockquote>  |
-
 
 1. Click **Create Password** to generate a new password for your service
    account.
@@ -208,7 +187,6 @@ More granular permissions for the service account can then be configured using
    > **Note:** Do not reload or navigate away from the screen before storing the
 >    password. This information is not displayed again.
 
-
 1. Connect with the new service account to finish creating the new
    account.
 
@@ -217,13 +195,11 @@ More granular permissions for the service account can then be configured using
 > - The first time the account connects, a database role with the same name as the
 > specified service account **User** is created, and the service account creation is complete.
 
-
    1. Find your new service account in the **App Passwords** table.
 
    1. Click on the **Connect** button to get details on connecting with the new
       account.
 
-      
       **psql:**
 If you have `psql` installed:
 
@@ -234,7 +210,6 @@ If you have `psql` installed:
 The first time the account connects, a database role with the same name as the
 specified service account **User** is created, and the service account creation is complete.
 
-      
       **Other clients:**
 To use a different client to connect,
 
@@ -244,9 +219,6 @@ To use a different client to connect,
 
 The first time the account connects, a database role with the same name as the
 specified service account **User** is created, and the service account creation is complete.
-
-      
-      
 
 ## Terraform
 
@@ -309,11 +281,9 @@ access control
 (RBAC)](/security/cloud/access-control/#role-based-access-control-rbac) to
 control access for that account.
 
-
 ---
 
 ## Invite users
-
 
 > **Note:** - Until the user accepts the invitation and logs in, the user is listed as
 > **Pending Approval**.
@@ -337,8 +307,7 @@ Materialize Console.
    | --- | --- |
    | <strong>Organization Admin</strong> | <ul> <li> <p><strong>Console access</strong>: Has access to all Materialize console features, including administrative features (e.g., invite users, create service accounts, manage billing, and organization settings).</p> </li> <li> <p><strong>Database access</strong>: Has <red><strong>superuser</strong></red> privileges in the database.</p> </li> </ul>  |
    | <strong>Organization Member</strong> | <ul> <li> <p><strong>Console access</strong>: Has no access to Materialize console administrative features.</p> </li> <li> <p><strong>Database access</strong>: Inherits role-level privileges defined by the <code>PUBLIC</code> role; may also have additional privileges via grants or default privileges. See <a href="/security/cloud/access-control/#roles-and-privileges" >Access control control</a>.</p> </li> </ul>  |
-   
-   
+
    > **Note:** - The first user for an organization is automatically assigned the
    >   **Organization Admin** role.
    > - An [Organization

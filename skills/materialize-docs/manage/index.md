@@ -1,7 +1,5 @@
 # Manage Materialize
 
-
-
 This section contains various resources for managing Materialize.
 
 ## Operational guides
@@ -11,7 +9,6 @@ This section contains various resources for managing Materialize.
 | [Operational guidelines](/manage/operational-guidelines/) | General operational guidelines |
 | [Monitoring and alerting](/manage/monitor/) | Guides to set up monitoring and alerting |
 | [Disaster Recovery](/manage/disaster-recovery/) | Disaster recovery strategies for Materialize Cloud |
-
 
 ## Manage via dbt/Terraform
 
@@ -26,12 +23,9 @@ This section contains various resources for managing Materialize.
 |-------|-------------|
 | [**Usage & billing**](/administration/billing/) | Understand the billing model of Materialize |
 
-
-
 ---
 
 ## Appendix: Alternative cluster architectures
-
 
 If the [recommended three-tier
 architecture](/manage/operational-guidelines/#three-tier-architecture)
@@ -73,7 +67,6 @@ resources.</p>
 </li>
 </ul>
 
-
 ## One-tier architecture
 
 <p>If the <a href="/manage/operational-guidelines/#three-tier-architecture" >recommended three-tier
@@ -109,12 +102,9 @@ compute objects to a new cluster (i.e., recreating compute objects in a new clus
 </li>
 </ul>
 
-
-
 ---
 
 ## Disaster recovery (Cloud)
-
 
 The following outlines various disaster recovery (DR) strategies for
 Materialize.
@@ -134,12 +124,10 @@ cluster's rehydration time**.
 
 > **💡 Recommendation:** When running with the basic configuration, we recommend that you track your rehydration time to ensure that it is within an acceptable range for your business' risk tolerance. 
 
-
 ## Level 2:  Multi-replica clusters (High availability across AZs)
 
 > **Note:** The hybrid strategy is available if your deployment uses a [three-tier or a
 > two-tier architecture](/manage/operational-guidelines/).
-
 
 Materialize supports multi-replica clusters, allowing for distribution across
 Availability Zones (AZs):
@@ -156,7 +144,6 @@ across availability zones <strong>cannot</strong> be guaranteed.</p>
 </li>
 </ul>
 
-
 Multi-replica **compute clusters** and multi-replica **serving clusters**
 (excluding sink clusters) with replicas distributed across AZs provide DR
 resilience against: machine-level failures; rack and building-level outages; and
@@ -172,7 +159,6 @@ data uninterrupted in the case of a replica failure.
 
 > **💡 Cost and work capacity:** <ul> <li> <p>Each replica incurs cost, calculated as <code>cluster size * replication factor</code> per second. See <a href="/administration/billing/" >Usage &amp; billing</a> for more details.</p> </li> <li> <p>Increasing the replication factor does <strong>not</strong> increase the cluster&rsquo;s work capacity. Replicas are exact copies of one another: each replica must do exactly the same work as all the other replicas of the cluster(i.e., maintain the same dataflows and process the same queries). To increase the capacity of a cluster, you must increase its size.</p> </li> </ul> 
 
-
 If you require resilience beyond a single region, consider the Level 3 strategy.
 
 ## Level 3: A duplicate Materialize environment (Inter-region resilience)
@@ -180,7 +166,6 @@ If you require resilience beyond a single region, consider the Level 3 strategy.
 > **Note:** The duplicate environment strategy assumes the use of Infrastructure-as-Code
 > (IaC) practice for managing the environment. This ensures that catalog data,
 > including your RBAC setup, is identical in the second environment.
-
 
 For region-level fault tolerance, you can choose to have a second Materialize
 environment in another region. With this strategy:
@@ -195,7 +180,6 @@ can guarantee the same results.
 
 > **💡 No strict transactional consistency between environments:** This approach does <red>**not**</red> offer strict transactional consistency across regions. However, as long as both regions are caught up, the results should be within about a second of each other. 
 
-
 The duplicate Materialize environment setup can be adapted into a more
 cost-effective setup if your deployment uses a [three-tier or a two-tier
 architecture](/manage/operational-guidelines/). For details, see the [hybrid
@@ -208,7 +192,6 @@ variation](#hybrid-variation).
 > - The duplicate environment strategy assumes the use of Infrastructure-as-Code
 > (IaC) practice for managing the environment. This ensures that catalog data,
 > including your RBAC setup, is identical in the second environment.
-
 
 For a more cost-effective variation to the duplicate Materialize environment in
 another region, you can choose a hybrid strategy where:
@@ -230,11 +213,9 @@ have:
 - [Materialize DR
   characteristics](/manage/disaster-recovery/recovery-characteristics)
 
-
 ---
 
 ## Monitoring and alerting
-
 
 ## Cloud
 
@@ -267,7 +248,6 @@ To help you get started, the following guides are available:
 
 - [Datadog using Prometheus SQL Exporter](/manage/monitor/self-managed/datadog/)
 
-
 ### Alerting
 
 After setting up a monitoring tool, you can configure alert rules. Alert rules
@@ -275,11 +255,9 @@ send a notification when a metric surpasses a threshold. This will help you
 prevent operational incidents. For alert rules guidelines, see
 [Alerting](/manage/monitor/self-managed/alerting/).
 
-
 ---
 
 ## Operational guidelines
-
 
 The following provides some general guidelines for production.
 
@@ -314,7 +292,6 @@ deployments</a></p>
 <p>Independent scaling of each tier.</p>
 </li>
 </ul>
-
 
 #### Alternatives
 
@@ -355,7 +332,6 @@ align with the steady-state ingestion.</p>
 </li>
 </ul>
 
-
 See also [Production cluster architecture](#three-tier-architecture).
 
 ## Sinks
@@ -382,13 +358,9 @@ See also [Cluster architecture](#three-tier-architecture).
 
 ## Role-based access control (RBAC)
 
-
-
 **Cloud:**
 
 ### Cloud
-
-
 
 ##### Follow the principle of least privilege
 
@@ -396,33 +368,21 @@ Role-based access control in Materialize should follow the principle of
 least privilege. Grant only the minimum access necessary for users and
 service accounts to perform their duties.
 
-
-
 ##### Restrict the assignment of **Organization Admin** role
-
 
 {{% include-headless "/headless/rbac-cloud/org-admin-recommendation" %}}
 
-
-
 ##### Restrict the granting of `CREATEROLE` privilege
-
 
 {{% include-headless "/headless/rbac-cloud/createrole-consideration" %}}
 
-
-
 ##### Use Reusable Roles for Privilege Assignment
-
 
 {{% include-headless "/headless/rbac-cloud/use-resusable-roles" %}}
 
 See also [Manage database roles](/security/access-control/manage-roles/).
 
-
-
 ##### Audit for unused roles and privileges.
-
 
 {{% include-headless "/headless/rbac-cloud/audit-remove-roles" %}}
 
@@ -431,15 +391,9 @@ system](/security/cloud/access-control/manage-roles/#show-roles-in-system) and [
 a role](/security/cloud/access-control/manage-roles/#drop-a-role) for more
 information.
 
-
-
-
-
 **Self-Managed:**
 
 ### Self-Managed
-
-
 
 ##### Follow the principle of least privilege
 
@@ -447,26 +401,17 @@ Role-based access control in Materialize should follow the principle of
 least privilege. Grant only the minimum access necessary for users and
 service accounts to perform their duties.
 
-
-
 ##### Restrict the granting of `CREATEROLE` privilege
-
 
 {{% include-headless "/headless/rbac-sm/createrole-consideration" %}}
 
-
-
 ##### Use Reusable Roles for Privilege Assignment
-
 
 {{% include-headless "/headless/rbac-sm/use-resusable-roles" %}}
 
 See also [Manage database roles](/security/self-managed/access-control/manage-roles/).
 
-
-
 ##### Audit for unused roles and privileges.
-
 
 {{% include-headless "/headless/rbac-sm/audit-remove-roles" %}}
 
@@ -476,16 +421,9 @@ and [Drop a
 role](/security/self-managed/access-control/manage-roles/#drop-a-role) for
 more information.
 
-
-
-
-
-
-
 ---
 
 ## Use dbt to manage Materialize
-
 
 [dbt](https://docs.getdbt.com/docs/introduction) has become the standard for
 data transformation ("the T in ELT"). It combines the accessibility of SQL with
@@ -498,8 +436,6 @@ other database that requires a non-native adapter.
 > **Note:** The `dbt-materialize` adapter can only be used with **dbt Core**. Making the
 > adapter available in dbt Cloud depends on prioritization by dbt Labs. If you
 > require dbt Cloud support, please [reach out to the dbt Labs team](https://www.getdbt.com/community/join-the-community/).
-
-
 
 ## Available guides
 
@@ -535,8 +471,6 @@ other database that requires a non-native adapter.
 
 </div>
 
-
-
 ## See also
 
 As a tool primarily meant to manage your data model, the `dbt-materialize`
@@ -547,11 +481,9 @@ in your team, and you want to manage objects like
 [secrets](/sql/create-secret/) as code, we recommend using the [Materialize
 Terraform provider](/manage/terraform/) as a complementary deployment tool.
 
-
 ---
 
 ## Use Terraform to manage Materialize
-
 
 [Terraform](https://www.terraform.io/) is an infrastructure-as-code tool that
 allows you to manage your resources in a declarative configuration language.
@@ -575,7 +507,6 @@ infrastructure with a single `terraform apply` command.
   <a href="./get-started/" >Get started with Terraform and Materialize</a>
 </div>
 
-
 <div class="linkbox ">
   <div class="title">
     Manage resources
@@ -596,8 +527,6 @@ infrastructure with a single `terraform apply` command.
 </div>
 
 </div>
-
-
 
 ## Contributing
 

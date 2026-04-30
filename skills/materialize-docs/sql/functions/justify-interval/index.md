@@ -7,8 +7,6 @@ adjustment.
 
 ## Signatures
 
-
-
 ```mzsql
 justify_interval ( <interval> )
 
@@ -18,11 +16,9 @@ justify_interval ( <interval> )
 | --- | --- |
 | `<interval>` | An [`interval`](/sql/types/interval/) value to justify. Returns a new interval such that 30-day time periods are converted to months, 24-hour time periods are represented as days, and all fields have the same sign. It is a combination of [`justify_days`](/sql/functions/justify-days) and [`justify_hours`](/sql/functions/justify-hours) with additional sign adjustment.  |
 
-
 Parameter | Type                                                                                                                                                                                            | Description
 ----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------
 _interval_ | [`interval`](../../types/interval) | The interval value to justify.
-
 
 ### Return value
 

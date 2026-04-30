@@ -21,7 +21,6 @@ need to:
 >     adapter available in dbt Cloud depends on prioritization by dbt Labs. If you
 >     require dbt Cloud support, please [reach out to the dbt Labs team](https://www.getdbt.com/community/join-the-community/).
 
-
     ```bash
     python3 -m venv dbt-venv                  # create the virtual environment
     source dbt-venv/bin/activate              # activate the virtual environment
@@ -63,7 +62,6 @@ create a `profiles.yml` file, if it doesn't exist. To help you get started, the
 > **Note:** As a best practice, we strongly recommend using [service
 > accounts](/security/cloud/users-service-accounts/create-service-accounts) to
 > connect external applications, like dbt, to Materialize.
-
 
 dbt manages all your connection configurations (or, profiles) in a file called
 [`profiles.yml`](https://docs.getdbt.com/dbt-cli/configure-your-profile). By
@@ -151,7 +149,6 @@ table             | Creates a [materialized view](/sql/create-materialized-view)
 sink              | Creates a [sink](/sql/create-sink).                                                                                                                           |  cluster
 ephemeral         | Executes queries using CTEs.
 
-
 Create a materialization for each SQL statement you're planning to deploy. Each
 individual materialization should be stored as a `.sql` file under the
 directory defined by `model-paths` in `dbt_project.yml`.
@@ -169,8 +166,6 @@ or [`source()`](https://docs.getdbt.com/reference/dbt-jinja-functions/source) fu
 > that specifies access and authentication parameters. Connections are **not
 > exposed** in dbt, and need to exist before you run any `source` models.
 
-
-
 **Kafka:**
 Create a [Kafka source](/sql/create-source/kafka/).
 
@@ -187,7 +182,6 @@ The source above would be compiled to:
 ```
 database.schema.kafka_topic_a
 ```
-
 
 **PostgreSQL:**
 Create a [PostgreSQL source](/sql/create-source/postgres/).
@@ -246,7 +240,6 @@ database.schema.table_a
 database.schema.table_b
 ```
 
-
 **MySQL:**
 Create a [MySQL source](/sql/create-source/mysql/).
 
@@ -304,7 +297,6 @@ database.schema.table_a
 database.schema.table_b
 ```
 
-
 **Webhooks:**
 Create a [webhook source](/sql/create-source/webhook/).
 
@@ -331,8 +323,6 @@ The source above would be compiled to:
 ```
 database.schema.webhook
 ```
-
-
 
 ### Views and materialized views
 
@@ -384,7 +374,6 @@ function.
 
 > **Tip:** For guidance and best practices on how to use indexes in Materialize, see
 > [Indexes on views](/concepts/indexes/#indexes-on-views).
-
 
 To keep results **up-to-date** in Materialize, you can create [indexes](/concepts/indexes/)
 on view models using the [`index` configuration](#indexes). This
@@ -450,7 +439,6 @@ function.
 > **Tip:** For guidance and best practices on how to use indexes in Materialize, see
 > [Indexes on materialized views](/concepts/views/#indexes-on-materialized-views).
 
-
 With a materialized view, your models are kept **up-to-date** in Materialize as
 new data arrives. This allows you to bypass the need for maintaining complex
 incremental logic or re-run dbt to refresh your models.
@@ -491,9 +479,6 @@ against materialized views faster.
 
 > **Tip:** For guidance and best practices on how to use refresh strategies in Materialize,
 > see [Refresh strategies](/sql/create-materialized-view/#refresh-strategies).
-
-
-
 
 For data that doesn't require up-to-the-second freshness, or that can be
 accessed using different patterns to optimize for performance and cost
@@ -539,7 +524,6 @@ maintained** and must recompute their results from scratch on every refresh.
 > **Tip:** For guidance and best practices on how to use retain history in Materialize,
 > see [Retain history](/transform-data/patterns/durable-subscriptions/#set-history-retention-period).
 
-
 To configure how long historical data is retained in a materialized view, use the
 `retain_history` configuration. This is useful for maintaining a window of
 historical data for time-based queries or for compliance requirements.
@@ -582,7 +566,6 @@ In Materialize, a [sink](/sql/create-sink) describes an **external** system you
 want to write data to, and provides details about how to encode that data. You
 can instruct dbt to create a sink using the custom `sink` materialization.
 
-
 **Kafka:**
 Create a [Kafka sink](/sql/create-sink).
 
@@ -600,9 +583,6 @@ The sink above would be compiled to:
 ```
 database.schema.kafka_topic_c
 ```
-
-
-
 
 ### Configuration: clusters, databases and indexes {#configuration}
 
@@ -676,8 +656,6 @@ Component                            | Value     | Description
 ```
 
 ### Configuration: refresh strategies {#configuration-refresh-strategies}
-
-
 
 **Minimum requirements:** `dbt-materialize` v1.7.3+
 
@@ -975,7 +953,6 @@ configuration.
 
 > **Note:** Documentation persistence is tightly coupled with `dbt run` command invocations.
 > For "use-at-your-own-risk" workarounds, see [`dbt-core` #4226](https://github.com/dbt-labs/dbt-core/issues/4226). 👻
-
 
 1. To enable docs persistence, add a `models` property to `dbt_project.yml` with
    the `persist-docs` configuration:

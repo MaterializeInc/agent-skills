@@ -22,7 +22,6 @@ Name      | Type   | Description
 `profile` | string | The name of the authentication profile to use by default.<br>Default: `default`.
 `vault`   | string | The default vault to use to store secret configuration parameters: `inline` or `keychain`. When set to `inline`, secrets are stored directly in the configuration file. When set to `keychain`, secrets are stored in the system keychain (macOS only).<br>Default (Linux): `inline`<br>Default (macOS): `keychain`
 
-
 Use [`mz config set`](../reference/config#set) to set these parameters.
 
 ## Authentication profiles
@@ -56,7 +55,6 @@ Field             | Type   | Description
 `vault`           | string | The vault to use for this profile. See [Global parameters](#global-parameters) above.
 `cloud-endpoint`  | string | *Internal use only.* The Materialize API endpoint to use.
 `admin-endpoint`  | string | *Internal use only.* The Materialize administration endpoint to use.
-
 
 ## Example
 

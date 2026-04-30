@@ -6,14 +6,11 @@ Use `ALTER VIEW` to:
 
 ## Syntax
 
-
 **Rename:**
 
 ### Rename
 
 To rename a view:
-
-
 
 ```mzsql
 ALTER VIEW <name> RENAME TO <new_name>;
@@ -26,15 +23,11 @@ ALTER VIEW <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the view.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a view:
-
-
 
 ```mzsql
 ALTER VIEW <name> OWNER TO <new_owner_role>;
@@ -47,11 +40,6 @@ ALTER VIEW <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the view.  |
 To change the owner of a view, you must be the current owner and have
 membership in the `<new_owner_role>`.
-
-
-
-
-
 
 ## Privileges
 

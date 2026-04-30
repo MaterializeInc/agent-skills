@@ -6,10 +6,8 @@ schema.
 > **Warning:** The objects in the `mz_internal` schema are not part of Materialize's stable interface.
 > Backwards-incompatible changes to these objects may be made at any time.
 
-
 > **Warning:** `SELECT` statements may reference these objects, but creating views that
 > reference these objects is not allowed.
-
 
 ## `mz_object_global_ids`
 
@@ -25,14 +23,11 @@ The `mz_object_global_ids` table maps Materialize catalog item IDs to global IDs
 
 > **Public Preview:** This feature is in public preview.
 
-
 > **Warning:** Do not rely on all statements being logged in this view. Materialize
 > controls the maximum rate at which statements are sampled, and may change
 > this rate at any time.
 
-
 > **Warning:** Entries in this view may be cleared on restart (e.g., during Materialize maintenance windows).
-
 
 The `mz_recent_activity_log` view contains a log of the SQL statements
 that have been issued to Materialize in the last 24 hours, along
@@ -82,7 +77,6 @@ granted the [`mz_monitor` role](/security/appendix/appendix-built-in-roles/#syst
 | `initial_application_name` | [`text`]                     | The initial value of `application_name` at the beginning of the session.                                                                                                                                                                                                      |
 | `authenticated_user`       | [`text`]                     | The name of the user for which the session was established.                                                                                                                                                                                                                   |
 | `sql`                      | [`text`]                     | The SQL text of the statement.                                                                                                                                                                                                                                                |
-
 
 ## `mz_aws_connections`
 
@@ -173,14 +167,6 @@ At this time, we do not make any guarantees about the exactness or freshness of 
 
 ## `mz_cluster_replica_metrics_history`
 
-
-
-
-
-
-
-
-
 The `mz_cluster_replica_metrics_history` table records resource utilization metrics
 for all processes of all extant cluster replicas.
 
@@ -214,14 +200,6 @@ of each process in each cluster replica in the system.
 
 ## `mz_cluster_replica_status_history`
 
-
-
-
-
-
-
-
-
 The `mz_cluster_replica_status_history` table records status changes
 for all processes of all extant cluster replicas.
 
@@ -252,14 +230,6 @@ At this time, we do not make any guarantees about the exactness or freshness of 
 | `heap_percent`   | [`double precision`] | Approximate heap (RAM + swap) usage, in percent of the total allocation.
 
 ## `mz_cluster_replica_utilization_history`
-
-
-
-
-
-
-
-
 
 The `mz_cluster_replica_utilization_history` view records resource utilization metrics
 for all processes of all extant cluster replicas, as a percentage of the total resource allocation.
@@ -447,13 +417,11 @@ use.
 > optimizations. You should test any changes in a development environment
 > before deploying the changes to production.
 
-
 The `mz_index_advice` view provides advice on opportunities to optimize resource
 usage (memory and CPU) in Materialize. The advice provided suggests either
 creating indexes or materialized views to precompute intermediate results that
 can be reused across several objects, or removing unnecessary indexes or
 materialized views.
-
 
 ### Known limitations
 
@@ -479,7 +447,6 @@ usage. For example:
 To guarantee that there are no regressions given your specific usage patterns,
 it's important to test any changes in a development environment before
 deploying the changes to production.
-
 
 <!-- RELATION_SPEC mz_internal.mz_index_advice -->
 | Field                    | Type        | Meaning  |
@@ -648,7 +615,6 @@ The view is defined as the transitive closure of [`mz_object_dependencies`](#mz_
 
 > **Public Preview:** This feature is in public preview.
 
-
 The `mz_notices` view contains a list of currently active notices emitted by the
 system. The view can be accessed by Materialize _superusers_.
 
@@ -672,7 +638,6 @@ system. The view can be accessed by Materialize _superusers_.
 ## `mz_notices_redacted`
 
 > **Public Preview:** This feature is in public preview.
-
 
 The `mz_notices_redacted` view contains a redacted list of currently active
 optimizer notices emitted by the system. The view can be accessed by Materialize
@@ -769,7 +734,6 @@ have one or more corresponding executions in
 | `prepared_at` | [`timestamp with time zone`] | The time at which the statement was prepared.                                                                                     |
 -->
 
-
 ## `mz_session_history`
 
 The `mz_session_history` table contains all the sessions that have
@@ -781,7 +745,6 @@ referenced from
 > controls the maximum rate at which statements are sampled, and may change
 > this rate at any time.
 
-
 <!-- RELATION_SPEC mz_internal.mz_session_history -->
 | Field                | Type                         | Meaning                                                                                                                           |
 |----------------------|------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
@@ -789,15 +752,6 @@ referenced from
 | `connected_at`       | [`timestamp with time zone`] | The time at which the session was established.                                                                                    |
 | `initial_application_name`   | [`text`]                     | The `application_name` session metadata field.                                                                                    |
 | `authenticated_user` | [`text`]                     | The name of the user for which the session was established.                                                                       |
-
-
-
-
-
-
-
-
-
 
 ## `mz_sessions`
 
@@ -811,7 +765,6 @@ The `mz_sessions` table contains a row for each active session in the system.
 | `role_id`        | [`text`]                       | The role ID of the role that the session is logged in as. Corresponds to [`mz_catalog.mz_roles`](../mz_catalog#mz_roles). |
 | `client_ip`      | [`text`]                       | The IP address of the client that initiated the session.                                                                  |
 | `connected_at`   | [`timestamp with time zone`]   | The time at which the session connected to the system.                                                                    |
-
 
 ## `mz_network_policies`
 
@@ -860,7 +813,6 @@ in the system on user objects to user roles.
 | `name`           | [`text`] | The name of the privilege target.               |
 | `object_type`    | [`text`] | The type of object the privilege is granted on. |
 | `privilege_type` | [`text`] | They type of privilege granted.                 |
-
 
 ## `mz_show_cluster_privileges`
 

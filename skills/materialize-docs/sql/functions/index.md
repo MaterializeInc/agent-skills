@@ -2,8 +2,6 @@
 
 Learn more about the SQL functions and operators supported in Materialize
 
-
-
 This page details Materialize's supported SQL [functions](#functions) and [operators](#operators).
 
 ## Functions
@@ -877,7 +875,6 @@ after compiling it.
 > **Warning:** Materialize regular expressions are similar to, but not identical to, PostgreSQL
 > regular expressions.
 
-
 ### Time-like operators
 
 Operation | Computes
@@ -907,7 +904,6 @@ Operator | RHS Type | Description
 <code>&lt;@</code> | `jsonb` | Does RHS contain element? ([docs](/sql/types/jsonb/#rhs-contains-lhs-))
 `?` | `text` | Is RHS a top-level key? ([docs](/sql/types/jsonb/#search-top-level-keys-))
 
-
 ### Map operators
 
 Operator | RHS Type | Description
@@ -918,7 +914,6 @@ Operator | RHS Type | Description
 `?` | `string` | Is RHS a top-level key? ([docs](/sql/types/map/#search-top-level-keys-))
 `?&` | `string[]` | Does LHS contain all RHS top-level keys? ([docs](/sql/types/map/#search-for-all-top-level-keys-))
 <code>?&#124;</code> | `string[]` | Does LHS contain any RHS top-level keys? ([docs](/sql/types/map/#search-for-any-top-level-keys-))
-
 
 ### List operators
 
@@ -932,21 +927,15 @@ Operator | Description
 <code>listany @&gt; listany</code> | Check if the first list contains all elements of the second list.
 <code>listany &lt;@ listany</code> | Check if all elements of the first list are contained in the second list.
 
-
-
-
 ---
 
 ## Aggregate function filters
-
 
 You can use a `FILTER` clause on an aggregate function to specify which rows are sent to an [aggregate function](/sql/functions/#aggregate-functions). Rows for which the `filter_clause` evaluates to true contribute to the aggregation.
 
 Temporal filters cannot be used in aggregate function filters.
 
 ## Syntax
-
-
 
 ```mzsql
 <aggregate_name> ( <expression> )
@@ -960,7 +949,6 @@ FILTER (WHERE <filter_clause>)
 | `<expression>` | The expression to aggregate.  |
 | **FILTER** (WHERE `<filter_clause>`) | Specifies which rows are sent to the aggregate function. Rows for which the `<filter_clause>` evaluates to true contribute to the aggregation. Temporal filters cannot be used in aggregate function filters.  |
 
-
 ## Examples
 
 ```mzsql
@@ -971,18 +959,14 @@ SELECT
 FROM generate_series(1,10) AS s(i)
 ```
 
-
 ---
 
 ## array_agg function
-
 
 The `array_agg(value)` function aggregates values (including nulls) as an array.
 The input values to the aggregate can be [filtered](../filters).
 
 ## Syntax
-
-
 
 ```mzsql
 array_agg ( <value>
@@ -997,7 +981,6 @@ array_agg ( <value>
 | `<value>` | The values you want aggregated.  |
 | **ORDER BY** `<col_ref>` [**ASC** \| **DESC**] [**NULLS FIRST** \| **NULLS LAST**] [, ...] | Optional. Specifies the ordering of values within the aggregation. If not specified, incoming rows are not guaranteed any order.  |
 | **FILTER** (WHERE `<filter_clause>`) | Optional. Specifies which rows are sent to the aggregate function. Rows for which the `<filter_clause>` evaluates to true contribute to the aggregation. See [Aggregate function filters](/sql/functions/filters) for details.  |
-
 
 ## Signatures
 
@@ -1046,17 +1029,13 @@ GROUP BY
     title;
 ```
 
-
 ---
 
 ## CAST function and operator
 
-
 The `cast` function and operator return a value converted to the specified [type](../../types/).
 
 ## Signatures
-
-
 
 ```mzsql
 CAST ( <val> AS <type> )
@@ -1068,9 +1047,6 @@ CAST ( <val> AS <type> )
 | `<val>` | Any value you want to convert.  |
 | **AS** `<type>` | The return value's [type](/sql/types/).  |
 
-
-
-
 ```mzsql
 <val>::<type>
 
@@ -1081,10 +1057,7 @@ CAST ( <val> AS <type> )
 | `<val>` | Any value you want to convert.  |
 | `::<type>` | The return value's [type](/sql/types/).  |
 
-
 The following special syntax is permitted if _val_ is a string literal:
-
-
 
 ```mzsql
 <type> '<val>'
@@ -1095,7 +1068,6 @@ The following special syntax is permitted if _val_ is a string literal:
 | --- | --- |
 | `<type>` | The return value's [type](/sql/types/).  |
 | `'<val>'` | A string literal value. This special syntax is permitted if `<val>` is a string literal.  |
-
 
 ### Return value
 
@@ -1284,11 +1256,9 @@ SELECT 100.21::numeric(10, 2)::float AS dec_to_float;
 ## Related topics
 * [Data Types](../../types/)
 
-
 ---
 
 ## COALESCE function
-
 
 `COALESCE` returns the first non-`NULL` element provided.
 
@@ -1313,17 +1283,13 @@ SELECT coalesce(NULL, 3, 2, 1) AS coalesce_res;
    3
 ```
 
-
 ---
 
 ## csv_extract function
 
-
 `csv_extract` returns individual component columns from a column containing a CSV file formatted as a string.
 
 ## Signatures
-
-
 
 ```mzsql
 csv_extract ( <num_csv_col>, <col_name> )
@@ -1334,7 +1300,6 @@ csv_extract ( <num_csv_col>, <col_name> )
 | --- | --- |
 | `<num_csv_col>` | An [`int`](/sql/types/integer/) value specifying the number of columns in the CSV string.  |
 | `<col_name>` | A [`string`](/sql/types/text/) value containing the name of the column containing the CSV string.  |
-
 
 Parameter | Type | Description
 ----------|------|------------
@@ -1370,11 +1335,9 @@ SELECT csv.* FROM t, csv_extract(2, data) csv
 (3 rows)
 ```
 
-
 ---
 
 ## date_bin function
-
 
 `date_bin` returns the largest value less than or equal to `source` that is a
 multiple of `stride` starting at `origin`––for shorthand, we call this
@@ -1403,8 +1366,6 @@ strides, rather than only unit times.
 
 ## Signatures
 
-
-
 ```mzsql
 date_bin ( <stride>, <source> [, <origin>] )
 
@@ -1415,7 +1376,6 @@ date_bin ( <stride>, <source> [, <origin>] )
 | `<stride>` | An [`interval`](/sql/types/interval/) value defining the width of bins. Cannot contain any years or months, but can exceed 30 days. Must be between 1 and 9,223,372,036 seconds.  |
 | `<source>` | A [`timestamp`](/sql/types/timestamp/) or [`timestamp with time zone`](/sql/types/timestamp/) value to determine the bin for.  |
 | `<origin>` | Optional. Must be the same type as `<source>`. Align bins to this value. If not provided, defaults to the Unix epoch. Cannot be more than 2^63 nanoseconds apart from `<source>`.  |
-
 
 Parameter | Type | Description
 ----------|------|------------
@@ -1480,11 +1440,9 @@ FROM (
 [`timestamp`]: ../../types/timestamp
 [`timestamp with time zone`]: ../../types/timestamptz
 
-
 ---
 
 ## date_part function
-
 
 `date_part` returns some time component from a time-based value, such as the year from a Timestamp.
 It is mostly functionally equivalent to the function [`EXTRACT`](../extract), except to maintain
@@ -1492,8 +1450,6 @@ PostgreSQL compatibility, `date_part` returns values of type [`float`](../../typ
 result in a loss of precision in certain uses. Using [`EXTRACT`](../extract) is recommended instead.
 
 ## Signatures
-
-
 
 ```mzsql
 date_part ( '<time_period>', <val> )
@@ -1504,7 +1460,6 @@ date_part ( '<time_period>', <val> )
 | --- | --- |
 | `'<time_period>'` | The time period to extract. Valid values: `epoch`, `millennium`, `century`, `decade`, `year`, `quarter`, `month`, `week`, `day`, `hour`, `minute`, `second`, `microsecond`, `millisecond`, `dow`, `isodow`, `doy`. See the [Arguments](#arguments) section for synonyms.  |
 | `<val>` | A [`time`](/sql/types/time/), [`timestamp`](/sql/types/timestamp/), [`timestamp with time zone`](/sql/types/timestamp/), [`interval`](/sql/types/interval/), or [`date`](/sql/types/date/) value. Values of type [`date`](/sql/types/date/) are first cast to type [`timestamp`](/sql/types/timestamp/).  |
-
 
 Parameter | Type                                                                                                                                                          | Description
 ----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|------------
@@ -1562,11 +1517,9 @@ SELECT date_part('CENTURIES', DATE '2006-01-02');
         21
 ```
 
-
 ---
 
 ## date_trunc function
-
 
 `date_trunc` computes _ts_val_'s "floor value" of the specified time component,
 i.e. the largest time component less than or equal to the provided value.
@@ -1574,8 +1527,6 @@ i.e. the largest time component less than or equal to the provided value.
 To align values along arbitrary values, see [`date_bin`].
 
 ## Signatures
-
-
 
 ```mzsql
 date_trunc ( '<time_unit>', <val> )
@@ -1586,7 +1537,6 @@ date_trunc ( '<time_unit>', <val> )
 | --- | --- |
 | `'<time_unit>'` | The time unit to truncate to. Valid values: `microseconds`, `milliseconds`, `second`, `minute`, `hour`, `day`, `week`, `month`, `quarter`, `year`, `decade`, `century`, `millenium`.  |
 | `<val>` | A [`timestamp`](/sql/types/timestamp/), [`timestamp with time zone`](/sql/types/timestamp/), or [`interval`](/sql/types/interval/) value to truncate.  |
-
 
 Parameter | Type | Description
 ----------|------|------------
@@ -1630,11 +1580,9 @@ SELECT date_trunc('millennium', INTERVAL '1234 years 11 months 23 days 23:59:12.
 [`timestamp`]: ../../types/timestamp
 [`timestamp with time zone`]: ../../types/timestamptz
 
-
 ---
 
 ## datediff function
-
 
 The `datediff(datepart, start, end)` function returns the difference between two date, time or timestamp expressions based on the specified date or time part.
 
@@ -1692,11 +1640,9 @@ SELECT datediff('day', '2005-02-28', '2005-03-01') as non_leap;
 
 In the statement that uses a leap year (`2004`), the number of day boundaries crossed is `2`. When using a non-leap year (`2005`), only `1` day boundary is crossed.
 
-
 ---
 
 ## encode and decode functions
-
 
 The `encode` function encodes binary data into one of several textual
 representations. The `decode` function does the reverse.
@@ -1814,17 +1760,13 @@ SELECT decode('00  40  41  42  ff', 'hex');
 
 [rfc2045]: https://tools.ietf.org/html/rfc2045#section-6.8
 
-
 ---
 
 ## EXTRACT function
 
-
 `EXTRACT` returns some time component from a time-based value, such as the year from a Timestamp.
 
 ## Signatures
-
-
 
 ```mzsql
 EXTRACT ( <time_period> FROM <val> )
@@ -1835,7 +1777,6 @@ EXTRACT ( <time_period> FROM <val> )
 | --- | --- |
 | `<time_period>` | The time period to extract. Valid values: `EPOCH`, `MILLENNIUM`, `CENTURY`, `DECADE`, `YEAR`, `QUARTER`, `MONTH`, `WEEK`, `DAY`, `HOUR`, `MINUTE`, `SECOND`, `MICROSECOND`, `MILLISECOND`, `DOW`, `ISODOW`, `DOY`. See the [Arguments](#arguments) section for synonyms.  |
 | **FROM** `<val>` | A [`date`](/sql/types/date/), [`time`](/sql/types/time/), [`timestamp`](/sql/types/timestamp/), [`timestamp with time zone`](/sql/types/timestamp/), or [`interval`](/sql/types/interval/) value from which to extract a component.  |
-
 
 Parameter | Type                                                                                                                                                                                    | Description
 ----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------
@@ -1893,19 +1834,15 @@ SELECT EXTRACT(CENTURIES FROM DATE '2006-01-02');
       21
 ```
 
-
 ---
 
 ## jsonb_agg function
-
 
 The `jsonb_agg(expression)` function aggregates all values indicated by its expression,
 returning the values (including nulls) as a [`jsonb`](/sql/types/jsonb) array.
 The input values to the aggregate can be [filtered](../filters).
 
 ## Syntax
-
-
 
 ```mzsql
 jsonb_agg ( <expression>
@@ -1920,7 +1857,6 @@ jsonb_agg ( <expression>
 | `<expression>` | The values you want aggregated.  |
 | **ORDER BY** `<col_ref>` [**ASC** \| **DESC**] [**NULLS FIRST** \| **NULLS LAST**] [, ...] | Optional. Specifies the ordering of values within the aggregation. If not specified, incoming rows are not guaranteed any order.  |
 | **FILTER** (WHERE `<filter_clause>`) | Optional. Specifies which rows are sent to the aggregate function. Rows for which the `<filter_clause>` evaluates to true contribute to the aggregation. See [Aggregate function filters](/sql/functions/filters) for details.  |
-
 
 ## Signatures
 
@@ -1977,19 +1913,15 @@ FROM (
 
 * [`jsonb_object_agg`](/sql/functions/jsonb_object_agg)
 
-
 ---
 
 ## jsonb_object_agg function
-
 
 The `jsonb_object_agg(keys, values)` aggregate function zips together `keys`
 and `values` into a [`jsonb`](/sql/types/jsonb) object.
 The input values to the aggregate can be [filtered](../filters).
 
 ## Syntax
-
-
 
 ```mzsql
 jsonb_object_agg ( <keys>, <values>
@@ -2005,7 +1937,6 @@ jsonb_object_agg ( <keys>, <values>
 | `<values>` | The values to aggregate.  |
 | **ORDER BY** `<col_ref>` [**ASC** \| **DESC**] [**NULLS FIRST** \| **NULLS LAST**] [, ...] | Optional. Specifies the ordering of values within the aggregation. If not specified, incoming rows are not guaranteed any order.  |
 | **FILTER** (WHERE `<filter_clause>`) | Optional. Specifies which rows are sent to the aggregate function. Rows for which the `<filter_clause>` evaluates to true contribute to the aggregation. See [Aggregate function filters](/sql/functions/filters) for details.  |
-
 
 ## Signatures
 
@@ -2076,18 +2007,14 @@ The `FILTER` clause in the statement above returns values that are not `NULL` an
 
 * [`jsonb_agg`](/sql/functions/jsonb_agg)
 
-
 ---
 
 ## justify_days function
-
 
 `justify_days` returns a new [`interval`](../../types/interval) such that 30-day time periods are
 converted to months.
 
 ## Signatures
-
-
 
 ```mzsql
 justify_days ( <interval> )
@@ -2098,11 +2025,9 @@ justify_days ( <interval> )
 | --- | --- |
 | `<interval>` | An [`interval`](/sql/types/interval/) value to justify. Returns a new interval such that 30-day time periods are converted to months.  |
 
-
 Parameter | Type                                                                                                                                                                                            | Description
 ----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------
 _interval_ | [`interval`](../../types/interval) | The interval value to justify.
-
 
 ### Return value
 
@@ -2119,18 +2044,14 @@ SELECT justify_days(interval '35 days');
  1 month 5 days
 ```
 
-
 ---
 
 ## justify_hours function
-
 
 `justify_hours` returns a new [`interval`](../../types/interval) such that 24-hour time periods are
 converted to days.
 
 ## Signatures
-
-
 
 ```mzsql
 justify_hours ( <interval> )
@@ -2141,11 +2062,9 @@ justify_hours ( <interval> )
 | --- | --- |
 | `<interval>` | An [`interval`](/sql/types/interval/) value to justify. Returns a new interval such that 24-hour time periods are converted to days.  |
 
-
 Parameter | Type                                                                                                                                                                                            | Description
 ----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------
 _interval_ | [`interval`](../../types/interval) | The interval value to justify.
-
 
 ### Return value
 
@@ -2162,11 +2081,9 @@ SELECT justify_hours(interval '27 hours');
  1 day 03:00:00
 ```
 
-
 ---
 
 ## justify_interval function
-
 
 `justify_interval` returns a new [`interval`](../../types/interval) such that 30-day time periods are
 converted to months, 24-hour time periods are represented as days, and all fields have the same sign. It is a
@@ -2174,8 +2091,6 @@ combination of ['justify_days'](../justify-days) and ['justify_hours'](../justif
 adjustment.
 
 ## Signatures
-
-
 
 ```mzsql
 justify_interval ( <interval> )
@@ -2186,11 +2101,9 @@ justify_interval ( <interval> )
 | --- | --- |
 | `<interval>` | An [`interval`](/sql/types/interval/) value to justify. Returns a new interval such that 30-day time periods are converted to months, 24-hour time periods are represented as days, and all fields have the same sign. It is a combination of [`justify_days`](/sql/functions/justify-days) and [`justify_hours`](/sql/functions/justify-hours) with additional sign adjustment.  |
 
-
 Parameter | Type                                                                                                                                                                                            | Description
 ----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------
 _interval_ | [`interval`](../../types/interval) | The interval value to justify.
-
 
 ### Return value
 
@@ -2207,18 +2120,14 @@ SELECT justify_interval(interval '1 mon -1 hour');
  29 days 23:00:00
 ```
 
-
 ---
 
 ## LENGTH function
-
 
 `LENGTH` returns the [code points](https://en.wikipedia.org/wiki/Code_point) in
 an encoded string.
 
 ## Signatures
-
-
 
 ```mzsql
 length ( <str> [, <encoding_name>] )
@@ -2229,7 +2138,6 @@ length ( <str> [, <encoding_name>] )
 | --- | --- |
 | `<str>` | A [`string`](/sql/types/text/) or `bytea` value whose length you want.  |
 | `<encoding_name>` | Optional. A [`string`](/sql/types/text/) value specifying the [encoding](#encoding-details) to use for calculating the string's length. Defaults to UTF-8.  |
-
 
 Parameter | Type | Description
 ----------|------|------------
@@ -2292,19 +2200,15 @@ SELECT length('你好', 'big5') AS len;
    3
 ```
 
-
 ---
 
 ## list_agg function
-
 
 The `list_agg(value)` aggregate function concatenates
 input values (including nulls) into a [`list`](/sql/types/list).
 The input values to the aggregate can be [filtered](../filters).
 
 ## Syntax
-
-
 
 ```mzsql
 list_agg ( <value>
@@ -2319,7 +2223,6 @@ list_agg ( <value>
 | `<value>` | The values to concatenate.  |
 | **ORDER BY** `<col_ref>` [**ASC** \| **DESC**] [**NULLS FIRST** \| **NULLS LAST**] [, ...] | Optional. Specifies the ordering of values within the aggregation. If not specified, incoming rows are not guaranteed any order.  |
 | **FILTER** (WHERE `<filter_clause>`) | Optional. Specifies which rows are sent to the aggregate function. Rows for which the `<filter_clause>` evaluates to true contribute to the aggregation. See [Aggregate function filters](/sql/functions/filters) for details.  |
-
 
 ## Signatures
 
@@ -2368,11 +2271,9 @@ GROUP BY
     title;
 ```
 
-
 ---
 
 ## map_agg function
-
 
 The `map_agg(keys, values)` aggregate function zips together `keys`
 and `values` into a [`map`](/sql/types/map).
@@ -2380,8 +2281,6 @@ and `values` into a [`map`](/sql/types/map).
 The input values to the aggregate can be [filtered](../filters).
 
 ## Syntax
-
-
 
 ```mzsql
 map_agg ( <keys>, <values>
@@ -2397,7 +2296,6 @@ map_agg ( <keys>, <values>
 | `<values>` | The values to aggregate.  |
 | **ORDER BY** `<col_ref>` [**ASC** \| **DESC**] [**NULLS FIRST** \| **NULLS LAST**] [, ...] | Optional. Specifies the ordering of values within the aggregation. If not specified, incoming rows are not guaranteed any order.  |
 | **FILTER** (WHERE `<filter_clause>`) | Optional. Specifies which rows are sent to the aggregate function. Rows for which the `<filter_clause>` evaluates to true contribute to the aggregation. See [Aggregate function filters](/sql/functions/filters) for details.  |
-
 
 ## Signatures
 
@@ -2480,11 +2378,9 @@ In this example:
 -   `k2` has its value for `-8` filtered out `FILTER (WHERE t.v != -8)`;
     however, this `FILTER` also removes the `NULL` value at `now() + INTERVAL '1s'` because `WHERE null != -8` evaluates to `false`.
 
-
 ---
 
 ## normalize function
-
 
 `normalize` converts a string to a specified Unicode normalization form.
 
@@ -2532,7 +2428,6 @@ SELECT normalize('é') AS normalized;
  é
 ```
 
-
 <hr/>
 
 NFC combines base character with combining marks:
@@ -2544,7 +2439,6 @@ SELECT normalize('é', NFC) AS nfc;
 -----
  é
 ```
-
 
 <hr/>
 
@@ -2558,7 +2452,6 @@ SELECT normalize('é', NFD) = E'e\u0301' AS is_decomposed;
  true
 ```
 
-
 <hr/>
 
 NFKC decomposes compatibility characters like ligatures:
@@ -2570,7 +2463,6 @@ SELECT normalize('ﬁ', NFKC) AS decomposed;
 ------------
  fi
 ```
-
 
 <hr/>
 
@@ -2584,12 +2476,9 @@ SELECT normalize('x²', NFKC) AS normalized;
  x2
 ```
 
-
-
 ---
 
 ## now and mz_now functions
-
 
 In Materialize, `now()` returns the value of the system clock when the
 transaction began as a [`timestamp with time zone`] value.
@@ -2684,10 +2573,8 @@ even if the <code>mz_now()</code> clause is nested.</p>
 </li>
 </ul>
 
-
   For example:
 
-  
   | mz_now() Compound Clause | Valid/Invalid |
   | --- | --- |
   | <span class="copyableCode"> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">OR</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;1&#39;</span> <span class="k">days</span> <span class="o">&lt;=</span> <span class="n">mz_now</span><span class="p">()</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div></span>  | <p>✅ <strong>Valid</strong></p> <p>Ad-hoc queries do not have the same restrictions.</p>  |
@@ -2696,7 +2583,6 @@ even if the <code>mz_now()</code> clause is nested.</p>
   | <div style="background-color: var(--code-block)"> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">OR</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;1&#39;</span> <span class="k">days</span> <span class="o">&lt;=</span> <span class="n">mz_now</span><span class="p">()</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div></div>  | <p>❌ <strong>Invalid</strong></p> <p>In materialized view definitions, <code>mz_now()</code> clause can only be combined using an <code>AND</code>.</p>  |
   | <div style="background-color: var(--code-block)"> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Complete&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">OR</span> <span class="p">(</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> <span class="k">AND</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;1&#39;</span> <span class="k">days</span> <span class="o">&lt;=</span> <span class="n">mz_now</span><span class="p">())</span> </span></span></code></pre></div></div>  | <p>❌ <strong>Invalid</strong></p> <p>In materialized view definitions with <code>mz_now()</code> clauses, top-level conditions must be combined using an <code>AND</code>.</p>  |
   | <div style="background-color: var(--code-block)"> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Complete&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">OR</span> <span class="p">(</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> <span class="k">AND</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;1&#39;</span> <span class="k">days</span> <span class="o">&lt;=</span> <span class="n">mz_now</span><span class="p">())</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span><span class="line"><span class="cl"> </span></span><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">idx_forecast_completed_orders</span> <span class="k">ON</span> <span class="n">forecast_completed_orders</span> </span></span><span class="line"><span class="cl"><span class="p">(</span><span class="n">order_date</span><span class="p">);</span> <span class="c1">-- Unsupported because of the `mz_now()` clause </span></span></span></code></pre></div></div>  | <p>❌ <strong>Invalid</strong></p> <p>To index a view whose definitions includes <code>mz_now()</code> clauses, top-level conditions must be combined using an <code>AND</code> in the view definition.</p>  |
-
 
   For alternatives, see [Disjunction (OR)
   alternatives](http://localhost:1313/docs/transform-data/idiomatic-materialize-sql/mz_now/#disjunctions-or).
@@ -2805,11 +2691,9 @@ ERROR:  cannot materialize call to mz_now
 [`mz_timestamp`]: /sql/types/mz_timestamp
 [`timestamp with time zone`]: /sql/types/timestamptz
 
-
 ---
 
 ## Pushdown functions
-
 
 `try_parse_monotonic_iso8601_timestamp` parses a subset of [ISO 8601]
 timestamps that matches the 24 character length output
@@ -2871,11 +2755,9 @@ SELECT try_parse_monotonic_iso8601_timestamp('nope') AS ts;
 [temporal filter pushdown]: /transform-data/patterns/temporal-filters/#temporal-filter-pushdown
 [jsonb]: /sql/types/jsonb/
 
-
 ---
 
 ## string_agg function
-
 
 The `string_agg(value, delimiter)` aggregate function concatenates the non-null
 input values (i.e. `value`) into [`text`](/sql/types/text). Each value after the
@@ -2884,8 +2766,6 @@ equivalent to an empty string.
 The input values to the aggregate can be [filtered](../filters).
 
 ## Syntax
-
-
 
 ```mzsql
 string_agg ( <value>, <delimiter>
@@ -2901,7 +2781,6 @@ string_agg ( <value>, <delimiter>
 | `<delimiter>` | The value to precede each concatenated value.  |
 | **ORDER BY** `<col_ref>` [**ASC** \| **DESC**] [**NULLS FIRST** \| **NULLS LAST**] [, ...] | Optional. Specifies the ordering of values within the aggregation. If not specified, incoming rows are not guaranteed any order.  |
 | **FILTER** (WHERE `<filter_clause>`) | Optional. Specifies which rows are sent to the aggregate function. Rows for which the `<filter_clause>` evaluates to true contribute to the aggregation. See [Aggregate function filters](/sql/functions/filters) for details.  |
-
 
 ## Signatures
 
@@ -2983,11 +2862,9 @@ FROM (
 SELECT string_agg(b, ',' ORDER BY a DESC) FROM table;
 ```
 
-
 ---
 
 ## SUBSTRING function
-
 
 `SUBSTRING` returns a specified substring of a string.
 
@@ -3033,11 +2910,9 @@ SELECT substring('abcdefg', 3, 3) AS substr;
  cde
 ```
 
-
 ---
 
 ## Table functions
-
 
 ## Overview
 
@@ -3097,7 +2972,6 @@ The query returns 5 rows, one row for each list item:
 > results (i.e., query projection). In practice, you generally would omit
 > including the original list to minimize the return data size.
 
-
 ## `WITH ORDINALITY`
 
 When a table function is used in the `FROM` clause, you can add `WITH
@@ -3138,7 +3012,6 @@ FROM
 You can also name fewer columns in the column alias list than the number of
 columns in the output of the table function (plus `WITH ORDINALITY`, if
 present), in which case the extra columns retain their original names.
-
 
 ## `ROWS FROM`
 
@@ -3248,7 +3121,6 @@ The results contain the ordinality value in the `o` column:
 (2 rows)
 ```
 
-
 ## Table functions in the `SELECT` clause
 
 You can call table functions in the `SELECT` clause. These will be executed as if they were at the end of the `FROM` clause, but their output columns will be at the appropriate position specified by their positions in the `SELECT` clause.
@@ -3267,19 +3139,15 @@ You can also call ordinary scalar functions in the `FROM` clause as if they were
 
 See a list of table functions in the [function reference](/sql/functions/#table-functions).
 
-
 ---
 
 ## TIMEZONE and AT TIME ZONE functions
-
 
 `TIMEZONE` and `AT TIME ZONE` convert a [`timestamp`](../../types/timestamp/#timestamp-info) or a [`timestamptz`](../../types/timestamp/#timestamp-with-time-zone-info) to a different time zone.
 
 **Known limitation:** You must explicitly cast the type for the time zone.
 
 ## Signatures
-
-
 
 ```mzsql
 TIMEZONE ( <zone>::<type>, <timestamp> | <timestamptz> )
@@ -3293,9 +3161,6 @@ TIMEZONE ( <zone>::<type>, <timestamp> | <timestamptz> )
 | `<timestamp>` | A [`timestamp`](/sql/types/timestamp/) value (timestamp without time zone).  |
 | `<timestamptz>` | A [`timestamptz`](/sql/types/timestamp/) value (timestamp with time zone).  |
 
-
-
-
 ```mzsql
 <timestamp> | <timestamptz> AT TIME ZONE <zone>::<type>
 
@@ -3306,7 +3171,6 @@ TIMEZONE ( <zone>::<type>, <timestamp> | <timestamptz> )
 | `<timestamp>` | A [`timestamp`](/sql/types/timestamp/) value (timestamp without time zone).  |
 | `<timestamptz>` | A [`timestamptz`](/sql/types/timestamp/) value (timestamp with time zone).  |
 | **AT TIME ZONE** `<zone>::<type>` | The target time zone. `<zone>` is a [`text`](/sql/types/text/) value. `<type>` is a [`text`](/sql/types/text/) or [`numeric`](/sql/types/numeric/) type. **Known limitation:** You must explicitly cast the type for the time zone.  |
-
 
 Parameter | Type | Description
 ----------|------|------------
@@ -3370,11 +3234,9 @@ SELECT TIMEZONE ('America/New_York'::text,'2020-12-21 18:53:49+08');
 ## Related topics
 * [`timestamp` and `timestamp with time zone` data types](../../types/timestamp)
 
-
 ---
 
 ## to_char function
-
 
 `to_char` converts a timestamp into a string using the specified format.
 

@@ -2,8 +2,6 @@
 
 Serving results from Materialize
 
-
-
 In Materialize, indexed views and materialized views maintain up-to-date query
 results. This allows Materialize to serve fresh query results with low latency.
 
@@ -46,7 +44,6 @@ To serve results, you can:
 
 </div>
 
-
 <div class="linkbox ">
   <div class="title">
     Sink results
@@ -60,16 +57,11 @@ To serve results, you can:
 
 </div>
 
-
 </div>
-
-
-
 
 ---
 
 ## `SELECT` and `SUBSCRIBE`
-
 
 You can query results from Materialize using `SELECT` and `SUBSCRIBE` SQL
 statements. Because Materialize uses the PostgreSQL wire protocol, it works
@@ -113,7 +105,6 @@ also the following client library guides:
 
 <ul style="column-count: 2"><li><a href="/integrations/client-libraries/golang/#query" >Go</a></li></li><li><a href="/integrations/client-libraries/java-jdbc/#query" >Java</a></li></li><li><a href="/integrations/client-libraries/node-js/#query" >Node.js</a></li></li><li><a href="/integrations/client-libraries/php/#query" >PHP</a></li></li><li><a href="/integrations/client-libraries/python/#query" >Python</a></li></li><li><a href="/integrations/client-libraries/ruby/#query" >Ruby</a></li></li><li><a href="/integrations/client-libraries/rust/#query" >Rust</a></li></li></ul>
 
-
 ## SUBSCRIBE
 
 You can use [`SUBSCRIBE`](/sql/subscribe/) to stream query results.  For
@@ -138,18 +129,14 @@ You can use `SUBSCRIBE` to:
 
 > **Tip:** Use materialized view (instead of an indexed view) with `SUBSCRIBE`.
 
-
 For more information, see [`SUBSCRIBE`](/sql/subscribe/) reference page.  See
 also the following client library guides:
 
 <ul style="column-count: 2"><li><a href="/integrations/client-libraries/golang/#stream" >Go</a></li></li><li><a href="/integrations/client-libraries/java-jdbc/#stream" >Java</a></li></li><li><a href="/integrations/client-libraries/node-js/#stream" >Node.js</a></li></li><li><a href="/integrations/client-libraries/php/#stream" >PHP</a></li></li><li><a href="/integrations/client-libraries/python/#stream" >Python</a></li></li><li><a href="/integrations/client-libraries/ruby/#stream" >Ruby</a></li></li><li><a href="/integrations/client-libraries/rust/#stream" >Rust</a></li></li></ul>
 
-
-
 ---
 
 ## Sink results
-
 
 A [sink](/concepts/sinks/) describes the external system you want Materialize to
 write data to and details the encoding of that data. You can sink data from a
@@ -159,7 +146,6 @@ write data to and details the encoding of that data. You can sink data from a
 
 To create a sink, you can:
 
-
 | Method | External system | Guide(s) or Example(s) |
 | --- | --- | --- |
 | Use <code>COPY TO</code> command | Amazon S3 or S3-compatible storage | <ul> <li><a href="/serve-results/sink/s3/" >Sink to Amazon S3</a></li> </ul>  |
@@ -168,7 +154,6 @@ To create a sink, you can:
 | Use a native connector | Kafka/Redpanda | <ul> <li><a href="/serve-results/sink/kafka/" >Sink to Kafka/Redpanda</a></li> </ul>  |
 | Use a native connector | Apache Iceberg hosted on AWS S3 Tables | <ul> <li><a href="/serve-results/sink/iceberg/" >Sink to Iceberg</a></li> </ul>  |
 | Use <code>SUBSCRIBE</code> | Various | <ul> <li><a href="https://github.com/MaterializeInc/mz-catalog-sync" >Sink to Postgres</a></li> <li><a href="https://github.com/MaterializeIncLabs/mz-redis-sync" >Sink to Redis</a></li> </ul>  |
-
 
 ### Operational guideline
 
@@ -180,21 +165,17 @@ To create a sink, you can:
 For help, see [Troubleshooting
 sinks](/serve-results/sink/sink-troubleshooting/).
 
-
 ---
 
 ## Use BI/data collaboration tools
-
 
 Materialize uses the PostgreSQL wire protocol, which allows it to integrate out-of-the-box with various BI/data collaboration tools that support PostgreSQL.
 
 To help you get started, the following guides are available:
 
-
 ---
 
 ## Use foreign data wrapper (FDW)
-
 
 Materialize can be used as a remote server in a PostgreSQL foreign data wrapper
 (FDW). This allows you to query any object in Materialize as foreign tables from
@@ -213,7 +194,6 @@ requiring changes to application logic or tooling.
 >    service account to finish creating the new account. You will also need the
 >    connection details (host, port, password) when setting up the foreign server
 >    and user mappings in PostgreSQL.
-
 
 1. After you have connected at least once with the new service account to finish
    the new account creation, modify the `fdw_svc_account` role:

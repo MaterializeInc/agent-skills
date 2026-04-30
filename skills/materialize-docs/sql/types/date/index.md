@@ -14,8 +14,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 DATE '<date_str>' [<time_str>] [<tz_offset>]
 
@@ -26,7 +24,6 @@ DATE '<date_str>' [<time_str>] [<tz_offset>]
 | `'<date_str>'` | A string representing a date in `Y-M-D`, `Y M-D`, `Y M D` or `YMD` format.  |
 | `<time_str>` | _(NOP)_ A string representing a time of day in `H:M:S.NS` format. Can be separated from `<date_str>` by `T`.  |
 | `<tz_offset>` | _(NOP)_ The timezone's distance from UTC, in hours, specified as `+HH` or `-HH`.  |
-
 
 ## Details
 

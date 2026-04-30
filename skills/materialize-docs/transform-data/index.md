@@ -2,8 +2,6 @@
 
 Learn how to efficiently transform data using Materialize SQL.
 
-
-
 With Materialize, you can use SQL to transform, deliver, and act on
 fast-changing data.
 
@@ -17,7 +15,6 @@ might also differ, because Materialize uses an entirely different database
 engine based on <a href="/get-started/#incremental-updates" >Timely and Differential Dataflow</a>.</p>
 <p>If you need specific syntax or features that are not currently supported in
 Materialize, please submit a <a href="/support/#share-your-feedback" >feature request</a>.</p>
-
 
 ### SELECT statement
 
@@ -110,12 +107,9 @@ For more information, see:
   views](/concepts/indexes/#indexes-on-views-vs-materialized-views)
 - [Indexes: Best practices](/concepts/indexes/#best-practices)
 
-
-
 ---
 
 ## Dataflow troubleshooting
-
 
 If you're unable to troubleshoot your issue using the [`Ingest data`](/ingest-data/troubleshooting/)
 and [`Transform data`](/transform-data/troubleshooting/) troubleshooting guides,
@@ -215,7 +209,6 @@ Again, it's not too important for our purposes to understand what these regions
 do and how they are used to structure the operator graph. For our purposes it's
 just important to know than that they define a hierarchy on the operators.
 
-
 ## The system catalog and introspection relations
 
 Materialize collects a lot of useful information about the dataflows and
@@ -231,7 +224,6 @@ queries we want to debug.
 > consequence, you should expect the results of the queries below to vary
 > depending on the values set for the `cluster` and `cluster_replica`
 > [configuration parameters](/sql/set/#other-configuration-parameters).
-
 
 <!--
 [//]: # "TODO(joacoc) We should share ways for the user to diagnose and troubleshoot if and how fast a source is consuming."
@@ -440,7 +432,6 @@ In this way you can see that currently the only operator that is doing more than
 100 milliseconds worth of work is the `ArrangeBy` operator from the
 materialized view `num_bids`.
 
-
 ## Why is Materialize using so much memory?
 
 [Arrangements](/overview/arrangements) take up most of Materialize's memory use.
@@ -645,12 +636,9 @@ index, you have to drop and recreate all downstream dependencies.
 > pre-existing data. We recommend doing a [blue/green deployment](/manage/dbt/blue-green-deployments/)
 > to handle these changes in production environments.
 
-
-
 ---
 
 ## FAQ: Indexes
-
 
 ## Do indexes in Materialize support `ORDER BY`?
 
@@ -686,11 +674,9 @@ As such, indexes in Materialize currently do not provide optimizations for:
 
 - `GROUP BY`, `ORDER BY` and `LIMIT` clauses.
 
-
 ---
 
 ## Freshness troubleshooting
-
 
 [Freshness](/concepts/reaction-time/#freshness) measures the time from when a
 change occurs in an upstream system to when it becomes visible in the results of
@@ -853,7 +839,6 @@ memory utilization forcing data to disk, or Out of Memory (OOM) crash loops.
 
 ### Check the CPU or memory pressure
 
-
 **Specific cluster:**
 
 You can run the following query to check a cluster's resource utilization,
@@ -890,8 +875,6 @@ WHERE c.id LIKE 'u%'
 ORDER BY u.cpu_percent DESC;
 ```
 
-
-
 - If the returned `cpu_percent` is high, all objects on that cluster experience
   correlated freshness degradation.
 
@@ -908,7 +891,6 @@ if possible.
 > single cluster cannot be explained by CPU or memory pressure, [check whether
 > DDL or deploy activity](#check-for-ddl-or-deploy-activity) occurred during the
 > same window.
-
 
 ### Check for OOM crash loops
 
@@ -952,7 +934,6 @@ that are frozen, and their lag grows indefinitely.
 > runs) where replicas are scaled to zero between runs to save costs. High lag
 > on these clusters is expected and does not indicate a problem.
 
-
 To check, you can query `mz_catalog.mz_clusters` for clusters whose
 `replication_factor = 0`.
 
@@ -967,7 +948,6 @@ WHERE c.replication_factor = 0;
 - If compute is needed, set the replication factor to a non-zero integer
   ([`ALTER CLUSTER ... SET (REPLICATION FACTOR = <int>)`](/sql/alter-cluster/)).
 
-
 ## Check source ingestion
 
 A source ingestion bottleneck occurs when the source is not ingesting data fast
@@ -978,7 +958,6 @@ credential expiration, or a deliberately paused source.
 
 To check if a source or its associated subsource/table is unhealthy, query
 [`mz_internal.mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses):
-
 
 ```mzsql
 SELECT s.id, o.name, s.type, s.status, s.error, s.details
@@ -1033,7 +1012,6 @@ LIMIT 30;
 
 You can exclude intentionally paused sources by adding `AND o.id NOT IN (...)`
 to the `WHERE` clause.
-
 
 ### Determine spike scope
 
@@ -1157,18 +1135,15 @@ Interpreting the results:
 * **`source_peak_lag` stays low while `mv_peak_lag` spikes**: the MV cluster itself is falling behind, independent of its sources.
   This can happen during DDL operations, deploy events, or when the cluster is overloaded.
 
-
 ## Measuring aggregate freshness
 
 This section provides queries to measure overall freshness across your deployment.
-
 
 ### Peak and threshold-based freshness
 
 To count how many minutes exceed specific thresholds:
 
 > **Tip:** You may want to exclude non-production (e.g., development/testing/staging) clusters that may produce misleading results.
-
 
 ```mzsql
 SELECT
@@ -1199,13 +1174,11 @@ ORDER BY max(wl.lag) DESC
 LIMIT 30;
 ```
 
-
 ### Cluster-level freshness summary
 
 To get a per-cluster summary (useful for SLO reporting):
 
 > **Tip:** You may want to exclude non-production (e.g., development/testing/staging) clusters that may produce misleading results.
-
 
 ```mzsql
 SELECT
@@ -1265,11 +1238,9 @@ ORDER BY max(wl.lag) DESC;
 
 This gives an accurate picture of baseline freshness without masking unknown problems.
 
-
 ---
 
 ## Idiomatic Materialize SQL
-
 
 Materialize follows the SQL standard (SQL-92) implementation and strives for
 compatibility with the PostgreSQL dialect. However, for some use cases,
@@ -1277,7 +1248,6 @@ Materialize provides its own idiomatic query patterns that can provide better
 performance.
 
 ## Window functions
-
 
 | Window Function | Idiomatic Materialize |
 | --- | --- |
@@ -1287,9 +1257,7 @@ performance.
 | <a href="/transform-data/idiomatic-materialize-sql/lead/" >Lead over a regularly increasing field</a> | <a href="/transform-data/idiomatic-materialize-sql/lead/" >Use self join or a self <code>LEFT JOIN/LEFT OUTER JOIN</code> by an <strong>equality match</strong> on the regularly increasing field</a>. |
 | <a href="/transform-data/idiomatic-materialize-sql/top-k/" >Top-K</a> | <a href="/transform-data/idiomatic-materialize-sql/top-k/" >Use an <code>ORDER BY ... LIMIT</code> subquery with a <code>LATERAL JOIN</code> on a <code>DISTINCT</code> subquery (or, for K=1,  a <code>SELECT DISTINCT ON ... ORDER BY ... LIMIT</code> query)</a> |
 
-
 ## General query patterns
-
 
 | Query Pattern | Idiomatic Materialize |
 | --- | --- |
@@ -1297,12 +1265,9 @@ performance.
 | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#mz_now-expressions-to-calculate-past-or-future-timestamp" ><code>mz_now()</code> with date/time operators</a> | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#mz_now-expressions-to-calculate-past-or-future-timestamp" >Move the operation to the other side of the comparison</a>: |
 | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#disjunctions-or" ><code>mz_now()</code> with disjunctions (<code>OR</code>) in materialized/indexed view definitions and <code>SUBSCRIBE</code> statements</a>: | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#disjunctions-or" >Rewrite using <code>UNION ALL</code> or <code>UNION</code> (deduplicating as necessary) expression</a> |
 
-
-
 ---
 
 ## Optimization
-
 
 ## Indexes
 
@@ -1563,7 +1528,6 @@ In many relational databases, indexes don't replicate the entire collection of d
     CREATE INDEX pk_courses ON courses (id);
     ```
 
-
 2. For each foreign key in the join, create a "narrow" view with just two columns: foreign key and primary key. Then create two indexes: one for the foreign key and one for the primary key. In our example, the two foreign keys are `sections.teacher_id` and `sections.course_id`, so we do the following:
     ```mzsql
     -- Create a "narrow" view containing primary key sections.id
@@ -1582,7 +1546,6 @@ In many relational databases, indexes don't replicate the entire collection of d
     CREATE INDEX sections_narrow_courses_1 ON sections_narrow_courses (course_id);
     ```
     > **Note:** In this case, because both foreign keys are in `sections`, we could have gotten away with one narrow collection `sections_narrow_teachers_and_courses` with indexes on `id`, `teacher_id`, and `course_id`. In general, we won't be so lucky to have all the foreign keys in the same collection, so we've shown the more general pattern of creating a narrow view and two indexes for each foreign key.
-
 
 3. Rewrite your query to use your narrow collections in the join conditions. Example:
 
@@ -1763,20 +1726,16 @@ Check out the blog post [Delta Joins and Late Materialization](https://materiali
 [dataflows]: /get-started/arrangements/#dataflows
 [`SELECT` syntax]: /sql/select/#syntax
 
-
 ---
 
 ## Patterns
 
-
 The following section provides examples of implementing some common query
 patterns in Materialize:
-
 
 ---
 
 ## Troubleshooting
-
 
 Once data is flowing into Materialize and you start modeling it in SQL, you
 might run into some snags or unexpected scenarios. This guide collects common
@@ -1980,7 +1939,6 @@ accordingly.
 > your issue, jump to [Why is my query slow?](#why-is-my-query-slow) for further
 > guidance.
 
-
 ### Stalled source
 
 <!-- TODO: update this to use the query history UI once it's available -->
@@ -2027,7 +1985,6 @@ If your query was not the root cause, you can wait for the other activity on the
 
 If you’ve gone through the dataflow troubleshooting and do not want to make any changes to your query, consider [sizing up your cluster](https://materialize.com/docs/sql/create-cluster/#available-sizes). A larger size cluster will provision more resources.
 
-
 ## Which part of my query runs slowly or uses a lot of memory?
 
 You can [`EXPLAIN`](/sql/explain-plan/) a query to see how it will be run as a
@@ -2059,11 +2016,9 @@ If you're looking for a complete audit history, use the [mz_audit_events](/refer
 catalog table, which records all DDL commands issued against your Materialize
 region.
 
-
 ---
 
 ## Updating materialized views
-
 
 As your application and workload evolves, you might need to update materialized view definitions. Materialize offers multiple strategies to update your materialized views, each with different tradeoffs for complexity, resource usage, and impact on freshness.
 

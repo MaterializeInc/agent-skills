@@ -15,8 +15,6 @@ certificates) can be specified as plain `text`, or also stored as secrets.
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
 
-
-
 ## Source and sink connections
 
 ### AWS
@@ -26,8 +24,6 @@ Identity and Access Management (IAM) user or role in your AWS account. You can
 use AWS connections to perform [bulk exports to Amazon S3](/serve-results/s3/),
 perform [authentication with an Amazon MSK cluster](#kafka-aws-connection), or
 perform [authentication with an Amazon RDS MySQL database](#mysql-aws-connection).
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO AWS (
@@ -55,13 +51,11 @@ CREATE CONNECTION <connection_name> TO AWS (
 | `ASSUME ROLE SESSION NAME` | *Value:* `text`  The session name to use when assuming the role.  Only valid when `ASSUME ROLE ARN` is specified.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `false`. \|  |
 
-
 #### Permissions {#aws-permissions}
 
 > **Warning:** Failing to constrain the external ID in your role trust policy will allow
 > other Materialize customers to assume your role and use AWS privileges you
 > have granted the role!
-
 
 When using role assumption-based authentication, you must configure a [trust
 policy] on the IAM role that permits Materialize to assume the role.
@@ -108,7 +102,6 @@ SELECT id, external_id, example_trust_policy FROM mz_internal.mz_aws_connections
 ```
 
 #### Examples {#aws-examples}
-
 
 **Role assumption:**
 
@@ -158,11 +151,9 @@ CREATE CONNECTION aws_role_assumption TO AWS (
 );
 ```
 
-
 **Credentials:**
 > **Warning:** Use of credentials-based authentication is deprecated.  AWS strongly encourages
 > the use of role assumption-based authentication instead.
-
 
 To create an AWS connection that uses static access key credentials:
 
@@ -173,9 +164,6 @@ CREATE CONNECTION aws_credentials TO AWS (
     SECRET ACCESS KEY = SECRET aws_secret_access_key
 );
 ```
-
-
-
 
 ### S3 compatible object storage
 You can use an AWS connection to perform bulk exports and bulk imports with any S3 compatible object
@@ -201,8 +189,6 @@ A Kafka connection establishes a link to a [Kafka] cluster. You can use Kafka
 connections to create [sources](/sql/create-source/kafka) and [sinks](/sql/create-sink/kafka/).
 
 #### Syntax {#kafka-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO KAFKA (
@@ -240,7 +226,6 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | `PROGRESS TOPIC REPLICATION FACTOR` | *Value:* `int`  The partition count to use when creating the progress topic (if the Kafka topic does not already exist).  Default: Broker's default.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
 
-
 To connect to a Kafka cluster with multiple bootstrap servers, use the `BROKERS`
 option:
 
@@ -251,7 +236,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 ```
 
 #### Security protocol examples {#kafka-auth}
-
 
 **PLAINTEXT:**
 > **Warning:** It is insecure to use the `PLAINTEXT` security protocol unless
@@ -265,7 +249,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
     SSH TUNNEL ssh_connection
 );
 ```
-
 
 **SSL:**
 With both TLS encryption and TLS client authentication:
@@ -303,12 +286,10 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 );
 ```
 
-
 **SASL_PLAINTEXT:**
 > **Warning:** It is insecure to use the `SASL_PLAINTEXT` security protocol unless
 > you are using a [network security connection](#network-security-connections)
 > to tunnel into a private network, as shown below.
-
 
 ```mzsql
 CREATE SECRET kafka_password AS '...';
@@ -322,7 +303,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
     SSH TUNNEL ssh_connection
 );
 ```
-
 
 **SASL_SSL:**
 ```mzsql
@@ -341,7 +321,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 );
 ```
 
-
 **AWS IAM:**
 
 ```mzsql
@@ -357,20 +336,15 @@ CREATE CONNECTION kafka_msk TO KAFKA (
 );
 ```
 
-
-
 #### Network security {#kafka-network-security}
 
 If your Kafka broker is not exposed to the public internet, you can tunnel the
 connection through an AWS PrivateLink service (Materialize Cloud) or an
 SSH bastion host.
 
-
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 Depending on the hosted service you are connecting to, you might need to specify
 a PrivateLink connection [per advertised broker](#kafka-privatelink-syntax)
@@ -381,9 +355,6 @@ a PrivateLink connection [per advertised broker](#kafka-privatelink-syntax)
 > **Warning:** If your Kafka cluster advertises brokers that are not specified
 > in the `BROKERS` clause, Materialize will attempt to connect to
 > those brokers without any tunneling.
-
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO KAFKA (
@@ -401,10 +372,7 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | `<broker>:<port>` | The hostname and port of each Kafka broker.  |
 | `USING <tunnel_option>` | Specifies how to connect to each broker (e.g., via AWS PrivateLink or SSH tunnel).  |
 
-
 ##### `kafka_broker`
-
-
 
 ```mzsql
 '<broker>:<port>' USING AWS PRIVATELINK <connection_name> (
@@ -419,7 +387,6 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | `AWS PRIVATELINK <connection_name>` | The name of an AWS PrivateLink connection through which network traffic for this broker should be routed.  |
 | `AVAILABILITY ZONE` | The ID of the availability zone of the AWS PrivateLink service in which the broker is accessible.  |
 | `PORT` | The port of the AWS PrivateLink service to connect to.  |
-
 
 The `USING` clause specifies that Materialize Cloud should connect to the
 designated broker via an AWS PrivateLink service. Brokers do not need to be
@@ -470,8 +437,6 @@ PrivateLink connection and the port of the bootstrap server instead.
 
 ##### Default connection syntax {#kafka-privatelink-default-syntax}
 
-
-
 ```mzsql
 CREATE CONNECTION <connection_name> TO KAFKA (
     AWS PRIVATELINK <privatelink_connection_name> (PORT <port>),
@@ -484,7 +449,6 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | --- | --- |
 | `AWS PRIVATELINK <privatelink_connection_name>` | The name of an AWS PrivateLink connection through which network traffic should be routed.  |
 | `PORT` | The port of the AWS PrivateLink service to connect to.  |
-
 
 ##### Default connection options {#kafka-privatelink-default-options}
 
@@ -514,7 +478,6 @@ For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
 
-
 **SSH tunnel:**
 
 ##### Syntax {#kafka-ssh-syntax}
@@ -522,9 +485,6 @@ check [this guide](/ops/network-security/privatelink/).
 > **Warning:** If you do not specify a default `SSH TUNNEL` and your Kafka
 > cluster advertises brokers that are not listed in the `BROKERS` clause,
 > Materialize will attempt to connect to those brokers without any tunneling.
-
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO KAFKA (
@@ -542,10 +502,7 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | `<broker>:<port>` | The hostname and port of each Kafka broker.  |
 | `USING <tunnel_option>` | Specifies how to connect to each broker (e.g., via AWS PrivateLink or SSH tunnel).  |
 
-
 ##### `kafka_broker`
-
-
 
 ```mzsql
 '<broker>:<port>' USING SSH TUNNEL <connection_name>
@@ -555,7 +512,6 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | Syntax element | Description |
 | --- | --- |
 | `SSH TUNNEL <connection_name>` | The name of an SSH tunnel connection through which network traffic for this broker should be routed.  |
-
 
 The `USING` clause specifies that Materialize should connect to the designated
 broker via an SSH bastion server. Brokers do not need to be configured the same
@@ -598,9 +554,6 @@ BROKERS (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
 
-
-
-
 ### Confluent Schema Registry
 
 A Confluent Schema Registry connection establishes a link to a [Confluent Schema
@@ -608,8 +561,6 @@ Registry] server. You can use Confluent Schema Registry connections in the
 `FORMAT` clause of [`CREATE SOURCE`] and [`CREATE SINK`] statements.
 
 #### Syntax {#csr-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO CONFLUENT SCHEMA REGISTRY (
@@ -636,7 +587,6 @@ CREATE CONNECTION <connection_name> TO CONFLUENT SCHEMA REGISTRY (
 | `AWS PRIVATELINK` | *Value:* object name  The name of an [AWS PrivateLink connection](#aws-privatelink) to route network traffic through.  |
 | `SSH TUNNEL` | *Value:* object name  The name of an [SSH tunnel connection](#ssh-tunnel) to route network traffic through.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
-
 
 #### Examples {#csr-example}
 
@@ -678,12 +628,9 @@ CREATE CONNECTION csr_ssl TO CONFLUENT SCHEMA REGISTRY (
 If your Confluent Schema Registry server is not exposed to the public internet,
 you can tunnel the connection through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host.
 
-
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ##### Example {#csr-privatelink-example}
 
@@ -698,7 +645,6 @@ CREATE CONNECTION csr_privatelink TO CONFLUENT SCHEMA REGISTRY (
     AWS PRIVATELINK privatelink_svc
 );
 ```
-
 
 **SSH tunnel:**
 
@@ -717,17 +663,12 @@ CREATE CONNECTION csr_ssh TO CONFLUENT SCHEMA REGISTRY (
 );
 ```
 
-
-
-
 ### MySQL
 
 A MySQL connection establishes a link to a [MySQL] server. You can use
 MySQL connections to create [sources](/sql/create-source/mysql).
 
 #### Syntax {#mysql-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO MYSQL (
@@ -762,7 +703,6 @@ CREATE CONNECTION <connection_name> TO MYSQL (
 | `SSH TUNNEL` | *Value:* object name  The name of an [SSH tunnel connection](#ssh-tunnel) to route network traffic through.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
 
-
 #### Example {#mysql-example}
 
 ```mzsql
@@ -782,12 +722,9 @@ If your MySQL server is not exposed to the public internet, you can tunnel the
 connection through an AWS PrivateLink service (Materialize Cloud) or an
 SSH bastion host.
 
-
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ##### Example {#mysql-privatelink-example}
 
@@ -810,7 +747,6 @@ For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
 
-
 **SSH tunnel:**
 
 ##### Example {#mysql-ssh-example}
@@ -831,8 +767,6 @@ CREATE CONNECTION mysql_connection TO MYSQL (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
 
-
-
 **AWS IAM:**
 
 ##### Example {#mysql-aws-connection-example}
@@ -852,16 +786,12 @@ CREATE CONNECTION mysql_connection TO MYSQL (
 );
 ```
 
-
-
 ### PostgreSQL
 
 A Postgres connection establishes a link to a single database of a
 [PostgreSQL] server. You can use Postgres connections to create [sources](/sql/create-source/postgres).
 
 #### Syntax {#postgres-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO POSTGRES (
@@ -896,7 +826,6 @@ CREATE CONNECTION <connection_name> TO POSTGRES (
 | `SSH TUNNEL` | *Value:* object name  The name of an [SSH tunnel connection](#ssh-tunnel) to route network traffic through.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
 
-
 #### Example {#postgres-example}
 
 ```mzsql
@@ -917,12 +846,9 @@ CREATE CONNECTION pg_connection TO POSTGRES (
 If your PostgreSQL server is not exposed to the public internet, you can tunnel
 the connection through an AWS PrivateLink service (Materialize Cloud)or an SSH bastion host.
 
-
 **AWS PrivateLink:**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ##### Example {#postgres-privatelink-example}
 
@@ -946,7 +872,6 @@ For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
 
-
 **SSH tunnel:**
 
 ##### Example {#postgres-ssh-example}
@@ -969,19 +894,12 @@ CREATE CONNECTION pg_connection TO POSTGRES (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
 
-
-
-
 ### SQL Server
-
-
 
 A SQL Server connection establishes a link to a single database of a
 [SQL Server] instance. You can use SQL Server connections to create [sources](/sql/create-source/sql-server).
 
 #### Syntax {#sql-server-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO SQL SERVER (
@@ -1009,7 +927,6 @@ CREATE CONNECTION <connection_name> TO SQL SERVER (
 | `SSL CERTIFICATE AUTHORITY` | *Value:* secret or `text`  One or more client SSL certificates in PEM format.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
 
-
 #### Example {#sql-server-example}
 
 ```mzsql
@@ -1028,13 +945,10 @@ CREATE CONNECTION sqlserver_connection TO SQL SERVER (
 
 > **Public Preview:** This feature is in public preview.
 
-
 An Iceberg catalog connection establishes a link to an [Apache Iceberg](https://iceberg.apache.org/)
 catalog. You can use Iceberg catalog connections to create [Iceberg sinks](/sql/create-sink/iceberg).
 
 #### Syntax {#iceberg-catalog-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
@@ -1053,7 +967,6 @@ CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
 | `URL` | *Value:* `text`. Required.  The URL of the Iceberg catalog endpoint. For AWS S3 Tables, use `https://s3tables.<region>.amazonaws.com/iceberg`.  |
 | `WAREHOUSE` | *Value:* `text`. Required.  The ARN of the S3 Tables bucket: `arn:aws:s3tables:<region>:<account-id>:bucket/<bucket-name>`.  |
 | `AWS CONNECTION` | *Value:* object name. Required.  The name of an [AWS connection](#aws) to use for authentication.  |
-
 
 #### Example {#iceberg-catalog-example}
 
@@ -1075,21 +988,15 @@ For more information about using Iceberg sinks, see the [Iceberg sink documentat
 
 ## Network security connections
 
-
-
 ### AWS PrivateLink (Materialize Cloud) {#aws-privatelink}
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 An AWS PrivateLink connection establishes a link to an [AWS PrivateLink] service.
 You can use AWS PrivateLink connections in [Confluent Schema Registry connections](#confluent-schema-registry),
 [Kafka connections](#kafka), and [Postgres connections](#postgresql).
 
 #### Syntax {#aws-privatelink-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO AWS PRIVATELINK (
@@ -1104,7 +1011,6 @@ CREATE CONNECTION <connection_name> TO AWS PRIVATELINK (
 | `<connection_name>` | A name for the connection.  |
 | `SERVICE NAME` | *Value:* `text`. Required.  The name of the AWS PrivateLink service.  |
 | `AVAILABILITY ZONES` | *Value:* `text[]`. Required.  The IDs of the AWS availability zones in which the service is accessible.  |
-
 
 #### Permissions {#aws-privatelink-permissions}
 
@@ -1139,7 +1045,6 @@ see the [AWS PrivateLink documentation](https://docs.aws.amazon.com/vpc/latest/p
 > Doing so will allow any Materialize customer to create a connection to your
 > AWS PrivateLink service.
 
-
 #### Accepting connection requests {#aws-privatelink-requests}
 
 If your AWS PrivateLink service is configured to require acceptance of
@@ -1164,8 +1069,6 @@ and [Postgres connections](#postgresql).
 
 #### Syntax {#ssh-tunnel-syntax}
 
-
-
 ```mzsql
 CREATE CONNECTION <connection_name> TO SSH TUNNEL (
     HOST '<hostname>',
@@ -1181,7 +1084,6 @@ CREATE CONNECTION <connection_name> TO SSH TUNNEL (
 | `HOST` | *Value:* `text`. Required.  The hostname of the SSH bastion server.  |
 | `PORT` | *Value:* `integer`. Required.  The port to connect to.  |
 | `USER` | *Value:* `text`. Required.  The name of the user to connect as.  |
-
 
 #### Key pairs {#ssh-tunnel-keypairs}
 

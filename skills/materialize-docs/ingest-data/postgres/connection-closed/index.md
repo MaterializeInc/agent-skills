@@ -19,7 +19,6 @@ replicate data from PostgreSQL was closed, interrupting the replication process.
 > safely ignored if that is the case. Sources will automatically reconnect after
 > maintenance is complete.
 
-
 ## Common causes
 
 - **Network instability**: Intermittent network issues between Materialize and
@@ -154,7 +153,6 @@ max_connections = 200
 
 > **Note:** Increasing max_connections may require more shared memory. You may also need to
 > adjust `shared_buffers` and other memory settings.
-
 
 **4. Review and update SSL certificates**
 

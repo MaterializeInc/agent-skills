@@ -98,7 +98,6 @@ Again, it's not too important for our purposes to understand what these regions
 do and how they are used to structure the operator graph. For our purposes it's
 just important to know than that they define a hierarchy on the operators.
 
-
 ## The system catalog and introspection relations
 
 Materialize collects a lot of useful information about the dataflows and
@@ -114,7 +113,6 @@ queries we want to debug.
 > consequence, you should expect the results of the queries below to vary
 > depending on the values set for the `cluster` and `cluster_replica`
 > [configuration parameters](/sql/set/#other-configuration-parameters).
-
 
 <!--
 [//]: # "TODO(joacoc) We should share ways for the user to diagnose and troubleshoot if and how fast a source is consuming."
@@ -322,7 +320,6 @@ COPY(SUBSCRIBE(
 In this way you can see that currently the only operator that is doing more than
 100 milliseconds worth of work is the `ArrangeBy` operator from the
 materialized view `num_bids`.
-
 
 ## Why is Materialize using so much memory?
 

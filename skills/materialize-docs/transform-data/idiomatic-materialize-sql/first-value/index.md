@@ -22,9 +22,6 @@ to some ordering, in each group.
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
 
-
-
-
 ## Idiomatic Materialize SQL
 
 **Idiomatic Materialize SQL:** To find the first value in each group, use
@@ -119,7 +116,6 @@ For more information on setting `AGGREGATE INPUT GROUP SIZE`, see
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
 
-
 ### Use MIN() to find the first value
 
 Using idiomatic Materialize SQL, the following example finds the lowest item
@@ -163,7 +159,6 @@ window function](/sql/functions/#first_value) for first value within groups quer
 
 <br>
 <div style="background-color: var(--code-block)">
-
 
 ```nofmt
 -- Anti-pattern --
@@ -229,7 +224,6 @@ queries.</red>
 <br>
 <div style="background-color: var(--code-block)">
 
-
 ```nofmt
 -- Anti-pattern --
 SELECT order_id,
@@ -272,7 +266,6 @@ value if ordered by descending price values)
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-
 ```mzsql
 SELECT o.order_id, minmax.lowest_price, minmax.highest_price, o.item, o.price,
   o.price - minmax.lowest_price AS diff_lowest_price,
@@ -299,7 +292,6 @@ queries.</red>
 
 <br>
 <div style="background-color: var(--code-block)">
-
 
 ```nofmt
 -- Anti-pattern --

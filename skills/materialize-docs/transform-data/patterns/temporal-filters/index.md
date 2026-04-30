@@ -28,7 +28,6 @@ WHERE mz_now() <= event_ts + INTERVAL '5min'
 > However, there are currently no valid operators for the [`mz_timestamp`
 > type](/sql/types/mz_timestamp) that would allow this.  See [`mz_now()` requirements and restrictions](#mz_now-requirements-and-restrictions).
 
-
 The following diagram shows record `B` falling out of the result set as time
 moves forward:
 
@@ -46,7 +45,6 @@ moves forward:
 
 > **Tip:** When possible, prefer materialized views when using temporal filter to take
 > advantage of custom consolidation.
-
 
 When creating a temporal filter using
 [`mz_now()`](/sql/functions/now_and_mz_now) in a `WHERE` or `HAVING` clause, the
@@ -88,7 +86,6 @@ even if the <code>mz_now()</code> clause is nested.</p>
 </li>
 </ul>
 
-
   To rewrite the query, see [Disjunction (OR)
   alternatives](http://localhost:1313/docs/transform-data/idiomatic-materialize-sql/mz_now/#disjunctions-or).
 
@@ -102,7 +99,6 @@ After you have tried the examples, make sure to drop these objects and spin down
 
 > **Tip:** When possible, prefer materialized views when using temporal filter to take
 > advantage of custom consolidation.
-
 
 ### Sliding window
 
@@ -149,8 +145,6 @@ You can materialize the `last_30_sec` view by [recreating it as a `MATERIALIZED
 VIEW`](/sql/create-materialized-view/) (results persisted to storage). When
 you do so, Materialize will keep the results up to date with records expiring
 automatically according to the temporal filter.
-
-
 
 ### Time-to-Live (TTL)
 

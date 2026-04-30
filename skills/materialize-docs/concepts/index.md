@@ -2,8 +2,6 @@
 
 Learn about the core concepts in Materialize.
 
-
-
 The pages in this section introduces some of the key concepts in Materialize:
 
 Concept                                  | Description
@@ -17,12 +15,9 @@ Concept                                  | Description
 
 Refer to the individual pages for more information.
 
-
-
 ---
 
 ## Namespaces
-
 
 Namespaces are a way to organize Materialize objects logically. In organizations
 with multiple objects, namespaces help avoid naming conflicts and make it easier
@@ -48,7 +43,6 @@ beneath it. That is,
 sinks, indexes, types, functions, and secrets;
 - Tables, views, and materialized views can contain: columns.
 
-
 ### Qualifying names
 
 Namespaces enable disambiguation and access to objects across different
@@ -70,7 +64,6 @@ databases and schemas. Namespaces use the dot notation format
   > **Tip:** You can use fully qualified names to reference objects within the same
 >   database (or within the same database and schema). However, for brevity and
 >   readability, you may prefer to use qualified names instead.
-
 
 - **Qualified names**
 
@@ -96,7 +89,6 @@ databases and schemas. Namespaces use the dot notation format
 ## Namespace constraints
 
 All namespaces must adhere to [identifier rules](/sql/identifiers).
-
 
 ## Other objects
 
@@ -142,11 +134,9 @@ hierarchy:
   `SET DATABASE = my_db`).
 - Materialize allows cross-database queries.
 
-
 ---
 
 ## Clusters
-
 
 ## Overview
 
@@ -161,7 +151,6 @@ to be associated with a cluster:
   views](/concepts/views/#materialized-views).
 - Executing [`SELECT`](/sql/select/) and [`SUBSCRIBE`](/sql/subscribe/)
   statements.
-
 
 ## Resource isolation
 
@@ -200,7 +189,6 @@ and serve queries.
 > </li>
 > </ul>
 
-
 Materialize automatically assigns names to replicas (e.g., `r1`, `r2`). You can
 view information about individual replicas in the Materialize console and the
 system catalog.
@@ -221,7 +209,6 @@ across availability zones <strong>cannot</strong> be guaranteed.</p>
 </li>
 </ul>
 
-
 <a name="sizing-your-clusters"></a>
 
 ## Cluster sizing
@@ -238,7 +225,6 @@ As your workload changes, you can [resize a cluster](/sql/alter-cluster/).
 
 > **Tip:** To gauge the performance and utilization of your clusters, use the
 > [**Environment Overview** page in the Materialize Console](/console/monitoring/).
-
 
 ## Best practices
 
@@ -270,7 +256,6 @@ deployments</a></p>
 </li>
 </ul>
 
-
 See also [Operational guidelines](/manage/operational-guidelines/).
 
 #### Alternatives
@@ -301,11 +286,9 @@ hydration cost and the steady-state cost.
 - [Usage & billing](/administration/billing/)
 - [Operational guidelines](/manage/operational-guidelines/)
 
-
 ---
 
 ## Indexes
-
 
 ## Overview
 
@@ -318,7 +301,6 @@ views](/concepts/views/#materialized-views).
 
 > **Note:** In practice, you may find that you rarely need to index a source
 > without performing some transformation using a view, etc.
-
 
 In Materialize, you can create indexes on a [source](/concepts/sources/) to
 maintain in-memory up-to-date source data within the cluster you create the
@@ -371,7 +353,6 @@ materialized views require no additional computation to keep results up-to-date.
 > the index is created is faster since the results are served from memory rather
 > than from storage.
 
-
 For best practices on using indexes, and understanding when to use indexed views
 vs. materialized views, see [Usage patterns](#usage-patterns).
 
@@ -401,7 +382,6 @@ CREATE INDEX idx_on_my_view IN CLUSTER active_cluster ON my_view (...);
 ### Index usage
 
 > **Important:** Indexes are local to a cluster. Queries in one cluster cannot use the indexes in another, different cluster.
-
 
 Unlike some other databases, Materialize can use an index to serve query results
 even if the query does not specify a `WHERE` condition on the index key. Serving
@@ -488,7 +468,6 @@ CREATE INDEX idx_orders_view_qty on orders_view (quantity);
 The following table shows various queries and whether Materialize performs a
 point lookup or an index scan.
 
-
 | Query | Index Usage |
 | --- | --- |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span><span class="p">;</span> </span></span></code></pre></div> | Index scan. |
@@ -502,7 +481,6 @@ point lookup or an index scan.
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> <span class="k">WHERE</span> <span class="n">round</span><span class="p">(</span><span class="n">quantity</span><span class="p">)</span> <span class="o">=</span> <span class="mf">20</span><span class="p">;</span> </span></span></code></pre></div> | Index scan. |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- Assume quantity is an integer </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> <span class="k">WHERE</span> <span class="n">quantity</span> <span class="o">=</span> <span class="s1">&#39;hello&#39;</span><span class="p">;</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> <span class="k">WHERE</span> <span class="n">quantity</span><span class="o">::</span><span class="nb">TEXT</span> <span class="o">=</span> <span class="s1">&#39;hello&#39;</span><span class="p">;</span> </span></span></code></pre></div> | Index scan, assuming <code>quantity</code> field in <code>orders_view</code> is an integer. In the first query, the quantity is implicitly cast to text. In the second query, the quantity is explicitly cast to text. |
 
-
 Consider that the view has an index on the `quantity` and `price` fields
 instead of an index on the `quantity` field:
 
@@ -510,7 +488,6 @@ instead of an index on the `quantity` field:
 DROP INDEX idx_orders_view_qty;
 CREATE INDEX idx_orders_view_qty_price on orders_view (quantity, price);
 ```
-
 
 | Query | Index Usage |
 | --- | --- |
@@ -521,7 +498,6 @@ CREATE INDEX idx_orders_view_qty_price on orders_view (quantity, price);
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">quantity</span> <span class="o">=</span> <span class="mf">10</span> <span class="k">AND</span> <span class="p">(</span><span class="n">price</span> <span class="o">=</span> <span class="mf">2.50</span> <span class="k">OR</span> <span class="n">price</span> <span class="o">=</span> <span class="mf">3.00</span><span class="p">);</span> </span></span></code></pre></div> | Point lookup. Query uses <code>OR</code> to combine conditions on <strong>same</strong> field and <code>AND</code> to combine conditions on <strong>different</strong> fields. |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">quantity</span> <span class="o">=</span> <span class="mf">10</span> <span class="k">AND</span> <span class="n">price</span> <span class="o">=</span> <span class="mf">2.50</span> <span class="k">AND</span> <span class="n">item</span> <span class="o">=</span> <span class="s1">&#39;cupcake&#39;</span><span class="p">;</span> </span></span></code></pre></div> | Point lookup on the index keys <code>quantity</code> and <code>price</code>, then filter on <code>item</code>. |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">quantity</span> <span class="o">=</span> <span class="mf">10</span> <span class="k">AND</span> <span class="n">price</span> <span class="o">=</span> <span class="mf">2.50</span> <span class="k">OR</span> <span class="n">item</span> <span class="o">=</span> <span class="s1">&#39;cupcake&#39;</span><span class="p">;</span> </span></span></code></pre></div> | Index scan. Query uses <code>OR</code> to combine conditions on <strong>different</strong> fields. |
-
 
 #### Limitations
 
@@ -600,8 +576,6 @@ cluster that maintains the view results:
 - Index the materialized view in the serving cluster(s) to serve the results
 from memory.
 
-
-
 **2-tier architecture:**
 
 ![Image of the 2-tier-architecture](/images/2-tier-architecture.svg)
@@ -621,9 +595,6 @@ results from memory.
 > filters](/transform-data/patterns/temporal-filters/), avoid creating
 > materialized views on a shared cluster used for both compute/transformat
 > operations and serving queries. Use indexed views instead.
-
-
-
 
 **1-tier architecture:**
 
@@ -670,7 +641,6 @@ joins</a>.</p>
 </ul>
 <p>For more information, see <a href="/transform-data/optimization" >Optimization</a>.</p>
 
-
 ### Best practices
 
 <p>Before creating an index, consider the following:</p>
@@ -695,7 +665,6 @@ expected data access patterns to determine if you need to index or not.</p>
 </li>
 </ul>
 
-
 ## Related pages
 
 - [Optimization](/transform-data/optimization)
@@ -706,11 +675,9 @@ expected data access patterns to determine if you need to index or not.</p>
 red { color: Red; font-weight: 500; }
 </style>
 
-
 ---
 
 ## Reaction Time, Freshness, and Query Latency
-
 
 In operational data systems, the performance and responsiveness of queries depend not only on how fast a query runs, but also on how current the underlying data is. This page introduces three foundational concepts for evaluating and understanding system responsiveness in Materialize:
 
@@ -772,7 +739,6 @@ This is the most comprehensive measure of system responsiveness and is particula
 | Data Warehouse | High          |
 | Materialize    | Low           |
 
-
 ## Example
 
 Consider an e-commerce application that needs to monitor order fulfillment rates in real time. This requires both timely access to new orders and the ability to compute aggregates across multiple related tables.
@@ -807,11 +773,9 @@ This architecture removes the traditional trade-off between fast queries and fre
 
 Materialize is built to minimize all three. The result is a system that delivers fast, consistent answers over fresh data, enabling use cases that were previously too costly or complex to implement.
 
-
 ---
 
 ## Sinks
-
 
 ## Overview
 
@@ -823,7 +787,6 @@ view, a source, or a table.
 
 To create a sink, you can:
 
-
 | Method | External system | Guide(s) or Example(s) |
 | --- | --- | --- |
 | Use <code>COPY TO</code> command | Amazon S3 or S3-compatible storage | <ul> <li><a href="/serve-results/sink/s3/" >Sink to Amazon S3</a></li> </ul>  |
@@ -832,7 +795,6 @@ To create a sink, you can:
 | Use a native connector | Kafka/Redpanda | <ul> <li><a href="/serve-results/sink/kafka/" >Sink to Kafka/Redpanda</a></li> </ul>  |
 | Use a native connector | Apache Iceberg hosted on AWS S3 Tables | <ul> <li><a href="/serve-results/sink/iceberg/" >Sink to Iceberg</a></li> </ul>  |
 | Use <code>SUBSCRIBE</code> | Various | <ul> <li><a href="https://github.com/MaterializeInc/mz-catalog-sync" >Sink to Postgres</a></li> <li><a href="https://github.com/MaterializeIncLabs/mz-redis-sync" >Sink to Redis</a></li> </ul>  |
-
 
 ## Clusters and sinks
 
@@ -849,11 +811,9 @@ memory.
 
 - [`CREATE SINK`](/sql/create-sink)
 
-
 ---
 
 ## Sources
-
 
 ## Overview
 
@@ -928,10 +888,7 @@ Materialize bundles native connectors for the following external systems:
 
 </div>
 
-
-
 For details on the syntax, supported formats and features of each connector, check out the dedicated `CREATE SOURCE` documentation pages.
-
 
 ## Sources and clusters
 
@@ -945,11 +902,9 @@ See also [Operational guidelines](/manage/operational-guidelines/).
 
 - [`CREATE SOURCE`](/sql/create-source)
 
-
 ---
 
 ## Views
-
 
 ## Overview
 
@@ -1075,8 +1030,6 @@ having to perform additional computation.
 > cluster associated with the index is faster since the results are served from
 > memory rather than from storage.
 
-
-
 See also:
 
 - [Indexes](/concepts/indexes)
@@ -1086,7 +1039,6 @@ See also:
 ### Updating the materialized view definition
 
 > **Public Preview:** This feature is in public preview.
-
 
 You can use [`CREATE REPLACEMENT MATERIALIZED
 VIEW`](/sql/create-materialized-view/) with [`ALTER MATERIALIZED VIEW ... APPLY
@@ -1165,8 +1117,6 @@ cluster that maintains the view results:
 - Index the materialized view in the serving cluster(s) to serve the results
 from memory.
 
-
-
 **2-tier architecture:**
 
 ![Image of the 2-tier-architecture](/images/2-tier-architecture.svg)
@@ -1186,9 +1136,6 @@ results from memory.
 > filters](/transform-data/patterns/temporal-filters/), avoid creating
 > materialized views on a shared cluster used for both compute/transformat
 > operations and serving queries. Use indexed views instead.
-
-
-
 
 **1-tier architecture:**
 

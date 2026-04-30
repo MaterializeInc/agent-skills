@@ -4,8 +4,6 @@ Returns a specified time component from a time-based value
 
 ## Signatures
 
-
-
 ```mzsql
 EXTRACT ( <time_period> FROM <val> )
 
@@ -15,7 +13,6 @@ EXTRACT ( <time_period> FROM <val> )
 | --- | --- |
 | `<time_period>` | The time period to extract. Valid values: `EPOCH`, `MILLENNIUM`, `CENTURY`, `DECADE`, `YEAR`, `QUARTER`, `MONTH`, `WEEK`, `DAY`, `HOUR`, `MINUTE`, `SECOND`, `MICROSECOND`, `MILLISECOND`, `DOW`, `ISODOW`, `DOY`. See the [Arguments](#arguments) section for synonyms.  |
 | **FROM** `<val>` | A [`date`](/sql/types/date/), [`time`](/sql/types/time/), [`timestamp`](/sql/types/timestamp/), [`timestamp with time zone`](/sql/types/timestamp/), or [`interval`](/sql/types/interval/) value from which to extract a component.  |
-
 
 Parameter | Type                                                                                                                                                                                    | Description
 ----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------

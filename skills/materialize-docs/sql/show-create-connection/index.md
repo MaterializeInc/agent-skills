@@ -8,11 +8,9 @@
 SHOW [REDACTED] CREATE CONNECTION <connection_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available connection names, see [`SHOW CONNECTIONS`](/sql/show-connections).
 

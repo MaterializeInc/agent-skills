@@ -8,12 +8,9 @@ of materializing the view.
 
 ## Syntax
 
-
 **CREATE VIEW:**
 ### Create view
 To create a view:
-
-
 
 ```mzsql
 CREATE [TEMP|TEMPORARY] VIEW [IF NOT EXISTS] <view_name>[(<col_ident>, ...)] AS
@@ -29,7 +26,6 @@ CREATE [TEMP|TEMPORARY] VIEW [IF NOT EXISTS] <view_name>[(<col_ident>, ...)] AS
 | `(<col_ident>, ...)` | Optional if the `SELECT` statement return columns with unique names; else, is required if the `SELECT` statement returns multiple columns with the same identifier. If specified, renames the `SELECT` statement's columns to the list of identifiers. Both must be the same length.  |
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) that defines the view.  |
 
-
 **CREATE OR REPLACE VIEW:**
 ### Create or replace view
 To create, or if a view exists with the same name, replace it with the view
@@ -37,9 +33,6 @@ defined in this statement:
 
 > **Note:** You cannot replace views that other views depend on,
 > nor can you replace a non-view object with a view.
-
-
-
 
 ```mzsql
 CREATE OR REPLACE VIEW <view_name> [(<col_ident>, ...)] AS <select_stmt>;
@@ -51,9 +44,6 @@ CREATE OR REPLACE VIEW <view_name> [(<col_ident>, ...)] AS <select_stmt>;
 | `<view_name>` | A name for the view.  |
 | `(<col_ident>, ...)` | Optional if the `SELECT` statement return columns with unique names; else, is required if the `SELECT` statement returns multiple columns with the same identifier. If specified, renames the `SELECT` statement's columns to the list of identifiers. Both must be the same length.  |
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) that defines the view.  |
-
-
-
 
 ## Details
 

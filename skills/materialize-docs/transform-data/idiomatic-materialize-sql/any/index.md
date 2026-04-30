@@ -17,9 +17,6 @@ expression.
 > which can lead to a significant increase in memory usage. If possible, rewrite
 > the query to perform an equi-join on the unnested values.
 
-
-
-
 ## Idiomatic Materialize SQL
 
 **Idiomatic Materialize SQL:**  For equi-join whose `ON` expression includes
@@ -73,7 +70,6 @@ equi-join on the unnested values.
 <br>
 <div style="background-color: var(--code-block)">
 
-
 ```mzsql
 -- array_field may contain duplicates.--
 
@@ -113,12 +109,10 @@ WHERE a.fieldZ = ANY(b.array_field) -- Anti-pattern. Avoid.
 </tbody>
 </table>
 
-
 ## Examples
 
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
-
 
 ### Find orders with any sales items
 

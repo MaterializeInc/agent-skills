@@ -6,10 +6,8 @@ schema.
 > **Warning:** The objects in the `mz_introspection` schema are not part of Materialize's stable interface.
 > Backwards-incompatible changes to these objects may be made at any time.
 
-
 > **Warning:** `SELECT` statements may reference these objects, but creating views that
 > reference these objects is not allowed.
-
 
 Introspection relations are maintained by independently collecting internal logging information within each of the replicas of a cluster.
 Thus, in a multi-replica cluster, queries to these relations need to be directed to a specific replica by issuing the command `SET cluster_replica = <replica_name>`.

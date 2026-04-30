@@ -49,7 +49,6 @@ SHOW CLUSTER REPLICAS WHERE cluster = 'quickstart';
  quickstart    | r1      | 25cc   | t     |
 ```
 
-
 ## Related pages
 
 - [`CREATE CLUSTER REPLICA`](../create-cluster-replica)

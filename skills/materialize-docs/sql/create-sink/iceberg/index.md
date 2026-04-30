@@ -2,7 +2,6 @@
 Connecting Materialize to an Apache Iceberg table
 > **Public Preview:** This feature is in public preview.
 
-
 Use `CREATE SINK ... INTO ICEBERG CATALOG...` to create Iceberg sinks. Iceberg sinks write data from Materialize into an Iceberg table hosted on
 AWS S3 Tables. As data changes in Materialize, your Iceberg tables are
 automatically kept up to date.
@@ -16,11 +15,7 @@ To create an Iceberg sink, you need:
 
 ## Syntax
 
-
-
 **MODE UPSERT:**
-
-
 
 ```mzsql
 CREATE SINK [IF NOT EXISTS] <sink_name>
@@ -52,12 +47,7 @@ WITH (COMMIT INTERVAL = '<interval>')
 | **MODE UPSERT** | Indicates that the sink uses upsert semantics based on the `KEY`.  |
 | **COMMIT INTERVAL** `'<interval>'` | How frequently to commit snapshots to Iceberg (e.g., `'60s'`, `'5m'`). See [Commit interval tradeoffs](#commit-interval-tradeoffs).  |
 
-
-
-
 **MODE APPEND:**
-
-
 
 ```mzsql
 CREATE SINK [IF NOT EXISTS] <sink_name>
@@ -85,11 +75,6 @@ WITH (COMMIT INTERVAL = '<interval>')
 | **USING AWS CONNECTION** `<aws_connection>` | The [AWS connection](/sql/create-connection/#aws) for object storage access.  |
 | **MODE APPEND** | Writes all changes as data rows instead of using Iceberg delete files. Two extra columns are appended to the Iceberg table: `_mz_diff` (`int`, `+1` for inserts, `-1` for deletes) and `_mz_timestamp` (`long`). An update produces two rows: one with `_mz_diff = -1` (old values) and one with `_mz_diff = +1` (new values). No `KEY` clause is permitted. See [Append mode](#append-mode).  |
 | **COMMIT INTERVAL** `'<interval>'` | How frequently to commit snapshots to Iceberg (e.g., `'60s'`, `'5m'`). See [Commit interval tradeoffs](#commit-interval-tradeoffs).  |
-
-
-
-
-
 
 ## Details
 
@@ -128,7 +113,6 @@ data.</p>
 <p>Materialize stores progress information in Iceberg snapshot metadata
 properties (<code>mz-frontier</code> and <code>mz-sink-version</code>).</p>
 
-
 ### Commit interval tradeoffs
 
 The `COMMIT INTERVAL` setting involves tradeoffs between latency and efficiency:
@@ -149,7 +133,6 @@ The `COMMIT INTERVAL` setting involves tradeoffs between latency and efficiency:
 > Small files will result in degraded query performance. It also increases load on
 > the Iceberg metadata, which can result in a degraded catalog and non-responsive
 > queries.
-
 
 ### Unique keys
 
@@ -222,7 +205,6 @@ deployment.
 > **Note:** Delete handling applies to `MODE UPSERT` only. In `MODE APPEND`, all changes
 > are written as data rows. See [Append mode](#append-mode).
 
-
 Iceberg sinks use a hybrid delete strategy:
 
 - **Position deletes**: Used when a row is inserted and then deleted or updated
@@ -235,7 +217,6 @@ This means short-lived rows use efficient position deletes, while updates to
 older data use equality deletes.
 
 > **Tip:** Consider running [Iceberg compaction](https://iceberg.apache.org/docs/latest/maintenance/#compacting-data-files) periodically to merge delete files and improve query performance.
-
 
 ## Required privileges
 
@@ -331,7 +312,6 @@ CREATE SINK deduped_sink
 
 > **Warning:** If the key is not actually unique, downstream consumers may see incorrect
 > results.
-
 
 ### Creating an append sink
 
