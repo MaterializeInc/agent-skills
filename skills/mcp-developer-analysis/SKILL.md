@@ -1,5 +1,5 @@
 ---
-name: mz-developer-analysis
+name: mcp-developer-analysis
 description: Analyze a Materialize environment for health, performance, and optimization opportunities using the MCP Developer endpoint. Use this skill when someone wants to check environment health, investigate performance issues, troubleshoot stale materialized views, diagnose memory pressure, audit resource utilization, or get optimization recommendations. Trigger this even if the user just says "check my environment", "why is my MV stale", "why is my cluster slow", or "what can I optimize".
 compatibility: []
 ---
