@@ -152,11 +152,11 @@ jobs:
               git reset --hard origin/main
             fi
           else
-            if git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
-              echo "Deleting stale remote branch $BRANCH (no open PR)"
-              git push origin --delete "$BRANCH"
-            fi
-            git checkout -b "$BRANCH"
+            # No open PR for this branch. Reset locally from main; the push step
+            # uses --force, which overwrites any stale remote branch left over
+            # from a previously-merged PR (branch protection forbids deleting it).
+            echo "No open PR; starting branch fresh from origin/main"
+            git checkout -B "$BRANCH" origin/main
           fi
 
           echo "existing_pr=$EXISTING_PR" >> "$GITHUB_OUTPUT"
@@ -219,7 +219,7 @@ jobs:
         run: |
           git add skills/materialize-docs
           git commit -m "Update materialize-docs skill from materialize@${MZ_REF}"
-          git push origin "$BRANCH"
+          git push --force origin "$BRANCH"
 
       - name: Create PR
         if: steps.target.outputs.should_run == 'true' && steps.changes.outputs.has_changes == 'true' && steps.branch.outputs.existing_pr == ''
