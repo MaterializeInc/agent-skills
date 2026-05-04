@@ -3,20 +3,36 @@ Query Materialize system catalog tables for troubleshooting and observability vi
 > **Public Preview:** This feature is in public preview.
 
 
-Materialize provides a built-in Model Context Protocol (MCP) endpoint
-`/api/mcp/developer` (port 6876) for troubleshooting and observability. The MCP
-interface is served directly by the database; no sidecar process or external
-server is required.
+Materialize provides a built-in [Model Context Protocol
+(MCP)](https://modelcontextprotocol.io/) endpoint for troubleshooting and
+observability. The MCP interface is served directly by the database; no sidecar
+process or external server is required.
+
 
 ## Overview
 
-The `/api/mcp/developer` endpoint provides read-only access to the system
-catalog (`mz_*` tables). You can connect an MCP-compatible AI agent (such as
-Claude Code, Claude Desktop, or Cursor) to the `/api/mcp/developer` endpoint and
-ask natural language questions like:
+**Endpoint:** `/api/mcp/developer`
 
-- *Why is my materialized view stale?*
-- *How much memory is my cluster using?*.
+- Provides read-only access to the system catalog (`mz_*` tables).
+- Uses [JSON-RPC 2.0](https://www.jsonrpc.org/specification) over HTTP POST
+(default port 6876).
+- Supports the MCP `initialize`, `tools/list`, and `tools/call` methods.
+
+You can connect an MCP-compatible AI agent (such as Claude Code, Claude Desktop,
+or Cursor) to this endpoint and ask natural language questions like:
+
+| Question | What the agent does |
+|----------|---------------------|
+| **Why is my materialized view stale?** | Checks materialization lag, hydration status, replica health, and source errors. |
+| **Why is my cluster running out of memory?** | Checks replica utilization, identifies the largest dataflows, and finds optimization opportunities via the built-in index advisor. |
+| **Has my source finished snapshotting yet?** | Checks source statistics and status. |
+| **How much memory is my cluster using?** | Checks replica utilization metrics across all clusters. |
+| **What's the health of my environment?** | Checks replica statuses, source and sink health, and resource utilization. |
+| **What can I optimize to save costs?** | Queries the index advisor for materialized views that can be dematerialized and indexes that can be dropped. |
+
+The agent translates natural language questions into the appropriate system
+catalog queries, uses the `query_system_catalog` tool to run those queries, and
+synthesizes the results.
 
 ## Connect to the MCP server
 
@@ -27,16 +43,14 @@ ask natural language questions like:
 **Cloud:**
 
 1. Log in to the [Materialize Console](https://console.materialize.com/).
-1. Click the **Connect** link (lower-left corner) to open the **Connect** modal
-   and click on the **MCP Server** tab.
+1. Click the **Connect** link to open the [**Connect**
+    modal](/console/connect/).
+1. Click on the **MCP Server** tab.
 
-   ![Image of MCP tab in the Console's Connect
-modal](/images/console/console-connect-mcp.png "Materialize Connect modal, MCP
-tab")
+1. Select **Developer** for your Endpoint.
 
 1. To get your base64-encoded token:
-   - To use an existing app password, generate a base64-encoded token. MCP
-   clients send credentials as a Base64-encoded `user:password` string.
+   - To use an existing app password, generate a base64-encoded token.
 
      ```bash
      printf '<user>:<app_password>' | base64 -w0
@@ -44,7 +58,7 @@ tab")
 
    - To create a new app password to use, click on the **Create app password**
      to generate a new app password and token for MCP Server. **Copy the app
-     password and token**.
+     password and token** as they cannot be displayed again.
 
 
 **Self-Managed:**
@@ -62,7 +76,7 @@ tab")
    Base64-encoded `user:password` string.
 
    ```bash
-   printf '<user>:<password>' | base64 -w0
+   printf '<user>:<app_password>' | base64 -w0
    ```
 
    For example:
@@ -105,131 +119,85 @@ tab")
 
 
 
-**Emulator:**
-
-To connect to the MCP server for your Emulator, use the following endpoint
-(based on your deployment's base URL of `http://localhost:6876`):
-
-```
-http://localhost:6876/api/mcp/developer
-```
-
-
-
-
 
 
 
 ### Step 2. Configure your MCP client
 
-> **Warning:** When saving your credentials or other sensitive information in a config file, do
-> **not** commit these files to version control or share them publicly.
+> **Tip:** You can copy the `.json` content from the **MCP Server** tab in the Console's
+> **Connect** modal.
+> - Replace `<baseURL>` with your value.
+>   - If Cloud, there is nothing to replace as the `.json` content
+>     includes your specific baseURL value of the form
+>     `https://<region-id>.materialize.cloud`.
+>   - If Self-Managed, replace with the `http://<host>:6876` found in the previous
+>     step.
+> - Replace `<base64-token>` with your value.
 
 
 
 
 **Claude Code:**
 
-1. Create a `.mcp.json` file with the following content:
+Create a `.mcp.json` file in your project directory:
 
-   ```json
-   {
-     "mcpServers": {
-       "materialize-developer": {
-         "type": "http",
-         "url": "<baseURL>/api/mcp/developer",
-         "headers": {
-           "Authorization": "Basic <base64-token>"
-         }
-       }
-     }
-   }
-   ```
-
-   Update the `<baseURL>` and `<base64-token>` placeholders with your values:
-   
-   | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
-   |--------------| ------------------------------------------------------------------| -------------------------------|
-   | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
-   | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
-   | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
-   
-   > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
-   > the Console's **Connect** modal. The `.json` copied from the Console already
-   > includes the correct `<baseURL>`.
-
-1. Restart Claude Code to pick up the new setting.
+```json
+{
+  "mcpServers": {
+    "materialize-developer": {
+      "type": "http",
+      "url": "<baseURL>/api/mcp/developer",
+      "headers": {
+        "Authorization": "Basic <base64-token>"
+      }
+    }
+  }
+}
+```
 
 
 
 **Claude Desktop:**
 
-1. Add to your Claude Desktop MCP configuration (`claude_desktop_config.json`):
+Add to your Claude Desktop MCP configuration (`claude_desktop_config.json`):
 
-   ```json
-   {
-     "mcpServers": {
-       "materialize-developer": {
-         "url": "<baseURL>/api/mcp/developer",
-         "headers": {
-           "Authorization": "Basic <base64-token>"
-         }
-       }
-     }
-   }
-   ```
-
-   Update the `<baseURL>` and `<base64-token>` placeholders with your values:
-   
-   | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
-   |--------------| ------------------------------------------------------------------| -------------------------------|
-   | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
-   | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
-   | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
-   
-   > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
-   > the Console's **Connect** modal. The `.json` copied from the Console already
-   > includes the correct `<baseURL>`.
-
-1. Restart Claude Desktop to pick up the new setting.
+```json
+{
+  "mcpServers": {
+    "materialize-developer": {
+      "url": "<baseURL>/api/mcp/developer",
+      "headers": {
+        "Authorization": "Basic <base64-token>"
+      }
+    }
+  }
+}
+```
 
 
 
 **Cursor:**
 
-1. In Cursor's MCP settings (`.cursor/mcp.json`):
+In Cursor's MCP settings (`.cursor/mcp.json`):
 
-   ```json
-
-    "mcpServers": {
-      "materialize-developer": {
-        "url": "<baseURL>/api/mcp/developer",
-        "headers": {
-          "Authorization": "Basic <base64-token>"
-        }
+```json
+{
+  "mcpServers": {
+    "materialize-developer": {
+      "url": "<baseURL>/api/mcp/developer",
+      "headers": {
+        "Authorization": "Basic <base64-token>"
       }
     }
-   ```
-
-   Update the `<baseURL>` and `<base64-token>` placeholders with your values:
-   
-   | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
-   |--------------| ------------------------------------------------------------------| -------------------------------|
-   | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
-   | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
-   | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
-   
-   > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
-   > the Console's **Connect** modal. The `.json` copied from the Console already
-   > includes the correct `<baseURL>`.
-
-1. Restart Cursor to pick up the new setting.
+  }
+}
+```
 
 
 
 **Generic HTTP:**
 
-Any MCP-compatible client can connect by sending JSON-RPC 2.0 requests; update the `<baseURL>` and `<base64-token>` placeholders with your values:
+Any MCP-compatible client can connect by sending JSON-RPC 2.0 requests:
 
 ```bash
 curl -X POST <baseURL>/api/mcp/developer \
@@ -245,23 +213,6 @@ curl -X POST <baseURL>/api/mcp/developer \
 
 
 
-
-## Start asking questions
-
-Once connected, you can ask natural language questions like:
-
-| Question | What the agent does |
-|----------|---------------------|
-| **Why is my materialized view stale?** | Checks materialization lag, hydration status, replica health, and source errors. |
-| **Why is my cluster running out of memory?** | Checks replica utilization, identifies the largest dataflows, and finds optimization opportunities via the built-in index advisor. |
-| **Has my source finished snapshotting yet?** | Checks source statistics and status. |
-| **How much memory is my cluster using?** | Checks replica utilization metrics across all clusters. |
-| **What's the health of my environment?** | Checks replica statuses, source and sink health, and resource utilization. |
-| **What can I optimize to save costs?** | Queries the index advisor for materialized views that can be dematerialized and indexes that can be dropped. |
-
-The agent translates natural language questions into the appropriate system
-catalog queries, uses the `query_system_catalog` tool to run those queries, and
-synthesizes the results.
 
 ## Tools
 
@@ -315,4 +266,3 @@ discover more tables.
   configuration](/integrations/mcp-server/mcp-developer-config/)
 - [Troubleshooting](/integrations/mcp-server/mcp-server-troubleshooting/)
 - [Coding Agent Skills](/integrations/coding-agent-skills/)
-- [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)

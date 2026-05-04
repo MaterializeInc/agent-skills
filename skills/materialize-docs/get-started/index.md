@@ -548,7 +548,7 @@ not suitable for full feature set evaluations or production workloads.
    been already downloaded.
 
    ```sh
-   docker run -d -p 127.0.0.1:6874:6874 -p 127.0.0.1:6875:6875 -p 127.0.0.1:6876:6876 -p 127.0.0.1:6877:6877 materialize/materialized:v26.20.2
+   docker run -d -p 127.0.0.1:6874:6874 -p 127.0.0.1:6875:6875 -p 127.0.0.1:6876:6876 -p 127.0.0.1:6877:6877 materialize/materialized:v26.20.0
    ```
 
    When running locally:
@@ -564,11 +564,7 @@ not suitable for full feature set evaluations or production workloads.
 
    Open the Materialize Console in your browser at [http://localhost:6874](http://localhost:6874).
 
-   To streamline development and troubleshooting, we recommend configuring our
-   [MCP
-   Server](https://materialize.com/docs/integrations/mcp-server/mcp-developer/).
-
-   You can also connect to the Materialize Emulator using your
+   Alternatively, you can connect to the Materialize Emulator using your
    preferred SQL client, using the following connection field values:
 
    | Field    | Value         |

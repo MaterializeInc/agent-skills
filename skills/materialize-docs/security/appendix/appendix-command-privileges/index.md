@@ -73,7 +73,7 @@
 | <a href="/sql/show-create-connection" ><code>SHOW CREATE CONNECTION</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the connection.</li> </ul>  |
 | <a href="/sql/show-create-index" ><code>SHOW CREATE INDEX</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the index.</li> </ul>  |
 | <a href="/sql/show-create-materialized-view" ><code>SHOW CREATE MATERIALIZED VIEW</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the materialized view.</li> </ul>  |
-| <a href="/sql/show-create-type" ><code>SHOW CREATE TYPE</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the type.</li> </ul>  |
+| <a href="/sql/show-create-type" ><code>SHOW CREATE TYPE</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the table.</li> </ul>  |
 | <a href="/sql/show-create-sink" ><code>SHOW CREATE SINK</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the sink.</li> </ul>  |
 | <a href="/sql/show-create-source" ><code>SHOW CREATE SOURCE</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the source.</li> </ul>  |
 | <a href="/sql/show-create-table" ><code>SHOW CREATE TABLE</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the table.</li> </ul>  |
