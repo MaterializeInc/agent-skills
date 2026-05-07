@@ -17,7 +17,7 @@ Once installed, skills activate automatically when your prompt matches their use
 <details>
 <summary><strong>materialize-docs</strong></summary>
 
-Materialize documentation for SQL syntax, data ingestion, concepts, and best practices. Use when users ask about Materialize queries, sources, sinks, views, or clusters.
+Materialize documentation for SQL syntax, data ingestion, concepts, and best practices.
 
 **Use when:**
 
@@ -44,7 +44,16 @@ Materialize documentation for SQL syntax, data ingestion, concepts, and best pra
 <details>
 <summary><strong>mcp-developer-analysis</strong></summary>
 
-Analyze a Materialize environment for health, performance, and optimization opportunities using the MCP Developer endpoint. Use this skill when someone wants to check environment health, investigate performance issues, troubleshoot stale materialized views, diagnose memory pressure, audit resource utilization, or get optimization recommendations. Trigger this even if the user just says "check my environment", "why is my MV stale", "why is my cluster slow", or "what can I optimize".
+Analyze a Materialize environment for health, performance, and optimization opportunities using the MCP Developer endpoint.
+
+**Use when:**
+
+- Checking environment health
+- Investigating performance issues
+- Troubleshooting stale materialized views
+- Diagnosing memory pressure
+- Auditing resource utilization
+- Getting optimization recommendations
 
 </details>
 
