@@ -39,6 +39,8 @@ Materialize documentation for SQL syntax, data ingestion, concepts, and best pra
 - Self-Managed Deployments (AWS, Azure, GCP, Kubernetes)
 - Management (monitoring, dbt, Terraform, disaster recovery)
 
+**Source:** Synced with the [online Materialize documentation](https://materialize.com/docs/). Either source can be used to identify the Materialize version that introduced or updated a particular feature.
+
 </details>
 
 <details>
@@ -115,6 +117,5 @@ See [LICENSE](LICENSE).
 ## Changelog
 
 - 2026-05-05: Fix skill name to match directory: mz-developer-analysis > mcp-developer-analysis
-- 2026-04-28: Update materialize-docs skill from materialize@main
 - 2026-04-28: mcp-developer-analysis: Add MCP developer analysis skill
 - 2026-02-09: Add materialize-docs skill and repo scaffolding
