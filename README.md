@@ -17,7 +17,7 @@ Once installed, skills activate automatically when your prompt matches their use
 <details>
 <summary><strong>materialize-docs</strong></summary>
 
-Comprehensive Materialize documentation covering SQL syntax, data ingestion, concepts, and best practices. Contains 400+ reference files across 18 categories.
+Materialize documentation for SQL syntax, data ingestion, concepts, and best practices. Use when users ask about Materialize queries, sources, sinks, views, or clusters.
 
 **Use when:**
 
@@ -38,6 +38,13 @@ Comprehensive Materialize documentation covering SQL syntax, data ingestion, con
 - Security (RBAC, network policies, SSO)
 - Self-Managed Deployments (AWS, Azure, GCP, Kubernetes)
 - Management (monitoring, dbt, Terraform, disaster recovery)
+
+</details>
+
+<details>
+<summary><strong>mcp-developer-analysis</strong></summary>
+
+Analyze a Materialize environment for health, performance, and optimization opportunities using the MCP Developer endpoint. Use this skill when someone wants to check environment health, investigate performance issues, troubleshoot stale materialized views, diagnose memory pressure, audit resource utilization, or get optimization recommendations. Trigger this even if the user just says "check my environment", "why is my MV stale", "why is my cluster slow", or "what can I optimize".
 
 </details>
 
@@ -95,3 +102,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 ## License
 
 See [LICENSE](LICENSE).
+
+## Changelog
+
+- 2026-05-05: Fix skill name to match directory: mz-developer-analysis > mcp-developer-analysis
+- 2026-04-28: Update materialize-docs skill from materialize@main
+- 2026-04-28: mcp-developer-analysis: Add MCP developer analysis skill
+- 2026-02-09: Add materialize-docs skill and repo scaffolding
