@@ -116,6 +116,6 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
-- 2026-05-05: Fix skill name to match directory: mz-developer-analysis > mcp-developer-analysis
-- 2026-04-28: mcp-developer-analysis: Add MCP developer analysis skill
-- 2026-02-09: Add materialize-docs skill and repo scaffolding
+- 2026-05-05: Rename mz-developer-analysis to mcp-developer-analysis
+- 2026-04-28: Add mcp-developer-analysis skill
+- 2026-02-09: Add materialize-docs skill
