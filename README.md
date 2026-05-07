@@ -39,7 +39,7 @@ Materialize documentation for SQL syntax, data ingestion, concepts, and best pra
 - Self-Managed Deployments (AWS, Azure, GCP, Kubernetes)
 - Management (monitoring, dbt, Terraform, disaster recovery)
 
-**Source:** Synced with the [online Materialize documentation](https://materialize.com/docs/). Either source can be used to identify the Materialize version that introduced or updated a particular feature.
+**Synced with the [online Materialize documentation](https://materialize.com/docs/).** Either one can be used to identify the Materialize version that introduced or updated a particular feature.
 
 </details>
 
