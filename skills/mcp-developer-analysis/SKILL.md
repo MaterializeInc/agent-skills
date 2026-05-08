@@ -1,6 +1,6 @@
 ---
 name: mcp-developer-analysis
-description: Analyze a Materialize environment for health, performance, and optimization opportunities using the MCP Developer endpoint. Use this skill when someone wants to check environment health, investigate performance issues, troubleshoot stale materialized views, diagnose memory pressure, audit resource utilization, or get optimization recommendations. Trigger this even if the user just says "check my environment", "why is my MV stale", "why is my cluster slow", or "what can I optimize".
+description: Analyze a Materialize environment via the MCP Developer endpoint, and/or configure an MCP client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to connect to the materialize-developer server. For analysis: check environment health, investigate performance, troubleshoot stale materialized views, diagnose memory pressure, audit resource utilization, get optimization recommendations. For client connection: configure/connect/set-up an MCP client to materialize-developer (Emulator, Cloud, or self-managed), control which user/role is used, switch between identities. Trigger even if user just says "check my environment", "why is my MV stale", "why is my cluster slow", "what can I optimize", "how do I connect Claude Code to materialize-developer", or "configure Cursor for the Materialize MCP".
 compatibility: []
 ---
 
@@ -9,6 +9,19 @@ compatibility: []
 Analyze a Materialize environment by querying system catalog tables via the MCP
 Developer endpoint (`query_system_catalog` tool), and produce a structured
 report with health status, performance findings, and optimization recommendations.
+
+## Connecting an MCP client to `materialize-developer`
+
+If the user is asking how to **configure**, **connect**, or **set up** an MCP
+client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop)
+to talk to the `materialize-developer` server — including how to control which
+user or role the connection uses, or how to switch between identities — see
+[`mcp-client-connect.md`](mcp-client-connect.md). It covers the Emulator,
+Materialize Cloud, and self-managed deployments, with per-client snippets,
+authentication patterns, and verification recipes.
+
+The rest of this `SKILL.md` covers what to do *once you are connected* and want
+to analyze the environment.
 
 ## Discovering Tables and Columns
 
