@@ -6,6 +6,48 @@ This playbook covers **client-side configuration** for connecting an MCP-capable
 
 ---
 
+## How to use this playbook (instructions for the agent)
+
+This playbook is reference material. **Do not dump it in response to a general question.** The deep snippets, source citations, and per-deployment matrices below are for follow-up answers once the user has narrowed scope.
+
+### Triage flow for a general "how do I connect" question
+
+Examples that count as general: *"how do I connect to the Materialize developer MCP server?"*, *"what do you know about connecting?"*, *"how do I set up the Materialize MCP?"*, *"can you help me configure this?"*.
+
+Keep the initial reply short (target ≤ 30 lines / one screen). Don't paste config snippets, source-code citations, or full deployment tables. Run this flow:
+
+1. **One short sentence** stating what this skill helps with.
+
+2. **List the help topics** as a bullet list — names only, no snippets:
+   - Picking the right URL for the deployment (Emulator / Cloud / self-managed)
+   - Building the auth header (Basic vs Bearer; role vs user)
+   - Generating a config block for a specific MCP client
+   - Selecting / switching the user or role at runtime
+   - Verifying the connection (stateless curl probe)
+   - Troubleshooting connection errors
+
+3. **List the supported clients**, names only, on one line:
+
+   *Claude Code · Claude Desktop · Cursor · VS Code (Copilot Chat) · Zed · Continue · Windsurf*
+
+4. **List the three runtime patterns** for selecting the user/role, names only:
+   1. Env-var rotation (placeholder in config + env var rotation)
+   2. Multiple registrations (one per identity, each with its own literal `Authorization` header)
+   3. Direct config edit (swap the literal token in the existing entry)
+
+5. **Detect or ask which client the user wants help with:**
+   - **If the user named a client in the prompt**, confirm that's the focus.
+   - **If you can detect your runtime** — e.g. you were invoked via a Claude Code slash command, your environment shows `CLAUDE_*` vars, the working directory has `.claude/` or `claude_desktop_config.json` — name the inferred client (Claude Code or Claude Desktop) and ask the user to confirm. Important: detecting that the *harness running the agent* is Claude Code/Desktop does **not** imply the user wants help configuring that client; they may be using Claude Code to draft setup steps for a teammate using Cursor. Ask, don't assume.
+   - **Otherwise**, ask the user which of the supported clients they are using (offer the list above).
+
+6. **End with one open question:** *"What would you like help with?"*
+
+### When the user has already narrowed scope
+
+If the user already named a client, deployment, or specific topic (e.g., *"configure Cursor against my Cloud deployment"*, *"what's the URL for self-managed kind"*, *"why is my token rejected with 422"*), skip the triage and answer directly using the relevant section below.
+
+---
+
 ## What this connects to
 
 | Deployment | URL pattern | Auth backend |
