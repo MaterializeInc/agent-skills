@@ -46,6 +46,108 @@ Keep the initial reply short (target ≤ 30 lines / one screen). Don't paste con
 
 If the user already named a client, deployment, or specific topic (e.g., *"configure Cursor against my Cloud deployment"*, *"what's the URL for self-managed kind"*, *"why is my token rejected with 422"*), skip the triage and answer directly using the relevant section below.
 
+**Special case — first-time setup against the Emulator with Claude Code.** If the user's request matches that pattern, route to the [Walkthrough](#walkthrough--first-time-setup-against-the-emulator-with-claude-code) section below instead of assembling steps from the deep reference content. Trigger phrases:
+
+- *"walk me through first-time setup"*
+- *"set up materialize-developer"* (with no other client/deployment named)
+- *"connect Claude Code to materialize-developer"* (or *"to the Materialize MCP server"*)
+- *"first-time setup"*
+- Any prompt that names Claude Code + a local Emulator + the goal of getting connected, without specifying a competing identity pattern.
+
+---
+
+## Walkthrough — first-time setup against the Emulator with Claude Code
+
+The canonical "minimum-drama" path for getting Claude Code talking to a local Materialize Emulator's `/api/mcp/developer` endpoint. **Scope:** Emulator (`http://localhost:6876`), Claude Code, the `my_dev_agent` role, and Pattern A (env-var rotation). For other deployments, clients, or auth patterns, use the deep reference content below this section instead.
+
+### State-detection probes (run before each step; skip the step if state is already in place)
+
+```sh
+# 1. Emulator reachable?
+curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:6876/api/mcp/developer
+# Expect: 405 (GET-not-allowed; the endpoint is up). 503 = enable_mcp_developer is off.
+# Connection refused / no response = Emulator not running; stop and direct user to environment-setup.
+
+# 2. my_dev_agent role exists?
+psql postgres://materialize@127.0.0.1:6875/materialize -tAc \
+  "SELECT 1 FROM mz_roles WHERE name='my_dev_agent';"
+
+# 3. materialize-developer registered in Claude Code?
+claude mcp list 2>&1 | grep -E '^materialize-developer:'
+
+# 4. ~/.claude.json entry uses the env-var placeholder form?
+grep -A 3 '"materialize-developer"' ~/.claude.json | grep -q 'Basic ${MCP_DEV_TOKEN}'
+```
+
+### Steps
+
+The walkthrough is **idempotent** — re-running on a partly-configured machine skips finished steps. State each skip out loud so the user sees what was already in place.
+
+1. **Verify the Emulator is up** (probe 1). If it's not, stop with a pointer to `environment-setup/README.md` — the rest of the walkthrough cannot proceed without it.
+
+2. **Create the role if missing** (probe 2 returned no rows):
+
+   ```sh
+   psql postgres://materialize@127.0.0.1:6875/materialize -c "CREATE ROLE my_dev_agent;"
+   ```
+
+   Expected output: `CREATE ROLE`. Materialize does not support `CREATE ROLE IF NOT EXISTS`, so probe 2 first; don't blindly retry.
+
+3. **Register the MCP server if missing or in the wrong form** (probe 3 / probe 4):
+
+   ```sh
+   claude mcp add-json materialize-developer \
+     '{"type":"http","url":"http://localhost:6876/api/mcp/developer","headers":{"Authorization":"Basic ${MCP_DEV_TOKEN}"}}'
+   ```
+
+   If a registration exists but uses a literal token (Pattern C variant), `claude mcp remove materialize-developer` first, then re-add in the placeholder form. The walkthrough is opinionated about Pattern A — the env var is the rotation point.
+
+4. **PAUSE for the user to set the env var.** Show them, verbatim:
+
+   ```sh
+   read -s MCP_DEV_PASSWORD                                          # press Enter; Emulator user has no password
+   export MCP_DEV_TOKEN="$(printf 'my_dev_agent:'"$MCP_DEV_PASSWORD" | base64)"
+   unset MCP_DEV_PASSWORD
+   echo "$MCP_DEV_TOKEN"                                             # expect: bXlfZGV2X2FnZW50Og==
+   ```
+
+   Wait for the user to confirm the echo matches before continuing. macOS reminder: do **not** add `-w0` to `base64`; that's GNU coreutils only.
+
+5. **PAUSE for the user to restart Claude Code:**
+
+   ```sh
+   ^C^C
+   claude --continue
+   ```
+
+   The conversation context is preserved. When the user returns ("back" / "ready" / similar), proceed.
+
+6. **Smoke query** to prove the connection is live and identifies the right role:
+
+   ```
+   query_system_catalog: SELECT current_role FROM mz_catalog.mz_databases LIMIT 1
+   ```
+
+   Expected: `my_dev_agent`. The query needs to reference a system catalog table — a bare `SELECT current_role` is rejected with `Query must reference at least one system catalog table`.
+
+7. **Confirm success** in one short sentence and offer a follow-up. Example: *"You're connected as `my_dev_agent`. Try `/mcp-developer-analysis what's the health of my environment?` next."*
+
+### Failure handling
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Smoke query returns a role other than `my_dev_agent` | The user's `MCP_DEV_TOKEN` was set to a different role's base64 | Repeat step 4 with the right `read`/`base64` invocation, then restart again. |
+| HTTP 422 on the smoke query | Token doesn't decode to a known role; or empty token because the env var wasn't exported in the shell that launched `claude` | Confirm `echo "$MCP_DEV_TOKEN"` in the launching shell shows `bXlfZGV2X2FnZW50Og==`; if it's empty, `export` was missed. |
+| HTTP 503 on the smoke query | `enable_mcp_developer` system parameter is `false` on this Emulator | See the [server config docs](https://materialize.com/docs/integrations/mcp-server/mcp-developer-config/). Not a walkthrough fix. |
+| `claude mcp list` shows the server but the smoke query times out | Claude Code wasn't restarted after the env var was set | Step 5 again. |
+
+### What the walkthrough does NOT cover
+
+- **Cloud or self-managed setup** — different URLs, different credentials, possibly Bearer tokens. Use the deep reference content below.
+- **Pattern B (multiple registrations)** or **Pattern C (literal-token edit)** — the walkthrough only sets up Pattern A. Cover those if the user explicitly asks to switch identities.
+- **Skill installation** — `npx skills add MaterializeInc/agent-skills` is a terminal-side step done before the user can invoke the walkthrough at all. If the slash command isn't found, point the user there first.
+- **RBAC tightening** — the walkthrough leaves `my_dev_agent` at `PUBLIC` defaults, which is appropriate for training but not for production. Direct the user to the Materialize RBAC docs for production scoping.
+
 ---
 
 ## What this connects to
