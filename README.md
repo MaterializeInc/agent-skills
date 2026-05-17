@@ -17,7 +17,7 @@ Once installed, skills activate automatically when your prompt matches their use
 <details>
 <summary><strong>materialize-docs</strong></summary>
 
-Comprehensive Materialize documentation covering SQL syntax, data ingestion, concepts, and best practices. Contains 400+ reference files across 18 categories.
+Materialize documentation for SQL syntax, data ingestion, concepts, and best practices.
 
 **Use when:**
 
@@ -38,6 +38,27 @@ Comprehensive Materialize documentation covering SQL syntax, data ingestion, con
 - Security (RBAC, network policies, SSO)
 - Self-Managed Deployments (AWS, Azure, GCP, Kubernetes)
 - Management (monitoring, dbt, Terraform, disaster recovery)
+
+**Synced with the [online Materialize documentation](https://materialize.com/docs/).** Either one can be used to identify the Materialize version that introduced or updated a particular feature.
+
+</details>
+
+<details>
+<summary><strong>mcp-developer-analysis</strong></summary>
+
+Analyze a Materialize environment via the MCP Developer endpoint, and/or configure an MCP client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to connect to the materialize-developer server.
+
+**Use when:**
+
+- Checking environment health
+- Investigating performance issues
+- Troubleshooting stale materialized views
+- Diagnosing memory pressure
+- Auditing resource utilization
+- Getting optimization recommendations
+- Configuring an MCP client to connect to materialize-developer (Emulator, Cloud, or self-managed)
+- Controlling which user or role the connection uses
+- Switching between identities
 
 </details>
 
@@ -95,3 +116,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 ## License
 
 See [LICENSE](LICENSE).
+
+## Changelog
+
+- 2026-05-08: Add MCP client setup playbook to mcp-developer-analysis
+- 2026-05-05: Rename mz-developer-analysis to mcp-developer-analysis
+- 2026-04-28: Add mcp-developer-analysis skill
+- 2026-02-09: Add materialize-docs skill
