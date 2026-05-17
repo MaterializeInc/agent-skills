@@ -17,7 +17,6 @@ more efficient.
 > **Note:** The `PARTITION BY` option has no impact on the order in which records are returned by queries.
 > If you want to return results in a specific order, use an `ORDER BY` clause on your [`SELECT` statement](/sql/select/).
 
-
 ## Syntax
 
 The option `PARTITION BY <column list>` declares that a [materialized view](/sql/create-materialized-view/#syntax) or [table](/sql/create-table/#syntax) should be partitioned by the listed columns.
@@ -39,7 +38,6 @@ Durable collections without a `PARTITION BY` option can be partitioned arbitrari
 
 > **Note:** The `PARTITION BY` option does not mean that rows with different values for the specified columns will be stored in different parts, only that rows with similar values for those columns should be stored together.
 
-
 ## Requirements
 
 Materialize currently imposes some restrictions on the list of columns in the `PARTITION BY` clause.
@@ -53,7 +51,6 @@ Materialize currently imposes some restrictions on the list of columns in the `P
     - string types like `text` and `bytea`;
     - `boolean` and `uuid`;
     - `record` types where all fields types are supported.
-
 
 ## Filter pushdown
 
@@ -129,7 +126,6 @@ For timeseries or "event"-type collections, it's often useful to partition the d
 If you wait a few minutes longer until there are no events that match the temporal filter, you'll notice that not only does the query return zero rows, but the explain shows that we fetched zero parts.
 
 > **Note:** The exact numbers you see here may vary: parts can be much larger than a single row, and the actual level of filtering may fluctuate for small datasets as data is compacted together internally. However, datasets of a few gigabytes or larger should reliably see benefits from this optimization.
-
 
 ### Partitioning by category
 

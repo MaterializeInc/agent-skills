@@ -7,7 +7,6 @@ you to learn and prototype with no external dependencies.
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 ## Before you begin
 
 All you need is a Materialize account. If you already have one —
@@ -161,7 +160,6 @@ to shape the events.
       .map((log, index) => `<p key="${index}">${log}</p>`)
       .join("");
 
-    
     updateLogDisplay();
 
     console.log("URL:", webhookURLInput.value);
@@ -186,7 +184,7 @@ to shape the events.
         return response;
       })
       .then((data) => {
-        
+
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
@@ -194,7 +192,7 @@ to shape the events.
         logOutputDiv.innerHTML = logs
           .map((log, index) => `<p key="${index}">${log}</p>`)
           .join("");
-        
+
         updateLogDisplay();
       });
   }
@@ -220,7 +218,6 @@ to shape the events.
     generationInterval = null;
   }
 
-  
   function updateLogDisplay() {
     logOutputDiv.style.display = logs.length > 0 ? "block" : "none";
   }
@@ -229,7 +226,6 @@ to shape the events.
   stopButton.addEventListener("click", stopGeneration);
   updateLogDisplay();
 
-  
   jsonSchemaTextarea.addEventListener("blur", formatJSON);
 
   function formatJSON() {
@@ -238,7 +234,7 @@ to shape the events.
       const formattedJSON = JSON.stringify(JSON.parse(jsonString), null, 2);
       jsonSchemaTextarea.value = formattedJSON;
     } catch (error) {
-      
+
       console.error("Error while formatting JSON:", error);
     }
   }
@@ -289,7 +285,6 @@ to shape the events.
   };
 </script>
 
-
 In the SQL Shell, validate that the source is ingesting data:
 
 ```mzsql
@@ -313,7 +308,6 @@ generator, the data will look like:
 ## Step 4. Parse JSON
 
 Manually parsing JSON-formatted data in SQL can be tedious. You can use the [interactive JSON parser widget](https://materialize.com/docs/sql/types/jsonb/#parsing) to automatically turn a sample JSON payload into a parsing view with the individual fields mapped to columns.
-
 
 Webhook data is ingested as a JSON blob. We recommend creating a parsing view on
 top of your webhook source that uses [jsonb operators](/sql/types/jsonb/#operators)

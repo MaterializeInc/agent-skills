@@ -36,7 +36,6 @@ In this scenario, you are a DevOps engineer responsible for managing your Materi
 
     > **Note:** All of the resources in this tutorial can be run with a single terraform apply but we will add and apply resources incrementally to better illustrate grants.
 
-
 3. Each role you create has default role attributes that determine how they can interact with Materialize objects. Let’s look at the role attributes of the role you created:
 
     ```mzsql
@@ -147,7 +146,6 @@ In this example, let's say your `dev_role` needs the following permissions:
 
     > **Note:** All of the grant resources are a 1:1 between a specific role, object and privilege. So adding three privileges to the `dev_role` will require three Terraform resources which can can be accomplished with the `for_each` meta-argument.
 
-
 2. We will run Terraform to grant these privileges on the `dev_table` table.
 
     ```shell
@@ -227,7 +225,6 @@ The dev_role now has the acceptable privileges it needs. Let’s apply this role
     ```
 
     The output should return the object ID, the level of permission, and the assigning role ID.
-
 
     ```nofmt
     name|privileges
@@ -311,7 +308,6 @@ Your `dev_role` also needs access to `qa_db`. You can apply these privileges ind
    ```
 
    Both `dev_role` and `qa_role` have usage and create access to the `qa_db`. In the next section, you will edit role attributes for these roles and drop privileges.
-
 
 ## Step 7. Revoke privileges
 

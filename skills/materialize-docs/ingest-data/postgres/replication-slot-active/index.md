@@ -101,7 +101,6 @@ connections, you can terminate the stale connection in PostgreSQL:
 > **Warning:** Only terminate connections if you're certain they are stale. Terminating an
 > active replication connection will interrupt data ingestion.
 
-
 ```sql
 -- First, identify the PID from the error message or from pg_replication_slots
 -- Replace <slot_name> with the replication slot name shown in the error message

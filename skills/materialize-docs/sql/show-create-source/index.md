@@ -8,11 +8,9 @@
 SHOW [REDACTED] CREATE SOURCE <source_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available source names, see [`SHOW SOURCES`](/sql/show-sources).
 

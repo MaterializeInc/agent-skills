@@ -2,7 +2,6 @@
 Procedure to upgrade your Materialize operator and instances running on Azure
 > **Disambiguation:** - To upgrade to `v26.0` using Materialize-provided Terraforms, upgrade your Terraform version to `v0.6.1` or higher, <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#v061" >Azure Terraform v0.6.1 Upgrade Notes</a>. - To upgrade to `v26.0` if <red>**not**</red> using a Materialize-provided Terraforms, you must prepare your nodes by adding the required labels. For detailed instructions, see [Prepare for swap and upgrade to v26.0](/installation/upgrade-to-swap/). 
 
-
 To upgrade your Materialize instances, first choose a new operator version and upgrade the Materialize operator. Then, upgrade your Materialize instances to the same version. The following tutorial upgrades your
 Materialize deployment running on Azure Kubernetes Service (AKS).
 
@@ -18,25 +17,14 @@ directory or the root).
 > but **v26**.1.0 to **v28**.0.0 is not. Skipping major versions or downgrading is
 > not supported. To upgrade from v25.2 to v26.0, you must [upgrade first to v25.2.16+](https://materialize.com/docs/self-managed/v25.2/release-notes/#v25216).
 
-
-
-
-
-
-
 **Materialize on Azure Terraform Releases:**
 
 When upgrading, you may need or want to update your fork of the Terraform module
 to upgrade.
 
-
 | Terraform version | Notable changes |
 | --- | --- |
 | <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize/releases/tag/v0.6.4" >v0.6.4</a> | <ul> <li>Released as part of v26.0.0.</li> <li>Uses <code>terraform-helm-materialize</code> version <code>v0.1.35</code>.</li> </ul>  |
-
-
-
-
 
 ## Prerequisites
 
@@ -44,7 +32,6 @@ to upgrade.
 > Materialize instances are running before the the old instance are removed.
 > When performing a rolling upgrade, ensure you have enough resources to support
 > having both the old and new Materialize instances running.
-
 
 ### Azure subscription
 
@@ -132,16 +119,13 @@ deployment does not have a license key configured, contact <a href="https://mate
 1. Optional. You may need to update your fork of the Terraform module to
    upgrade.
 
-   
    | Terraform version | Notable changes |
    | --- | --- |
    | <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize/releases/tag/v0.6.4" >v0.6.4</a> | <ul> <li>Released as part of v26.0.0.</li> <li>Uses <code>terraform-helm-materialize</code> version <code>v0.1.35</code>.</li> </ul>  |
 
-
    > **Tip:** If upgrading from a deployment that was set up using an earlier version of the
 >    Terraform modules, additional considerations may apply when using an updated
 >    Terraform modules to your existing deployments.
-
 
 1. Optional. Create a virtual environment, specifying a path for the new virtual
    environment:
@@ -190,10 +174,6 @@ deployment does not have a license key configured, contact <a href="https://mate
    For help with `kubectl` commands, see [kubectl Quick
    reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/).
 
-
-
-
-
 1. Back up your `terraform.tfvars` file.
 
    ```sh
@@ -209,7 +189,7 @@ deployment does not have a license key configured, contact <a href="https://mate
    ```sh
    ##... Existing content not shown for brevity
    ##... Leave the existing variables unchanged
-   operator_version="v26.20.2"  # Set to the desired operator version
+   operator_version="v26.23.0"  # Set to the desired operator version
    ```
 
 1. Initialize the terraform directory.
@@ -255,7 +235,6 @@ deployment does not have a license key configured, contact <a href="https://mate
    - The **Events** section should list that the new version of the
      orchestratord have been pulled.
 
-
 1. Back up your ``mz_instances.tfvars`` file.
 
    ```sh
@@ -265,11 +244,10 @@ deployment does not have a license key configured, contact <a href="https://mate
 1. Update the `mz_instances.tfvars` to specify the upgrade variables for each
    instance:
 
-
    | Variable          | Description |
    |--------------------|-------------|
    | `create_database`  | Set to `false`. |
-   | `environmentd_version`  | New Materialize instance version. This should be the same as the operator version: `v26.20.2`.|
+   | `environmentd_version`  | New Materialize instance version. This should be the same as the operator version: `v26.23.0`.|
    | `request_rollout`  or `force_rollout` | A new UUID string.  Can be generated with `uuidgen`.<br> <ul><li>`request_rollout` triggers a rollout only if changes exist. </li><li>`force_rollout`  triggers a rollout even if no changes exist.</li></ul> |
    | `inPlaceRollout` | Set to `false` to perform a rolling upgrade. For rolling upgrades, ensure you have enough resources to support having both the old and new Materialize instances running during the upgrade. |
    | `license_key` | Required. Set to the value of your license key. If your existing deployment does not have a license key, contact [Materialize support](https://materialize.com/docs/support/). If you have a license key, substitute your license key for `<ENTER YOUR LICENSE KEY HERE>`. |
@@ -278,7 +256,7 @@ deployment does not have a license key configured, contact <a href="https://mate
 
    - a `create_database` of `false`,
    - an `inPlaceRollout` of `false`,
-   - an `environmentd_version` of `"v26.20.2"`,
+   - an `environmentd_version` of `"v26.23.0"`,
    - a `request_rollout` of `"22222222-2222-2222-2222-222222222222"`, and
    - a `license_key` (substituting your license key for `<ENTER YOUR LICENSE KEY HERE>`).
 
@@ -293,7 +271,7 @@ deployment does not have a license key configured, contact <a href="https://mate
          memory_limit   = "2Gi"
          create_database = false
          license_key    = "<ENTER YOUR LICENSE KEY HERE>"        # Required.
-         environmentd_version = "v26.20.2"
+         environmentd_version = "v26.23.0"
          inPlaceRollout: false                                   # When false, performs a rolling upgrade rather than in-place
          requestRollout: 22222222-2222-2222-2222-222222222222    # Enter a new UUID
        }
@@ -303,10 +281,6 @@ deployment does not have a license key configured, contact <a href="https://mate
    <div class="warning">
       <strong class="gutter">WARNING!</strong> Please consult the Materialize team before setting inPlaceRollout to true and performing an in-place rollout. In almost all cases a rolling upgrade is preferred.
    </div>
-
-
-
-
 
 1. Run `terraform plan` with both the `terraform.tfvars` and your
    `mz_instances.tfvars` files and review the changes to be made.

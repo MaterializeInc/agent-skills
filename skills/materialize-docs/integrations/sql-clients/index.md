@@ -29,7 +29,6 @@ user. This password is auto-generated, and prefixed with `mzp_`.
 > value of a configuration parameter for a specific user (i.e. role), use the
 > [`ALTER ROLE...SET`](/sql/alter-role) command.
 
-
 You can pass runtime connection parameters (like `cluster`, `isolation_level`,
 or `search_path`) to Materialize using the [`options` connection string
 parameter](https://www.postgresql.org/docs/14/libpq-connect.html#LIBPQ-PARAMKEYWORDS),
@@ -68,7 +67,6 @@ psql \
 > **Advanced** tab, select **Introspect using JDBC Metadata** from the **Expert
 > options** list. For more information, see the [DataGrip
 > documentation](https://www.jetbrains.com/help/datagrip/cannot-find-a-database-object-in-the-database-tree-view.html#temporarily-enable-introspection-with-jdbc-metadata).
-
 
 To connect to Materialize using [DataGrip](https://www.jetbrains.com/help/datagrip/connecting-to-a-database.html),
 follow the documentation to [create a connection](https://www.jetbrains.com/help/datagrip/connecting-to-a-database.html)
@@ -138,7 +136,6 @@ To show system objects in the database explorer:
 > **Note:** As we work on extending the coverage of `pg_catalog` in Materialize,
 > some TablePlus features might not work as expected.
 
-
 To connect to Materialize using [TablePlus](https://tableplus.com/),
 follow the documentation to [create a connection](https://docs.tableplus.com/gui-tools/manage-connections#create-a-connection)
 and use the **PostgreSQL database driver** with the credentials provided in the
@@ -149,8 +146,6 @@ Materialize console.
 ### `psql`
 
 > **Warning:** Not all features of `psql` are supported by Materialize yet, including some backslash meta-commands.
-
-
 
 **macOS:**
 
@@ -172,8 +167,6 @@ Then symlink the `psql` binary to your `/usr/local/bin` directory:
 brew link --force libpq
 ```
 
-
-
 **Linux:**
 
 Start by double-checking whether you already have `psql` installed:
@@ -191,8 +184,6 @@ The `postgresql-client` package includes only the client binaries, not the Postg
 
 For other Linux distributions, check out the [PostgreSQL documentation](https://www.postgresql.org/download/linux/).
 
-
-
 **Windows:**
 
 Start by double-checking whether you already have `psql` installed:
@@ -202,8 +193,6 @@ psql --version
 ```
 
 Download and install the [PostgreSQL installer](https://www.postgresql.org/download/windows/) certified by EDB.
-
-
 
 ## See also
 

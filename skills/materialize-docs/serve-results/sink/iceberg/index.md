@@ -2,7 +2,6 @@
 How to export results from Materialize to Apache Iceberg tables.
 > **Public Preview:** This feature is in public preview.
 
-
 Iceberg sinks provide exactly once delivery of updates from Materialize into [Apache
 Iceberg](https://iceberg.apache.org/)[^1] tables hosted on [Amazon S3
 Tables](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables.html)[^2].
@@ -261,7 +260,6 @@ engines. This setting involves tradeoffs:
 > the Iceberg metadata, which can result in a degraded catalog, and non-responsive
 > queries.
 
-
 ### Exactly-once delivery
 
 <p>Iceberg sinks provide <strong>exactly-once delivery</strong>. After a restart,
@@ -269,7 +267,6 @@ Materialize resumes from the last committed snapshot without duplicating
 data.</p>
 <p>Materialize stores progress information in Iceberg snapshot metadata
 properties (<code>mz-frontier</code> and <code>mz-sink-version</code>).</p>
-
 
 ### Type mapping
 

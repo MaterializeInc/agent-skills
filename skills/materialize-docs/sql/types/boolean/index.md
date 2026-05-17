@@ -12,8 +12,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 TRUE | FALSE
 
@@ -23,7 +21,6 @@ TRUE | FALSE
 | --- | --- |
 | **TRUE** | The boolean value `true`.  |
 | **FALSE** | The boolean value `false`.  |
-
 
 ## Details
 

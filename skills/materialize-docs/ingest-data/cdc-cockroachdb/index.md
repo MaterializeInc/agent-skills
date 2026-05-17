@@ -3,7 +3,6 @@ How to propagate Change Data Capture (CDC) data from a CockroachDB database to M
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 Change Data Capture (CDC) allows you to track and propagate changes in a
 CockroachDB database to downstream consumers. In this guide, we’ll cover how to
 use Materialize to create and efficiently maintain real-time views with
@@ -63,7 +62,6 @@ for transformation.
    Materialize expects. Each table will produce data to a dedicated Kafka
    topic, which can then be consumed by Materialize.
 
-
 For detailed instructions on configuring your CockroachDB instance for CDC,
 refer to the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stable/create-changefeed).
 
@@ -75,7 +73,6 @@ refer to the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stab
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -108,9 +105,7 @@ topics in your Kafka (or Kafka-API compatible) broker.
     ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
     ```
 
-
 ### 2. Create a connection
-
 
 Now that you've created an ingestion cluster, you can connect Materialize to
 your Kafka broker and start ingesting data. The exact steps depend on your
@@ -196,7 +191,6 @@ observability features in the [Materialize Console](/console/).
    If the source fails to transition to this state, check the
    [ingestion troubleshooting guide](/ingest-data/troubleshooting/).
 
-
 ### 5. Create a view
 
 A [view](/concepts/views/) saves a query under a name to provide a shorthand for
@@ -210,7 +204,6 @@ CREATE VIEW cnt_table1 AS
     FROM kafka_repl
     GROUP BY field1;
 ```
-
 
 ### 6. Create an index on the view
 
@@ -230,7 +223,6 @@ CREATE INDEX idx_cnt_table1_field1 ON cnt_table1(field1);
 
 For best practices on when to index a view, see
 [Indexes](/concepts/indexes/) and [Views](/concepts/views/).
-
 
 ## Next steps
 

@@ -17,8 +17,6 @@ Detail | Info
 
 ### Hex format
 
-
-
 ```mzsql
 '\x<binary_string>'
 
@@ -28,12 +26,9 @@ Detail | Info
 | --- | --- |
 | `'\x<binary_string>'` | A hex-formatted binary string. The string is preceded by `\x` followed by hexadecimal digits. In some cases, the initial backslash may need to be escaped by doubling it (`\\`).  |
 
-
 In some cases, the initial backslash may need to be escaped by doubling it (`\\`). For more information, see the PostgreSQL documentation on [string constants](https://www.postgresql.org/docs/13/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS).
 
 ### Escape format
-
-
 
 ```mzsql
 '\<binary_string>'
@@ -43,7 +38,6 @@ In some cases, the initial backslash may need to be escaped by doubling it (`\\`
 | Syntax element | Description |
 | --- | --- |
 | `'\<binary_string>'` | An escape-formatted binary string. The string is preceded by `\`. Octet values can be escaped by converting them into their three-digit octal values and preceding them with backslashes; the backslash itself can be escaped as a double backslash. Certain values must be escaped: zero octet (`\000`), single quote (`\047` or `''''`), backslash (`\134` or `\\`), and non-printable octets (`\xxx` where `xxx` is the octal value).  |
-
 
 In the escape format, octet values can be escaped by converting them into their three-digit octal values and preceding them with backslashes; the backslash itself can be escaped as a double backslash. While any octet value *can* be escaped, the values in the table below *must* be escaped.
 
@@ -66,7 +60,6 @@ You can [cast](../../functions/cast) `bytea` to [`text`](../text) by assignment.
 > [hex-formatted](#hex-format) string, even if the byte array consists entirely of
 > printable characters. See [handling character data](#handling-character-data)
 > for alternatives.
-
 
 #### To `bytea`
 
@@ -112,7 +105,6 @@ SELECT convert_from('\x68656c6c6f20f09f918b', 'utf8') AS text;
 ```
 
 ## Examples
-
 
 ```mzsql
 SELECT '\xDEADBEEF'::bytea AS bytea_val;

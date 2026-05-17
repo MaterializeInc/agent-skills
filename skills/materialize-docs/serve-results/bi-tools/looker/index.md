@@ -31,7 +31,6 @@ level</a> using the following SQL statement:</p>
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
 
-
 ## Known limitations
 
 When using Looker with Materialize, be aware of the following limitations:

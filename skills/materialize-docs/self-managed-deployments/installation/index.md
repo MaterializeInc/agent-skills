@@ -2,8 +2,6 @@
 
 Installation guides for Self-Managed Materialize.
 
-
-
 <p>You can install Self-Managed Materialize on a Kubernetes cluster running
 locally or on a cloud provider. Self-Managed Materialize requires:</p>
 <ul>
@@ -25,7 +23,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 <h2 id="installation-guides">Installation guides</h2>
 <p>The following installation guides are available to help you get started:</p>
 
-
 <h3 id="install-using-helm-commands">Install using Helm Commands</h3>
 <table>
   <thead>
@@ -41,7 +38,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
       </tr>
   </tbody>
 </table>
-
 
 <h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
@@ -70,7 +66,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
   </tbody>
 </table>
 
-
 <h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
 > installing Materialize.
@@ -97,16 +92,11 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
       </tr>
   </tbody>
 </table>
-
-
-
 
 ---
 
 ## Install Guides (Legacy)
 
-
-
 <h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
 > installing Materialize.
@@ -134,16 +124,12 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
   </tbody>
 </table>
 
-
-
 ---
 
 ## Install locally on kind
 
-
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; and a license key.
-
 
 The following tutorial uses a local [`kind`](https://kind.sigs.k8s.io/) cluster
 and deploys the following components:
@@ -158,7 +144,6 @@ and deploys the following components:
 >   purposes only.
 > - The tutorial uses a Kubernetes metrics server with TLS disabled. In practice,
 >   refer to your organization's official security practices.
-
 
 ## Prerequisites
 
@@ -178,7 +163,6 @@ requirements:
 - 5 CPUs
 - 15GB memory
 
-
 ### Helm 3.2.0+
 
 If you don't have Helm version 3.2.0+ installed, install. For details, see the
@@ -196,7 +180,6 @@ reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/).
 
 Starting in v26.0, Self-Managed Materialize requires a license key.
 
-
 | License key type | Deployment type | Action |
 | --- | --- | --- |
 | Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
@@ -204,17 +187,15 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
 | Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
 
-
 ## Installation
 
 1. Start Docker if it is not already running.
 
    For this local deployment, you will need the following Docker resource
    requirements:
-   
+
    - 5 CPUs
    - 15GB memory
-
 
 1. Open a Terminal window.
 
@@ -253,39 +234,34 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    some sample configuration files. Download the sample configuration files from
    the Materialize repo:
 
-   
-   
    ```shell
-   mz_version=v26.20.2
-   
+   mz_version=v26.23.0
+
    curl -o sample-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
    curl -o sample-postgres.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/postgres.yaml
    curl -o sample-minio.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/minio.yaml
    curl -o sample-materialize.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/materialize.yaml
    ```
-   
+
    - `sample-values.yaml`: Used to configure the Materialize Operator.
    - `sample-postgres.yaml`: Used to configure PostgreSQL as the metadata
      database.
    - `sample-minio.yaml`: Used to configure minIO as the blob storage.
    - `sample-materialize.yaml`: Used to configure Materialize instance.
-   
+
    These configuration files are for local evaluation/testing purposes only and
    not intended for production use.
-
 
 1. Add your license key:
 
    a. To get your license key:
 
-      
       | License key type | Deployment type | Action |
       | --- | --- | --- |
       | Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
       | Community | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
       | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
       | Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
-
 
    b. Edit `sample-materialize.yaml` to add your license key to the
    `license_key` field in the backend secret.
@@ -304,7 +280,6 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    ---
    ```
 
-
 1. Install the Materialize Helm chart.
 
    1. Add the Materialize Helm chart repository.
@@ -319,19 +294,16 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
       helm repo update materialize
       ```
 
-   
-   
    1. Install the Materialize Operator. The operator will be installed in the
       `materialize` namespace.
-   
+
       ```shell
       helm install my-materialize-operator materialize/materialize-operator \
           --namespace=materialize --create-namespace \
-          --version v26.20.2 \
+          --version v26.23.0 \
           --set observability.podMetrics.enabled=true \
           -f sample-values.yaml
       ```
-
 
    1. Verify the installation and check the status:
 
@@ -419,7 +391,6 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 >       the tutorial uses a Kubernetes metrics server with TLS disabled. In practice,
 >       refer to your organization's official security practices.
 
-
       ```shell
       helm install metrics-server metrics-server/metrics-server \
          --namespace kube-system \
@@ -453,7 +424,6 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
        > **Note:** It may take approximately 1-2 minutes for all resources to appear in the
 >        namespace. Allow up to 90 seconds before verifying resource creation with
 >        `kubectl get` commands.
-
 
        ```shell
        kubectl get all -n materialize-environment
@@ -498,17 +468,16 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 
 1. Open the Materialize Console in your browser:
 
-   
    1. Find your console service name.
-   
+
       ```shell
       MZ_SVC_CONSOLE=$(kubectl -n materialize-environment get svc \
         -o custom-columns="NAME:.metadata.name" --no-headers | grep console)
       echo $MZ_SVC_CONSOLE
       ```
-   
+
    1. Port forward the Materialize Console service to your local machine:[^1]
-   
+
       ```shell
       (
         while true; do
@@ -517,15 +486,15 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
         done;
       ) &
       ```
-   
+
       The command is run in background.
       <br>- To list the background jobs, use `jobs`.
       <br>- To bring back to foreground, use `fg %<job-number>`.
       <br>- To kill the background job, use `kill %<job-number>`.
-   
+
    1. Open a browser and navigate to
       [http://localhost:8080](http://localhost:8080).
-   
+
    [^1]: The port forwarding command uses a while loop to handle a [known
    Kubernetes issue 78446](https://github.com/kubernetes/kubernetes/issues/78446),
    where interrupted long-running requests through a standard port-forward cause
@@ -533,24 +502,19 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    if an error occurs, ensuring a more stable connection. It detects failures by
    monitoring for "portforward.go" error messages.
 
-
       > **Tip:** If you experience long loading screens or unresponsiveness in the Materialize
 >       Console, we recommend increasing the size of the `mz_catalog_server` cluster.
 >       Refer to the [Troubleshooting Console
 >       Unresponsiveness](/self-managed-deployments/troubleshooting/#troubleshooting-console-unresponsiveness)
 >       guide.
 
-
-
 ## Next steps
-
 
 - From the Console, you can get started with the
 [Quickstart](/get-started/quickstart/).
 
 - To start ingesting your own data from an external system like Kafka, MySQL or
   PostgreSQL, see [Ingest data](/ingest-data/).
-
 
 - To enable authentication and authorization, see
   [Security](/security/self-managed/).
@@ -569,18 +533,15 @@ kind delete cluster
 - [Troubleshooting](/installation/troubleshooting/)
 - [Installation](/installation/)
 
-
 ---
 
 ## Install on AWS
 
-
 Materialize provides a set of modular [Terraform
 modules](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main)
 that can be used to deploy all services required for Materialize to run on AWS.
-The module is intended to provide a simple set of examples on how to deploy
-Materialize. It can be used as is or modules can be taken from the example and
-integrated with existing DevOps tooling.
+These modules serve as composable building blocks that you can integrate into
+existing DevOps workflows, either as a full set or individually.
 
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; and a license key.
@@ -588,17 +549,10 @@ a metadata database; blob storage; and a license key.
 deploys a complete Materialize environment on AWS using the modular Terraform
 setup from this repository.
 
-
-> **Warning:** The Terraform modules used in this tutorial are intended for
-> evaluation/demonstration purposes and for serving as a template when building
-> your own production deployment. The modules should not be directly relied upon
-> for production deployments: **future releases of the modules will contain
-> breaking changes.** Instead, to use as a starting point for your own production
-> deployment, either:
-> - Fork the repo and pin to a specific version; or
-> - Use the code as a reference when developing your own deployment.
-
-
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
 ## What Gets Created
 
@@ -662,7 +616,6 @@ This example provisions the following infrastructure:
 | 8080 | For HTTP(S) connections to Materialize Console |
  |
 
-
 ## Prerequisites
 
 ### AWS Account Requirements
@@ -681,9 +634,7 @@ An active AWS account with appropriate permissions to create:
 - [kubectl](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html)
 - [Helm 3.2.0+](https://helm.sh/docs/intro/install/)
 
-
 ### License Key
-
 
 | License key type | Deployment type | Action |
 | --- | --- | --- |
@@ -692,26 +643,20 @@ An active AWS account with appropriate permissions to create:
 | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
 | Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
 
-
 ## Getting started: Simple example
 
-> **Warning:** The Terraform modules used in this tutorial are intended for
-> evaluation/demonstration purposes and for serving as a template when building
-> your own production deployment. The modules should not be directly relied upon
-> for production deployments: **future releases of the modules will contain
-> breaking changes.** Instead, to use as a starting point for your own production
-> deployment, either:
-> - Fork the repo and pin to a specific version; or
-> - Use the code as a reference when developing your own deployment.
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
-
-> **Tip:** The simple example used in this tutorial enables [Password
+> **Tip:** * The `examples/simple` example, used in this tutorial, is provided for illustration and to help you get started. In practice, we recommend instantiating these modules within your own Terraform code rather than relying on the example configuration directly.
+> * The simple example used in this tutorial enables [Password
 > authentication](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/aws/examples/simple/main.tf#L380)
 > for the Materialize instance. To use a different authentication method, update
 > [`authenticator_kind`](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/kubernetes/modules/materialize-instance/README.md#input_authenticator_kind).
 > See [Authentication](/security/self-managed/authentication/) for the supported
 > authentication mechanisms.
-
 
 ### Step 1: Set Up the Environment
 
@@ -794,7 +739,6 @@ An active AWS account with appropriate permissions to create:
 >    ```
 >    Then, re-apply the Terraform configuration.
 
-
 1. From the output, you will need the following fields to connect using the
    Materialize Console and PostgreSQL-compatible clients/drivers:
    - `nlb_dns_name`
@@ -806,8 +750,6 @@ An active AWS account with appropriate permissions to create:
 
    > **Tip:** Your shell may show an ending marker (such as `%`) because the
 >    output did not end with a newline. Do not include the marker when using the value.
-
-
 
 1. Configure `kubectl` to connect to your cluster, replacing:
 
@@ -832,14 +774,13 @@ An active AWS account with appropriate permissions to create:
    ```bash
    kubectl -n materialize get all
    ```
-   
+
    **Materialize instance:**
    To check the status of the Materialize instance, which runs in the `materialize-environment` namespace:
    ```bash
    kubectl -n materialize-environment get all
    ```
-   
-   
+
    <p>If you run into an error during deployment, refer to the
    <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
 
@@ -849,14 +790,11 @@ Using the `nlb_dns_name` and `external_login_password_mz_system` from the Terraf
 output, you can connect to Materialize via the Materialize Console or
 PostgreSQL-compatible tools/drivers using the following ports:
 
-
 | Port | Description |
 | --- | --- |
 | 6875 | For SQL connections to the database |
 | 6876 | For HTTP(S) connections to the database |
 | 8080 | For HTTP(S) connections to Materialize Console |
-
-
 
 #### Connect to the Materialize Console
 
@@ -864,8 +802,6 @@ PostgreSQL-compatible tools/drivers using the following ports:
 > public NLB. You can connect directly using the NLB's DNS name from anywhere
 > on the internet (subject to your `ingress_cidr_blocks` configuration).
 > - **If using a private (internal) NLB:** You can connect from inside the same VPC or from networks that are privately connected to it. Alternatively, use Kubernetes port-forwarding for both SQL and Console.
-
-
 
 1. To connect to the Materialize Console, open a browser to
     `https://<nlb_dns_name>:8080`, substituting your `<nlb_dns_name>`.
@@ -880,7 +816,6 @@ PostgreSQL-compatible tools/drivers using the following ports:
 >    warning with regards to the certificate. In production, run with
 >    certificates from an official Certificate Authority (CA) rather than
 >    self-signed certificates.
-
 
 1. Log in as `mz_system`, using `external_login_password_mz_system` as the
    password.
@@ -905,8 +840,6 @@ PostgreSQL-compatible tools/drivers using the following ports:
 > public NLB. You can connect directly using the NLB's DNS name from anywhere
 > on the internet (subject to your `ingress_cidr_blocks` configuration).
 > - **If using a private (internal) NLB:** You can connect from inside the same VPC or from networks that are privately connected to it. Alternatively, use Kubernetes port-forwarding for both SQL and Console.
-
-
 
 1. To connect using `psql`, in the connection string, specify:
 
@@ -940,7 +873,6 @@ PostgreSQL-compatible tools/drivers using the following ports:
 > **Tip:** To reduce cost in your demo environment, you can tweak subnet CIDRs
 > and instance types in `main.tf`.
 
-
 You can customize each Terraform module independently.
 
 - For details on the Terraform modules, see both the [top
@@ -963,7 +895,6 @@ See also:
 
 ## Cleanup
 
-
 To delete the whole sample infrastructure and deployment (including the
 Materialize operator and Materialize instances and data), run from the Terraform
 directory:
@@ -974,25 +905,20 @@ terraform destroy
 
 When prompted to proceed, type `yes` to confirm the deletion.
 
-
-
 ## See Also
 
 - [Troubleshooting](/self-managed-deployments/troubleshooting/)
 - [Security](/security/self-managed/)
 
-
 ---
 
 ## Install on Azure
 
-
 Materialize provides a set of modular [Terraform
 modules](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main)
 that can be used to deploy all services required for Materialize to run on Azure.
-The module is intended to provide a simple set of examples on how to deploy
-Materialize. It can be used as is or modules can be taken from the example and
-integrated with existing DevOps tooling.
+These modules serve as composable building blocks that you can integrate into
+existing DevOps workflows, either as a full set or individually.
 
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; and a license key.
@@ -1000,15 +926,10 @@ a metadata database; blob storage; and a license key.
 deploys a complete Materialize environment on Azure using the modular Terraform
 setup from this repository.
 
-> **Warning:** The Terraform modules used in this tutorial are intended for
-> evaluation/demonstration purposes and for serving as a template when building
-> your own production deployment. The modules should not be directly relied upon
-> for production deployments: **future releases of the modules will contain
-> breaking changes.** Instead, to use as a starting point for your own production
-> deployment, either:
-> - Fork the repo and pin to a specific version; or
-> - Use the code as a reference when developing your own deployment.
-
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
 ## What Gets Created
 
@@ -1099,7 +1020,6 @@ An active Azure subscription with appropriate permissions to create:
 
 ### License Key
 
-
 | License key type | Deployment type | Action |
 | --- | --- | --- |
 | Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
@@ -1107,27 +1027,20 @@ An active Azure subscription with appropriate permissions to create:
 | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
 | Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
 
-
 ## Getting started: Simple example
 
-> **Warning:** The Terraform modules used in this tutorial are intended for
-> evaluation/demonstration purposes and for serving as a template when building
-> your own production deployment. The modules should not be directly relied upon
-> for production deployments: **future releases of the modules will contain
-> breaking changes.** Instead, to use as a starting point for your own production
-> deployment, either:
-> - Fork the repo and pin to a specific version; or
-> - Use the code as a reference when developing your own deployment.
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
-
-
-> **Tip:** The simple example used in this tutorial enables [Password
+> **Tip:** * The `examples/simple` example, used in this tutorial, is provided for illustration and to help you get started. In practice, we recommend instantiating these modules within your own Terraform code rather than relying on the example configuration directly.
+> * The simple example used in this tutorial enables [Password
 > authentication](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/azure/examples/simple/main.tf#L340)
 > for the Materialize instance. To use a different authentication method, update
 > [`authenticator_kind`](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/kubernetes/modules/materialize-instance/README.md#input_authenticator_kind).
 > See [Authentication](/security/self-managed/authentication/) for the supported
 > authentication mechanisms.
-
 
 ### Step 1: Set Up the Environment
 
@@ -1238,7 +1151,6 @@ An active Azure subscription with appropriate permissions to create:
    > **Tip:** Your shell may show an ending marker (such as `%`) because the
 >    output did not end with a newline. Do not include the marker when using the value.
 
-
 1. Configure `kubectl` to connect to your cluster, replacing:
    - `<your-resource-group-name>` with your resource group name; i.e., the
      `resource_group_name` in the Terraform output or in the
@@ -1261,14 +1173,13 @@ An active Azure subscription with appropriate permissions to create:
    ```bash
    kubectl -n materialize get all
    ```
-   
+
    **Materialize instance:**
    To check the status of the Materialize instance, which runs in the `materialize-environment` namespace:
    ```bash
    kubectl -n materialize-environment get all
    ```
-   
-   
+
    <p>If you run into an error during deployment, refer to the
    <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
 
@@ -1277,13 +1188,11 @@ An active Azure subscription with appropriate permissions to create:
 You can connect to Materialize via the Materialize Console or
 PostgreSQL-compatible tools/drivers using the following ports:
 
-
 | Port | Description |
 | --- | --- |
 | 6875 | For SQL connections to the database |
 | 6876 | For HTTP(S) connections to the database |
 | 8080 | For HTTP(S) connections to Materialize Console |
-
 
 #### Connect using the Materialize Console
 
@@ -1291,8 +1200,6 @@ PostgreSQL-compatible tools/drivers using the following ports:
 > public NLB. You can connect directly using the NLB's DNS name from anywhere
 > on the internet (subject to your `ingress_cidr_blocks` configuration).
 > - **If using a private (internal) NLB:** You can connect from inside the same VPC or from networks that are privately connected to it. Alternatively, use Kubernetes port-forwarding for both SQL and Console.
-
-
 
 Using the `console_load_balancer_ip` and `external_login_password_mz_system`
 from the Terraform output, you can connect to Materialize via the Materialize
@@ -1312,7 +1219,6 @@ Console.
 >    warning with regards to the certificate. In production, run with
 >    certificates from an official Certificate Authority (CA) rather than
 >    self-signed certificates.
-
 
 1. Log in as `mz_system`, using `external_login_password_mz_system` as the
    password.
@@ -1337,8 +1243,6 @@ Console.
 > public NLB. You can connect directly using the NLB's DNS name from anywhere
 > on the internet (subject to your `ingress_cidr_blocks` configuration).
 > - **If using a private (internal) NLB:** You can connect from inside the same VPC or from networks that are privately connected to it. Alternatively, use Kubernetes port-forwarding for both SQL and Console.
-
-
 
 Using the `balancerd_load_balancer_ip` and `external_login_password_mz_system`
 from the Terraform output, you can connect to Materialize via
@@ -1370,11 +1274,9 @@ PostgreSQL-compatible clients/drivers, such as `psql`.
 
 1. Login as one of the created user.
 
-
 ## Customizing Your Deployment
 
 > **Tip:** To reduce cost in your demo environment, you can tweak VM sizes and database tiers in `main.tf`.
-
 
 You can customize each Terraform module independently.
 
@@ -1389,7 +1291,6 @@ guide](/self-managed-deployments/deployment-guidelines/azure-deployment-guidelin
 
 > **Note:** Autoscaling: Uses Azure's native cluster autoscaler that integrates directly with Azure Virtual Machine Scale Sets for automated node scaling.
 
-
 See also:
 - [Configuring System
   Parameters](/self-managed-deployments/configuration-system-parameters/)
@@ -1399,7 +1300,6 @@ See also:
   Descriptions](/self-managed-deployments/materialize-crd-field-descriptions/)
 
 ## Cleanup
-
 
 To delete the whole sample infrastructure and deployment (including the
 Materialize operator and Materialize instances and data), run from the Terraform
@@ -1411,24 +1311,20 @@ terraform destroy
 
 When prompted to proceed, type `yes` to confirm the deletion.
 
-
 ## See Also
 
 - [Troubleshooting](/self-managed-deployments/troubleshooting/)
 - [Security](/security/self-managed/)
 
-
 ---
 
 ## Install on GCP
 
-
 Materialize provides a set of modular [Terraform
 modules](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main)
 that can be used to deploy all services required for Materialize to run on Google Cloud.
-The module is intended to provide a simple set of examples on how to deploy
-Materialize. It can be used as is or modules can be taken from the example and
-integrated with existing DevOps tooling.
+These modules serve as composable building blocks that you can integrate into
+existing DevOps workflows, either as a full set or individually.
 
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; and a license key.
@@ -1436,15 +1332,10 @@ a metadata database; blob storage; and a license key.
 deploys a complete Materialize environment on GCP using the modular Terraform
 setup from this repository.
 
-> **Warning:** The Terraform modules used in this tutorial are intended for
-> evaluation/demonstration purposes and for serving as a template when building
-> your own production deployment. The modules should not be directly relied upon
-> for production deployments: **future releases of the modules will contain
-> breaking changes.** Instead, to use as a starting point for your own production
-> deployment, either:
-> - Fork the repo and pin to a specific version; or
-> - Use the code as a reference when developing your own deployment.
-
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
 ## What Gets Created
 
@@ -1532,7 +1423,6 @@ A Google account with permission to:
 
 ### License Key
 
-
 | License key type | Deployment type | Action |
 | --- | --- | --- |
 | Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
@@ -1540,26 +1430,20 @@ A Google account with permission to:
 | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
 | Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
 
-
 ## Getting started: Simple example
 
-> **Warning:** The Terraform modules used in this tutorial are intended for
-> evaluation/demonstration purposes and for serving as a template when building
-> your own production deployment. The modules should not be directly relied upon
-> for production deployments: **future releases of the modules will contain
-> breaking changes.** Instead, to use as a starting point for your own production
-> deployment, either:
-> - Fork the repo and pin to a specific version; or
-> - Use the code as a reference when developing your own deployment.
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
-
-> **Tip:** The simple example used in this tutorial enables [Password
+> **Tip:** * The `examples/simple` example, used in this tutorial, is provided for illustration and to help you get started. In practice, we recommend instantiating these modules within your own Terraform code rather than relying on the example configuration directly.
+> * The simple example used in this tutorial enables [Password
 > authentication](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/gcp/examples/simple/main.tf#L332)
 > for the Materialize instance. To use a different authentication method, update
 > [`authenticator_kind`](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/kubernetes/modules/materialize-instance/README.md#input_authenticator_kind).
 > See [Authentication](/security/self-managed/authentication/) for the supported
-> authentication mechanisms. s
-
+> authentication mechanisms.
 
 ### Step 1: Set Up the Environment
 
@@ -1681,7 +1565,6 @@ A Google account with permission to:
    > **Tip:** Your shell may show an ending marker (such as `%`) because the
 >    output did not end with a newline. Do not include the marker when using the value.
 
-
 1. Configure `kubectl` to connect to your GKE cluster, replacing:
 
    - `<your-gke-cluster-name>` with your cluster name; i.e., the
@@ -1709,14 +1592,13 @@ A Google account with permission to:
    ```bash
    kubectl -n materialize get all
    ```
-   
+
    **Materialize instance:**
    To check the status of the Materialize instance, which runs in the `materialize-environment` namespace:
    ```bash
    kubectl -n materialize-environment get all
    ```
-   
-   
+
    <p>If you run into an error during deployment, refer to the
    <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
 
@@ -1725,13 +1607,11 @@ A Google account with permission to:
 You can connect to Materialize via the Materialize Console or
 PostgreSQL-compatible tools/drivers using the following ports:
 
-
 | Port | Description |
 | --- | --- |
 | 6875 | For SQL connections to the database |
 | 6876 | For HTTP(S) connections to the database |
 | 8080 | For HTTP(S) connections to Materialize Console |
-
 
 #### Connect using the Materialize Console
 
@@ -1739,8 +1619,6 @@ PostgreSQL-compatible tools/drivers using the following ports:
 > public NLB. You can connect directly using the NLB's DNS name from anywhere
 > on the internet (subject to your `ingress_cidr_blocks` configuration).
 > - **If using a private (internal) NLB:** You can connect from inside the same VPC or from networks that are privately connected to it. Alternatively, use Kubernetes port-forwarding for both SQL and Console.
-
-
 
 Using the `console_load_balancer_ip`  and `external_login_password_mz_system`
 from the Terraform output, you can connect to Materialize via the Materialize
@@ -1760,7 +1638,6 @@ Console.
 >    warning with regards to the certificate. In production, run with
 >    certificates from an official Certificate Authority (CA) rather than
 >    self-signed certificates.
-
 
 1. Log in as `mz_system`, using `external_login_password_mz_system` as the
    password.
@@ -1785,8 +1662,6 @@ Console.
 > public NLB. You can connect directly using the NLB's DNS name from anywhere
 > on the internet (subject to your `ingress_cidr_blocks` configuration).
 > - **If using a private (internal) NLB:** You can connect from inside the same VPC or from networks that are privately connected to it. Alternatively, use Kubernetes port-forwarding for both SQL and Console.
-
-
 
 Using the `balancerd_load_balancer_ip` and `external_login_password_mz_system`
 from the Terraform output, you can connect to Materialize via
@@ -1822,7 +1697,6 @@ PostgreSQL-compatible clients/drivers, such as `psql`:
 
 > **Tip:** To reduce cost in your demo environment, you can tweak machine types and database tiers in `main.tf`.
 
-
 You can customize each module independently.
 
 - For details on the Terraform modules, see both the [top
@@ -1837,7 +1711,6 @@ guide](/self-managed-deployments/deployment-guidelines/gcp-deployment-guidelines
 
 > **Note:** **GCP Storage Authentication Limitation:** Materialize currently only supports HMAC key authentication for GCS access (S3-compatible API). While the modules configure both HMAC keys and Workload Identity, Materialize uses HMAC keys for actual storage access.
 
-
 See also:
 - [Configuring System
   Parameters](/self-managed-deployments/configuration-system-parameters/)
@@ -1848,7 +1721,6 @@ See also:
 
 ## Cleanup
 
-
 To delete the whole sample infrastructure and deployment (including the
 Materialize operator and Materialize instances and data), run from the Terraform
 directory:
@@ -1858,7 +1730,6 @@ terraform destroy
 ```
 
 When prompted to proceed, type `yes` to confirm the deletion.
-
 
 ## See Also
 

@@ -73,10 +73,7 @@ Materialize bundles native connectors for the following external systems:
 
 </div>
 
-
-
 For details on the syntax, supported formats and features of each connector, check out the dedicated `CREATE SOURCE` documentation pages.
-
 
 ## Sources and clusters
 

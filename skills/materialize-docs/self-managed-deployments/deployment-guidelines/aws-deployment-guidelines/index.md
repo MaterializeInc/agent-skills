@@ -3,7 +3,6 @@ General guidelines when deploying Self-Managed Materialize on AWS.
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; and a license key.
 
-
 ## Recommended instance types
 
 As a general guideline, we recommend:
@@ -25,7 +24,6 @@ the default [`node_group_instance_types`].
 [`node_group_instance_types`]:
     https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#input_node_group_instance_types
 
-
 ## Locally-attached NVMe storage
 
 Configuring swap on nodes to use locally-attached NVMe storage allows
@@ -36,13 +34,11 @@ significantly degrade performance and is not supported.
 
 ### Swap support
 
-
 **New Terraform:**
 
 #### New Terraform
 
 The new Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws/examples/simple) supports configuring swap out of the box.
-
 
 **Legacy Terraform:**
 #### Legacy Terraform
@@ -56,10 +52,6 @@ With this change, the Terraform:
 See [Upgrade Notes](https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#v061).
 
 > **Note:** If deploying `v25.2`, Materialize clusters will not automatically use swap unless they are configured with a `memory_request` less than their `memory_limit`. In `v26`, this will be handled automatically.
-
-
-
-
 
 ## TLS
 

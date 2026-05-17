@@ -40,7 +40,6 @@ SHOW CONNECTIONS LIKE 'kafka%';
  kafka_connection | kafka
 ```
 
-
 ## Related pages
 
 - [`CREATE CONNECTION`](../create-connection)

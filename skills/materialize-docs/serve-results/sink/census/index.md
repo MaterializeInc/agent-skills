@@ -24,7 +24,6 @@ To begin you will need to add your Materialize database as a source in Census.
 
 Next you will add a destination where data will be sent.
 
-
 **Braze:**
 
 1. In Census, navigate to **Destinations** and then click **New Destination**.
@@ -35,13 +34,9 @@ Next you will add a destination where data will be sent.
    The [Census guide for Braze](https://docs.getcensus.com/destinations/braze) will explain how to create an API key with the
    correct permissions. Then click the **Connect**.
 
-
-
-
 ## Step 3. Create a Sync
 
 After successfully adding the Materialize source, you can create a sync to send data from Materialize to your downstream destination.
-
 
 **Braze:**
 
@@ -60,9 +55,6 @@ After successfully adding the Materialize source, you can create a sync to send 
 1. Under **Set Up Braze Field Mappings** set any of the columns in the Materialize object to their corresponding fields in the Braze User entity.
 
 1. Click **Next** to see an overview of your sync and click **Create** to create the sync.
-
-
-
 
 ## Step 4. Add a Schedule (Optional)
 

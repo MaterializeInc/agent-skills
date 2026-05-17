@@ -8,7 +8,6 @@ Discard resets state associated with the current session.
 DISCARD TEMP|TEMPORARY|ALL ;
 ```
 
-
 Syntax element | Description
 ---------------|------------
 **TEMP**  | Drops any temporary objects created by the current session.

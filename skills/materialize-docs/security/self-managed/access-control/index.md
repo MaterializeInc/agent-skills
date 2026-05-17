@@ -2,11 +2,8 @@
 
 How to configure and manage role-based database access control (RBAC) in Materialize.
 
-
-
 > **Note:** Initially, only the `mz_system` user (which has superuser/administrator
 > privileges) is available to manage roles.
-
 
 <a name="role-based-access-control-rbac" ></a>
 
@@ -19,7 +16,6 @@ roles](/security/self-managed/access-control/manage-roles/).
 ## Enabling RBAC
 
 > **Warning:** If RBAC is not enabled, all users have <red>**superuser**</red> privileges.
-
 
 By default, role-based access control (RBAC) checks are not enabled (i.e.,
 enforced) when using [authentication](/security/self-managed/authentication/#configuring-authentication-type). To
@@ -101,7 +97,6 @@ Once a role is created, you can:
 
 > **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
-
 ### Initial privileges
 
 All roles in Materialize are automatically members of
@@ -110,13 +105,11 @@ such, every role includes inherited privileges from `PUBLIC`.
 
 By default, the `PUBLIC` role has the following privileges:
 
-
 **Baseline privileges via PUBLIC role:**
 
 | Privilege | Description | On database object(s) |
 | --- | --- | --- |
 | <code>USAGE</code> | Permission to use or reference an object. | <ul> <li>All <code>*.public</code> schemas (e.g., <code>materialize.public</code>);</li> <li><code>materialize</code> database; and</li> <li><code>quickstart</code> cluster.</li> </ul>  |
-
 
 **Default privileges on future objects set up for PUBLIC:**
 
@@ -164,34 +157,23 @@ the target role still has the privilege(s) through the other role.
 
 ## Best practices
 
-
-
 ### Follow the principle of least privilege
 
 Role-based access control in Materialize should follow the principle of
 least privilege. Grant only the minimum access necessary for users and
 service accounts to perform their duties.
 
-
-
 ### Restrict the granting of `CREATEROLE` privilege
-
 
 {{% include-headless "/headless/rbac-sm/createrole-consideration" %}}
 
-
-
 ### Use Reusable Roles for Privilege Assignment
-
 
 {{% include-headless "/headless/rbac-sm/use-resusable-roles" %}}
 
 See also [Manage database roles](/security/self-managed/access-control/manage-roles/).
 
-
-
 ### Audit for unused roles and privileges.
-
 
 {{% include-headless "/headless/rbac-sm/audit-remove-roles" %}}
 
@@ -201,14 +183,9 @@ and [Drop a
 role](/security/self-managed/access-control/manage-roles/#drop-a-role) for
 more information.
 
-
-
-
-
 ---
 
 ## Manage database roles
-
 
 In Materialize, role-based access control (RBAC) governs access to objects
 through privileges granted to database roles.
@@ -216,7 +193,6 @@ through privileges granted to database roles.
 ## Enabling RBAC
 
 > **Warning:** If RBAC is not enabled, all users have <red>**superuser**</red> privileges.
-
 
 By default, role-based access control (RBAC) checks are not enabled (i.e.,
 enforced) when using [authentication](/security/self-managed/authentication/#configuring-authentication-type). To
@@ -256,15 +232,12 @@ SHOW enable_rbac_checks;
 > **Note:** Initially, only the `mz_system` user (which has superuser/administrator
 > privileges) is available to manage roles.
 
-
-
 | Role management operations | Required privileges |
 | --- | --- |
 | To create/revoke/grant roles | <ul> <li><code>CREATEROLE</code> privileges on the system. > **Warning:** Roles with the `CREATEROLE` privilege can obtain the privileges of any other > role in the system by granting themselves that role. Avoid granting > `CREATEROLE` unnecessarily. </li> </ul>  |
 | To view privileges for a role | None |
 | To grant/revoke role privileges | <ul> <li>Ownership of affected objects.</li> <li><code>USAGE</code> privileges on the containing database if the affected object is a schema.</li> <li><code>USAGE</code> privileges on the containing schema if the affected object is namespaced by a schema.</li> <li><em>superuser</em> status if the privilege is a system privilege.</li> </ul>  |
 | To alter default privileges | <ul> <li>Role membership in <code>role_name</code>.</li> <li><code>USAGE</code> privileges on the containing database if <code>database_name</code> is specified.</li> <li><code>USAGE</code> privileges on the containing schema if <code>schema_name</code> is specified.</li> <li><em>superuser</em> status if the <em>target_role</em> is <code>PUBLIC</code> or <strong>ALL ROLES</strong> is specified.</li> </ul>  |
-
 
 See also [Appendix: Privileges by
 command](/security/appendix/appendix-command-privileges/)
@@ -292,13 +265,11 @@ CREATE ROLE <user> WITH LOGIN PASSWORD '<password>';
 
 > **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. 
 
-
 For example, the following creates:
 
 - A new user `blue.berry@example.com` (or more specifically, a new user role).
 - A new service account `sales_report_app` (or more specifically, a new service
   account role).
-
 
 **A new user role:**
 
@@ -314,7 +285,6 @@ override the [naming restrictions](/sql/identifiers/#naming-restrictions).
 Once created, the user `blue.berry@example.com` can login using the
 password.
 
-
 **A new service account role:**
 
 The following creates a new service account `sales_report_app`, or more
@@ -326,9 +296,6 @@ CREATE ROLE "sales_report_app" WITH LOGIN PASSWORD '<password>';
 ```
 Once created, the associated application can use the `sales_report_app`
 service account to connect to Materialize.
-
-
-
 
 In Materialize, a role is created with inheritance support. With inheritance,
 when a role is granted to another role (i.e., the target role), the target role
@@ -356,7 +323,6 @@ Once a role is created, you can:
 
 > **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
-
 See also:
 
 - For a list of required privileges for specific operations, see [Appendix:
@@ -374,13 +340,11 @@ CREATE ROLE <role>;
 > **Tip:** Role names cannot start with `mz_` and `pg_` as they are reserved for system
 > roles.
 
-
 For example, the following creates:
 - A role for users who need to perform compute/transform operations in the
   compute/transform.
 - A role for users who need to manage indexes on the serving cluster(s).
 - A role for users who need to read results from the serving cluster.
-
 
 **View manager role:**
 
@@ -409,8 +373,6 @@ CREATE ROLE data_reader;
 
 ```
 
-
-
 In Materialize, a role is created with inheritance support. With inheritance,
 when a role is granted to another role (i.e., the target role), the target role
 inherits privileges (not role attributes and parameters) through the other role.
@@ -437,7 +399,6 @@ Once a role is created, you can:
 
 > **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
-
 See also:
 
 - For a list of required privileges for specific operations, see [Appendix:
@@ -450,11 +411,9 @@ Privileges by command](/security/appendix/appendix-command-privileges/).
 > - The examples below assume the roles only need privileges to objects in the
 >   `mydb.sales` schema.
 
-
 ### View privileges for a role
 
 > **Privilege(s) required to run the command:** No specific privilege is required to run the `SHOW PRIVILEGES` 
-
 
 To view privileges granted to a role, you can use the [`SHOW
 PRIVILEGES`](/sql/show-privileges) command, substituting `<role>` with the role
@@ -469,12 +428,9 @@ SHOW PRIVILEGES FOR <role>;
 > [`PUBLIC`](/security/appendix/appendix-built-in-roles/#public-role). As
 > such, every role includes inherited privileges from `PUBLIC`.
 
-
 For example:
 
-
 **User:**
-
 
 To view privileges for a user, run [`SHOW PRIVILEGES`](/sql/show-privileges)
 on the user's role. For example, show the privileges for the `blue.berry@example.com` role created in the
@@ -483,7 +439,6 @@ on the user's role. For example, show the privileges for the `blue.berry@example
 SHOW PRIVILEGES FOR "blue.berry@example.com";
 
 ```
-
 
 The results show that the role currently has only the privileges inherited
 through the `PUBLIC` role.
@@ -497,10 +452,7 @@ through the `PUBLIC` role.
 | mz_system | PUBLIC  | null        | null   | quickstart  | cluster     | USAGE          |
 ```
 
-
-
 **Service account role:**
-
 
 To view privileges for a service account, run [`SHOW
 PRIVILEGES`](/sql/show-privileges) on the service account's role. For example, show the privileges for the `sales_report_app` role created in the
@@ -521,7 +473,6 @@ through the `PUBLIC` role.
 | mz_system | PUBLIC  | null        | null   | materialize | database    | USAGE          |
 | mz_system | PUBLIC  | null        | null   | quickstart  | cluster     | USAGE          |
 ```
-
 
 **Functional roles:**
 
@@ -546,7 +497,6 @@ through the `PUBLIC` role.
 | mz_system | PUBLIC  | null        | null   | quickstart  | cluster     | USAGE          |
 ```
 
-
 **Serving index manager role:**
 
 Show the privileges for the `serving_index_manager` role created in the
@@ -567,7 +517,6 @@ through the `PUBLIC` role.
 | mz_system | PUBLIC  | null        | null   | materialize | database    | USAGE          |
 | mz_system | PUBLIC  | null        | null   | quickstart  | cluster     | USAGE          |
 ```
-
 
 **Data reader role:**
 
@@ -590,16 +539,9 @@ through the `PUBLIC` role.
 | mz_system | PUBLIC  | null        | null   | quickstart  | cluster     | USAGE          |
 ```
 
-
-
-
-
-
-
 > **Tip:** For the `SHOW PRIVILEGES` command, you can add a `WHERE` clause to filter by the
 > return fields; e.g., `SHOW PRIVILEGES FOR view_manager WHERE
 > name='quickstart';`.
-
 
 ### Grant privileges to a role
 
@@ -608,7 +550,6 @@ a role, use the [`GRANT PRIVILEGE`](/sql/grant-privilege/) statement (see
 [`GRANT PRIVILEGE`](/sql/grant-privilege/) for the full syntax)
 
 > **Privilege(s) required to run the command:** - Ownership of affected objects. - `USAGE` privileges on the containing database if the affected object is a schema. - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema. - _superuser_ status if the privilege is a system privilege. To override the **object ownership** requirements to grant privileges, run as a user with superuser privileges; e.g. `mz_system` user. 
-
 
 ```mzsql
 GRANT <PRIVILEGE> ON <OBJECT_TYPE> <object_name> TO <role>;
@@ -629,8 +570,6 @@ For example, the following grants privileges to the functional roles.
 > - For objects in a schema, access is also required for the schema.
 > For details on SQL operations and needed privileges, see [Appendix: Privileges
 > by command](/security/appendix/appendix-command-privileges/).
-
-
 
 **View manager role:**
 
@@ -666,7 +605,6 @@ GRANT CREATE ON CLUSTER compute_cluster TO view_manager;
 GRANT CREATE ON SCHEMA mydb.sales TO view_manager;
 
 ```
-
 
 Review the privileges granted to the `view_manager` role:
 ```mzsql
@@ -710,7 +648,6 @@ privileges](/security/self-managed/access-control/manage-roles/#manage-future-pr
 to automatically grant privileges on new objects.
 
 {{</ important >}}
-
 
 **Serving index manager role:**
 
@@ -778,7 +715,6 @@ for details and example of changing ownership of objects.
 
 {{</ note >}}
 
-
 **Data reader role:**
 The following example grants the `data_reader` role privileges to run:
 
@@ -800,7 +736,6 @@ GRANT SELECT ON ALL TABLES IN SCHEMA mydb.sales TO data_reader;
 -- materialized views, and sources.
 
 ```
-
 
 Review the privileges granted to the `data_reader` role:
 ```mzsql
@@ -843,9 +778,6 @@ to automatically grant privileges on new objects.
 
 {{</ important >}}
 
-
-
-
 ### Grant a role to another role
 
 Once a role is created, you can modify its privileges either:
@@ -861,13 +793,11 @@ Once a role is created, you can modify its privileges either:
 > individual user or service account roles. You can also grant functional roles to
 > other functional roles to compose more complex functional roles.
 
-
 To grant a role to another role (where the role can be a user role/service
 account role/functional role), use the [`GRANT ROLE`](/sql/grant-role/)
 statement (see [`GRANT ROLE`](/sql/grant-role/) for full syntax):
 
 > **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. `mz_system` user has the required privileges on the system. 
-
 
 ```mzsql
 GRANT <role> [, <role>...] to <target_role> [, <target_role> ...];
@@ -885,9 +815,7 @@ In the following examples,
 - The functional role `data_reader` is granted to the service account role
   `sales_report_app`.
 
-
 **Grant view_manager role:**
-
 
 The following grants the `view_manager` role to the role associated with the
 user `blue.berry@example.com`.
@@ -895,7 +823,6 @@ user `blue.berry@example.com`.
 GRANT view_manager TO "blue.berry@example.com";
 
 ```
-
 
 Review the privileges granted to the `blue.berry@example.com` role:
 ```mzsql
@@ -922,8 +849,6 @@ included.
 | mz_system | view_manager | null        | null   | compute_cluster | cluster     | CREATE         |
 | mz_system | view_manager | null        | null   | compute_cluster | cluster     | USAGE          |
 ```
-
-
 
 After the `view_manager` role is granted to `"blue.berry@example.com"`,
 `"blue.berry@example.com"` can create objects in the `mydb.sales` schema on
@@ -985,9 +910,6 @@ the schema and vice versa. For privileges on new objects, you can either:
 privileges](/security/self-managed/access-control/manage-roles/#manage-future-privileges-for-a-role)
 to automatically grant privileges on new objects.
 
-
-
-
 **Grant serving_index_manager role:**
 The following grants the `serving_index_manager` role to the functional role
 `view_manager`, which already has privileges to create materialized views in
@@ -1000,7 +922,6 @@ GRANT serving_index_manager TO view_manager;
 
 Review the privileges of `view_manager` as well as `"blue.berry@example.com"`
 (a member of  `view_manager`) after the grant.
-
 
 **Privileges for view_manager:**
 Review the privileges granted to the `view_manager` role:
@@ -1031,8 +952,6 @@ any.
 | mz_system | view_manager          | null        | null   | compute_cluster | cluster     | CREATE         |
 | mz_system | view_manager          | null        | null   | compute_cluster | cluster     | USAGE          |
 ```
-
-
 
 **Privileges for blue.berry@example.com:**
 
@@ -1070,13 +989,6 @@ all applicable privileges on the objects they create.
 | mz_system              | view_manager           | null        | null   | compute_cluster     | cluster           | USAGE          |
 ```
 
-
-
-
-
-
-
-
 To create indexes on an object, in addition to specific `CREATE` privileges
 (granted by the `serving_index_manager` role), the user needs to be the
 owner of the object.
@@ -1099,9 +1011,6 @@ SELECT * from orders_daily_totals;
 ```
 To allow others in the `view_manager` role to create indexes, see [Change
 ownership of objects](/security/self-managed/access-control/manage-roles/#change-ownership-of-objects).
-
-
-
 
 **Grant data_reader role:**
 
@@ -1135,8 +1044,6 @@ also be included.
 | mz_system | data_reader | null        | null   | serving_cluster | cluster     | USAGE          |
 ```
 
-
-
 As the privileges show, after the `data_reader` role is granted to the
 `sales_report_app` service account role, `sales_report_app` can read from
 the three tables in the `mydb.sales` schema on the `serving_cluster`.
@@ -1160,16 +1067,11 @@ To allow `sales_report_app` or `data_reader` to read from the new objects in
 privileges](/security/self-managed/access-control/manage-roles/#manage-future-privileges-for-a-role)
 to automatically grant `SELECT` privileges on new objects.
 
-
-
-
-
 ### Revoke privileges from a role
 
 To remove privileges from a role, use the [`REVOKE <privilege>`](/sql/revoke-privilege/) statement:
 
 > **Privilege(s) required to run the command:** - Ownership of affected objects. - `USAGE` privileges on the containing database if the affected object is a schema. - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema. - _superuser_ status if the privilege is a system privilege. 
-
 
 ```mzsql
 REVOKE <PRIVILEGE> ON <OBJECT_TYPE> <object_name> FROM <role>;
@@ -1180,7 +1082,6 @@ REVOKE <PRIVILEGE> ON <OBJECT_TYPE> <object_name> FROM <role>;
 To revoke a role from another role, use the [`REVOKE <role>`](/sql/revoke-role/) statement:
 
 > **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the systems. 
-
 
 ```mzsql
 REVOKE <role> FROM <target_role>;
@@ -1197,7 +1098,6 @@ REVOKE data_reader FROM sales_report_app;
 > role nor inherits the revoked role's privileges. **However**, privileges are
 > cumulative: if the target role inherits the same privilege(s) from another role,
 > the target role still has the privilege(s) through the other role.
-
 
 ## Manage future privileges for a role
 
@@ -1222,7 +1122,6 @@ privileges were set.
 
 > **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
-
 ### View default privileges
 
 To view default privileges, you can use the [`SHOW DEFAULT
@@ -1232,16 +1131,13 @@ the full syntax):
 
 > **Privilege(s) required to run the command:** No specific privilege is required to run the `SHOW DEFAULT PRIVILEGES`. 
 
-
 ```mzsql
 SHOW DEFAULT PRIVILEGES FOR <role>;
 ```
 
 For example:
 
-
 **User:**
-
 
 To view default privileges for a user, run [`SHOW DEFAULT
 PRIVILEGES`](/sql/show-default-privileges) on the user's role. For example,
@@ -1258,10 +1154,7 @@ the `PUBLIC` role.
 {{% include-headless
 "/headless/rbac-sm/show-default-privileges-new-roles" %}}
 
-
-
 **Service account role:**
-
 
 To view default privileges for a service account, run [`SHOW DEFAULT
 PRIVILEGES`](/sql/show-default-privileges) on the service account's role. For example, show the default privileges for the `sales_report_app` role created in the
@@ -1275,8 +1168,6 @@ are the default privileges it has as a member of the `PUBLIC` role.
 
 {{% include-headless
 "/headless/rbac-sm/show-default-privileges-new-roles" %}}
-
-
 
 **Functional roles:**
 
@@ -1294,7 +1185,6 @@ the default privileges it has as a member of the `PUBLIC` role.
 {{% include-headless
 "/headless/rbac-sm/show-default-privileges-new-roles" %}}
 
-
 **Serving index manager role:**
 
 Show the default privileges for the `serving_index_manager` role created in
@@ -1310,7 +1200,6 @@ the `PUBLIC` role.
 {{% include-headless
 "/headless/rbac-sm/show-default-privileges-new-roles" %}}
 
-
 **Data reader role:**
 
 Show the default privileges for the `data_reader` role created in the
@@ -1325,12 +1214,6 @@ the default privileges it has as a member of the `PUBLIC` role.
 {{% include-headless
 "/headless/rbac-sm/show-default-privileges-new-roles" %}}
 
-
-
-
-
-
-
 ### Alter default privileges
 
 To define default privilege for objects created by a role, use the [`ALTER
@@ -1338,7 +1221,6 @@ DEFAULT PRIVILEGES`](/sql/alter-default-privileges) command (see  [`ALTER
 DEFAULT PRIVILEGES`](/sql/alter-default-privileges) for the full syntax):
 
 > **Privilege(s) required to run the command:** - Role membership in `role_name`. - `USAGE` privileges on the containing database if `database_name` is specified. - `USAGE` privileges on the containing schema if `schema_name` is specified. - _superuser_ status if the _target_role_ is `PUBLIC` or **ALL ROLES** is specified. 
-
 
 ```mzsql
 ALTER DEFAULT PRIVILEGES FOR ROLE <object_creator>
@@ -1357,8 +1239,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE <object_creator>
 > - As with any other grants, the privileges granted to the `<target_role>` are
 >   inherited by the members of the `<target_role>`.
 
-
-
 **Specify blue.berry as the object creator:**
 
 The following updates the default privileges for new tables, views,
@@ -1374,7 +1254,6 @@ GRANT SELECT ON TABLES TO view_manager, data_reader;
 -- `TABLES` refers to tables, views, materialized views, and sources.
 
 ```
-
 
 Afterwards, if `blue.berry@example.com` creates a new materialized view in
 the `mydb.sales` schema, the `view_manager` and `data_reader` roles are
@@ -1397,8 +1276,6 @@ ON o.item = i.item;
 To verify that the default privileges have been automatically granted, you can
 run `SHOW PRIVILEGES`:
 
-
-
 **view_manager:**
 
 Verify the privileges for `view_manager`:
@@ -1415,9 +1292,7 @@ materialized view:
  blue.berry@example.com | view_manager          | mydb        | sales  | magic               | materialized-view | SELECT
 ```
 
-
 **data_reader:**
-
 
 Verify the privileges for `data_reader`:
 ```mzsql
@@ -1432,8 +1307,6 @@ materialized view:
 ------------------------+-------------+-------------+--------+---------------------+-------------------+----------------
  blue.berry@example.com | data_reader | mydb        | sales  | magic               | materialized-view | SELECT
 ```
-
-
 
 **sales_report_app (a member of data_reader):**
 Verify the privileges for `sales_report_app` (a member of the
@@ -1451,13 +1324,7 @@ it inherits through the `data_reader` role:
  blue.berry@example.com | data_reader | mydb        | sales  | magic               | materialized-view | SELECT
 ```
 
-
-
-
-
-
 **Specify PUBLIC as the object creator:**
-
 
 With the exception of the `PUBLIC` role, the `<object_creator>` role is
 **not** transitive. That is, default privileges that specify a functional
@@ -1481,7 +1348,6 @@ GRANT INSERT ON TABLES TO view_manager;
 
 ```
 
-
 If `lemon@example.com` creates a new table `only_lemon`, the above default
 `INSERT` privilege will not apply as the object creator must be
 `view_manager`, not a member of `view_manager`.
@@ -1499,8 +1365,6 @@ SHOW PRIVILEGES FOR view_manager where name = 'only_lemon';
 The `SHOW PRIVILEGES FOR view_manager  where name = 'only_lemon';` returns 0
 rows.
 
-
-
 However, if `view_manager` is the **only role** that has `CREATE` privileges
 on `mydb.sales` schema, you can specify `PUBLIC` as the `<object_creator>`.
 Then, the default privilege will apply to all objects created by
@@ -1513,9 +1377,6 @@ GRANT INSERT ON TABLES TO view_manager;
 -- sources, the `CREATE` privilege will only apply to tables.
 
 ```
-
-
-
 
 If `lemon@example.com` now creates a new table `shared_lemon`, the above
 default `INSERT` privilege will be granted to `view_manager`.
@@ -1532,9 +1393,7 @@ CREATE TABLE shared_lemon (id INT);
 To verify that the default privileges have been automatically granted to others,
 you can run `SHOW PRIVILEGES`:
 
-
 **view_manager:**
-
 
 Verify the privileges for `view_manager`:
 ```mzsql
@@ -1548,7 +1407,6 @@ SHOW PRIVILEGES FOR view_manager where name = 'shared_lemon';
 --------------------+--------------+----------+--------+--------------+-------------+----------------
   lemon@example.com | view_manager | mydb     | sales  | shared_lemon | table       | INSERT
 ```
-
 
 **blue.berry@example.com:**
 
@@ -1565,11 +1423,6 @@ SHOW PRIVILEGES FOR "blue.berry@example.com" where name = 'shared_lemon';
   lemon@example.com | view_manager | mydb     | sales  | shared_lemon | table       | INSERT
 ```
 
-
-
-
-
-
 ## Show roles in system
 
 To view the roles in the system, use the [`SHOW ROLES`](/sql/show-roles/) command:
@@ -1577,7 +1430,6 @@ To view the roles in the system, use the [`SHOW ROLES`](/sql/show-roles/) comman
 ```mzsql
 SHOW ROLES [ LIKE <pattern>  | WHERE <condition(s)> ];
 ```
-
 
 For example, to show all roles:
 ```mzsql
@@ -1597,7 +1449,6 @@ serving_index_manager  |
 view_manager           |
 ```
 
-
 ## Drop a role
 
 To remove a role from the system, use the [`DROP ROLE`](/sql/drop-role/)
@@ -1605,15 +1456,12 @@ command:
 
 > **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. 
 
-
 ```mzsql
 DROP ROLE <role>;
 ```
 
 > **Note:** You cannot drop a role if it contains any members. Before dropping a role,
 > revoke the role from all its members. See [Revoke a role](#revoke-a-role-from-another-role).
-
-
 
 ## Alter role
 
@@ -1644,8 +1492,6 @@ ALTER ROLE "blue.berry@example.com" SET search_path = sales; -- i.e., schema
   issue a `SET ...` command to override these values for the current
   session.
 
-
-
 In Materialize, when you grant a role to another role (user role/service
 account role/independent role), the target role inherits only the privileges
 of the granted role. **Role configurations are not inherited.** For example,
@@ -1668,7 +1514,6 @@ after this change:
 {{% include-headless "/headless/rbac-sm/alter-role-tip" %}}
 {{</ tip >}}
 
-
 ## Change ownership of objects
 
 Certain [commands on an
@@ -1684,7 +1529,6 @@ account role/functional role), you can use the [ALTER ... OWNER
 TO](/sql/#rbac) command:
 
 > **Privilege(s) required to run the command:** - Ownership of the object being altered. - Role membership in `new_owner`. - `CREATE` privileges on the containing cluster if the object is a cluster replica. - `CREATE` privileges on the containing database if the object is a schema. - `CREATE` privileges on the containing schema if the object is namespaced by a schema. 
-
 
 ```mzsql
 ALTER <object_type> <object_name> OWNER TO <role>;
@@ -1713,8 +1557,6 @@ example](/security/self-managed/access-control/manage-roles/#alter-default-privi
  lemon@example.com | view_manager      | mydb     | sales  | shared_lemon | table       | INSERT
 ```
 
-
-
 Review `view_manager`'s privileges on the `shared_lemon` table.
 ```mzsql
 SHOW PRIVILEGES FOR view_manager where name = 'shared_lemon';
@@ -1730,14 +1572,11 @@ example](/security/self-managed/access-control/manage-roles/#alter-default-privi
  lemon@example.com | view_manager | mydb     | sales  | shared_lemon | table       | INSERT
 ```
 
-
-
 Change the owner of the `shared_lemon` table to `view_manager`.
 ```mzsql
 ALTER TABLE mydb.sales.shared_lemon OWNER TO view_manager;
 
 ```
-
 
 After running the command, review `view_manager`'s privileges on the
 `shared_lemon` table.
@@ -1757,8 +1596,6 @@ view_manager | view_manager | mydb     | sales  | shared_lemon | table       | S
 view_manager | view_manager | mydb     | sales  | shared_lemon | table       | UPDATE
 ```
 
-
-
 Review `lemon@example.com`'s privileges on the `shared_lemon` table.
 ```mzsql
 SHOW PRIVILEGES FOR "lemon@example.com" where name = 'shared_lemon';
@@ -1775,7 +1612,6 @@ The results show that `lemon@example.com` now only has access through
  view_manager | view_manager | mydb     | sales  | shared_lemon | table       | SELECT
  view_manager | view_manager | mydb     | sales  | shared_lemon | table       | UPDATE
 ```
-
 
 ## See also
 

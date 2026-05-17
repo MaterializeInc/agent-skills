@@ -4,8 +4,6 @@ A secret securely stores sensitive credentials (like passwords and SSL keys) in 
 
 ## Syntax
 
-
-
 ```mzsql
 CREATE SECRET [IF NOT EXISTS] <name> AS <value>;
 
@@ -16,7 +14,6 @@ CREATE SECRET [IF NOT EXISTS] <name> AS <value>;
 | `IF NOT EXISTS` | If specified, do not generate an error if a secret of the same name already exists.  |
 | `<name>` | The identifier for the secret.  |
 | `<value>` | The value for the secret. The value expression may not reference any relations, and must be implicitly castable to `bytea`.  |
-
 
 ## Examples
 

@@ -24,7 +24,6 @@ beneath it. That is,
 sinks, indexes, types, functions, and secrets;
 - Tables, views, and materialized views can contain: columns.
 
-
 ### Qualifying names
 
 Namespaces enable disambiguation and access to objects across different
@@ -46,7 +45,6 @@ databases and schemas. Namespaces use the dot notation format
   > **Tip:** You can use fully qualified names to reference objects within the same
 >   database (or within the same database and schema). However, for brevity and
 >   readability, you may prefer to use qualified names instead.
-
 
 - **Qualified names**
 
@@ -72,7 +70,6 @@ databases and schemas. Namespaces use the dot notation format
 ## Namespace constraints
 
 All namespaces must adhere to [identifier rules](/sql/identifiers).
-
 
 ## Other objects
 

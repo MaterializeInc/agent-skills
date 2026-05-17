@@ -8,11 +8,9 @@
 SHOW [REDACTED] CREATE VIEW <view_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available view names, see [`SHOW VIEWS`](/sql/show-views).
 

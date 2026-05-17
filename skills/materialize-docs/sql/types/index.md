@@ -2,8 +2,6 @@
 
 Learn more about the SQL data types supported in Materialize
 
-
-
 Materialize's type system consists of two classes of types:
 
 - [Built-in types](#built-in-types)
@@ -239,12 +237,9 @@ SELECT pg_typeof(
 
 [create-type]: ../create-type
 
-
-
 ---
 
 ## Array types
-
 
 Arrays are a multidimensional sequence of any non-array type.
 
@@ -254,7 +249,6 @@ Arrays are a multidimensional sequence of any non-array type.
 > array types. Unfortunately, PostgreSQL arrays have odd semantics and do not
 > interoperate well with modern data formats like JSON and Avro.
 > Use the [`list` type](/sql/types/list) instead.
-
 
 ## Details
 
@@ -417,11 +411,9 @@ SELECT ARRAY[ARRAY[1, 2], ARRAY[NULL, 4]]::text
  {{1,2},{NULL,4}}
 ```
 
-
 ---
 
 ## boolean type
-
 
 `boolean` data expresses a binary value of either `TRUE` or `FALSE`.
 
@@ -435,8 +427,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 TRUE | FALSE
 
@@ -446,7 +436,6 @@ TRUE | FALSE
 | --- | --- |
 | **TRUE** | The boolean value `true`.  |
 | **FALSE** | The boolean value `false`.  |
-
 
 ## Details
 
@@ -485,11 +474,9 @@ SELECT FALSE AS f_val;
  f
 ```
 
-
 ---
 
 ## bytea type
-
 
 The `bytea` data type allows the storage of [binary strings](https://www.postgresql.org/docs/9.0/datatype-binary.html) or what is typically thought of as "raw bytes". Materialize supports both the typical formats for input and output: the hex format and the historical PostgreSQL escape format. The hex format is preferred.
 
@@ -508,8 +495,6 @@ Detail | Info
 
 ### Hex format
 
-
-
 ```mzsql
 '\x<binary_string>'
 
@@ -519,12 +504,9 @@ Detail | Info
 | --- | --- |
 | `'\x<binary_string>'` | A hex-formatted binary string. The string is preceded by `\x` followed by hexadecimal digits. In some cases, the initial backslash may need to be escaped by doubling it (`\\`).  |
 
-
 In some cases, the initial backslash may need to be escaped by doubling it (`\\`). For more information, see the PostgreSQL documentation on [string constants](https://www.postgresql.org/docs/13/sql-syntax-lexical.html#SQL-SYNTAX-STRINGS).
 
 ### Escape format
-
-
 
 ```mzsql
 '\<binary_string>'
@@ -534,7 +516,6 @@ In some cases, the initial backslash may need to be escaped by doubling it (`\\`
 | Syntax element | Description |
 | --- | --- |
 | `'\<binary_string>'` | An escape-formatted binary string. The string is preceded by `\`. Octet values can be escaped by converting them into their three-digit octal values and preceding them with backslashes; the backslash itself can be escaped as a double backslash. Certain values must be escaped: zero octet (`\000`), single quote (`\047` or `''''`), backslash (`\134` or `\\`), and non-printable octets (`\xxx` where `xxx` is the octal value).  |
-
 
 In the escape format, octet values can be escaped by converting them into their three-digit octal values and preceding them with backslashes; the backslash itself can be escaped as a double backslash. While any octet value *can* be escaped, the values in the table below *must* be escaped.
 
@@ -557,7 +538,6 @@ You can [cast](../../functions/cast) `bytea` to [`text`](../text) by assignment.
 > [hex-formatted](#hex-format) string, even if the byte array consists entirely of
 > printable characters. See [handling character data](#handling-character-data)
 > for alternatives.
-
 
 #### To `bytea`
 
@@ -604,7 +584,6 @@ SELECT convert_from('\x68656c6c6f20f09f918b', 'utf8') AS text;
 
 ## Examples
 
-
 ```mzsql
 SELECT '\xDEADBEEF'::bytea AS bytea_val;
 ```
@@ -625,11 +604,9 @@ SELECT '\000'::bytea AS bytea_val;
  \x00
 ```
 
-
 ---
 
 ## date type
-
 
 `date` data expresses a date without a specified time.
 
@@ -645,8 +622,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 DATE '<date_str>' [<time_str>] [<tz_offset>]
 
@@ -657,7 +632,6 @@ DATE '<date_str>' [<time_str>] [<tz_offset>]
 | `'<date_str>'` | A string representing a date in `Y-M-D`, `Y M-D`, `Y M D` or `YMD` format.  |
 | `<time_str>` | _(NOP)_ A string representing a time of day in `H:M:S.NS` format. Can be separated from `<date_str>` by `T`.  |
 | `<tz_offset>` | _(NOP)_ The timezone's distance from UTC, in hours, specified as `+HH` or `-HH`.  |
-
 
 ## Details
 
@@ -701,11 +675,9 @@ SELECT DATE '2007-02-01' AS date_v;
  2007-02-01
 ```
 
-
 ---
 
 ## Floating-point types
-
 
 ## `real` info
 
@@ -729,8 +701,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 <int> [.<frac>]
 
@@ -740,7 +710,6 @@ Detail | Info
 | --- | --- |
 | `<int>` | An integer value.  |
 | `.<frac>` | Optional. Fractional decimal digits.  |
-
 
 ## Details
 
@@ -806,11 +775,9 @@ SELECT 1.23::real AS real_v;
     1.23
 ```
 
-
 ---
 
 ## Integer types
-
 
 ## `smallint` info
 
@@ -909,11 +876,9 @@ SELECT 1.23::integer AS int_v;
      1
 ```
 
-
 ---
 
 ## interval type
-
 
 `interval` data expresses a duration of time.
 
@@ -933,8 +898,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 INTERVAL '<time_expr>' [<head_time_unit> TO <tail_time_unit>]
 
@@ -946,10 +909,7 @@ INTERVAL '<time_expr>' [<head_time_unit> TO <tail_time_unit>]
 | `<head_time_unit>` | Optional. Return an interval without `time_unit`s larger than `<head_time_unit>`. Note that this differs from PostgreSQL's implementation, which ignores this clause.  |
 | **TO** `<tail_time_unit>` | Optional. If specified: (1) Return an interval without `time_unit` smaller than `<tail_time_unit>`. (2) If the final `time_expr` is only a number, treat the `time_expr` as belonging to `<tail_time_unit>`. This is the case of the most common `interval` format like `INTERVAL '1' MINUTE`.  |
 
-
 ### `time_expr` syntax
-
-
 
 ```mzsql
 [+ | -] (<ym_str> | <time_str> | <int> [.<frac>] [<time_unit>])
@@ -963,10 +923,7 @@ INTERVAL '<time_expr>' [<head_time_unit> TO <tail_time_unit>]
 | `<time_str>` | A string representing hours, minutes, seconds, and nanoseconds in `H:M:S.NS` format.  |
 | `<int>` [`.<frac>`] [`<time_unit>`] | An integer or decimal number, optionally followed by a time unit.  |
 
-
 ### `time_unit` syntax
-
-
 
 ```mzsql
 MILLENNIUM | CENTURY | DECADE | YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECONDS | MICROSECONDS
@@ -976,7 +933,6 @@ MILLENNIUM | CENTURY | DECADE | YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MI
 | Syntax element | Description |
 | --- | --- |
 | `<time_unit>` | A time unit keyword. Valid values: `MILLENNIUM`, `CENTURY`, `DECADE`, `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND`, `MILLISECONDS`, `MICROSECONDS`.  |
-
 
 ## Details
 
@@ -1141,11 +1097,9 @@ SELECT TIMESTAMP '2020-01-01 8:00:00' + INTERVAL '1' DAY AS ts_interaction;
  2020-01-02 08:00:00
 ```
 
-
 ---
 
 ## jsonb type
-
 
 `jsonb` data expresses a JSON object similar to
 [PostgreSQL's implementation](https://www.postgresql.org/docs/current/datatype-json.html).
@@ -1162,8 +1116,6 @@ implementation of `json`.
 
 ## Syntax
 
-
-
 ```mzsql
 '<json_string>'::JSONB
 
@@ -1172,7 +1124,6 @@ implementation of `json`.
 | Syntax element | Description |
 | --- | --- |
 | `'<json_string>'` | A well-formed [JSON object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON) string.  |
-
 
 ## `jsonb` functions + operators
 
@@ -1191,7 +1142,6 @@ Operator | RHS Type | Description
 `@>` | `jsonb` | Does element contain RHS? ([docs](/sql/types/jsonb/#lhs-contains-rhs-))
 <code>&lt;@</code> | `jsonb` | Does RHS contain element? ([docs](/sql/types/jsonb/#rhs-contains-lhs-))
 `?` | `text` | Is RHS a top-level key? ([docs](/sql/types/jsonb/#search-top-level-keys-))
-
 
 ### Functions
 
@@ -1370,7 +1320,6 @@ Note the extra double quotes on the right-hand side of the comparison.
 ### Parsing
 
 Manually parsing JSON-formatted data in SQL can be tedious. You can use the [interactive JSON parser widget](https://materialize.com/docs/sql/types/jsonb/#parsing) to automatically turn a sample JSON payload into a parsing view with the individual fields mapped to columns.
-
 
 ## Examples
 
@@ -1613,7 +1562,6 @@ CROSS JOIN jsonb_array_elements(t.json_col) AS obj;
 
 <hr/>
 
-
 #### `jsonb_array_elements_text`
 
 ```mzsql
@@ -1796,11 +1744,9 @@ Note that the output is `jsonb`.
 [`list`]: /sql/types/list
 [`array`]: /sql/types/array
 
-
 ---
 
 ## List types
-
 
 Lists are ordered sequences of homogenously typed elements. Lists' elements can
 be other lists, known as "layered lists."
@@ -1813,8 +1759,6 @@ be other lists, known as "layered lists."
 
 ## Syntax
 
-
-
 ```mzsql
 LIST [ <element> [, ...] ]
 LIST ( <query> )
@@ -1825,7 +1769,6 @@ LIST ( <query> )
 | --- | --- |
 | **LIST** [ `<element>` [, ...] ] | Construct a list from a comma-separated list of elements. All elements must be of the same type. You can nest `LIST` constructors to create layered lists, or elide the `LIST` keyword from interior list expressions.  |
 | **LIST** ( `<query>` ) | Construct a list from the results of a subquery. The subquery must return a single column. Note that parentheses are used rather than square brackets in this form.  |
-
 
 ## List functions + operators
 
@@ -1854,7 +1797,6 @@ Operator | Description
 <code>listelementany &vert;&vert; listany</code> | Prepend the element to the list.
 <code>listany @&gt; listany</code> | Check if the first list contains all elements of the second list.
 <code>listany &lt;@ listany</code> | Check if all elements of the first list are contained in the second list.
-
 
 ### Functions
 
@@ -2340,16 +2282,6 @@ SELECT '{{1.5,NULL},{2.25}}'::numeric(38,2) list list AS text_to_list;
 > **Note:** Like [array containment operators in PostgreSQL](https://www.postgresql.org/docs/current/functions-array.html#FUNCTIONS-ARRAY),
 > list containment operators in Materialize **do not** account for duplicates.
 
-
-
-
-
-
-
-
-
-
-
 ```mzsql
 SELECT LIST[1,4,3] @> LIST[3,1] AS contains;
 ```
@@ -2367,7 +2299,6 @@ SELECT LIST[2,7] <@ LIST[1,7,4,2,6] AS is_contained_by;
 -----------------
  t
 ```
-
 
 ```mzsql
 SELECT LIST[7,3,1] @> LIST[1,3,3,3,3,7] AS contains;
@@ -2387,11 +2318,9 @@ SELECT LIST[1,3,7,NULL] @> LIST[1,3,7,NULL] AS contains;
  f
 ```
 
-
 ---
 
 ## map type
-
 
 `map` data expresses an unordered map with [`text`](../text) keys and an
 arbitrary uniform value type.
@@ -2404,8 +2333,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 '<map_string>'::MAP[TEXT => <value_type>]
 
@@ -2415,7 +2342,6 @@ Detail | Info
 | --- | --- |
 | `'<map_string>'` | A well-formed map object string.  |
 | `::MAP[TEXT => <value_type>]` | The type annotation specifying that this is a map with [`text`](/sql/types/text/) keys and values of `<value_type>`.  |
-
 
 ## Map functions + operators
 
@@ -2429,7 +2355,6 @@ Operator | RHS Type | Description
 `?` | `string` | Is RHS a top-level key? ([docs](/sql/types/map/#search-top-level-keys-))
 `?&` | `string[]` | Does LHS contain all RHS top-level keys? ([docs](/sql/types/map/#search-for-all-top-level-keys-))
 <code>?&#124;</code> | `string[]` | Does LHS contain any RHS top-level keys? ([docs](/sql/types/map/#search-for-any-top-level-keys-))
-
 
 ### Functions
 
@@ -2720,11 +2645,9 @@ SELECT map_length(MAP['a' => 1, 'b' => 2]);
  2
 ```
 
-
 ---
 
 ## mz_aclitem type
-
 
 `mz_aclitem` data expresses a granted privilege on some object.
 
@@ -2778,11 +2701,9 @@ From | To | Required context
 
 There are no supported operations or functions on `mz_aclitem` types.
 
-
 ---
 
 ## mz_timestamp type
-
 
 `mz_timestamp` data expresses an internal timestamp.
 
@@ -2827,11 +2748,9 @@ From | To | Required context
 
 There are no supported operations or functions on `mz_timestamp` types.
 
-
 ---
 
 ## numeric type
-
 
 `numeric` data expresses an exact number with user-defined precision and scale.
 
@@ -2848,8 +2767,6 @@ Detail | Info
 
 ### Numeric values
 
-
-
 ```mzsql
 <int> [.<frac>] [E<exp>]
 
@@ -2861,10 +2778,7 @@ Detail | Info
 | `.<frac>` | Optional. Fractional decimal digits.  |
 | **E**`<exp>` | Optional. Multiply the number preceding **E** by 10<sup>exp</sup>.  |
 
-
 ### Numeric definitions
-
-
 
 ```mzsql
 numeric [(<precision>, <scale>)]
@@ -2875,7 +2789,6 @@ numeric [(<precision>, <scale>)]
 | --- | --- |
 | `<precision>` | **Ignored**: All `numeric` values in Materialize have a precision of 39.  |
 | `<scale>` | The total number of fractional decimal digits to track, e.g. `.321` has a scale of 3. `<scale>` cannot exceed the maximum precision (39).  |
-
 
 ## Details
 
@@ -3058,11 +2971,9 @@ SELECT 1.23e4 AS num_w_exp;
      12300
 ```
 
-
 ---
 
 ## oid type
-
 
 `oid` expresses a PostgreSQL-compatible object identifier.
 
@@ -3101,11 +3012,9 @@ You can [cast](../../functions/cast) from the following types to `oid`:
 
 [pg-oid]: https://www.postgresql.org/docs/current/datatype-oid.html
 
-
 ---
 
 ## record type
-
 
 A `record` is a tuple that can contain an arbitrary number of elements of any
 type.
@@ -3118,8 +3027,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 ROW ( <expr> [, ...] )
 
@@ -3128,7 +3035,6 @@ ROW ( <expr> [, ...] )
 | Syntax element | Description |
 | --- | --- |
 | **ROW** ( `<expr>` [, ...] ) | Construct a record (tuple) with an arbitrary number of elements of any type. The fields of a record are named `f1`, `f2`, and so on.  |
-
 
 ## Details
 
@@ -3188,11 +3094,9 @@ as the expression `record.f2` specifies a column named `f2` from a table named
 `record`, rather than the field `f2` from the record-typed column named
 `record`.
 
-
 ---
 
 ## text type
-
 
 `text` data expresses a Unicode string. This is equivalent to `string` or
 `varchar` in other RDBMSes.
@@ -3209,8 +3113,6 @@ Detail | Info
 
 ### Standard
 
-
-
 ```mzsql
 '<text>'
 
@@ -3219,7 +3121,6 @@ Detail | Info
 | Syntax element | Description |
 | --- | --- |
 | `'<text>'` | A standard string literal. To escape a single quote character (`'`), write two adjacent single quotes. All other characters are taken literally.  |
-
 
 To escape a single quote character (`'`) in a standard string literal, write two
 adjacent single quotes:
@@ -3240,8 +3141,6 @@ All other characters are taken literally.
 A string literal that is preceded by an `e` or `E` is an "escape" string
 literal:
 
-
-
 ```mzsql
 [e | E] '<escapable_text>'
 
@@ -3251,7 +3150,6 @@ literal:
 | --- | --- |
 | **[e \| E]** | Optional. Precede the string literal with `e` or `E` to create an escape string literal.  |
 | `'<escapable_text>'` | An escape string literal. Follows the same rules as standard string literals, except that backslash character (`\`) starts an escape sequence. The following escape sequences are recognized: `\b` (backspace), `\f` (form feed), `\n` (newline), `\r` (carriage return), `\t` (tab), `\uXXXX` or `\UXXXXXXXX` (Unicode codepoint), `\\` (literal backslash), `\'` (alternate means of escaping single quote).  |
-
 
 Escape string literals follow the same rules as standard string literals, except
 that backslash character (`\`) starts an escape sequence. The following escape
@@ -3309,11 +3207,9 @@ SELECT E'behold\nescape strings\U0001F632' AS escape_val;
  escape strings😲
 ```
 
-
 ---
 
 ## time type
-
 
 `time` data expresses a time without a specific date.
 
@@ -3328,8 +3224,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 TIME '<time_str>'
 
@@ -3338,7 +3232,6 @@ TIME '<time_str>'
 | Syntax element | Description |
 | --- | --- |
 | `'<time_str>'` | A string representing a time of day in `H:M:S.NS` format.  |
-
 
 ## Details
 
@@ -3393,11 +3286,9 @@ SELECT DATE '2001-02-03' + TIME '12:34:56' AS d_t;
  2001-02-03 12:34:56
 ```
 
-
 ---
 
 ## Timestamp types
-
 
 `timestamp` and `timestamp with time zone` data expresses a date and time in
 UTC.
@@ -3429,8 +3320,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 TIMESTAMP [(<precision>)] [WITH [OUT] TIME ZONE] '<date_str>' [<time_str>] [<tz_offset>]
 TIMESTAMPTZ [(<precision>)] '<date_str>' [<time_str>] [<tz_offset>]
@@ -3445,7 +3334,6 @@ TIMESTAMPTZ [(<precision>)] '<date_str>' [<time_str>] [<tz_offset>]
 | `'<date_str>'` | A string representing a date in `Y-M-D`, `Y M-D`, `Y M D` or `YMD` format.  |
 | `<time_str>` | Optional. A string representing a time of day in `H:M:S.NS` format. Can be separated from `<date_str>` by a space or `T`.  |
 | `<tz_offset>` | Optional. The timezone's distance from UTC, in hours, specified as `+HH` or `-HH`.  |
-
 
 ## Details
 
@@ -3518,11 +3406,9 @@ SELECT TIMESTAMPTZ '2007-02-01 15:04:05+06' AS tstz_v;
 ## Related topics
 * [`TIMEZONE` and `AT TIME ZONE` functions](../../functions/timezone-and-at-time-zone)
 
-
 ---
 
 ## Unsigned Integer types
-
 
 ## `uint2` info
 
@@ -3616,11 +3502,9 @@ SELECT 1.23::uint4 AS int_v;
      1
 ```
 
-
 ---
 
 ## uuid type
-
 
 `uuid` data expresses a universally-unique identifier (UUID).
 
@@ -3638,8 +3522,6 @@ bytes.
 
 ## Syntax
 
-
-
 ```mzsql
 UUID '<uuid_str>'
 
@@ -3648,7 +3530,6 @@ UUID '<uuid_str>'
 | Syntax element | Description |
 | --- | --- |
 | `'<uuid_str>'` | A UUID string. The standard form consists of five groups of lowercase hexadecimal digits separated by hyphens: `8-4-4-4-12` digits. Materialize also accepts UUID input where hyphens are omitted, or where some or all hexadecimal digits are uppercase. Materialize will always output UUIDs in the standard form.  |
-
 
 The standard form of a UUID consists of five groups of lowercase hexadecimal
 digits separated by hyphens, where the first group contains 8 digits, the next

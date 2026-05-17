@@ -22,8 +22,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 <int> [.<frac>]
 
@@ -33,7 +31,6 @@ Detail | Info
 | --- | --- |
 | `<int>` | An integer value.  |
 | `.<frac>` | Optional. Fractional decimal digits.  |
-
 
 ## Details
 

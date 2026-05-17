@@ -13,8 +13,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 TIME '<time_str>'
 
@@ -23,7 +21,6 @@ TIME '<time_str>'
 | Syntax element | Description |
 | --- | --- |
 | `'<time_str>'` | A string representing a time of day in `H:M:S.NS` format.  |
-
 
 ## Details
 

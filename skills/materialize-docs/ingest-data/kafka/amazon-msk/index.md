@@ -10,7 +10,6 @@ MSK cluster.
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 ## Before you begin
 
 Before you begin, you must have:
@@ -19,8 +18,6 @@ Before you begin, you must have:
 - A client machine that can interact with your cluster.
 
 ## Creating a connection
-
-
 
 **Cloud:**
 
@@ -38,15 +35,12 @@ connect:
 - **Use an SSH tunnel:** If your Kafka cluster is running in a private network,
     you can use an SSH tunnel to connect Materialize to the cluster.
 
-
-
 **PrivateLink:**
 
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the Terraform module repositories for [Amazon MSK](https://github.com/MaterializeInc/terraform-aws-msk-privatelink)
 > and [self-managed Kafka clusters](https://github.com/MaterializeInc/terraform-aws-kafka-privatelink).
-
 
 This section covers how to create AWS PrivateLink connections
 and retrieve the AWS principal needed to configure the AWS PrivateLink service.
@@ -216,9 +210,6 @@ connection you just configured:
    * For **in-region connections**, the correct availability zone is specified
       for each broker.
 
-
-
-
 **SSH Tunnel:**
 
 Materialize can connect to a Kafka broker, a Confluent Schema Registry server, a
@@ -264,7 +255,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     |-------|---------------------------------------|---------------------------------------|
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
-
 
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
@@ -351,7 +341,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
    If no validation errors are returned, the connection can be used to create a
    source connection.
 
-
 1. In Materialize, create a source connection that uses the SSH tunnel
    connection you configured in the previous section:
 
@@ -361,8 +350,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
      SSH TUNNEL ssh_connection
    );
    ```
-
-
 
 **Public cluster:**
 
@@ -471,17 +458,12 @@ or your preferred SQL client.</p>
 </span></span></code></pre></div></li>
 </ol>
 
-
-
-
-
 **Self-Managed:**
 Configure your Kafka network to allow Materialize to connect:
 
 - **Use an SSH tunnel**: If your Kafka cluster is running in a private network, you can use an SSH tunnel to connect Materialize to the cluster.
 
 - **Allow Materialize IPs**: If your Kafka cluster is publicly accessible, you can configure your firewall to allow connections from a set of static Materialize IP addresses.
-
 
 **SSH Tunnel:**
 
@@ -528,7 +510,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     |-------|---------------------------------------|---------------------------------------|
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
-
 
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
@@ -605,7 +586,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
     If no validation errors are returned, the connection can be used to create a source connection.
 
-
 1. In Materialize, create a source connection that uses the SSH tunnel
    connection you configured in the previous section:
 
@@ -615,8 +595,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
      SSH TUNNEL ssh_connection
    );
    ```
-
-
 
 **Public cluster:**
 
@@ -724,13 +702,6 @@ or your preferred SQL client.</p>
 </span></span><span class="line"><span class="cl">  <span class="p">);</span>
 </span></span></code></pre></div></li>
 </ol>
-
-
-
-
-
-
-
 
 ## Creating a source
 

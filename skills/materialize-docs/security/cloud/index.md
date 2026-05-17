@@ -2,8 +2,6 @@
 
 Security for Materialize Cloud
 
-
-
 This section covers security for Materialize Cloud.
 
 | Guide | Description |
@@ -12,24 +10,17 @@ This section covers security for Materialize Cloud.
 | [Access control](/security/cloud/access-control/) | Reference for role-based access management (RBAC) |
 | [Manage network policies](/security/cloud/manage-network-policies/) | Set up network policies |
 
-
 See also:
 
 - [Appendix: Privileges](/security/appendix/appendix-privileges/)
 - [Appendix: Privileges by commands](/security/appendix/appendix-command-privileges/)
 - [Appendix: Built-in roles](/security/appendix/appendix-built-in-roles/)
 
-
-
 ---
 
 ## Access control (Role-based)
 
-
 > **Disambiguation:** Materialize uses roles to manage access control at two levels: - [Organization roles](/security/cloud/users-service-accounts/#organization-roles), which determines the access to the Console's administrative features and sets the **initial database roles** for the user/service account. - [Database roles](/security/cloud/access-control/#role-based-access-control-rbac), which controls access to database objects and operations within Materialize. This section focuses on the database access control. For information on organization roles, see [Users and service accounts](../users-service-accounts/). 
-
-
-
 
 ## Role-based access control (RBAC)
 
@@ -72,7 +63,6 @@ Once a role is created, you can:
 
 > **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
-
 ### Initial privileges
 
 All roles in Materialize are automatically members of
@@ -81,13 +71,11 @@ such, every role includes inherited privileges from `PUBLIC`.
 
 By default, the `PUBLIC` role has the following privileges:
 
-
 **Baseline privileges via PUBLIC role:**
 
 | Privilege | Description | On database object(s) |
 | --- | --- | --- |
 | <code>USAGE</code> | Permission to use or reference an object. | <ul> <li>All <code>*.public</code> schemas (e.g., <code>materialize.public</code>);</li> <li><code>materialize</code> database; and</li> <li><code>quickstart</code> cluster.</li> </ul>  |
-
 
 **Default privileges on future objects set up for PUBLIC:**
 
@@ -136,41 +124,27 @@ the target role still has the privilege(s) through the other role.
 
 ## Best practices
 
-
-
 ### Follow the principle of least privilege
 
 Role-based access control in Materialize should follow the principle of
 least privilege. Grant only the minimum access necessary for users and
 service accounts to perform their duties.
 
-
-
 ### Restrict the assignment of **Organization Admin** role
-
 
 {{% include-headless "/headless/rbac-cloud/org-admin-recommendation" %}}
 
-
-
 ### Restrict the granting of `CREATEROLE` privilege
-
 
 {{% include-headless "/headless/rbac-cloud/createrole-consideration" %}}
 
-
-
 ### Use Reusable Roles for Privilege Assignment
-
 
 {{% include-headless "/headless/rbac-cloud/use-resusable-roles" %}}
 
 See also [Manage database roles](/security/access-control/manage-roles/).
 
-
-
 ### Audit for unused roles and privileges.
-
 
 {{% include-headless "/headless/rbac-cloud/audit-remove-roles" %}}
 
@@ -179,17 +153,12 @@ system](/security/cloud/access-control/manage-roles/#show-roles-in-system) and [
 a role](/security/cloud/access-control/manage-roles/#drop-a-role) for more
 information.
 
-
-
-
 ---
 
 ## Manage network policies
 
-
 > **Tip:** We recommend using [Terraform](https://registry.terraform.io/providers/MaterializeInc/materialize/latest/docs/resources/network_policy)
 > to configure and manage network policies.
-
 
 By default, Materialize is available on the public internet without any
 network-layer access control. As an **administrator** of a Materialize
@@ -200,7 +169,6 @@ Materialize region using IP-based rules.
 
 > **Note:** Network policies are applied **globally** (i.e., at the region level) and rules
 > can only be configured for **ingress traffic**.
-
 
 To create a new network policy, use the [`CREATE NETWORK POLICY`](/sql/create-network-policy)
 statement to provide a list of rules for allowed ingress traffic.
@@ -248,11 +216,9 @@ To drop the pre-installed `default` network policy (or the network policy
 subsequently set as default), you must first set a new system default using
 the [`ALTER SYSTEM SET network_policy`](/sql/alter-system-set) statement.
 
-
 ---
 
 ## User and service accounts
-
 
 As an administrator of a Materialize organization, you can manage the users and
 apps (via service accounts) that can access your Materialize organization and
@@ -267,7 +233,6 @@ assigned an organization role:
 | --- | --- |
 | <strong>Organization Admin</strong> | <ul> <li> <p><strong>Console access</strong>: Has access to all Materialize console features, including administrative features (e.g., invite users, create service accounts, manage billing, and organization settings).</p> </li> <li> <p><strong>Database access</strong>: Has <red><strong>superuser</strong></red> privileges in the database.</p> </li> </ul>  |
 | <strong>Organization Member</strong> | <ul> <li> <p><strong>Console access</strong>: Has no access to Materialize console administrative features.</p> </li> <li> <p><strong>Database access</strong>: Inherits role-level privileges defined by the <code>PUBLIC</code> role; may also have additional privileges via grants or default privileges. See <a href="/security/cloud/access-control/#roles-and-privileges" >Access control control</a>.</p> </li> </ul>  |
-
 
 > **Note:** - The first user for an organization is automatically assigned the
 >   **Organization Admin** role.
@@ -300,7 +265,6 @@ users](./invite-users/).
 > **Tip:** As a best practice, we recommend you use service accounts to connect external
 > applications and services to Materialize.
 
-
 As an **Organization admin**, you can create a new service account via
 the [Materialize Console](/console/) or via
 [Terraform](/manage/terraform/).
@@ -309,7 +273,6 @@ the [Materialize Console](/console/) or via
 > the account.
 > - The first time the account connects, a database role with the same name as the
 > specified service account **User** is created, and the service account creation is complete.
-
 
 For instructions on creating a new service account in your Materialize
 organization, see [Create service accounts](./create-service-accounts/).

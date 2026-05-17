@@ -6,14 +6,11 @@ Use `ALTER TYPE` to:
 
 ## Syntax
 
-
 **Rename:**
 
 ### Rename
 
 To rename a type:
-
-
 
 ```mzsql
 ALTER TYPE <name> RENAME TO <new_name>;
@@ -26,15 +23,11 @@ ALTER TYPE <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the type.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a type:
-
-
 
 ```mzsql
 ALTER TYPE <name> OWNER TO <new_owner_role>;
@@ -47,11 +40,6 @@ ALTER TYPE <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the type.  |
 To change the owner of a type, you must be the current owner and have
 membership in the `<new_owner_role>`.
-
-
-
-
-
 
 ## Privileges
 

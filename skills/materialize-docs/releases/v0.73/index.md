@@ -1,7 +1,6 @@
 # Materialize v0.73
 ## v0.73.0
 
-
 [//]: # "NOTE(morsapaes) v0.73 shipped the ASSERT NOT NULL option for sinks
 behind a feature flag."
 

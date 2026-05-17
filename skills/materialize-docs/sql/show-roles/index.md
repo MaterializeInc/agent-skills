@@ -43,7 +43,6 @@ SHOW ROLES WHERE name = 'mike@ko.sh';
  mike@ko.sh
 ```
 
-
 ## Related pages
 
 - [`CREATE ROLE`](../create-role)

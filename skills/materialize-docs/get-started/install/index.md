@@ -21,7 +21,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 <h2 id="installation-guides">Installation guides</h2>
 <p>The following installation guides are available to help you get started:</p>
 
-
 <h3 id="install-using-helm-commands">Install using Helm Commands</h3>
 <table>
   <thead>
@@ -37,7 +36,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
       </tr>
   </tbody>
 </table>
-
 
 <h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
@@ -65,7 +63,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
       </tr>
   </tbody>
 </table>
-
 
 <h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
 > **Tip:** The Terraform modules are provided as examples. They are not required for

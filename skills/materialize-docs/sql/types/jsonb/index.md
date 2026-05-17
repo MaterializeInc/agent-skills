@@ -15,8 +15,6 @@ implementation of `json`.
 
 ## Syntax
 
-
-
 ```mzsql
 '<json_string>'::JSONB
 
@@ -25,7 +23,6 @@ implementation of `json`.
 | Syntax element | Description |
 | --- | --- |
 | `'<json_string>'` | A well-formed [JSON object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON) string.  |
-
 
 ## `jsonb` functions + operators
 
@@ -44,7 +41,6 @@ Operator | RHS Type | Description
 `@>` | `jsonb` | Does element contain RHS? ([docs](/sql/types/jsonb/#lhs-contains-rhs-))
 <code>&lt;@</code> | `jsonb` | Does RHS contain element? ([docs](/sql/types/jsonb/#rhs-contains-lhs-))
 `?` | `text` | Is RHS a top-level key? ([docs](/sql/types/jsonb/#search-top-level-keys-))
-
 
 ### Functions
 
@@ -223,7 +219,6 @@ Note the extra double quotes on the right-hand side of the comparison.
 ### Parsing
 
 Manually parsing JSON-formatted data in SQL can be tedious. You can use the [interactive JSON parser widget](https://materialize.com/docs/sql/types/jsonb/#parsing) to automatically turn a sample JSON payload into a parsing view with the individual fields mapped to columns.
-
 
 ## Examples
 
@@ -465,7 +460,6 @@ CROSS JOIN jsonb_array_elements(t.json_col) AS obj;
 ```
 
 <hr/>
-
 
 #### `jsonb_array_elements_text`
 

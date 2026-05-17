@@ -32,13 +32,11 @@ Cloud Storage, or Cloudflare R2.
 
 > **Warning:** `VALIDATE CONNECTION` only works for AWS S3 connections. Using `VALIDATE CONNECTION` to test a connection to S3 compatible object storage service will result in an error. However, you can still use the connection to copy data.
 
-
 ## Step 2. Run a bulk export
 
 To export data to your target bucket, use the [`COPY TO`](/sql/copy-to/#copy-to-s3)
 command and the AWS connection you created in the previous step. Replace the `<S3_BUCKET_URI>`
 with the S3 compatible URI for your target bucket.
-
 
 **Parquet:**
 
@@ -53,8 +51,6 @@ WITH (
 For details on the Parquet writer settings Materialize uses, as well as data
 type support and conversion, check the [reference documentation](/sql/copy-to/#copy-to-s3-parquet).
 
-
-
 **CSV:**
 
 ```mzsql
@@ -64,10 +60,6 @@ WITH (
     FORMAT = 'csv'
   );
 ```
-
-
-
-
 
 ## Step 3. (Optional) Add scheduling
 

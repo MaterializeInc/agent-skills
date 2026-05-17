@@ -12,8 +12,6 @@ kind](/self-managed-deployments/installation/install-on-local-kind/).
 > but **v26**.1.0 to **v28**.0.0 is not. Skipping major versions or downgrading is
 > not supported. To upgrade from v25.2 to v26.0, you must [upgrade first to v25.2.16+](https://materialize.com/docs/self-managed/v25.2/release-notes/#v25216).
 
-
-
 ## Prerequisites
 
 ### Helm 3.2.0+
@@ -41,10 +39,6 @@ deployment does not have a license key configured, contact <a href="https://mate
 > When performing a rolling upgrade, ensure you have enough resources to support
 > having both the old and new Materialize instances running.
 
-
-
-
-
 1. Open a Terminal window.
 
 1. Go to your Materialize working directory.
@@ -62,7 +56,7 @@ deployment does not have a license key configured, contact <a href="https://mate
 1. Get the sample configuration files for the new version.
 
    ```shell
-   mz_version=v26.20.2
+   mz_version=v26.23.0
 
    curl -o upgrade-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
    ```
@@ -77,7 +71,7 @@ deployment does not have a license key configured, contact <a href="https://mate
    ```shell
    helm upgrade my-materialize-operator materialize/materialize-operator \
    --namespace=materialize \
-   --version v26.20.2 \
+   --version v26.23.0 \
    -f upgrade-values.yaml \
    --set observability.podMetrics.enabled=true
    ```
@@ -109,9 +103,8 @@ deployment has not been configured with a license key:
 
    | Field | Description |
    |-------|-------------|
-   | `environmentdImageRef` | Update the version to the new version. This should be the same as the operator version: `v26.20.2`. |
+   | `environmentdImageRef` | Update the version to the new version. This should be the same as the operator version: `v26.23.0`. |
    | `requestRollout` or `forceRollout`| Enter a new UUID. Can be generated with `uuidgen`. <br> <ul><li>`requestRollout` triggers a rollout only if changes exist. </li><li>`forceRollout` triggers a rollout even if no changes exist.</li></ul> |
-
 
    ```yaml
    apiVersion: materialize.cloud/v1alpha1
@@ -120,7 +113,7 @@ deployment has not been configured with a license key:
      name: 12345678-1234-1234-1234-123456789012
      namespace: materialize-environment
    spec:
-     environmentdImageRef: materialize/environmentd:v26.20.2 # Update version
+     environmentdImageRef: materialize/environmentd:v26.23.0 # Update version
      requestRollout: 22222222-2222-2222-2222-222222222222    # Enter a new UUID
    # forceRollout: 33333333-3333-3333-3333-333333333333    # For forced rollouts
      rolloutStrategy: WaitUntilReady                         # The mechanism to use when rolling out the new version.
@@ -158,7 +151,6 @@ deployment has not been configured with a license key:
    have been pulled.
 
 1. Open the Materialize Console. The Console should display the new version.
-
 
 ## See also
 

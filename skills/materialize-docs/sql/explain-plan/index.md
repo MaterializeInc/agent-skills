@@ -10,9 +10,7 @@ Reference page for `EXPLAIN PLAN`. `EXPLAIN PLAN` is used to inspect the plans o
 > our backwards compatibility guarantee. The syntax and output of `EXPLAIN` may
 > change arbitrarily in future versions of Materialize.
 
-
 ## Syntax
-
 
 **FOR SELECT:**
 ```mzsql
@@ -94,8 +92,6 @@ FOR ]  -- The FOR keyword is required if the PLAN keyword is specified
     <SUBSCRIBE ...>
 ;
 ```
-
-
 
 Note that the `FOR` keyword is required if the `PLAN` keyword is present. The following three statements are equivalent:
 
@@ -248,7 +244,6 @@ Used Indexes:
   - materialize.public.t1_x_idx (lookup)
 ```
 
-
 ### Reading plans
 
 Materialize plans are directed, potentially cyclic, graphs of operators. Each operator in the graph
@@ -361,8 +356,6 @@ closer to LIR than SQL. The raw plans from `EXPLAIN RAW PLAN FOR ...`
 are closer to SQL (and therefore less indicative of how the query will
 actually run).
 
-
-
 **In fully optimized physical (LIR) plans (Default):**
 The following table lists the operators that are available in the LIR plan.
 
@@ -385,7 +378,6 @@ The following table lists the operators that are available in the LIR plan.
 **Notes:**
 - **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
 - **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
-
 
 **In decorrelated and optimized plans:**
 The following table lists the operators that are available in the optimized plan.
@@ -413,7 +405,6 @@ The following table lists the operators that are available in the optimized plan
 - **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
 - **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
 
-
 **In raw plans:**
 The following table lists the operators that are available in the raw plan.
 
@@ -437,9 +428,6 @@ The following table lists the operators that are available in the raw plan.
 **Notes:**
 - **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
 - **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
-
-
-
 
 Operators are sometimes marked as `Fused ...`. This indicates that the operator is fused with its input, i.e., the operator below it. That is, if you see a `Fused X` operator above a `Y` operator:
 
@@ -593,7 +581,6 @@ MATERIALIZED VIEW my_mat_view;
 You can also explain `SUBSCRIBE` statements to understand how data changes will be streamed.
 
 > **Note:** `SUBSCRIBE` only supports `OPTIMIZED PLAN` and `PHYSICAL PLAN` stages. The `RAW`, `DECORRELATED`, and `LOCALLY OPTIMIZED` stages are not available for `SUBSCRIBE` because it takes MIR (mid-level intermediate representation) directly rather than going through HIR lowering.
-
 
 Explain the optimized plan for subscribing to a table:
 

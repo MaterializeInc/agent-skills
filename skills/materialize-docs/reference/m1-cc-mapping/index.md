@@ -2,7 +2,6 @@
 General mapping between cc and M.1 cluster sizes.
 The following table provides a general mapping between cc and M.1 cluster sizes:
 
-
 **cc to M.1:**
 
 | cc Size | M.1 Size |
@@ -22,7 +21,6 @@ The following table provides a general mapping between cc and M.1 cluster sizes:
 | <strong>128C</strong> | M.1-32xlarge |
 | <strong>256C</strong> | M.1-64xlarge |
 | <strong>512C</strong> | M.1-128xlarge |
-
 
 **M.1 to cc:**
 
@@ -44,9 +42,6 @@ The following table provides a general mapping between cc and M.1 cluster sizes:
 | M.1-32xlarge | <strong>128C</strong> |
 | M.1-64xlarge | <strong>256C</strong> |
 | M.1-128xlarge | <strong>512C</strong> |
-
-
-
 
 Some sizes have multiple mappings. When converting between cc and M.1 sizing, we
 recommend choosing the larger mapping size first.

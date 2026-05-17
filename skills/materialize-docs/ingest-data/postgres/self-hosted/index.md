@@ -6,7 +6,6 @@ Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 ## Before you begin
 
 <ul>
@@ -18,7 +17,6 @@ Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 or your preferred SQL client.</p>
 </li>
 </ul>
-
 
 ## A. Configure PostgreSQL
 
@@ -109,15 +107,11 @@ all tables in the schema instead of naming the specific tables:</p>
 </span></span></code></pre></div></li>
 </ol>
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your PostgreSQL instance is publicly
 > accessible, **you can skip this step**. For production scenarios, we recommend
 > configuring one of the network security options below.
-
-
-
 
 **Cloud:**
 
@@ -133,8 +127,6 @@ to connect:
 
 Select the option that works best for you.
 
-
-
 **Allow Materialize IPs:**
 
 1. In the [Materialize console's SQL Shell](/console/),
@@ -147,8 +139,6 @@ Select the option that works best for you.
 
 1. Update your database firewall rules to allow traffic from each IP address
    from the previous step.
-
-
 
 **Use AWS PrivateLink:**
 
@@ -256,7 +246,6 @@ option.
       show up, so you would need to wait for the endpoint service connection to
       be ready before you create a source.
 
-
 **Use an SSH tunnel:**
 
 To create an SSH tunnel from Materialize to your database, you launch an VM to
@@ -290,12 +279,6 @@ traffic from the bastion host.
 1. Update your database firewall rules to allow traffic from the SSH bastion
    host.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -317,14 +300,9 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. Update your database firewall rules to allow traffic from Materialize.
-
-
 
 **Use an SSH tunnel:**
 
@@ -347,14 +325,6 @@ traffic from the bastion host.
 1. Update your database firewall rules to allow traffic from the SSH bastion
    host.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -363,7 +333,6 @@ traffic from the bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 <p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -391,13 +360,10 @@ size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>AL
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -425,14 +391,10 @@ use:
 
    ```
 
-   
    - Replace `<host>` with your PostgreSQL endpoint.
-   
+
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
-
-
-
 
 **Use AWS PrivateLink (Cloud-only):**
 
@@ -460,11 +422,9 @@ details for Materialize to use:
    ```
 
    - Replace `<host>` with your database endpoint.
-   
+
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
-
-
 
 **Use an SSH tunnel:**
 
@@ -483,7 +443,7 @@ tunnel connection:   ```mzsql
    - Replace `<SSH_BASTION_HOST>` and `<SSH_BASTION_PORT>` with the public IP
    address and port of the SSH bastion host you created
    [earlier](#b-optional-configure-network-security).
-   
+
    - Replace `<SSH_BASTION_USER>` with the username for the key pair you
    created for your SSH bastion host.
 
@@ -517,7 +477,6 @@ CONNECTION`](/sql/validate-connection) command:
 
    ```   If no validation error is returned, move to the next step.
 
-
 1. Use the [`CREATE SECRET`](/sql/create-secret/) command to securely store the
 password for the `materialize` PostgreSQL user you created
 [earlier](#2-create-a-publication-and-a-replication-user):
@@ -541,13 +500,9 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    ```
 
    - Replace `<host>` with your PostgreSQL endpoint.
-   
+
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
-
-
-
-
 
 ### 3. Start ingesting data
 
@@ -573,7 +528,6 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 {{< /tabs >}}
-
 
 ### 4. Monitor the ingestion status
 
@@ -640,7 +594,6 @@ dataset and the size of the cluster the source is running in.</p>
 </li>
 </ol>
 
-
 ### 5. Right-size the cluster
 
 <p>After the snapshotting phase, Materialize starts ingesting change events from
@@ -703,7 +656,6 @@ your ingestion cluster.</p>
 </li>
 </ol>
 
-
 ## D. Explore your data
 
 <p>With Materialize ingesting your PostgreSQL data into durable storage, you can
@@ -728,7 +680,6 @@ or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external messa
 Materialize.</p>
 </li>
 </ul>
-
 
 ## Considerations
 

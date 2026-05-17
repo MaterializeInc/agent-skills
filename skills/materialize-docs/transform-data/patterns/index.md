@@ -2,17 +2,12 @@
 
 Learn about common Materialize query patterns.
 
-
-
 The following section provides examples of implementing some common query
 patterns in Materialize:
-
-
 
 ---
 
 ## Durable subscriptions
-
 
 [//]: # "TODO: Move to Serve results section"
 
@@ -34,8 +29,6 @@ application following a connection disruption, you can:
 
 ## History retention period
 
-
-
 By default, all user-defined sources, tables, materialized views, and indexes
 keep track of the most recent version of their underlying data. To gracefully
 recover from connection disruptions and enable lossless, _durable
@@ -45,7 +38,6 @@ that the subscription depends on to **retain history**.
 > **Important:** Configuring indexes to retain history is not recommended. Instead, consider
 > creating a materialized view for your subscription query and configuring the
 > history retention period on that view.
-
 
 To configure the history retention period for sources, tables and materialized
 views, use the `RETAIN HISTORY` option in its `CREATE` statement. This value can
@@ -89,7 +81,6 @@ See also [Considerations](#considerations).
 > not recommended. Instead, consider creating a materialized view for your
 > subscription query and configuring the history retention period on that view.
 > See [Considerations](#considerations).
-
 
 To set the history retention period for [sources](/sql/create-source/),
 [tables](/sql/create-table/), and [materialized
@@ -273,11 +264,9 @@ As a result, to guarantee that the data processing occurs only once after your
 application crashes, you must write the progress message `mz_timestamp` and all
 buffered data **together in a single transaction**.
 
-
 ---
 
 ## Partitioning and filter pushdown
-
 
 [//]: # "TODO link to the source table docs once that feature is documented."
 
@@ -295,7 +284,6 @@ more efficient.
 
 > **Note:** The `PARTITION BY` option has no impact on the order in which records are returned by queries.
 > If you want to return results in a specific order, use an `ORDER BY` clause on your [`SELECT` statement](/sql/select/).
-
 
 ## Syntax
 
@@ -318,7 +306,6 @@ Durable collections without a `PARTITION BY` option can be partitioned arbitrari
 
 > **Note:** The `PARTITION BY` option does not mean that rows with different values for the specified columns will be stored in different parts, only that rows with similar values for those columns should be stored together.
 
-
 ## Requirements
 
 Materialize currently imposes some restrictions on the list of columns in the `PARTITION BY` clause.
@@ -332,7 +319,6 @@ Materialize currently imposes some restrictions on the list of columns in the `P
     - string types like `text` and `bytea`;
     - `boolean` and `uuid`;
     - `record` types where all fields types are supported.
-
 
 ## Filter pushdown
 
@@ -409,7 +395,6 @@ If you wait a few minutes longer until there are no events that match the tempor
 
 > **Note:** The exact numbers you see here may vary: parts can be much larger than a single row, and the actual level of filtering may fluctuate for small datasets as data is compacted together internally. However, datasets of a few gigabytes or larger should reliably see benefits from this optimization.
 
-
 ### Partitioning by category
 
 Other datasets don't have a strong timeseries component, but they do have a clear notion of type or category. For example, suppose you have a collection of music venues spread across the world that you regularly query by a single country.
@@ -446,12 +431,9 @@ Other datasets don't have a strong timeseries component, but they do have a clea
 
 > **Note:** As before, we're not guaranteed to see much or any benefit from filter pushdown on small collections... but for datasets of over a few gigabytes, we should reliably be able to filter down to a subset of the parts we'd otherwise need to fetch.
 
-
-
 ---
 
 ## Percentile calculation
-
 
 Percentiles are a useful statistic to understand and interpret data distribution. This pattern covers how to use histograms to efficiently calculate percentiles in Materialize.
 
@@ -484,7 +466,6 @@ computationally expensive if there are large number of distinct values.
 Alternatively, you can get an approximate percentiles by using [HDR
 histograms](#using-hdr-histograms-to-compute-approximate-percentiles).
 
-
 To use histograms to compute exact percentiles:
 
 - First, create a histogram view that groups each distinct value into its own
@@ -498,7 +479,6 @@ To use histograms to compute exact percentiles:
   > **Note:** The use of the cross join produces a number of outputs that is quadratic in
 >   the input. And, while the results will only be linear in size, it may take a
 >   disproportionate amount of time to produce and maintain.
-
 
 ### Example
 
@@ -549,7 +529,6 @@ To use histograms to compute exact percentiles:
 >    the input. And, while the results will only be linear in size, it may take a
 >    disproportionate amount of time to produce and maintain.
 
-
 1. You can then query `distribution` by the `cumulative_density` field to
    return specific percentiles. For example, the following query returns the
    90-th percentile.
@@ -561,7 +540,6 @@ To use histograms to compute exact percentiles:
    ORDER BY cumulative_density
    LIMIT 1;
    ```
-
 
 ## Using HDR histograms to compute approximate percentiles
 
@@ -596,7 +574,6 @@ same for HDR histograms.
 > example](#example). If you have created and populated the table, skip the
 > corresponding steps.
 
-
 1. Create a table `input`:
 
    ```mzsql
@@ -615,8 +592,6 @@ same for HDR histograms.
    are first decomposed into `significand * 2^exponent`. Then by reducing the
    precision of the significand to 1/16 (4 bits), the value is reconstructed to
    an approximated value.
-
-   
 
    **Materialize Console:**
 
@@ -647,8 +622,6 @@ SELECT
 FROM buckets
 GROUP BY bucket;
 ```
-
-   
 
    **psql:**
 
@@ -682,8 +655,6 @@ SELECT
 FROM buckets
 GROUP BY bucket;
 ```
-   
-   
 
 1. Create a view `hdr_distribution` to calculate the cumulative count and the
    cumulative density for each bucket. The cumulative density is calculated by
@@ -804,11 +775,9 @@ precise percentile is `9001`.
 
 The precision of the approximation can be adapted by changing the `precision` in the definition of `hdr_histogram`. The higher the `precision`, the fewer items are kept in the same bucket and therefore the more precise the approximate percentile becomes. The lower the `precision`, the more items are kept in the same bucket and therefore the less memory is required.
 
-
 ---
 
 ## Rules execution engine
-
 
 A rules engine is a powerful way to make decisions based on data.
 With Materialize, you can execute those rules continuously.
@@ -899,7 +868,6 @@ LATERAL (
 
    > **Tip:** If running this example in a client, use `COPY(SUBSCRIBE...) TO STDOUT;`.
 
-
     ```nofmt
     mz_timestamp  | mz_diff | rule_id |   name   |      colors         | wingspan_cm
     --------------|---------|---------|----------|---------------------|------------
@@ -952,11 +920,9 @@ DROP TABLE bird_rules CASCADE;
 
 Rule execution engines can be much more complex than the minimal example presented here, but the underlying principle is the same; define the rules as **data** and use a `LATERAL` join to apply each rule to the dataset. Once you materialize the view, either by creating an index or creating it as a materialized view, the results will be kept up to date automatically as the dataset changes and as the rules change.
 
-
 ---
 
 ## Temporal filters (time windows)
-
 
 A **temporal filter** is a query condition/predicate that uses the
 [`mz_now()`](/sql/functions/now_and_mz_now) function to filter data based on a
@@ -986,7 +952,6 @@ WHERE mz_now() <= event_ts + INTERVAL '5min'
 > However, there are currently no valid operators for the [`mz_timestamp`
 > type](/sql/types/mz_timestamp) that would allow this.  See [`mz_now()` requirements and restrictions](#mz_now-requirements-and-restrictions).
 
-
 The following diagram shows record `B` falling out of the result set as time
 moves forward:
 
@@ -1004,7 +969,6 @@ moves forward:
 
 > **Tip:** When possible, prefer materialized views when using temporal filter to take
 > advantage of custom consolidation.
-
 
 When creating a temporal filter using
 [`mz_now()`](/sql/functions/now_and_mz_now) in a `WHERE` or `HAVING` clause, the
@@ -1046,7 +1010,6 @@ even if the <code>mz_now()</code> clause is nested.</p>
 </li>
 </ul>
 
-
   To rewrite the query, see [Disjunction (OR)
   alternatives](http://localhost:1313/docs/transform-data/idiomatic-materialize-sql/mz_now/#disjunctions-or).
 
@@ -1060,7 +1023,6 @@ After you have tried the examples, make sure to drop these objects and spin down
 
 > **Tip:** When possible, prefer materialized views when using temporal filter to take
 > advantage of custom consolidation.
-
 
 ### Sliding window
 
@@ -1107,8 +1069,6 @@ You can materialize the `last_30_sec` view by [recreating it as a `MATERIALIZED
 VIEW`](/sql/create-materialized-view/) (results persisted to storage). When
 you do so, Materialize will keep the results up to date with records expiring
 automatically according to the temporal filter.
-
-
 
 ### Time-to-Live (TTL)
 
@@ -1292,5 +1252,4 @@ The filter in our query appears in the `pushdown=` list at the bottom of the out
 Some common functions, such as casting from a string to a timestamp, can prevent filter pushdown for a query. For similar functions that _do_ allow pushdown, see [the pushdown functions documentation](/sql/functions/pushdown/).
 
 > **Note:** See the guide on [partitioning and filter pushdown](/transform-data/patterns/partition-by/) for a **private preview** feature that can make the filter pushdown optimization more predictable.
-
 

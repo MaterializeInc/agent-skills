@@ -202,7 +202,6 @@ accordingly.
 > your issue, jump to [Why is my query slow?](#why-is-my-query-slow) for further
 > guidance.
 
-
 ### Stalled source
 
 <!-- TODO: update this to use the query history UI once it's available -->
@@ -248,7 +247,6 @@ If your query was the root cause, you’ll need to kill it for the cluster repli
 If your query was not the root cause, you can wait for the other activity on the cluster to stop and Memory Utilization/CPU to go down, or switch to a different cluster.
 
 If you’ve gone through the dataflow troubleshooting and do not want to make any changes to your query, consider [sizing up your cluster](https://materialize.com/docs/sql/create-cluster/#available-sizes). A larger size cluster will provision more resources.
-
 
 ## Which part of my query runs slowly or uses a lot of memory?
 

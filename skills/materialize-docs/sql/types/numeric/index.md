@@ -15,8 +15,6 @@ Detail | Info
 
 ### Numeric values
 
-
-
 ```mzsql
 <int> [.<frac>] [E<exp>]
 
@@ -28,10 +26,7 @@ Detail | Info
 | `.<frac>` | Optional. Fractional decimal digits.  |
 | **E**`<exp>` | Optional. Multiply the number preceding **E** by 10<sup>exp</sup>.  |
 
-
 ### Numeric definitions
-
-
 
 ```mzsql
 numeric [(<precision>, <scale>)]
@@ -42,7 +37,6 @@ numeric [(<precision>, <scale>)]
 | --- | --- |
 | `<precision>` | **Ignored**: All `numeric` values in Materialize have a precision of 39.  |
 | `<scale>` | The total number of fractional decimal digits to track, e.g. `.321` has a scale of 3. `<scale>` cannot exceed the maximum precision (39).  |
-
 
 ## Details
 

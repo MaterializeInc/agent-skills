@@ -51,7 +51,6 @@ the input view or source.
 | **AS OF** \<timestamp_expression\> | If specified, no rows whose timestamp is earlier than the specified timestamp will be returned. For more information, see [`AS OF`](#as-of). |
 | **UP TO** \<timestamp_expression\> | If specified, no rows whose timestamp is greater than or equal to the specified timestamp will be returned. For more information, see [`UP TO`](#up-to). |
 
-
 #### `WITH` options
 
 The following options are valid within the `WITH` clause.
@@ -175,7 +174,6 @@ tailing constant views (e.g. `CREATE VIEW v AS SELECT 1`).
 > to fetch rows from `SUBSCRIBE` in batches.
 > See the [examples](#examples) for details.
 
-
 ### `SNAPSHOT`
 
 By default, `SUBSCRIBE` begins by emitting a snapshot of the subscribed relation, which
@@ -202,7 +200,6 @@ To see only updates after the initial timestamp, specify `WITH (SNAPSHOT = false
 > SUBSCRIBE TO <object> WITH (SNAPSHOT = false)
 > ```
 > where `<object>` is a materialized view, table, source, or index, Materialize can generally skip fetching or processing the snapshot data from that collection entirely.
-
 
 ### `PROGRESS`
 
@@ -428,8 +425,6 @@ column. Each progress row will have a `NULL` key and a `NULL` value.
 
 #### `ENVELOPE DEBEZIUM`
 
-
-
 To modify the output of `SUBSCRIBE` to support upserts using a
 [Debezium-style diff envelope](/sql/create-sink/kafka/#debezium-envelope),
 use `ENVELOPE DEBEZIUM`. This clause allows you to specify a `KEY` that
@@ -523,8 +518,6 @@ structure:
 before and after value.
 
 #### `WITHIN TIMESTAMP ORDER BY`
-
-
 
 To modify the ordering of the output of `SUBSCRIBE`, use `WITHIN TIMESTAMP ORDER
 BY`. This clause allows you to specify an `ORDER BY` expression which is used

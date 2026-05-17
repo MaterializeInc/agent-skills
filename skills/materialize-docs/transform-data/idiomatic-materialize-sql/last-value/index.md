@@ -22,9 +22,6 @@ to some ordering, in each group.
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
 
-
-
-
 ## Idiomatic Materialize SQL
 
 **Idiomatic Materialize SQL:** To find the last value in each group, use the
@@ -74,7 +71,6 @@ queries.</red>
 
 > **Note:** Materialize does not support `RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED
 > FOLLOWING`.
-
 
 <br>
 <div style="background-color: var(--code-block)">
@@ -131,7 +127,6 @@ For more information on setting `AGGREGATE INPUT GROUP SIZE`, see
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
 
-
 ### Use MAX() to find the last value
 
 Using idiomatic Materialize SQL, the following example finds the highest item
@@ -151,7 +146,6 @@ highest price (i.e., the last price if ordered by ascending price values):
 <tr>
 <td><blue>Idiomatic Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
-
 
 ```mzsql
 SELECT o.order_id, minmax.highest_price, o.item, o.price,
@@ -177,7 +171,6 @@ for last value in each group queries.</red>
 
 > **Note:** Materialize does not support `RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED
 > FOLLOWING`.
-
 
 <div style="background-color: var(--code-block)">
 
@@ -226,7 +219,6 @@ in the order and the lowest price.  That is, use a subquery that groups by the
 <td><blue>Idiomatic Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-
 ```mzsql
 SELECT o.order_id, minmax.lowest_price, o.item, o.price,
   o.price - minmax.lowest_price AS diff_lowest_price
@@ -251,7 +243,6 @@ for last value in each group queries.</red>
 
 > **Note:** Materialize does not support `RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED
 > FOLLOWING`.
-
 
 <div style="background-color: var(--code-block)">
 
@@ -326,7 +317,6 @@ ORDER BY o.order_id, o.item;
 
 > **Note:** Materialize does not support `RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED
 > FOLLOWING`.
-
 
 <div style="background-color: var(--code-block)">
 

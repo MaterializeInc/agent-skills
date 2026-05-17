@@ -6,10 +6,7 @@
 > our backwards compatibility guarantee. The syntax and output of `EXPLAIN` may
 > change arbitrarily in future versions of Materialize.
 
-
 ## Syntax
-
-
 
 ```mzsql
 EXPLAIN TIMESTAMP [AS (TEXT | JSON)]
@@ -21,7 +18,6 @@ FOR <select_stmt>
 | --- | --- |
 | **AS** (`TEXT` \| `JSON`) | Optional. Specifies the output format of the explanation:  \| Format \| Description \| \|--------\|-------------\| \| `TEXT` \| Format the explanation output as UTF-8 text (default). \| \| `JSON` \| Format the explanation output as a JSON object. \|  |
 | **FOR** `<select_stmt>` | The [`SELECT`](/sql/select) statement to explain.  |
-
 
 ## Details
 
@@ -67,7 +63,6 @@ Field | Meaning | Example
 **source** | Source’s identifiers | `source materialize.public.raw_users (u2014, storage)`
 **read frontier** | Minimum logical timestamp. |`[1673612423000 (2023-01-13 12:20:23.000)]`
 **write frontier** | Maximum logical timestamp. | `[1673612424152 (2023-01-13 12:20:24.152)]`
-
 
 ## Examples
 
@@ -123,7 +118,6 @@ pub struct TimestampDetermination<T> {
     pub largest_not_in_advance_of_upper: T,
 }
 
-
 *Query timestamp: The timestamp in a timeline at which the query makes the read
 oracle read: The value of the timeline's oracle timestamp, if used.
 largest not in advance of upper: The largest timestamp not in advance of upper.
@@ -152,7 +146,6 @@ Each source contains two frontiers:
  largest not in advance of upper: 1673612424151 (2023-01-13 12:20:24.151) +
                            upper:[1673612424152 (2023-01-13 12:20:24.152)]+
                            since:[1673612423000 (2023-01-13 12:20:23.000)]+
-
 
                                  Timestamp
 ---------------------------------------------------------------------------

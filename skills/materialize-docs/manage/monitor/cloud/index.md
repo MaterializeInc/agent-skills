@@ -2,8 +2,6 @@
 
 Monitoring and alerting for Materialize Cloud
 
-
-
 This section covers monitoring and alerting for Materialize Cloud.
 
 ### Monitoring
@@ -22,12 +20,9 @@ send a notification when a metric surpasses a threshold. This will help you
 prevent operational incidents. For alert rules guidelines, see
 [Alerting](/manage/monitor/cloud/alerting/).
 
-
-
 ---
 
 ## Alerting
-
 
 After setting up a monitoring tool, it is important to configure alert rules. Alert rules send a notification when a metric surpasses a threshold. This will help you prevent operational incidents.
 
@@ -53,7 +48,6 @@ Freshness | > 5s | > 1m | Average [lag behind an input](/reference/system-catalo
 
 > **Note:** Customers on legacy cluster sizes should still monitor their Memory usage. Please [contact support](/support/) for questions.
 
-
 ### Custom Thresholds
 
 For the following table, replace the two variables, _X_ and _Y_, by your organization and use case:
@@ -76,11 +70,9 @@ During an upgrade, clients may experience brief connection interruptions, but th
 
 All performance‑impacting incidents are communicated on our [status page](https://status.materialize.com/), which provides current and historical incident details and subscription options for notifications. Reviewing this page is the quickest way to confirm if a known issue is affecting your database.
 
-
 ---
 
 ## Datadog
-
 
 This guide walks you through the steps required to monitor the performance and
 overall health of your Materialize region using [Datadog](https://www.datadoghq.com/).
@@ -98,7 +90,6 @@ the following additional services:
 > **Note:** As a best practice, we strongly recommend using [service accounts](/security/users-service-accounts/create-service-accounts)
 > to connect external applications, like Datadog, to Materialize.
 
-
 To export metrics from Materialize and expose them in a format that Datadog can
 consume, you need to configure and run a Prometheus SQL Exporter. This service
 will run SQL queries against Materialize at specified intervals, and export the
@@ -115,14 +106,11 @@ which has been tried and tested in production environments.
 >    as guidance to bootstrap your monitoring with some key Materialize metrics
 >    and indicators.
 
-
-
 1. In the configuration file, define the connection to your Materialize region
    under `connections` using the credentials provided in the [Materialize Console](/console/).
 
    > **Note:** You must escape the special `@` character in `USER` for a successful
 >    connection. Example: instead of `name@email.com`, use `name%40email.com`.
-
 
    **Filename:** config.yml
    ```yaml
@@ -244,11 +232,9 @@ Before adding a custom query, make sure to consider the following:
 4. The Datadog agent is subject to a limit of 2000 metrics.
 5. Queries can impact cluster performance.
 
-
 ---
 
 ## Grafana
-
 
 This guide walks you through the steps required to monitor the performance and
 overall health of your Materialize region using [Grafana](https://grafana.com/).
@@ -266,7 +252,6 @@ the following additional services:
 > **Note:** As a best practice, we strongly recommend using [service accounts](/security/users-service-accounts/create-service-accounts)
 > to connect external applications, like Grafana, to Materialize.
 
-
 To export metrics from Materialize and expose them in a format that Grafana can
 consume, you need to configure and run a Prometheus SQL Exporter. This service
 will run SQL queries against Materialize at specified intervals, and export the
@@ -283,13 +268,11 @@ which has been tried and tested in production environments.
 >    as guidance to bootstrap your monitoring with some key Materialize metrics
 >    and indicators.
 
-
 2. In the configuration file, define the connection to your Materialize region
    under `connections` using the credentials provided in the [Materialize Console](/console/).
 
    > **Note:** You must escape the special `@` character in `USER` for a successful
 >    connection. Example: instead of `name@email.com`, use `name%40email.com`.
-
 
    **Filename:** config.yml
    ```yaml
@@ -354,7 +337,6 @@ which has been tried and tested in production environments.
 To scrape the metrics available in the Prometheus SQL Exporter endpoint, you
 must then set up a [Grafana Agent](https://grafana.com/docs/agent/latest/?pg=oss-agent) for Grafana cloud, or [Prometheus](https://prometheus.io/download/) for the self-hosted version:
 
-
 **Grafana Cloud:**
 
 1. Follow the [instructions to install and run a Grafana Agent](https://grafana.com/docs/agent/latest/static/set-up/install/)
@@ -389,7 +371,6 @@ must then set up a [Grafana Agent](https://grafana.com/docs/agent/latest/?pg=oss
 
    </details>
 
-
 **Self-hosted Grafana:**
 1. Follow the [instructions to install and run Prometheus](https://prometheus.io/docs/prometheus/latest/installation/)
    in your host.
@@ -414,10 +395,7 @@ must then set up a [Grafana Agent](https://grafana.com/docs/agent/latest/?pg=oss
 
    **Tip:** see [this sample](https://github.com/MaterializeInc/demos/blob/main/integrations/grafana/local/misc/datasources/prometheus.yml) for a Prometheus data source configuration.
 
-
 For more details on how to configure, run and troubleshoot Prometheus, see the [Prometheus documentation](https://prometheus.io/docs/introduction/overview/).
-
-
 
 ## Step 3. Build a monitoring dashboard
 

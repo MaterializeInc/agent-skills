@@ -3,7 +3,6 @@ How to stream data from Neon to Materialize
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 [Neon](https://neon.tech) is a fully managed serverless PostgreSQL provider. It
 separates compute and storage to offer features like **autoscaling**,
 **branching** and **bottomless storage**.
@@ -29,7 +28,6 @@ Console.
 > **Warning:** Enabling logical replication applies **globally** to all databases in your Neon
 > project, and **cannot be reverted**. It also **restarts all computes**, which
 > means that any active connections are dropped and have to reconnect.
-
 
 Materialize uses PostgreSQL's [logical replication](https://www.postgresql.org/docs/current/logical-replication.html)
 protocol to track changes in your database and propagate them to Materialize.
@@ -112,7 +110,6 @@ role, which has the required `REPLICATION` privilege.
    While you can use the default user for replication, we recommend creating a
    dedicated user for security reasons.
 
-    
 **Neon CLI:**
 
 Use the [`roles create` CLI command](https://neon.tech/docs/reference/cli-roles)
@@ -121,8 +118,6 @@ to create a new role.
 ```bash
 neon roles create --name materialize
 ```
-
-
 
 **Neon Console:**
 
@@ -135,8 +130,6 @@ neon roles create --name materialize
 7. In the role creation dialog, specify the role name as "materialize".
 8. Click **Create**. The role is created, and you are provided with the
 password for the role.
-
-
 
 **API:**
 
@@ -154,10 +147,6 @@ curl 'https://console.neon.tech/api/v2/projects/<project_id>/branches/<branch_id
 }
 }' | jq
 ```
-
-
-
-    
 
 4. Grant the user the required permissions on the schema(s) you want to
    replicate:
@@ -179,9 +168,6 @@ curl 'https://console.neon.tech/api/v2/projects/<project_id>/branches/<branch_id
 > **Note:** If you are prototyping and your Neon instance is publicly accessible, **you can
 > skip this step**. For production scenarios, we recommend using [**IP Allow**](https://neon.tech/docs/introduction/ip-allow)
 > to limit the IP addresses that can connect to your Neon instance.
-
-
-
 
 **Cloud:**
 
@@ -205,14 +191,11 @@ will need to allow inbound traffic from Materialize IP addresses.
    3. Select **IP Allow**.
    4. Add each Materialize IP address to the list.
 
-
-
 **Self-Managed:**
 
 > **Note:** If you are prototyping and your Neon instance is publicly accessible, **you can
 > skip this step**. For production scenarios, we recommend using [**IP Allow**](https://neon.tech/docs/introduction/ip-allow)
 > to limit the IP addresses that can connect to your Neon instance.
-
 
 If you use Neon's [**IP Allow**](https://neon.tech/docs/introduction/ip-allow)
 feature to limit the IP addresses that can connect to your Neon instance, you
@@ -224,9 +207,6 @@ will need to allow inbound traffic from Materialize IP addresses.
    2. On the Neon **Dashboard**, select **Settings**.
    3. Select **IP Allow**.
    4. Add Materialize IP addresses to the list.
-
-
-
 
 ## C. Ingest data in Materialize
 
@@ -240,7 +220,6 @@ preferred SQL client connected to Materialize.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 <p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -268,7 +247,6 @@ size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>AL
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
@@ -283,7 +261,6 @@ your networking configuration.
 
     You can access the password for your Neon user from
     the **Connection Details** widget on the Neon **Dashboard**.
-
 
 2. Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create a
    connection object with access and authentication details for Materialize to
@@ -339,7 +316,6 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 {{< /tabs >}}
-
 
 ### 4. Monitor the ingestion status
 
@@ -406,7 +382,6 @@ dataset and the size of the cluster the source is running in.</p>
 </li>
 </ol>
 
-
 ### 5. Right-size the cluster
 
 <p>After the snapshotting phase, Materialize starts ingesting change events from
@@ -469,7 +444,6 @@ your ingestion cluster.</p>
 </li>
 </ol>
 
-
 ## D. Explore your data
 
 <p>With Materialize ingesting your PostgreSQL data into durable storage, you can
@@ -494,7 +468,6 @@ or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external messa
 Materialize.</p>
 </li>
 </ul>
-
 
 ## Considerations
 

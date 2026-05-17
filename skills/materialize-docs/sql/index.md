@@ -2,8 +2,6 @@
 
 SQL commands reference.
 
-
-
 ## Create/Alter/Drop Objects
 
 | CREATE | ALTER | DROP |
@@ -24,12 +22,10 @@ SQL commands reference.
 | [`CREATE TYPE`](/sql/create-type) | [`ALTER TYPE`](/sql/alter-type) | [`DROP TYPE`](/sql/drop-type) |
 | [`CREATE VIEW`](/sql/create-view) | [`ALTER VIEW`](/sql/alter-view) | [`DROP VIEW`](/sql/drop-view) |
 
-
 ## Create/Read/Update/Delete Data
 
 The following commands perform CRUD operations on materialized views, views,
 sources, and tables:
-
 
 | <strong>Select/Subscribe</strong> |  - [`SELECT`](/sql/select)  - [`SUBSCRIBE`](/sql/subscribe)    |
 | <strong>Cursor</strong> |  - [`CLOSE`](/sql/close)  - [`DECLARE`](/sql/declare)  - [`FETCH`](/sql/fetch)   |
@@ -37,19 +33,15 @@ sources, and tables:
 | <strong>Transactions</strong> |  - [`BEGIN`](/sql/begin)  - [`COMMIT`](/sql/commit)  - [`ROLLBACK`](/sql/rollback)   |
 | <strong>Copy</strong> |  - [`COPY FROM`](/sql/copy-from)  - [`COPY TO`](/sql/copy-to)   |
 
-
 ## RBAC
 
 Commands to manage roles and privileges and owners:
-
 
 | <strong>Roles</strong> |  - [`ALTER ROLE`](/sql/alter-role)  - [`CREATE ROLE`](/sql/create-role)  - [`DROP ROLE`](/sql/drop-role) <br>[`DROP USER`](/sql/drop-user)  - [`GRANT ROLE`](/sql/grant-role)  - [`REVOKE ROLE`](/sql/revoke-role)  - [`SHOW ROLES`](/sql/show-roles)   |
 | <strong>Privileges</strong> |  - [`ALTER DEFAULT PRIVILEGES`](/sql/alter-default-privileges)  - [`GRANT PRIVILEGE`](/sql/grant-privilege)  - [`REVOKE PRIVILEGE`](/sql/revoke-privilege)   |
 | <strong>Owners</strong> |  - [`ALTER CLUSTER`](/sql/alter-cluster)  - [`ALTER CLUSTER REPLICA`](/sql/alter-cluster-replica)  - [`ALTER CONNECTION`](/sql/alter-connection)  - [`ALTER DATABASE`](/sql/alter-database)  - [`ALTER MATERIALIZED VIEW`](/sql/alter-materialized-view)  - [`ALTER SCHEMA`](/sql/alter-schema)  - [`ALTER SECRET`](/sql/alter-secret)  - [`ALTER SINK`](/sql/alter-sink)  - [`ALTER SOURCE`](/sql/alter-source)  - [`ALTER TABLE`](/sql/alter-table)  - [`ALTER TYPE`](/sql/alter-type)  - [`ALTER VIEW`](/sql/alter-view)  - [`DROP OWNED`](/sql/drop-owned)  - [`REASSIGN OWNED`](/sql/reassign-owned)   |
 
-
 ## Query Introspection (`Explain`)
-
 
 - [`EXPLAIN ANALYZE`](/sql/explain-analyze)
 
@@ -61,9 +53,7 @@ Commands to manage roles and privileges and owners:
 
 - [`EXPLAIN TIMESTAMP`](/sql/explain-timestamp)
 
-
 ## Object Introspection (`SHOW`) { #show }
-
 
 - [`SHOW`](/sql/show)
 
@@ -127,11 +117,9 @@ Commands to manage roles and privileges and owners:
 
 - [`SHOW VIEWS`](/sql/show-views)
 
-
 ## Session
 
 Commands related with session state and configurations:
-
 
 - [`DISCARD`](/sql/discard)
 
@@ -141,15 +129,11 @@ Commands related with session state and configurations:
 
 - [`SHOW`](/sql/show)
 
-
 ## Validations
-
 
 - [`VALIDATE CONNECTION`](/sql/validate-connection)
 
-
 ## Prepared Statements
-
 
 - [`DEALLOCATE`](/sql/deallocate)
 
@@ -157,13 +141,9 @@ Commands related with session state and configurations:
 
 - [`PREPARE`](/sql/prepare)
 
-
-
-
 ---
 
 ## Namespaces
-
 
 Namespaces are a way to organize Materialize objects logically. In organizations
 with multiple objects, namespaces help avoid naming conflicts and make it easier
@@ -189,7 +169,6 @@ beneath it. That is,
 sinks, indexes, types, functions, and secrets;
 - Tables, views, and materialized views can contain: columns.
 
-
 ### Qualifying names
 
 Namespaces enable disambiguation and access to objects across different
@@ -211,7 +190,6 @@ databases and schemas. Namespaces use the dot notation format
   > **Tip:** You can use fully qualified names to reference objects within the same
 >   database (or within the same database and schema). However, for brevity and
 >   readability, you may prefer to use qualified names instead.
-
 
 - **Qualified names**
 
@@ -237,7 +215,6 @@ databases and schemas. Namespaces use the dot notation format
 ## Namespace constraints
 
 All namespaces must adhere to [identifier rules](/sql/identifiers).
-
 
 ## Other objects
 
@@ -283,11 +260,9 @@ hierarchy:
   `SET DATABASE = my_db`).
 - Materialize allows cross-database queries.
 
-
 ---
 
 ## ALTER CLUSTER
-
 
 Use `ALTER CLUSTER` to:
 
@@ -303,14 +278,11 @@ general, you will not need to manually perform this operation.
 
 `ALTER CLUSTER` has the following syntax variations:
 
-
 **Set a configuration:**
 
 ### Set a configuration
 
 To set a cluster configuration:
-
-
 
 ```mzsql
 ALTER CLUSTER <cluster_name>
@@ -334,15 +306,11 @@ SET (
 | `SCHEDULE` | Optional. The [scheduling type](/sql/create-cluster/#scheduling) for the cluster. Valid values are `MANUAL` and `ON REFRESH`.  Default: `MANUAL`  |
 | `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under activedevelopment.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* A fixed duration to wait for the new replicas to be ready. This option can lead to downtime. As such, we recommend using the `WAIT UNTIL READY` option instead.\|  |
 
-
-
 **Reset to default:**
 
 ### Reset to default
 
 To reset a cluster configuration back to its default value:
-
-
 
 ```mzsql
 ALTER CLUSTER <cluster_name>
@@ -361,15 +329,11 @@ RESET (
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  Default: `TRUE`  |
 | `SCHEDULE` | Optional. The [scheduling type](/sql/create-cluster/#scheduling) for the cluster.  Default: `MANUAL`  |
 
-
-
 **Rename:**
 
 ### Rename
 
 To rename a cluster:
-
-
 
 ```mzsql
 ALTER CLUSTER <cluster_name> RENAME TO <new_cluster_name>;
@@ -381,18 +345,13 @@ ALTER CLUSTER <cluster_name> RENAME TO <new_cluster_name>;
 | `<cluster_name>` | The current name of the cluster.  |
 | `<new_cluster_name>` | The new name of the cluster.  |
 
-
 > **Note:** You cannot rename system clusters, such as `mz_system` and `mz_catalog_server`.
-
-
 
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a cluster:
-
-
 
 ```mzsql
 ALTER CLUSTER <cluster_name> OWNER TO <new_owner_role>;
@@ -406,8 +365,6 @@ ALTER CLUSTER <cluster_name> OWNER TO <new_owner_role>;
 To change the owner, you must have ownership of the cluster and membership in
 the `<new_owner_role>`. See also [Required privileges](#required-privileges).
 
-
-
 **Swap with:**
 
 ### Swap with
@@ -416,10 +373,7 @@ the `<new_owner_role>`. See also [Required privileges](#required-privileges).
 > `SWAP WITH` operation is used for blue/green deployments. In general, you will
 > not need to manually perform this operation.
 
-
 To swap the name of this cluster with another cluster:
-
-
 
 ```mzsql
 ALTER CLUSTER <cluster1> SWAP WITH <cluster2>;
@@ -431,10 +385,6 @@ ALTER CLUSTER <cluster1> SWAP WITH <cluster2>;
 | `<cluster1>` | The name of the first cluster.  |
 | `<cluster2>` | The name of the second cluster.  |
 
-
-
-
-
 ## Considerations
 
 ### Resizing
@@ -443,9 +393,7 @@ ALTER CLUSTER <cluster1> SWAP WITH <cluster2>;
 > [**Monitoring**](/console/monitoring/)>**Environment Overview**. This page
 > displays cluster resource utilization and sizing advice.
 
-
 #### Available sizes
-
 
 **cc Clusters:**
 
@@ -482,14 +430,10 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 > most workloads. We recommend using cc sizes unless your workload specifically
 > requires the additional disk capacity that M.1 sizes provide.
 
-
 > **Note:** The values set forth in the table are solely for illustrative purposes.
 > Materialize reserves the right to change the capacity at any time. As such, you
 > acknowledge and agree that those values in this table may change at any time,
 > and you should not rely on these values for any capacity planning.
-
-
-
 
 | Cluster size | Compute Credits/Hour | Total Capacity | Notes |
 | --- | --- | --- | --- |
@@ -508,10 +452,6 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 | <strong>M.1-32xlarge</strong> | 384 | 13160 GiB | Available upon request |
 | <strong>M.1-64xlarge</strong> | 768 | 26320 GiB | Available upon request |
 | <strong>M.1-128xlarge</strong> | 1536 | 52640 GiB | Available upon request |
-
-
-
-
 
 See also:
 
@@ -532,7 +472,6 @@ system catalog table.
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
 > time. You should not rely on them for any kind of capacity planning.
 
-
 #### Downtime
 
 Resizing operation can incur downtime unless used with WAIT UNTIL READY option.
@@ -540,8 +479,6 @@ See [zero-downtime cluster resizing](#zero-downtime-cluster-resizing) for
 details.
 
 #### Zero-downtime cluster resizing
-
-
 
 You can use the `WAIT UNTIL READY` option to perform a zero-downtime resizing,
 which incurs **no downtime**. Instead of restarting the cluster, this approach
@@ -591,7 +528,6 @@ available, the cluster can continue to maintain dataflows and serve queries.
 >   To increase the capacity of a cluster, you must increase its
 >   [size](#resizing).
 
-
 Materialize automatically assigns names to replicas (e.g., `r1`, `r2`). You can
 view information about individual replicas in the Materialize console and the system
 catalog.
@@ -606,7 +542,6 @@ When provisioning replicas,
 
 - For clusters sized at **`3200cc` and above**, even distribution of replicas
   across availability zones **cannot** be guaranteed.
-
 
 ## Required privileges
 
@@ -629,7 +564,6 @@ See also:
 
 You cannot rename system clusters, such as `mz_system` and `mz_catalog_server`.
 
-
 ## Examples
 
 ### Replication factor
@@ -643,7 +577,6 @@ ALTER CLUSTER c1 SET (REPLICATION FACTOR 2);
 
 Increasing the `REPLICATION FACTOR` increases the cluster's [fault
 tolerance](#replication-factor-and-fault-tolerance), not its work capacity.
-
 
 ### Resizing
 
@@ -675,8 +608,6 @@ and some types of sources.
 
 ### Schedule
 
-
-
 For use cases that require using [scheduled clusters](/sql/create-cluster/#scheduling),
 you can set or change the originally configured schedule and related options
 using the `ALTER CLUSTER` command.
@@ -694,7 +625,6 @@ scheduled clusters.
 > **Note:** When getting started with Materialize, we recommend using managed clusters. You
 > can convert any unmanaged clusters to managed clusters by following the
 > instructions below.
-
 
 Alter the `managed` status of a cluster to managed:
 
@@ -719,11 +649,9 @@ compute-specific settings. If needed, these can be set explicitly.
 - [`CREATE SINK`](/sql/create-sink/)
 - [`SHOW SINKS`](/sql/show-sinks)
 
-
 ---
 
 ## ALTER CLUSTER REPLICA
-
 
 Use `ALTER CLUSTER REPLICA` to:
 - Rename a cluster replica.
@@ -731,14 +659,11 @@ Use `ALTER CLUSTER REPLICA` to:
 
 ## Syntax
 
-
 **Rename:**
 
 ### Rename
 
 To rename a cluster replica:
-
-
 
 ```mzsql
 ALTER CLUSTER REPLICA <name> RENAME TO <new_name>;
@@ -750,18 +675,13 @@ ALTER CLUSTER REPLICA <name> RENAME TO <new_name>;
 | `<name>` | The current name of the cluster replica.  |
 | `<new_name>` | The new name of the cluster replica.  |
 
-
 > **Note:** You cannot rename replicas in system clusters.
-
-
 
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a cluster replica:
-
-
 
 ```mzsql
 ALTER CLUSTER REPLICA <name> OWNER TO <new_owner_role>;
@@ -774,11 +694,6 @@ ALTER CLUSTER REPLICA <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the cluster replica.  |
 To change the owner of a cluster replica, you must be the current owner and have
 membership in the `<new_owner_role>`.
-
-
-
-
-
 
 ## Privileges
 
@@ -801,11 +716,9 @@ The following changes the owner of the cluster replica `production.r1` to
 ALTER CLUSTER REPLICA production.r1 OWNER TO admin;
 ```
 
-
 ---
 
 ## ALTER CONNECTION
-
 
 Use `ALTER CONNECTION` to:
 
@@ -817,14 +730,11 @@ Use `ALTER CONNECTION` to:
 
 ## Syntax
 
-
 **SET/DROP/RESET options:**
 
 ### SET/DROP/RESET options
 
 To modify connection parameters:
-
-
 
 ```mzsql
 ALTER CONNECTION [IF EXISTS] <name>
@@ -846,15 +756,11 @@ ALTER CONNECTION [IF EXISTS] <name>
 | `<value>` | The value to assign to the option.  |
 | **WITH (VALIDATE `<bool>`)** | Optional. Whether [connection validation](/sql/create-connection#connection-validation) should be performed. Defaults to `true`.  |
 
-
-
 **ROTATE KEYS:**
 
 ### ROTATE KEYS
 
 To rotate SSH tunnel connection key pairs:
-
-
 
 ```mzsql
 ALTER CONNECTION [IF EXISTS] <name> ROTATE KEYS;
@@ -866,17 +772,11 @@ ALTER CONNECTION [IF EXISTS] <name> ROTATE KEYS;
 | **IF EXISTS** | Optional. If specified, do not return an error if the specified connection does not exist.  |
 | `<name>` | The identifier of the SSH tunnel connection.  |
 
-
-
-
-
 **Rename:**
 
 ### Rename
 
 To rename a connection
-
-
 
 ```mzsql
 ALTER CONNECTION <name> RENAME TO <new_name>;
@@ -889,15 +789,11 @@ ALTER CONNECTION <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the connection.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a connection:
-
-
 
 ```mzsql
 ALTER CONNECTION <name> OWNER TO <new_owner_role>;
@@ -910,10 +806,6 @@ ALTER CONNECTION <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the connection.  |
 To change the owner of a connection, you must be the owner of the connection and
 have membership in the `<new_owner_role>`. See also [Privileges](#privileges).
-
-
-
-
 
 ## Details
 
@@ -979,11 +871,9 @@ The privileges required to execute this statement are:
 [SSH tunnel connection]: /sql/create-connection/#ssh-tunnel
 [`mz_ssh_tunnel_connections`]: /reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections
 
-
 ---
 
 ## ALTER DATABASE
-
 
 Use `ALTER DATABASE` to:
 - Rename a database.
@@ -991,14 +881,11 @@ Use `ALTER DATABASE` to:
 
 ## Syntax
 
-
 **Rename:**
 
 ### Rename
 
 To rename a database:
-
-
 
 ```mzsql
 ALTER DATABASE <name> RENAME TO <new_name>;
@@ -1011,15 +898,11 @@ ALTER DATABASE <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the database.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a database:
-
-
 
 ```mzsql
 ALTER DATABASE <name> OWNER TO <new_owner_role>;
@@ -1033,11 +916,6 @@ ALTER DATABASE <name> OWNER TO <new_owner_role>;
 To change the owner of a database, you must be the current owner and have
 membership in the `<new_owner_role>`.
 
-
-
-
-
-
 ## Privileges
 
 The privileges required to execute this statement are:
@@ -1046,11 +924,9 @@ The privileges required to execute this statement are:
 - In addition, to change owners:
   - Role membership in `new_owner`.
 
-
 ---
 
 ## ALTER DEFAULT PRIVILEGES
-
 
 Use `ALTER DEFAULT PRIVILEGES` to:
 
@@ -1065,7 +941,6 @@ default privilege.
 
 ## Syntax
 
-
 **GRANT:**
 ### GRANT
 
@@ -1078,8 +953,6 @@ all objects of that type, all objects of that type created within a specific set
 of databases, or all objects of that type created within a specific set of
 schemas. Default privileges are also specified for objects created by a certain
 set of roles or by all roles.
-
-
 
 ```mzsql
 ALTER DEFAULT PRIVILEGES
@@ -1102,8 +975,6 @@ ALTER DEFAULT PRIVILEGES
 | **ALL [PRIVILEGES]** | All applicable privileges for the provided object type.  |
 | **TO** `<target_role>` | The role who will be granted the default privilege. Use the `PUBLIC` pseudo-role to grant privileges to all roles.  |
 
-
-
 **REVOKE:**
 ### REVOKE
 
@@ -1111,7 +982,6 @@ ALTER DEFAULT PRIVILEGES
 > on objects. Those privileges must be revoked manually after the object is
 > created. Though owners can always re-grant themselves any privilege on an object
 > that they own.
-
 
 The `REVOKE` variant of `ALTER DEFAULT PRIVILEGES` is used to revoke previously
 created default privileges on objects created in the future. It will not revoke
@@ -1121,8 +991,6 @@ default privilege, all the fields in the revoke statement (`creator_role`,
 an existing default privilege. The existing default privileges can easily be
 viewed by the following query: `SELECT * FROM
 mz_internal.mz_show_default_privileges`.
-
-
 
 ```mzsql
 ALTER DEFAULT PRIVILEGES
@@ -1145,14 +1013,9 @@ ALTER DEFAULT PRIVILEGES
 | **ALL [PRIVILEGES]** | All applicable privileges for the provided object type.  |
 | **FROM** `<target_role>` | The role from whom to remove the default privilege. Use the `PUBLIC` pseudo-role to remove default privileges previously granted to `PUBLIC`.  |
 
-
-
-
-
 ## Details
 
 ### Available privileges
-
 
 **By Privilege:**
 
@@ -1169,7 +1032,6 @@ ALTER DEFAULT PRIVILEGES
 | <strong>CREATECLUSTER</strong> | Permission to create new clusters. | <code>N</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 | <strong>CREATENETWORKPOLICY</strong> | Permission to create network policies to control access at the network layer. | <code>P</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 
-
 **By Object:**
 
 | Object | Privileges |
@@ -1185,10 +1047,6 @@ ALTER DEFAULT PRIVILEGES
 | <code>TABLE</code> | <ul> <li><code>INSERT</code></li> <li><code>SELECT</code></li> <li><code>UPDATE</code></li> <li><code>DELETE</code></li> </ul>  |
 | <code>TYPE</code> | <ul> <li><code>USAGE</code></li> </ul>  |
 | <code>VIEW</code> | <ul> <li><code>SELECT</code></li> </ul>  |
-
-
-
-
 
 ### Compatibility
 
@@ -1240,25 +1098,20 @@ The privileges required to execute this statement are:
 - [`GRANT PRIVILEGE`](../grant-privilege)
 - [`REVOKE PRIVILEGE`](../revoke-privilege)
 
-
 ---
 
 ## ALTER INDEX
-
 
 Use `ALTER INDEX` to:
 - Rename an index.
 
 ## Syntax
 
-
 **Rename:**
 
 ### Rename
 
 To rename an index:
-
-
 
 ```mzsql
 ALTER INDEX <name> RENAME TO <new_name>;
@@ -1270,12 +1123,6 @@ ALTER INDEX <name> RENAME TO <new_name>;
 | `<name>` | The current name of the index you want to alter.  |
 | `<new_name>` | The new name of the index.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
-
-
-
-
-
-
 
 ## Privileges
 
@@ -1291,11 +1138,9 @@ The privileges required to execute this statement are:
 - [`SHOW SOURCES`](/sql/show-sources)
 - [`SHOW SINKS`](/sql/show-sinks)
 
-
 ---
 
 ## ALTER MATERIALIZED VIEW
-
 
 Use `ALTER MATERIALIZED VIEW` to:
 
@@ -1304,17 +1149,13 @@ Use `ALTER MATERIALIZED VIEW` to:
 - Change retain history configuration for the materialized view.
 - Replace a materialized view. (*Public preview*)
 
-
 ## Syntax
-
 
 **Rename:**
 
 ### Rename
 
 To rename a materialized view:
-
-
 
 ```mzsql
 ALTER MATERIALIZED VIEW <name> RENAME TO <new_name>;
@@ -1327,15 +1168,11 @@ ALTER MATERIALIZED VIEW <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the materialized view.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a materialized view:
-
-
 
 ```mzsql
 ALTER MATERIALIZED VIEW <name> OWNER TO <new_owner_role>;
@@ -1349,15 +1186,11 @@ ALTER MATERIALIZED VIEW <name> OWNER TO <new_owner_role>;
 To change the owner of a materialized view, you must be the owner of the materialized view and have
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
 
-
-
 **(Re)Set retain history config:**
 
 ### (Re)Set retain history config
 
 To set the retention history for a materialized view:
-
-
 
 ```mzsql
 ALTER MATERIALIZED VIEW <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
@@ -1369,10 +1202,7 @@ ALTER MATERIALIZED VIEW <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
 | `<name>` | The name of the materialized view you want to alter.  |
 | `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
 
-
 To reset the retention history to the default for a materialized view:
-
-
 
 ```mzsql
 ALTER MATERIALIZED VIEW <name> RESET (RETAIN HISTORY);
@@ -1383,8 +1213,6 @@ ALTER MATERIALIZED VIEW <name> RESET (RETAIN HISTORY);
 | --- | --- |
 | `<name>` | The name of the materialized view you want to alter.  |
 
-
-
 **Replace materialized view:**
 
 ### Replace materialized view
@@ -1393,8 +1221,6 @@ ALTER MATERIALIZED VIEW <name> RESET (RETAIN HISTORY);
 
 To replace an existing materialized view in-place with a replacement
 materialized view:
-
-
 
 ```mzsql
 ALTER MATERIALIZED VIEW <name> APPLY REPLACEMENT <replacement_materialized_view>;
@@ -1405,11 +1231,6 @@ ALTER MATERIALIZED VIEW <name> APPLY REPLACEMENT <replacement_materialized_view>
 | --- | --- |
 | `<name>` | The name of the materialized view to replace.  |
 | `<replacement_materialized_view>` | The name of a replacement materialized view specifically created for the target materialized view. See [`CREATE REPLACEMENT MATERIALIZED VIEW <replacement_view>...FOR <name>...`](/sql/create-materialized-view).  |
-
-
-
-
-
 
 ## Details
 
@@ -1432,7 +1253,6 @@ view and drops the replacement view at the same time.</p>
 <p>Emits a diff representing the changes between the old and new output.</p>
 </li>
 </ul>
-
 
 See [Recommended checks before replacing a
 view](/sql/alter-materialized-view/#recommended-checks-before-replacing-a-view).
@@ -1474,8 +1294,6 @@ of your original and replacement materialized views.</p>
 original materialized view. If the rate of advancement suggests that catch
 up will take an extended period of time, it is recommended to drop the
 replacement view.</p>
-
-
 
 ## Privileges
 
@@ -1542,7 +1360,6 @@ For a step-by-step tutorial on replacing a materialized view, see [Replace
 materialized views
 guide](/transform-data/updating-materialized-views/replace-materialized-view/).
 
-
 ## Related pages
 
 - [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view)
@@ -1550,11 +1367,9 @@ guide](/transform-data/updating-materialized-views/replace-materialized-view/).
 - [`SHOW CREATE MATERIALIZED VIEW`](/sql/show-create-materialized-view)
 - [`DROP MATERIALIZED VIEW`](/sql/drop-materialized-view)
 
-
 ---
 
 ## ALTER NETWORK POLICY (Cloud)
-
 
 *Available for Materialize Cloud only*
 
@@ -1565,8 +1380,6 @@ Changes to a network policy will only affect new connections
 and **will not** terminate active connections.
 
 ## Syntax
-
-
 
 ```mzsql
 ALTER NETWORK POLICY <name> SET (
@@ -1585,7 +1398,6 @@ ALTER NETWORK POLICY <name> SET (
 | `<rule_name>` | The name for the network policy rule. Must be unique within the network policy.  |
 | `<address>` | The Classless Inter-Domain Routing (CIDR) block to which the rule applies.  |
 
-
 ## Details
 
 ### Pre-installed network policy
@@ -1598,7 +1410,6 @@ will be pre-installed. This policy has a wide open ingress rule `allow
 > Before dropping the `default` network policy, a _superuser_ (i.e. `Organization
 > Admin`) must run [`ALTER SYSTEM SET network_policy`](/sql/alter-system-set) to
 > change the default value.
-
 
 ### Lockout prevention
 
@@ -1641,11 +1452,9 @@ ALTER SYSTEM SET network_policy = office_access_policy;
 - [`CREATE NETWORK POLICY`](../create-network-policy)
 - [`DROP NETWORK POLICY`](../drop-network-policy)
 
-
 ---
 
 ## ALTER ROLE
-
 
 `ALTER ROLE` alters the attributes of an existing role.[^1]
 
@@ -1653,15 +1462,11 @@ ALTER SYSTEM SET network_policy = office_access_policy;
 
 ## Syntax
 
-
-
-
 **Cloud:**
 
 ### Cloud
 
 The following syntax is used to alter a role in Materialize Cloud.
-
 
 ```mzsql
 ALTER ROLE <role_name>
@@ -1677,7 +1482,6 @@ ALTER ROLE <role_name>
 | `SET <name> TO <value\|DEFAULT>` | *Optional.* If specified, sets the configuration parameter for the role to the `<value>` or if the value specified is `DEFAULT`, the system's default (equivalent to `ALTER ROLE ... RESET <name>`).  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
 | `RESET <name>` | *Optional.* If specified, resets the configuration parameter for the role to the system's default.  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
 
-
 **Note:**
 - Materialize Cloud does not support the `NOINHERIT` option for `ALTER
 ROLE`.
@@ -1690,12 +1494,10 @@ ability to alter top level objects such as databases and other roles.
 Instead, Materialize Cloud uses system level privileges. See [GRANT
 PRIVILEGE](../grant-privilege) for more details.
 
-
 **Self-Managed:**
 ### Self-Managed
 
 The following syntax is used to alter a role in Materialize Self-Managed.
-
 
 ```mzsql
 ALTER ROLE <role_name>
@@ -1721,7 +1523,6 @@ ALTER ROLE <role_name>
 | `SET <name> TO <value\|DEFAULT>` | *Optional.* If specified, sets the configuration parameter for the role to the `<value>` or if the value specified is `DEFAULT`, the system's default (equivalent to `ALTER ROLE ... RESET <name>`).  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
 | `RESET <name>` | *Optional.* If specified, resets the configuration parameter for the role to the system's default.  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
 
-
 **Note:**
 - Self-Managed Materialize does not support the `NOINHERIT` option for
 `ALTER ROLE`.
@@ -1730,9 +1531,6 @@ does not use role attributes to determine a role's ability to create top
 level objects such as databases and other roles. Instead, Self-Managed
 Materialize uses system level privileges. See [GRANT
 PRIVILEGE](../grant-privilege) for more details.
-
-
-
 
 ## Restrictions
 
@@ -1774,7 +1572,6 @@ SHOW cluster;
 quickstart
 ```
 
-
 #### Making a role a superuser  (Self-Managed)
 
 Unlike regular roles, superusers have unrestricted access to all objects in the system and can perform any action on them.
@@ -1813,7 +1610,6 @@ rj  f
 
 > **Warning:** Setting a NULL password removes the password.
 
-
 ```mzsql
 ALTER ROLE rj PASSWORD NULL;
 ```
@@ -1840,28 +1636,22 @@ The privileges required to execute this statement are:
 - [`GRANT PRIVILEGE`](../grant-privilege)
 - [`REVOKE PRIVILEGE`](../revoke-privilege)
 
-
 ---
 
 ## ALTER SCHEMA
-
 
 Use `ALTER SCHEMA` to:
 - Swap the name of a schema with that of another schema.
 - Rename a schema.
 - Change owner of a schema.
 
-
 ## Syntax
-
 
 **Swap with:**
 
 ### Swap with
 
 To swap the name of a schema with that of another schema:
-
-
 
 ```mzsql
 ALTER SCHEMA <schema1> SWAP WITH <schema2>;
@@ -1873,15 +1663,11 @@ ALTER SCHEMA <schema1> SWAP WITH <schema2>;
 | `<schema1>` | The name of the schema you want to swap.  |
 | `<schema2>` | The name of the other schema you want to swap with.  |
 
-
-
 **Rename schema:**
 
 ### Rename schema
 
 To rename a schema:
-
-
 
 ```mzsql
 ALTER SCHEMA <name> RENAME TO <new_name>;
@@ -1894,15 +1680,11 @@ ALTER SCHEMA <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the schema.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner to:**
 
 ### Change owner to
 
 To change the owner of a schema:
-
-
 
 ```mzsql
 ALTER SCHEMA <name> OWNER TO <new_owner_role>;
@@ -1915,12 +1697,6 @@ ALTER SCHEMA <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the schema.  |
 To change the owner of a schema, you must be the owner of the schema and have
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
-
-
-
-
-
-
 
 ## Examples
 
@@ -1963,11 +1739,9 @@ The privileges required to execute this statement are:
 - [`SHOW SECRETS`](/sql/show-secrets)
 - [`SHOW SINKS`](/sql/show-sinks)
 
-
 ---
 
 ## ALTER SECRET
-
 
 Use `ALTER SECRET` to:
 
@@ -1977,14 +1751,11 @@ Use `ALTER SECRET` to:
 
 ## Syntax
 
-
 **Change value:**
 
 ### Change value
 
 To change the value of a secret:
-
-
 
 ```mzsql
 ALTER SECRET [IF EXISTS] <name> AS <value>;
@@ -1996,15 +1767,11 @@ ALTER SECRET [IF EXISTS] <name> AS <value>;
 | `<name>` | The identifier of the secret you want to alter.  |
 | `<value>` | The new value for the secret. The _value_ expression may not reference any relations, and must be implicitly castable to `bytea`.  |
 
-
-
 **Rename:**
 
 ### Rename
 
 To rename a secret:
-
-
 
 ```mzsql
 ALTER SECRET [IF EXISTS] <name> RENAME TO <new_name>;
@@ -2017,15 +1784,11 @@ ALTER SECRET [IF EXISTS] <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the secret.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a secret:
-
-
 
 ```mzsql
 ALTER SECRET [IF EXISTS] <name> OWNER TO <new_owner_role>;
@@ -2038,10 +1801,6 @@ ALTER SECRET [IF EXISTS] <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the secret.  |
 To change the owner, you must be a current owner as well as have membership in
 the `<new_owner_role>`.
-
-
-
-
 
 ## Details
 
@@ -2100,11 +1859,9 @@ The privileges required to execute this statement are:
 [`ALTER SOURCE`]: /sql/alter-source
 [`ALTER SINK`]: /sql/alter-sink
 
-
 ---
 
 ## ALTER SINK
-
 
 Use `ALTER SINK` to:
 - Change the relation you want to sink from. This is useful in the context of
@@ -2114,14 +1871,11 @@ Use `ALTER SINK` to:
 
 ## Syntax
 
-
 **Change sink from relation:**
 
 ### Change sink from relation
 
 To change the relation you want to sink from:
-
-
 
 ```mzsql
 ALTER SINK <name> SET FROM <relation_name>;
@@ -2133,15 +1887,11 @@ ALTER SINK <name> SET FROM <relation_name>;
 | `<name>`  | The name of the sink you want to change.  |
 | `<relation_name>`  | The name of the relation you want to sink from.  |
 
-
-
 **Rename:**
 
 ### Rename
 
 To rename a sink:
-
-
 
 ```mzsql
 ALTER SINK <name> RENAME TO <new_name>;
@@ -2154,17 +1904,11 @@ ALTER SINK <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the sink.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a sink:
-
-
 
 ```mzsql
 ALTER SINK <name> OWNER TO <new_owner_role>;
@@ -2177,9 +1921,6 @@ ALTER SINK <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the sink.  |
 To change the owner, you must be a current owner as well as have membership
 in the `<new_owner_role>`.
-
-
-
 
 ## Details
 
@@ -2216,7 +1957,6 @@ relation.
 > definition of the sink to emit results up until the oldest timestamp at which
 > the contents of the new upstream relation are known. Attempting to `ALTER` an
 > unhealthy sink that can't make progress will result in the command timing out.
-
 
 #### Cutover scenarios and workarounds
 
@@ -2317,7 +2057,6 @@ CREATE SINK avro_sink
 
 ```
 
-
 To have the sink read from `matview_new` instead of `matview_old`, you can
 use `ALTER SINK` to change the `FROM <relation>`:
 
@@ -2347,7 +2086,6 @@ scenarios:
 For workaround, see [Example: Handle cutover scenarios](#handle-cutover-scenarios)
 {{< /tip >}}
 
-
 ### Handle cutover scenarios
 
 Because Materialize emits updates from the newly specified relation **only** if
@@ -2366,7 +2104,6 @@ the changes. Then, after the sink upper has advanced beyond the time of the
 switch, you can `ALTER SINK` to the new relation (and remove the temporary
 intermediary materialized view and table).
 
-
 1. For example, create a table `switch` and a temporary materialized view
 `transition` that contains either:
 - the `matview_old` content if `switch.value` is `false`.
@@ -2374,33 +2111,30 @@ intermediary materialized view and table).
 
 At first, the `switch.value` is `false`, so the `transition` materialized view contains the `matview_old` content.
 
-
    <no value>```mzsql
    CREATE TABLE switch (value bool);
    INSERT INTO switch VALUES (false); -- controls whether we want the new or the old materialized view.
-   
+
    CREATE MATERIALIZED VIEW transition AS
    (SELECT matview_old.* FROM matview_old JOIN switch ON switch.value = false)
    UNION ALL
    (SELECT matview_new.* FROM matview_new JOIN switch ON switch.value = true)
    ;
-   
+
    ```
 
 1. `ALTER SINK` to use `transition`, which currently contains `matview_old` content:
 
-
    <no value>```mzsql
    ALTER SINK avro_sink SET FROM transition;
-   
+
    ```
 
 1. Update `switch.value` to `true`, which causes the `transition` materialized view to contain `matview_new` content:
 
-
    <no value>```mzsql
    UPDATE switch SET value = true;
-   
+
    ```
 
 1. Wait for the sink's upper frontier
@@ -2408,20 +2142,18 @@ At first, the `switch.value` is `false`, so the `transition` materialized view c
 beyond the time of the switch update. Once advanced, alter sink to use
 `matview_new`:
 
-
    <no value>```mzsql
    -- After sink upper has advanced beyond the time of the switch UPDATE.
    ALTER SINK avro_sink SET FROM matview_new;
-   
+
    ```
 
 1. Drop the `transition` materialized view and the `switch` table:
 
-
    <no value>```mzsql
    DROP MATERIALIZED VIEW transition;
    DROP TABLE switch;
-   
+
    ```
 
 ## See also
@@ -2429,11 +2161,9 @@ beyond the time of the switch update. Once advanced, alter sink to use
 - [`CREATE SINK`](/sql/create-sink/)
 - [`SHOW SINKS`](/sql/show-sinks)
 
-
 ---
 
 ## ALTER SOURCE
-
 
 Use `ALTER SOURCE` to:
 
@@ -2445,14 +2175,11 @@ Use `ALTER SOURCE` to:
 
 ## Syntax
 
-
 **Add subsource:**
 
 ### Add subsource
 
 To add the specified upstream table(s) to the specified PostgreSQL/MySQL/SQL Server source:
-
-
 
 ```mzsql
 ALTER SOURCE [IF EXISTS] <name>
@@ -2469,7 +2196,6 @@ ALTER SOURCE [IF EXISTS] <name>
 | **AS** `<subsrc>` | Optional. The name for the subsource in Materialize.  |
 | **WITH (TEXT COLUMNS (`<col>` [, ...]))** | Optional. List of columns to decode as `text` for types that are unsupported in Materialize.  |
 
-
 > **Note:** When you add a new subsource to an existing source ([`ALTER SOURCE ... ADD
 > SUBSOURCE ...`](/sql/alter-source/)), Materialize starts the snapshotting
 > process for the new subsource. During this snapshotting, the data ingestion for
@@ -2477,16 +2203,11 @@ ALTER SOURCE [IF EXISTS] <name>
 > possible, you can resize the cluster to speed up the snapshotting process and
 > once the process finishes, resize the cluster for steady-state.
 
-
-
-
 **Rename:**
 
 ### Rename
 
 To rename a source:
-
-
 
 ```mzsql
 ALTER SOURCE <name> RENAME TO <new_name>;
@@ -2499,15 +2220,11 @@ ALTER SOURCE <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the source.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a source:
-
-
 
 ```mzsql
 ALTER SOURCE <name> OWNER TO <new_owner_role>;
@@ -2521,15 +2238,11 @@ ALTER SOURCE <name> OWNER TO <new_owner_role>;
 To change the owner of a source, you must be the owner of the source and have
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
 
-
-
 **(Re)Set retain history config:**
 
 ### (Re)Set retain history config
 
 To set the retention history for a source:
-
-
 
 ```mzsql
 ALTER SOURCE [IF EXISTS] <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
@@ -2541,10 +2254,7 @@ ALTER SOURCE [IF EXISTS] <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
 | `<name>` | The name of the source you want to alter.  |
 | `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
 
-
 To reset the retention history to the default for a source:
-
-
 
 ```mzsql
 ALTER SOURCE [IF EXISTS] <name>  RESET (RETAIN HISTORY);
@@ -2555,15 +2265,11 @@ ALTER SOURCE [IF EXISTS] <name>  RESET (RETAIN HISTORY);
 | --- | --- |
 | `<name>` | The name of the source you want to alter.  |
 
-
-
 **(Re)Set timestamp interval:**
 
 ### (Re)Set timestamp interval
 
 To set the timestamp interval for a source:
-
-
 
 ```mzsql
 ALTER SOURCE [IF EXISTS] <name> SET (TIMESTAMP INTERVAL [=] <interval>);
@@ -2575,10 +2281,7 @@ ALTER SOURCE [IF EXISTS] <name> SET (TIMESTAMP INTERVAL [=] <interval>);
 | `<name>` | The name of the source you want to alter.  |
 | `<interval>` | The interval at which timestamps are assigned to the data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: `1s`.  |
 
-
 To reset the timestamp interval to the system default for a source:
-
-
 
 ```mzsql
 ALTER SOURCE [IF EXISTS] <name> RESET (TIMESTAMP INTERVAL);
@@ -2588,11 +2291,6 @@ ALTER SOURCE [IF EXISTS] <name> RESET (TIMESTAMP INTERVAL);
 | Syntax element | Description |
 | --- | --- |
 | `<name>` | The name of the source you want to alter.  |
-
-
-
-
-
 
 ## Context
 
@@ -2607,7 +2305,6 @@ the schema of the PostgreSQL/MySQL/SQL Server tables that are ingested.
 > the existing subsources for the same source is temporarily blocked. As such, if
 > possible, you can resize the cluster to speed up the snapshotting process and
 > once the process finishes, resize the cluster for steady-state.
-
 
 ### Dropping subsources from a PostgreSQL/MySQL/SQL Server source
 
@@ -2635,7 +2332,6 @@ ALTER SOURCE pg_src ADD SUBSOURCE tbl_a, tbl_b AS b WITH (TEXT COLUMNS [tbl_a.co
 > the existing subsources for the same source is temporarily blocked. As such, if
 > possible, you can resize the cluster to speed up the snapshotting process and
 > once the process finishes, resize the cluster for steady-state.
-
 
 ### Dropping subsources
 
@@ -2675,11 +2371,9 @@ The privileges required to execute this statement are:
 - [`DROP SOURCE`](/sql/drop-source/)
 - [`SHOW SOURCES`](/sql/show-sources)
 
-
 ---
 
 ## ALTER SYSTEM RESET
-
 
 Use `ALTER SYSTEM RESET` to globally restore the value of a configuration
 parameter to its default value. This command is an alternative spelling for
@@ -2771,11 +2465,9 @@ The privileges required to execute this statement are:
 - [`SHOW`](../show)
 - [`ALTER SYSTEM SET`](../alter-system-set)
 
-
 ---
 
 ## ALTER SYSTEM SET
-
 
 Use `ALTER SYSTEM SET` to globally modify the value of a configuration parameter.
 
@@ -2867,11 +2559,9 @@ The privileges required to execute this statement are:
 - [`ALTER SYSTEM RESET`](../alter-system-reset)
 - [`SHOW`](../show)
 
-
 ---
 
 ## ALTER TABLE
-
 
 Use `ALTER TABLE` to:
 
@@ -2881,14 +2571,11 @@ Use `ALTER TABLE` to:
 
 ## Syntax
 
-
 **Rename:**
 
 ### Rename
 
 To rename a table:
-
-
 
 ```mzsql
 ALTER TABLE <name> RENAME TO <new_name>;
@@ -2901,15 +2588,11 @@ ALTER TABLE <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the table.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a table:
-
-
 
 ```mzsql
 ALTER TABLE <name> OWNER TO <new_owner_role>;
@@ -2923,15 +2606,11 @@ ALTER TABLE <name> OWNER TO <new_owner_role>;
 To change the owner of a table, you must be the owner of the table and have
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
 
-
-
 **(Re)Set retain history config:**
 
 ### (Re)Set retain history config
 
 To set the retention history for a user-populated table:
-
-
 
 ```mzsql
 ALTER TABLE <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
@@ -2943,10 +2622,7 @@ ALTER TABLE <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
 | `<name>` | The name of the table you want to alter.  |
 | `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
 
-
 To reset the retention history to the default for a user-populated table:
-
-
 
 ```mzsql
 ALTER TABLE <name> RESET (RETAIN HISTORY);
@@ -2956,10 +2632,6 @@ ALTER TABLE <name> RESET (RETAIN HISTORY);
 | Syntax element | Description |
 | --- | --- |
 | `<name>` | The name of the table you want to alter.  |
-
-
-
-
 
 ## Privileges
 
@@ -2971,11 +2643,9 @@ The privileges required to execute this statement are:
   - `CREATE` privileges on the containing schema if the table is namespaced by
   a schema.
 
-
 ---
 
 ## ALTER TYPE
-
 
 Use `ALTER TYPE` to:
 - Rename a type.
@@ -2983,14 +2653,11 @@ Use `ALTER TYPE` to:
 
 ## Syntax
 
-
 **Rename:**
 
 ### Rename
 
 To rename a type:
-
-
 
 ```mzsql
 ALTER TYPE <name> RENAME TO <new_name>;
@@ -3003,15 +2670,11 @@ ALTER TYPE <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the type.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a type:
-
-
 
 ```mzsql
 ALTER TYPE <name> OWNER TO <new_owner_role>;
@@ -3025,11 +2688,6 @@ ALTER TYPE <name> OWNER TO <new_owner_role>;
 To change the owner of a type, you must be the current owner and have
 membership in the `<new_owner_role>`.
 
-
-
-
-
-
 ## Privileges
 
 The privileges required to execute this statement are:
@@ -3040,11 +2698,9 @@ The privileges required to execute this statement are:
   - `CREATE` privileges on the containing schema if the type is namespaced by a
     schema.
 
-
 ---
 
 ## ALTER VIEW
-
 
 Use `ALTER VIEW` to:
 - Rename a view.
@@ -3052,14 +2708,11 @@ Use `ALTER VIEW` to:
 
 ## Syntax
 
-
 **Rename:**
 
 ### Rename
 
 To rename a view:
-
-
 
 ```mzsql
 ALTER VIEW <name> RENAME TO <new_name>;
@@ -3072,15 +2725,11 @@ ALTER VIEW <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the view.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a view:
-
-
 
 ```mzsql
 ALTER VIEW <name> OWNER TO <new_owner_role>;
@@ -3094,11 +2743,6 @@ ALTER VIEW <name> OWNER TO <new_owner_role>;
 To change the owner of a view, you must be the current owner and have
 membership in the `<new_owner_role>`.
 
-
-
-
-
-
 ## Privileges
 
 The privileges required to execute this statement are:
@@ -3109,11 +2753,9 @@ The privileges required to execute this statement are:
   - `CREATE` privileges on the containing schema if the view is namespaced by
   a schema.
 
-
 ---
 
 ## BEGIN
-
 
 <p><a href="/sql/begin/" ><code>BEGIN</code></a> starts a transaction block. Once a transaction is started:</p>
 <ul>
@@ -3135,8 +2777,7 @@ Materialize supports multi-statement[^ddltxn] transaction blocks for:
 - [**read-only** statements](#read-only-transactions);
 - [**write-only** (specifically, insert-only)
   statements](#write-only-transactions);
-- [**DDL-only** (specifically, `CREATE TABLE FROM SOURCE` (and optionally,
-  `CREATE SOURCE`) statements)](#ddl-only-transactions). (***Private Preview***)
+- [**DDL-only** statements](#ddl-only-transactions).
 
 See [Details](#details) for more information.
 
@@ -3162,8 +2803,7 @@ Option | Description
 Multi-statement transactions in Materialize are [**read-only**
 transactions](#read-only-transactions), [**write-only**
 transactions](#write-only-transactions), or [**DDL-only**
-transactions](#ddl-only-transactions) (*Private Preview*) as determined by
-either:
+transactions](#ddl-only-transactions) as determined by either:
 
 - The first statement after the `BEGIN`, or
 - The [`READ ONLY`](#begin-option-read-only) option is specified.
@@ -3184,7 +2824,6 @@ In Materialize, read-only transactions can be either:
 >   queries in the transaction.
 > - The transaction will additionally hold back normal compaction of the objects,
 >   potentially increasing memory usage for very long running transactions.
-
 
 #### SELECT-only transactions
 
@@ -3299,11 +2938,14 @@ encounters an <strong>internal ERROR</strong> and rolls back:</p>
 
 ### DDL-only transactions
 
-
-
 In Materialize, a DDL-only transaction block is a transaction that can contain
-multiple [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/) (and optionally,
-[`CREATE SOURCE`](/sql/create-source/)) statements.[^ddltxn]
+multiple DDL statements. The following DDL statements are allowed in DDL-only
+transactions:
+
+- [`ALTER ... RENAME`](/sql/alter-schema/#rename-schema) (e.g., `ALTER TABLE ... RENAME`, `ALTER SCHEMA ... RENAME`)
+- [`ALTER ... SWAP`](/sql/alter-schema/#swap-with) (e.g., `ALTER SCHEMA ... SWAP`)
+- [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/)
+- [`CREATE SOURCE`](/sql/create-source/)
 
 In practice, use DDL transaction blocks to create multiple tables from a source
 in a single transaction. On a successful [`COMMIT`](/sql/commit/), all objects
@@ -3330,11 +2972,9 @@ COMMIT;
 [`DECLARE ... CURSOR FOR`]: /sql/declare/
 [`INSERT`]: /sql/insert/
 
-
 ---
 
 ## CLOSE
-
 
 Use `CLOSE` to close a cursor previously opened with [`DECLARE`](/sql/declare).
 
@@ -3348,11 +2988,9 @@ Syntax element | Description
 ---------------|------------
 `<cursor_name>` | The name of an open cursor to close.
 
-
 ---
 
 ## COMMENT ON
-
 
 Use `COMMENT ON` to:
 
@@ -3361,8 +2999,6 @@ Use `COMMENT ON` to:
 - Remove the comment from an object.
 
 ## Syntax
-
-
 
 ```mzsql
 COMMENT ON <object_type> <name> IS <comment | NULL>;
@@ -3374,7 +3010,6 @@ COMMENT ON <object_type> <name> IS <comment | NULL>;
 | `<object_type>` | The type of the object. Supported object types:  - `CLUSTER` - `CLUSTER REPLICA` - `COLUMN` - `CONNECTION` - `DATABASE` - `FUNCTION` - `INDEX` - `MATERIALIZED VIEW` - `NETWORK POLICY` - `ROLE` - `SCHEMA` - `SECRET` - `SINK` - `SOURCE` - `TABLE` - `TYPE` - `VIEW`  |
 | `<name>` | The fully qualified name of the object.  |
 | `<comment \| NULL>` | - The comment string for the object. - Use `NULL` to remove an existing comment.  |
-
 
 ## Details
 
@@ -3412,11 +3047,9 @@ COMMENT ON TABLE foo IS NULL;
 SELECT * FROM mz_internal.mz_comments;
 ```
 
-
 ---
 
 ## COMMIT
-
 
 `COMMIT` ends the current [transaction](/sql/begin/#details). Upon the `COMMIT`
 statement:
@@ -3451,15 +3084,14 @@ is issued, all changes are discarded.</li>
 
 Transactions in Materialize are **read-only** transactions, **write-only**
 (more specifically, **insert-only**) transactions, or **DDL-only**
-transactions (***Private Preview***).
+transactions.
 
 For a [write-only (i.e., insert-only)
 transaction](/sql/begin/#write-only-transactions), all statements in the
 transaction are committed at the same timestamp.
 
-For a [DDL-only transaction](/sql/begin/#ddl-only-transactions) (***Private
-Preview***), all statements in the transaction are committed at the same
-timestamp.
+For a [DDL-only transaction](/sql/begin/#ddl-only-transactions), all
+statements in the transaction are committed at the same timestamp.
 
 ## Examples
 
@@ -3516,7 +3148,6 @@ queries in the transaction.
 > **Note:** The transaction will additionally hold back normal compaction of the objects,
 > potentially increasing memory usage for very long running transactions.
 
-
 ## See also
 
 - [`BEGIN`]
@@ -3530,20 +3161,15 @@ queries in the transaction.
 [`DECLARE ... CURSOR FOR`]: /sql/declare/
 [`INSERT`]: /sql/insert
 
-
 ---
 
 ## COPY FROM
-
 
 `COPY FROM` copies data into a table using the [Postgres `COPY` protocol][pg-copy-from].
 
 ## Syntax
 
-
-
 **Copy from STDIN:**
-
 
 ```mzsql
 COPY [INTO] <table_name> [ ( <column> [, ...] ) ] FROM STDIN
@@ -3558,10 +3184,7 @@ COPY [INTO] <table_name> [ ( <column> [, ...] ) ] FROM STDIN
 | `( <column> [, ...] )` | If specified, correlate the inserted rows' columns to `<table_name>`'s columns by ordinal position, i.e. the first column of the row to insert is correlated to the first named column. If not specified, all columns must have data provided, and will be referenced using their order in the table. With a partial column list, all unreferenced columns will receive their default value.  |
 | `[WITH] ( <option1> [=] <val1> [, ...] )` | The following `<options>` are supported for the `COPY FROM` operation: \| Name \|  Description \| \|------\|---------------\| \| `FORMAT` \|  Sets the input formatting method. Valid input formats are `TEXT` and `CSV`. For more information see [Text formatting](#text-formatting) and [CSV formatting](#csv-formatting).<br><br> Default: `TEXT`. \| `DELIMITER` \| A single-quoted one-byte character to use as the column delimiter. Must be different from `QUOTE`.<br><br> Default: A tab character in `TEXT`  format, a comma in `CSV` format. \| `NULL`  \| A single-quoted string that represents a _NULL_ value.<br><br> Default: `\N` (backslash-N) in text format, an unquoted empty string in CSV format. \| `QUOTE` \| _For `FORMAT CSV` only._ A single-quoted one-byte character that specifies the character to signal a quoted string, which may contain the `DELIMITER` value (without beginning new columns). To include the `QUOTE` character itself in column, wrap the column's value in the `QUOTE` character and prefix all instance of the value you want to literally interpret with the `ESCAPE` value. Must be different from `DELIMITER`.<br><br> Default: `"`. \| `ESCAPE` \| _For `FORMAT CSV` only._ A single-quoted string that specifies the character to allow instances of the `QUOTE` character to be parsed literally as part of a column's value. <br><br> Default: `QUOTE`'s value. \| `HEADER`  \| _For `FORMAT CSV` only._ A boolean that specifies that the file contains a header line with the names of each column in the file. The first line is ignored on input. <br><br> Default: `false`.  |
 
-
-
 **Copy from S3 and S3 compatible services:**
-
 
 ```mzsql
 COPY [INTO] <table_name> [ ( <column> [, ...] ) ] FROM [<s3 URI> | <http URL>]
@@ -3578,10 +3201,6 @@ COPY [INTO] <table_name> [ ( <column> [, ...] ) ] FROM [<s3 URI> | <http URL>]
 | `<HTTP URL>` | The URL (for example, s3 presigned URL) to retrieve the file(s) to be copied from.  |
 | `[WITH] ( <option1> [=] <val1> [, ...] )` | The following `<options>` are supported for the `COPY FROM` operation: Name \| Value type \| Default value \| Description -----\|-----------------\|---------------\|------------ `FORMAT` \| `CSV`, `PARQUET` \| None, must be provided \| Sets the input formatting method. For more information see [formatting details below](#details). `DELIMITER` \| Single-quoted one-byte character \| Format-dependent \| Overrides the format's default column delimiter. _`FORMAT CSV` only_ `NULL` \| Single-quoted strings \| Format-dependent \| Specifies the string that represents a _NULL_ value. _`FORMAT CSV` only_ `QUOTE` \| Single-quoted one-byte character \| `"` \| Specifies the character to signal a quoted string, which may contain the `DELIMITER` value (without beginning new columns). To include the `QUOTE` character itself in column, wrap the column's value in the `QUOTE` character and prefix all instance of the value you want to literally interpret with the `ESCAPE` value. _`FORMAT CSV` only_ `ESCAPE` \| Single-quoted strings \| `QUOTE`'s value \| Specifies the character to allow instances of the `QUOTE` character to be parsed literally as part of a column's value. _`FORMAT CSV` only_ `HEADER`  \| `boolean`   \| `false`  \| Specifies that the file contains a header line with the names of each column in the file. The first line is ignored on input.  _`FORMAT CSV` only._ `AWS CONNECTION` \| _connection_name_ \|  \|  The name of the AWS connection to use in the `COPY FROM` command. If using an s3 URI, must be specified. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#aws) documentation page. _Only valid with S3._ `FILES`   \| array \| \| A list of files to be appended to the URI. Example: `[ "top.csv", "files/a.csv", "files/b.csv" ]`. `PATTERN` \| string \| \| A glob used to identify files at at the URI. Example: `"files/**"`.  Note that `DELIMITER` and `QUOTE` must use distinct values.  |
 
-
-
-
-
 ## Details
 
 ### S3 Bucket IAM Policies
@@ -3597,7 +3216,6 @@ To use `COPY FROM` with S3, you need to allow the following actions in your IAM 
 > you need to enable equivalent permissions on the service you are using. The specific
 > configuration steps will vary by provider, but the access credentials must allow the same
 > read and list operations on the target bucket.
-
 
 ### Text formatting
 
@@ -3636,8 +3254,6 @@ Supported PARQUET compression formats
 - brotli
 - zstd
 - lz4
-
-
 
 | [Arrow type](https://github.com/apache/arrow/blob/main/format/Schema.fbs) | [Parquet primitive type](https://parquet.apache.org/docs/file-format/types/) | [Parquet logical type](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md) | Materialize type                                                                  |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
@@ -3731,6 +3347,11 @@ COPY INTO csv_table FROM 's3://my_bucket/my_data.csv' (FORMAT CSV, AWS CONNECTIO
 COPY INTO csv_table FROM '<s3 presigned URL>' (FORMAT CSV);
 ```
 
+> **Note:** Materialize does not follow HTTP redirects when fetching from a URL. If the
+> server returns a `3xx` response, the `COPY FROM` will fail rather than follow
+> the `Location` header. Use the final URL directly (for example, the resolved
+> presigned URL) instead of one that redirects.
+
 ## Privileges
 
 The privileges required to execute this statement are:
@@ -3740,11 +3361,9 @@ The privileges required to execute this statement are:
 
 [pg-copy-from]: https://www.postgresql.org/docs/14/sql-copy.html
 
-
 ---
 
 ## COPY TO
-
 
 `COPY TO` outputs results from Materialize to standard output or object storage.
 This command is useful to output [`SUBSCRIBE`](/sql/subscribe/) results
@@ -3758,8 +3377,6 @@ This command is useful to output [`SUBSCRIBE`](/sql/subscribe/) results
 Copying results to `stdout` is useful to output the stream of updates from a
 [`SUBSCRIBE`](/sql/subscribe/) command in interactive SQL clients like `psql`.
 
-
-
 ```mzsql
 COPY ( <query> ) TO STDOUT [WITH ( <option> = <val> )];
 
@@ -3769,8 +3386,6 @@ COPY ( <query> ) TO STDOUT [WITH ( <option> = <val> )];
 | --- | --- |
 | `<query>` | The [`SELECT`](/sql/select) or [`SUBSCRIBE`](/sql/subscribe) query whose results are copied.  |
 | `WITH ( <option> = <val> )` | Optional. The following `<option>` are supported: \| Name \|  Description \| \|------\|---------------\| `FORMAT` \| Sets the output format. Valid output formats are: `TEXT`,`BINARY`, `CSV`.<br><br> Default: `TEXT`.  |
-
-
 
 **Copy to Amazon S3 and S3 compatible services:**
 ### Copy to Amazon S3 and S3 compatible services {#copy-to-s3}
@@ -3784,8 +3399,6 @@ The `COPY TO` command is _one-shot_: every time you want to export results, you
 must run the command. To automate exporting results on a regular basis, you can
 set up scheduling, for example using a simple `cron`-like service or an
 orchestration platform like Airflow or Dagster.
-
-
 
 ```mzsql
 COPY <query> TO '<s3_uri>'
@@ -3804,11 +3417,6 @@ WITH (
 | `AWS CONNECTION = <connection_name>` | The name of the AWS connection to use in the `COPY TO` command. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#aws) documentation page.  |
 | `FORMAT = '<format>'` | The file format to write. Valid formats are `'csv'` and `'parquet'`.  - {{< include-from-yaml data="examples/copy_to" name="csv-writer-settings" >}}  - {{< include-from-yaml data="examples/copy_to" name="parquet-writer-settings" >}}  |
 | [`MAX FILE SIZE = <size>`] | Optional. Sets the approximate maximum file size (in bytes) of each file uploaded to the S3 bucket.  |
-
-
-
-
-
 
 ## Details
 
@@ -3889,7 +3497,6 @@ writer settings are used:</p>
 <p>If you encounter issues trying to ingest Parquet files produced by
 Materialize into your downstream systems, please <a href="/support/" >contact our
 team</a>.</p>
-
 
 #### Parquet data types
 
@@ -4086,7 +3693,6 @@ to indicate the Materialize native type the field originated from.</p>
   </tbody>
 </table>
 
-
 ## Privileges
 
 The privileges required to execute this statement are:
@@ -4160,7 +3766,6 @@ writer settings are used:</p>
 Materialize into your downstream systems, please <a href="/support/" >contact our
 team</a>.</p>
 
-
 See also [Copy to S3: Parquet Data Types](#parquet-data-types).
 
 #### File format CSV
@@ -4202,7 +3807,6 @@ writer settings:</p>
   </tbody>
 </table>
 
-
 ## Related pages
 
 - [`CREATE CONNECTION`](/sql/create-connection)
@@ -4210,17 +3814,13 @@ writer settings:</p>
   - [Amazon S3](/serve-results/s3/)
   - [Snowflake (via S3)](/serve-results/snowflake/)
 
-
 ---
 
 ## CREATE CLUSTER
 
-
 `CREATE CLUSTER` creates a new [cluster](/concepts/clusters/).
 
 ## Syntax
-
-
 
 ```mzsql
 CREATE CLUSTER <cluster_name> (
@@ -4239,7 +3839,6 @@ CREATE CLUSTER <cluster_name> (
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. See [Replication factor](#replication-factor) for details.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  <a name="unmanaged-clusters"></a>  Specify `FALSE` to create an **unmanaged** cluster. With unmanaged clusters, you need to manually manage the cluster's replicas using the the [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) and [`DROP CLUSTER REPLICA`](/sql/drop-cluster-replica) commands. When creating an unmanaged cluster, you must specify the `REPLICAS` option as well.  {{< tip >}} When getting started with Materialize, we recommend starting with managed clusters. {{</ tip >}}  Default: `TRUE`  |
 | `SCHEDULE` | Optional. The [scheduling type](#scheduling) for the cluster. Valid values are: - `MANUAL` - `ON REFRESH`  Default: `MANUAL`  |
-
 
 ## Details
 
@@ -4288,7 +3887,6 @@ example, you could place your development workloads in a cluster named
 The `SIZE` option determines the amount of compute resources available to the
 cluster.
 
-
 **cc Clusters:**
 
 Materialize offers the following cc cluster sizes:
@@ -4318,7 +3916,6 @@ query the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
 > time. You should not rely on them for any kind of capacity planning.
 
-
 Clusters of larger sizes can process data faster and handle larger data volumes.
 
 **M.1 Clusters:**
@@ -4329,14 +3926,10 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 > most workloads. We recommend using cc sizes unless your workload specifically
 > requires the additional disk capacity that M.1 sizes provide.
 
-
 > **Note:** The values set forth in the table are solely for illustrative purposes.
 > Materialize reserves the right to change the capacity at any time. As such, you
 > acknowledge and agree that those values in this table may change at any time,
 > and you should not rely on these values for any capacity planning.
-
-
-
 
 | Cluster size | Compute Credits/Hour | Total Capacity | Notes |
 | --- | --- | --- | --- |
@@ -4356,8 +3949,6 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 | <strong>M.1-64xlarge</strong> | 768 | 26320 GiB | Available upon request |
 | <strong>M.1-128xlarge</strong> | 1536 | 52640 GiB | Available upon request |
 
-
-
 **Legacy t-shirt Clusters:**
 
 Materialize also offers some legacy t-shirt cluster sizes for upsert sources.
@@ -4367,15 +3958,10 @@ Materialize also offers some legacy t-shirt cluster sizes for upsert sources.
 > clusters to cc sizes.
 > The legacy size information is provided for completeness.
 
-
-
-
 <blockquote>
 <p><strong>Warning:</strong> Materialize regions that were enabled after 15 April 2024 do not have access
 to legacy sizes.</p>
 </blockquote>
-
-
 
 When legacy sizes are enabled for a region, the following sizes are available:
 
@@ -4391,9 +3977,6 @@ When legacy sizes are enabled for a region, the following sizes are available:
 * `4xlarge`
 * `5xlarge`
 * `6xlarge`
-
-
-
 
 See also:
 
@@ -4414,8 +3997,6 @@ the cluster is hosting, this operation **might incur downtime**.
 See the reference documentation for [`ALTER
 CLUSTER`](/sql/alter-cluster#zero-downtime-cluster-resizing) for more details
 on cluster resizing.
-
-
 
 ### Replication factor
 
@@ -4453,7 +4034,6 @@ using [`ALTER CLUSTER`] to set a nonzero replication factor.
 > queries) as all the other replicas of the cluster.
 > To increase a cluster's capacity, you should instead increase the cluster's
 > [size](#available-sizes).
-
 
 ### Credit usage
 
@@ -4502,8 +4082,6 @@ Cluster `c` will have consumed 0.4 credits in total:
     credits.
 
 ### Scheduling
-
-
 
 To support [scheduled refreshes in materialized views](../create-materialized-view/#refresh-strategies),
 you can configure a cluster to automatically turn on and off using the
@@ -4639,12 +4217,9 @@ The privileges required to execute this statement are:
 [`SUBSCRIBE`]: /sql/subscribe
 [`mz_cluster_replica_sizes`]: /reference/system-catalog/mz_catalog#mz_cluster_replica_sizes
 
-
 ---
 
 ## CREATE CLUSTER REPLICA
-
-
 
 `CREATE CLUSTER REPLICA` provisions a new replica for an [**unmanaged**
 cluster](/sql/create-cluster/#unmanaged-clusters).
@@ -4652,10 +4227,7 @@ cluster](/sql/create-cluster/#unmanaged-clusters).
 > **Tip:** When getting started with Materialize, we recommend starting with managed
 > clusters.
 
-
 ## Syntax
-
-
 
 ```mzsql
 CREATE CLUSTER REPLICA <cluster_name>.<replica_name> (
@@ -4670,7 +4242,6 @@ CREATE CLUSTER REPLICA <cluster_name>.<replica_name> (
 | `<replica_name>` | A name for this replica.  |
 | `SIZE` | The size of the resource allocations for the cluster.  For valid size values, see [Available sizes](#available-sizes).  |
 
-
 ## Details
 
 ### Available sizes
@@ -4678,7 +4249,6 @@ CREATE CLUSTER REPLICA <cluster_name>.<replica_name> (
 The `SIZE` option for replicas is identical to the [`SIZE` option for
 clusters](/sql/create-cluster/#available-sizes) option, except that the size applies only
 to the new replica.
-
 
 **cc Clusters:**
 
@@ -4709,7 +4279,6 @@ query the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
 > time. You should not rely on them for any kind of capacity planning.
 
-
 Clusters of larger sizes can process data faster and handle larger data volumes.
 
 **M.1 Clusters:**
@@ -4720,14 +4289,10 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 > most workloads. We recommend using cc sizes unless your workload specifically
 > requires the additional disk capacity that M.1 sizes provide.
 
-
 > **Note:** The values set forth in the table are solely for illustrative purposes.
 > Materialize reserves the right to change the capacity at any time. As such, you
 > acknowledge and agree that those values in this table may change at any time,
 > and you should not rely on these values for any capacity planning.
-
-
-
 
 | Cluster size | Compute Credits/Hour | Total Capacity | Notes |
 | --- | --- | --- | --- |
@@ -4747,10 +4312,6 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 | <strong>M.1-64xlarge</strong> | 768 | 26320 GiB | Available upon request |
 | <strong>M.1-128xlarge</strong> | 1536 | 52640 GiB | Available upon request |
 
-
-
-
-
 See also:
 
 - [cc to M.1 size mapping](/sql/m1-cc-mapping/).
@@ -4760,7 +4321,6 @@ See also:
 
 - [Blog:Scaling Beyond Memory: How Materialize Uses Swap for Larger
   Workloads](https://materialize.com/blog/scaling-beyond-memory/).
-
 
 ### Homogeneous vs. heterogeneous hardware provisioning
 
@@ -4796,11 +4356,9 @@ The privileges required to execute this statement are:
 [AWS availability zone ID]: https://docs.aws.amazon.com/ram/latest/userguide/working-with-az-ids.html
 [`DROP CLUSTER REPLICA`]: /sql/drop-cluster-replica
 
-
 ---
 
 ## CREATE CONNECTION
-
 
 [//]: # "TODO: This page could be broken up."
 
@@ -4817,8 +4375,6 @@ certificates) can be specified as plain `text`, or also stored as secrets.
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
 
-
-
 ## Source and sink connections
 
 ### AWS
@@ -4828,8 +4384,6 @@ Identity and Access Management (IAM) user or role in your AWS account. You can
 use AWS connections to perform [bulk exports to Amazon S3](/serve-results/s3/),
 perform [authentication with an Amazon MSK cluster](#kafka-aws-connection), or
 perform [authentication with an Amazon RDS MySQL database](#mysql-aws-connection).
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO AWS (
@@ -4857,13 +4411,11 @@ CREATE CONNECTION <connection_name> TO AWS (
 | `ASSUME ROLE SESSION NAME` | *Value:* `text`  The session name to use when assuming the role.  Only valid when `ASSUME ROLE ARN` is specified.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `false`. \|  |
 
-
 #### Permissions {#aws-permissions}
 
 > **Warning:** Failing to constrain the external ID in your role trust policy will allow
 > other Materialize customers to assume your role and use AWS privileges you
 > have granted the role!
-
 
 When using role assumption-based authentication, you must configure a [trust
 policy] on the IAM role that permits Materialize to assume the role.
@@ -4910,7 +4462,6 @@ SELECT id, external_id, example_trust_policy FROM mz_internal.mz_aws_connections
 ```
 
 #### Examples {#aws-examples}
-
 
 **Role assumption:**
 
@@ -4960,11 +4511,9 @@ CREATE CONNECTION aws_role_assumption TO AWS (
 );
 ```
 
-
 **Credentials:**
 > **Warning:** Use of credentials-based authentication is deprecated.  AWS strongly encourages
 > the use of role assumption-based authentication instead.
-
 
 To create an AWS connection that uses static access key credentials:
 
@@ -4975,9 +4524,6 @@ CREATE CONNECTION aws_credentials TO AWS (
     SECRET ACCESS KEY = SECRET aws_secret_access_key
 );
 ```
-
-
-
 
 ### S3 compatible object storage
 You can use an AWS connection to perform bulk exports and bulk imports with any S3 compatible object
@@ -5003,8 +4549,6 @@ A Kafka connection establishes a link to a [Kafka] cluster. You can use Kafka
 connections to create [sources](/sql/create-source/kafka) and [sinks](/sql/create-sink/kafka/).
 
 #### Syntax {#kafka-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO KAFKA (
@@ -5039,9 +4583,8 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | `AWS CONNECTION` | <a name="kafka-aws-connection"></a> *Value:* object name  The name of an [AWS connection](#aws) to use when performing IAM authentication with an Amazon MSK cluster.  Only valid if the security protocol is `SASL_PLAINTEXT` or `SASL_SSL`.  |
 | `AWS PRIVATELINK` | *Value:* object name  The name of an [AWS PrivateLink connection](#aws-privatelink) to route network traffic through.  Exactly one of `BROKER`, `BROKERS`, or `AWS PRIVATELINK` must be specified.  |
 | `PROGRESS TOPIC` | *Value:* `text`  The name of a topic that Kafka sinks can use to track internal consistency metadata.  Default: `_materialize-progress-{REGION ID}-{CONNECTION ID}`.  |
-| `PROGRESS TOPIC REPLICATION FACTOR` | *Value:* `int`  The partition count to use when creating the progress topic (if the Kafka topic does not already exist).  Default: Broker's default.  |
+| `PROGRESS TOPIC REPLICATION FACTOR` | *Value:* `int`  The replication factor to use when creating the progress topic (if the Kafka topic does not already exist).  Default: Broker's default.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
-
 
 To connect to a Kafka cluster with multiple bootstrap servers, use the `BROKERS`
 option:
@@ -5053,7 +4596,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 ```
 
 #### Security protocol examples {#kafka-auth}
-
 
 **PLAINTEXT:**
 > **Warning:** It is insecure to use the `PLAINTEXT` security protocol unless
@@ -5067,7 +4609,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
     SSH TUNNEL ssh_connection
 );
 ```
-
 
 **SSL:**
 With both TLS encryption and TLS client authentication:
@@ -5105,12 +4646,10 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 );
 ```
 
-
 **SASL_PLAINTEXT:**
 > **Warning:** It is insecure to use the `SASL_PLAINTEXT` security protocol unless
 > you are using a [network security connection](#network-security-connections)
 > to tunnel into a private network, as shown below.
-
 
 ```mzsql
 CREATE SECRET kafka_password AS '...';
@@ -5124,7 +4663,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
     SSH TUNNEL ssh_connection
 );
 ```
-
 
 **SASL_SSL:**
 ```mzsql
@@ -5143,7 +4681,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 );
 ```
 
-
 **AWS IAM:**
 
 ```mzsql
@@ -5159,20 +4696,15 @@ CREATE CONNECTION kafka_msk TO KAFKA (
 );
 ```
 
-
-
 #### Network security {#kafka-network-security}
 
 If your Kafka broker is not exposed to the public internet, you can tunnel the
 connection through an AWS PrivateLink service (Materialize Cloud) or an
 SSH bastion host.
 
-
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 Depending on the hosted service you are connecting to, you might need to specify
 a PrivateLink connection [per advertised broker](#kafka-privatelink-syntax)
@@ -5183,9 +4715,6 @@ a PrivateLink connection [per advertised broker](#kafka-privatelink-syntax)
 > **Warning:** If your Kafka cluster advertises brokers that are not specified
 > in the `BROKERS` clause, Materialize will attempt to connect to
 > those brokers without any tunneling.
-
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO KAFKA (
@@ -5203,10 +4732,7 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | `<broker>:<port>` | The hostname and port of each Kafka broker.  |
 | `USING <tunnel_option>` | Specifies how to connect to each broker (e.g., via AWS PrivateLink or SSH tunnel).  |
 
-
 ##### `kafka_broker`
-
-
 
 ```mzsql
 '<broker>:<port>' USING AWS PRIVATELINK <connection_name> (
@@ -5221,7 +4747,6 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | `AWS PRIVATELINK <connection_name>` | The name of an AWS PrivateLink connection through which network traffic for this broker should be routed.  |
 | `AVAILABILITY ZONE` | The ID of the availability zone of the AWS PrivateLink service in which the broker is accessible.  |
 | `PORT` | The port of the AWS PrivateLink service to connect to.  |
-
 
 The `USING` clause specifies that Materialize Cloud should connect to the
 designated broker via an AWS PrivateLink service. Brokers do not need to be
@@ -5272,8 +4797,6 @@ PrivateLink connection and the port of the bootstrap server instead.
 
 ##### Default connection syntax {#kafka-privatelink-default-syntax}
 
-
-
 ```mzsql
 CREATE CONNECTION <connection_name> TO KAFKA (
     AWS PRIVATELINK <privatelink_connection_name> (PORT <port>),
@@ -5286,7 +4809,6 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | --- | --- |
 | `AWS PRIVATELINK <privatelink_connection_name>` | The name of an AWS PrivateLink connection through which network traffic should be routed.  |
 | `PORT` | The port of the AWS PrivateLink service to connect to.  |
-
 
 ##### Default connection options {#kafka-privatelink-default-options}
 
@@ -5316,7 +4838,6 @@ For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
 
-
 **SSH tunnel:**
 
 ##### Syntax {#kafka-ssh-syntax}
@@ -5324,9 +4845,6 @@ check [this guide](/ops/network-security/privatelink/).
 > **Warning:** If you do not specify a default `SSH TUNNEL` and your Kafka
 > cluster advertises brokers that are not listed in the `BROKERS` clause,
 > Materialize will attempt to connect to those brokers without any tunneling.
-
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO KAFKA (
@@ -5344,10 +4862,7 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | `<broker>:<port>` | The hostname and port of each Kafka broker.  |
 | `USING <tunnel_option>` | Specifies how to connect to each broker (e.g., via AWS PrivateLink or SSH tunnel).  |
 
-
 ##### `kafka_broker`
-
-
 
 ```mzsql
 '<broker>:<port>' USING SSH TUNNEL <connection_name>
@@ -5357,7 +4872,6 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 | Syntax element | Description |
 | --- | --- |
 | `SSH TUNNEL <connection_name>` | The name of an SSH tunnel connection through which network traffic for this broker should be routed.  |
-
 
 The `USING` clause specifies that Materialize should connect to the designated
 broker via an SSH bastion server. Brokers do not need to be configured the same
@@ -5400,9 +4914,6 @@ BROKERS (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
 
-
-
-
 ### Confluent Schema Registry
 
 A Confluent Schema Registry connection establishes a link to a [Confluent Schema
@@ -5410,8 +4921,6 @@ Registry] server. You can use Confluent Schema Registry connections in the
 `FORMAT` clause of [`CREATE SOURCE`] and [`CREATE SINK`] statements.
 
 #### Syntax {#csr-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO CONFLUENT SCHEMA REGISTRY (
@@ -5438,7 +4947,6 @@ CREATE CONNECTION <connection_name> TO CONFLUENT SCHEMA REGISTRY (
 | `AWS PRIVATELINK` | *Value:* object name  The name of an [AWS PrivateLink connection](#aws-privatelink) to route network traffic through.  |
 | `SSH TUNNEL` | *Value:* object name  The name of an [SSH tunnel connection](#ssh-tunnel) to route network traffic through.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
-
 
 #### Examples {#csr-example}
 
@@ -5480,12 +4988,9 @@ CREATE CONNECTION csr_ssl TO CONFLUENT SCHEMA REGISTRY (
 If your Confluent Schema Registry server is not exposed to the public internet,
 you can tunnel the connection through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host.
 
-
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ##### Example {#csr-privatelink-example}
 
@@ -5500,7 +5005,6 @@ CREATE CONNECTION csr_privatelink TO CONFLUENT SCHEMA REGISTRY (
     AWS PRIVATELINK privatelink_svc
 );
 ```
-
 
 **SSH tunnel:**
 
@@ -5519,17 +5023,12 @@ CREATE CONNECTION csr_ssh TO CONFLUENT SCHEMA REGISTRY (
 );
 ```
 
-
-
-
 ### MySQL
 
 A MySQL connection establishes a link to a [MySQL] server. You can use
 MySQL connections to create [sources](/sql/create-source/mysql).
 
 #### Syntax {#mysql-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO MYSQL (
@@ -5564,7 +5063,6 @@ CREATE CONNECTION <connection_name> TO MYSQL (
 | `SSH TUNNEL` | *Value:* object name  The name of an [SSH tunnel connection](#ssh-tunnel) to route network traffic through.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
 
-
 #### Example {#mysql-example}
 
 ```mzsql
@@ -5584,12 +5082,9 @@ If your MySQL server is not exposed to the public internet, you can tunnel the
 connection through an AWS PrivateLink service (Materialize Cloud) or an
 SSH bastion host.
 
-
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ##### Example {#mysql-privatelink-example}
 
@@ -5612,7 +5107,6 @@ For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
 
-
 **SSH tunnel:**
 
 ##### Example {#mysql-ssh-example}
@@ -5633,8 +5127,6 @@ CREATE CONNECTION mysql_connection TO MYSQL (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
 
-
-
 **AWS IAM:**
 
 ##### Example {#mysql-aws-connection-example}
@@ -5654,16 +5146,12 @@ CREATE CONNECTION mysql_connection TO MYSQL (
 );
 ```
 
-
-
 ### PostgreSQL
 
 A Postgres connection establishes a link to a single database of a
 [PostgreSQL] server. You can use Postgres connections to create [sources](/sql/create-source/postgres).
 
 #### Syntax {#postgres-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO POSTGRES (
@@ -5698,7 +5186,6 @@ CREATE CONNECTION <connection_name> TO POSTGRES (
 | `SSH TUNNEL` | *Value:* object name  The name of an [SSH tunnel connection](#ssh-tunnel) to route network traffic through.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
 
-
 #### Example {#postgres-example}
 
 ```mzsql
@@ -5719,12 +5206,9 @@ CREATE CONNECTION pg_connection TO POSTGRES (
 If your PostgreSQL server is not exposed to the public internet, you can tunnel
 the connection through an AWS PrivateLink service (Materialize Cloud)or an SSH bastion host.
 
-
 **AWS PrivateLink:**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ##### Example {#postgres-privatelink-example}
 
@@ -5748,7 +5232,6 @@ For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
 
-
 **SSH tunnel:**
 
 ##### Example {#postgres-ssh-example}
@@ -5771,19 +5254,12 @@ CREATE CONNECTION pg_connection TO POSTGRES (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
 
-
-
-
 ### SQL Server
-
-
 
 A SQL Server connection establishes a link to a single database of a
 [SQL Server] instance. You can use SQL Server connections to create [sources](/sql/create-source/sql-server).
 
 #### Syntax {#sql-server-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO SQL SERVER (
@@ -5811,7 +5287,6 @@ CREATE CONNECTION <connection_name> TO SQL SERVER (
 | `SSL CERTIFICATE AUTHORITY` | *Value:* secret or `text`  One or more client SSL certificates in PEM format.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
 
-
 #### Example {#sql-server-example}
 
 ```mzsql
@@ -5830,13 +5305,10 @@ CREATE CONNECTION sqlserver_connection TO SQL SERVER (
 
 > **Public Preview:** This feature is in public preview.
 
-
 An Iceberg catalog connection establishes a link to an [Apache Iceberg](https://iceberg.apache.org/)
 catalog. You can use Iceberg catalog connections to create [Iceberg sinks](/sql/create-sink/iceberg).
 
 #### Syntax {#iceberg-catalog-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
@@ -5855,7 +5327,6 @@ CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
 | `URL` | *Value:* `text`. Required.  The URL of the Iceberg catalog endpoint. For AWS S3 Tables, use `https://s3tables.<region>.amazonaws.com/iceberg`.  |
 | `WAREHOUSE` | *Value:* `text`. Required.  The ARN of the S3 Tables bucket: `arn:aws:s3tables:<region>:<account-id>:bucket/<bucket-name>`.  |
 | `AWS CONNECTION` | *Value:* object name. Required.  The name of an [AWS connection](#aws) to use for authentication.  |
-
 
 #### Example {#iceberg-catalog-example}
 
@@ -5877,21 +5348,15 @@ For more information about using Iceberg sinks, see the [Iceberg sink documentat
 
 ## Network security connections
 
-
-
 ### AWS PrivateLink (Materialize Cloud) {#aws-privatelink}
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 An AWS PrivateLink connection establishes a link to an [AWS PrivateLink] service.
 You can use AWS PrivateLink connections in [Confluent Schema Registry connections](#confluent-schema-registry),
 [Kafka connections](#kafka), and [Postgres connections](#postgresql).
 
 #### Syntax {#aws-privatelink-syntax}
-
-
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO AWS PRIVATELINK (
@@ -5906,7 +5371,6 @@ CREATE CONNECTION <connection_name> TO AWS PRIVATELINK (
 | `<connection_name>` | A name for the connection.  |
 | `SERVICE NAME` | *Value:* `text`. Required.  The name of the AWS PrivateLink service.  |
 | `AVAILABILITY ZONES` | *Value:* `text[]`. Required.  The IDs of the AWS availability zones in which the service is accessible.  |
-
 
 #### Permissions {#aws-privatelink-permissions}
 
@@ -5941,7 +5405,6 @@ see the [AWS PrivateLink documentation](https://docs.aws.amazon.com/vpc/latest/p
 > Doing so will allow any Materialize customer to create a connection to your
 > AWS PrivateLink service.
 
-
 #### Accepting connection requests {#aws-privatelink-requests}
 
 If your AWS PrivateLink service is configured to require acceptance of
@@ -5966,8 +5429,6 @@ and [Postgres connections](#postgresql).
 
 #### Syntax {#ssh-tunnel-syntax}
 
-
-
 ```mzsql
 CREATE CONNECTION <connection_name> TO SSH TUNNEL (
     HOST '<hostname>',
@@ -5983,7 +5444,6 @@ CREATE CONNECTION <connection_name> TO SSH TUNNEL (
 | `HOST` | *Value:* `text`. Required.  The hostname of the SSH bastion server.  |
 | `PORT` | *Value:* `integer`. Required.  The port to connect to.  |
 | `USER` | *Value:* `text`. Required.  The name of the user to connect as.  |
-
 
 #### Key pairs {#ssh-tunnel-keypairs}
 
@@ -6096,17 +5556,13 @@ The privileges required to execute this statement are:
 [trust policy]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_terms-and-concepts.html#term_trust-policy
 [external ID]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-user_externalid.html
 
-
 ---
 
 ## CREATE DATABASE
 
-
 Use `CREATE DATABASE` to create a new database.
 
 ## Syntax
-
-
 
 ```mzsql
 CREATE DATABASE [IF NOT EXISTS] <database_name>;
@@ -6117,7 +5573,6 @@ CREATE DATABASE [IF NOT EXISTS] <database_name>;
 | --- | --- |
 | `IF NOT EXISTS` | If specified, do not generate an error if a database of the same name already exists. If not specified, throw an error if a database of the same name already exists.  |
 | `<database_name>` | A name for the database.  |
-
 
 ## Details
 
@@ -6149,11 +5604,9 @@ The privileges required to execute this statement are:
 - [`DROP DATABASE`](../drop-database)
 - [`SHOW DATABASES`](../show-databases)
 
-
 ---
 
 ## CREATE INDEX
-
 
 `CREATE INDEX` creates an in-memory [index](/concepts/indexes/) on a source, view, or materialized view.
 
@@ -6164,16 +5617,12 @@ By maintaining fresh, up-to-date results in memory, indexes can significantly [o
 
 Because indexes are scoped to a single cluster, they are most useful for accelerating queries within that cluster. For results that must be shared across clusters or persisted to durable storage, consider using a [materialized view](/sql/create-materialized-view), which also maintains fresh results but is accessible system-wide.
 
-
 ## Syntax
-
 
 **CREATE INDEX:**
 ### Create index
 
 Create an index using the specified columns as the index key.
-
-
 
 ```mzsql
 CREATE INDEX [<index_name>]
@@ -6192,15 +5641,11 @@ ON <obj_name> [USING <method>] (<col_expr>, ...)
 | `(<col_expr>, ...)` | The expressions to use as the key for the index.  |
 | `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
-
 **CREATE DEFAULT INDEX:**
 ### Create default index
 
 Create a default index using a set of columns that uniquely identify each row.
 If this set of columns cannot be inferred, all columns are used.
-
-
 
 ```mzsql
 CREATE DEFAULT INDEX
@@ -6216,10 +5661,6 @@ ON <obj_name> [USING <method>]
 | `<obj_name>` | The name of the source, view, or materialized view on which you want to create an index.  |
 | `USING <method>` | The name of the index method to use. The only supported method is [`arrangement`](/overview/arrangements).  |
 | `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
-
-
-
-
 
 ## Details
 
@@ -6298,7 +5739,6 @@ expected data access patterns to determine if you need to index or not.</p>
 </li>
 </ul>
 
-
 ### Usage patterns
 
 #### Indexes on views vs. materialized views
@@ -6362,8 +5802,6 @@ joins</a>.</p>
 </li>
 </ul>
 <p>For more information, see <a href="/transform-data/optimization" >Optimization</a>.</p>
-
-
 
 ## Examples
 
@@ -6444,11 +5882,9 @@ The privileges required to execute this statement are:
 -   [`SHOW INDEXES`](../show-indexes)
 -   [`DROP INDEX`](../drop-index)
 
-
 ---
 
 ## CREATE MATERIALIZED VIEW
-
 
 Use `CREATE MATERIALIZED VIEW` to:
 
@@ -6477,12 +5913,9 @@ offers lower latency for direct querying within that cluster.
 
 ## Syntax
 
-
 **CREATE MATERIALIZED VIEW:**
 
 ### Create materialized view
-
-
 
 ```mzsql
 CREATE MATERIALIZED VIEW [IF NOT EXISTS] <view_name>
@@ -6502,9 +5935,6 @@ AS <select_stmt>;
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `ASSERT NOT NULL` *col_ident* \| `text` \| The column identifier for which to create a [non-null assertion](#non-null-assertions). To specify multiple columns, use the option multiple times. \| \| `PARTITION BY` *columns* \| `(ident [, ident]*)` \| The key by which Materialize should internally partition this durable collection. See the [partitioning guide](/transform-data/patterns/partition-by/) for restrictions on valid values and other details. \| \| `RETAIN HISTORY FOR` *retention_period* \| `interval` \| ***Private preview.*** Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `REFRESH` *refresh_strategy* \| \| ***Private preview.*** The refresh strategy for the materialized view. See [Refresh strategies](#refresh-strategies) for syntax options. Default: `ON COMMIT`. \|  |
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) whose results you want to maintain incrementally updated.  |
 
-
-
-
 **CREATE REPLACEMENT MATERIALIZED VIEW:**
 
 ### Create replacement materialized view
@@ -6512,8 +5942,6 @@ AS <select_stmt>;
 > **Public Preview:** This feature is in public preview.
 
 Create a replacement materialized view for an existing materialized view.
-
-
 
 ```mzsql
 CREATE REPLACEMENT MATERIALIZED VIEW <name>
@@ -6532,14 +5960,10 @@ AS <select_stmt>;
 | `WITH (<with_options>)` | Same options as `CREATE MATERIALIZED VIEW`.  |
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) for the replacement view. The statement must produce the same output schema as the target materialized view; i.e., column names, column types, column order, nullability, and keys must all match.  |
 
-
 The created replacement materialized view starts hydrating immediately and can
 later be applied to replace the specified materialized view. For more
 information, see [Creating replacement materialized
 views](#creating-replacement-materialized-views).
-
-
-
 
 ## Details
 
@@ -6600,7 +6024,6 @@ indexes in each cluster you are referencing the materialized view in.
 this exists+add detail about using indexes to optimize materialized view
 stacking."
 
-
 ### Non-null assertions
 
 Because materialized views may be created on arbitrary queries, it may not in
@@ -6615,8 +6038,6 @@ offending row is deleted.
 
 ### Refresh strategies
 
-
-
 Materialized views in Materialize are incrementally maintained by default, meaning their results are automatically updated as soon as new data arrives.
 This guarantees that queries returns the most up-to-date information available with minimal delay and that results are always as [fresh](/concepts/reaction-time) as the input data itself.
 
@@ -6625,8 +6046,6 @@ However, in some very specific scenarios like reporting over slow changing histo
 For these cases, Materialize supports refresh strategies, which allow you to configure a materialized view to recompute itself on a fixed schedule rather than maintaining them incrementally.
 
 > **Note:** The use of refresh strategies is discouraged unless you have a clear and measurable need to reduce maintenance costs on stale or archival data. For most use cases, the default incremental maintenance model provides a better experience.
-
-
 
 [//]: # "TODO(morsapaes) We should add a SQL pattern that walks through a
 full-blown example of how to implement the cold, warm, hot path with refresh
@@ -6815,7 +6234,6 @@ same output schema (including column order and keys) as the target view.</li>
 </ul>
 <p>Upon creation, the replacement view starts hydrating in the background.</p>
 
-
 Before applying the replacement view, verify that the replacement view is
 hydrated to avoid downtime:
 
@@ -6911,8 +6329,6 @@ non-indexed, and so on."
 
 > **Public Preview:** This feature is in public preview.
 
-
-
 The following example creates a replacement materialized view
 `winning_bids_replacement` for the `winning_bids` materialized view. The
 replacement view specifies a different filter `mz_now() > a.end_time` than
@@ -6941,7 +6357,6 @@ See also:
 - [Replace materialized views guide
 ](/transform-data/updating-materialized-views/replace-materialized-view/)
 
-
 ## Privileges
 
 The privileges required to execute this statement are:
@@ -6963,11 +6378,9 @@ The privileges required to execute this statement are:
 - [`SHOW CREATE MATERIALIZED VIEW`](../show-create-materialized-view)
 - [`DROP MATERIALIZED VIEW`](../drop-materialized-view)
 
-
 ---
 
 ## CREATE NETWORK POLICY (Cloud)
-
 
 *Available for Materialize Cloud only*
 
@@ -6976,8 +6389,6 @@ Materialize region using IP-based rules. Network policies are part of
 Materialize's framework for [access control](/security/cloud/).
 
 ## Syntax
-
-
 
 ```mzsql
 CREATE NETWORK POLICY <name> (
@@ -6996,8 +6407,6 @@ CREATE NETWORK POLICY <name> (
 | `<rule_name>` | The name for the network policy rule. Must be unique within the network policy.  |
 | `<address>` | The Classless Inter-Domain Routing (CIDR) block to which the rule applies.  |
 
-
-
 ## Details
 
 ### Pre-installed network policy
@@ -7010,7 +6419,6 @@ will be pre-installed. This policy has a wide open ingress rule `allow
 > Before dropping the `default` network policy, a _superuser_ (i.e. `Organization
 > Admin`) must run [`ALTER SYSTEM SET network_policy`](/sql/alter-system-set) to
 > change the default value.
-
 
 ## Privileges
 
@@ -7039,11 +6447,9 @@ ALTER SYSTEM SET network_policy = office_access_policy;
 - [`DROP NETWORK POLICY`](../drop-network-policy)
 - [`GRANT ROLE`](../grant-role)
 
-
 ---
 
 ## CREATE ROLE
-
 
 Use `CREATE ROLE` [^1] to:
 - Create functional roles (*Both Cloud and Self-Managed*).
@@ -7056,14 +6462,11 @@ the system.
 
 ## Syntax
 
-
-
 **Cloud:**
 
 ### Cloud
 
 The following syntax is used to create a role in Materialize Cloud.
-
 
 ```mzsql
 CREATE ROLE <role_name> [[WITH] INHERIT];
@@ -7073,7 +6476,6 @@ CREATE ROLE <role_name> [[WITH] INHERIT];
 | Syntax element | Description |
 | --- | --- |
 | `INHERIT` | *Optional.* If specified, grants the role the ability to inherit privileges of other roles. *Default.*  |
-
 
 **Note:**
 - Materialize Cloud does not support the `NOINHERIT` option for `CREATE
@@ -7087,12 +6489,10 @@ ability to create top level objects such as databases and other roles.
 Instead, Materialize uses system level privileges. See [GRANT
 PRIVILEGE](../grant-privilege) for more details.
 
-
 **Self-Managed:**
 ### Self-Managed
 
 The following syntax is used to create a role in Materialize Self-Managed.
-
 
 ```mzsql
 CREATE ROLE <role_name>
@@ -7114,7 +6514,6 @@ CREATE ROLE <role_name>
 | `NOSUPERUSER` | *Optional.* If specified, prevents the role from having superuser privileges. This is the default behavior if `SUPERUSER` is not specified.  |
 | `PASSWORD` | ***Public Preview***  *Optional.* This feature may have minor stability issues. If specified, allows you to set a password for the role.  |
 
-
 **Note:**
 - Self-Managed Materialize does not support the `NOINHERIT` option for
 `CREATE ROLE`.
@@ -7122,9 +6521,6 @@ CREATE ROLE <role_name>
 does not use role attributes to determine a role's ability to create top
 level objects such as databases and other roles. Instead, Self-Managed
 Materialize uses system level privileges. See [GRANT PRIVILEGE](../grant-privilege) for more details.
-
-
-
 
 ## Restrictions
 
@@ -7196,8 +6592,6 @@ SELECT rolsuper FROM pg_authid WHERE rolname = 'super_user';
  true
 ```
 
-
-
 ## Related pages
 
 - [`ALTER ROLE`](../alter-role)
@@ -7209,17 +6603,13 @@ SELECT rolsuper FROM pg_authid WHERE rolname = 'super_user';
 - [`GRANT PRIVILEGE`](../grant-privilege)
 - [`REVOKE PRIVILEGE`](../revoke-privilege)
 
-
 ---
 
 ## CREATE SCHEMA
 
-
 `CREATE SCHEMA` creates a new schema.
 
 ## Syntax
-
-
 
 ```mzsql
 CREATE SCHEMA [IF NOT EXISTS] <schema_name>;
@@ -7230,7 +6620,6 @@ CREATE SCHEMA [IF NOT EXISTS] <schema_name>;
 | --- | --- |
 | `IF NOT EXISTS` | If specified, do not generate an error if a schema of the same name already exists. If not specified, throw an error if a schema of the same name already exists.  |
 | `<schema_name>` | A name for the schema. You can specify the database for the schema with a preceding `database_name.schema_name`, e.g. `my_db.my_schema`, otherwise the schema is created in the current database.  |
-
 
 ## Details
 
@@ -7262,17 +6651,13 @@ The privileges required to execute this statement are:
 - [`DROP DATABASE`](../drop-database)
 - [`SHOW DATABASES`](../show-databases)
 
-
 ---
 
 ## CREATE SECRET
 
-
 A secret securely stores sensitive credentials (like passwords and SSL keys) in Materialize's secret management system. Optionally, a secret can also be used to store credentials that are generally not sensitive (like usernames and SSL certificates), so that all your credentials are managed uniformly.
 
 ## Syntax
-
-
 
 ```mzsql
 CREATE SECRET [IF NOT EXISTS] <name> AS <value>;
@@ -7284,7 +6669,6 @@ CREATE SECRET [IF NOT EXISTS] <name> AS <value>;
 | `IF NOT EXISTS` | If specified, do not generate an error if a secret of the same name already exists.  |
 | `<name>` | The identifier for the secret.  |
 | `<value>` | The value for the secret. The value expression may not reference any relations, and must be implicitly castable to `bytea`.  |
-
 
 ## Examples
 
@@ -7305,11 +6689,9 @@ The privileges required to execute this statement are:
 - [`DROP SECRET`](../drop-secret)
 - [`SHOW SECRETS`](../show-secrets)
 
-
 ---
 
 ## CREATE SINK
-
 
 A [sink](/concepts/sinks/) describes an external system you
 want Materialize to write data to, and provides details about how to encode
@@ -7320,11 +6702,7 @@ that data. You can define a sink over a materialized view, source, or table.
 <!--"Docs Note: Using include-example shortcode instead of include-syntax since only want the code snippet on this page."
 -->
 
-
-
 **Kafka/Redpanda:**
-
-
 
 **Format Avro:**
 
@@ -7359,8 +6737,6 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name> [
 
 ```
 
-
-
 **Format JSON:**
 
 <no value>```mzsql
@@ -7385,8 +6761,6 @@ FORMAT JSON
 
 ```
 
-
-
 **Format TEXT/BYTES:**
 
 <no value>```mzsql
@@ -7408,8 +6782,6 @@ FORMAT TEXT | BYTES
 [WITH (SNAPSHOT = <snapshot>)]
 
 ```
-
-
 
 **KEY FORMAT VALUE FORMAT:**
 
@@ -7449,24 +6821,13 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 
 ```
 
-
-
-
-
-
 For details, see [CREATE Sink: Kafka/Redpanda](/sql/create-sink/kafka/).
-
 
 **Iceberg:**
 
 > **Public Preview:** This feature is in public preview.
 
-
-
-
 For details, see [CREATE Sink: Iceberg](/sql/create-sink/iceberg/).
-
-
 
 ## Best practices
 
@@ -7511,11 +6872,9 @@ The privileges required to execute this statement are:
 - [`SHOW COLUMNS`](/sql/show-columns/)
 - [`SHOW CREATE SINK`](/sql/show-create-sink/)
 
-
 ---
 
 ## CREATE SOURCE
-
 
 A [source](/concepts/sources/) describes an external system you want Materialize to read data from, and provides details about how to decode and interpret that data.
 
@@ -7523,8 +6882,6 @@ A [source](/concepts/sources/) describes an external system you want Materialize
 
 <!--"Docs Note: Using include-example shortcode instead of include-syntax since only want the code snippet on this page."
 -->
-
-
 
 **PostgreSQL (New):**
 
@@ -7538,7 +6895,6 @@ FROM POSTGRES CONNECTION <connection_name> (PUBLICATION '<publication_name>')
 ```
 
 For details, see [CREATE SOURCE: PostgreSQL (New Syntax)](/sql/create-source/postgres-v2/).
-
 
 **PostgreSQL (Legacy):**
 
@@ -7577,7 +6933,6 @@ FROM MYSQL CONNECTION <connection_name> [
 
 For details, see [CREATE SOURCE: MySQL](/sql/create-source/mysql/).
 
-
 **SQL Server (New):**
 
 <no value>```mzsql
@@ -7588,8 +6943,6 @@ FROM SQL SERVER CONNECTION <connection_name>
 ```
 
 For details, see [CREATE SOURCE: SQL Server (New Syntax)](/sql/create-source/sql-server-v2/).
-
-
 
 **SQL Server (Legacy):**
 
@@ -7606,11 +6959,7 @@ FROM SQL SERVER CONNECTION <connection_name>
 
 For details, see [CREATE SOURCE: SQL Server(Legacy)](/sql/create-source/sql-server/).
 
-
-
 **Kafka/Redpanda:**
-
-
 
 **Format Avro:**
 
@@ -7645,8 +6994,6 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
 
 ```
 
-
-
 **Format JSON:**
 
 <no value>```mzsql
@@ -7672,8 +7019,6 @@ FORMAT JSON
 [WITH (RETAIN HISTORY FOR <retention_period>)]
 
 ```
-
-
 
 **Format TEXT/BYTES:**
 
@@ -7701,8 +7046,6 @@ FORMAT TEXT | BYTES
 
 ```
 
-
-
 **Format CSV:**
 
 <no value>```mzsql
@@ -7728,7 +7071,6 @@ FORMAT CSV WITH <n> COLUMNS | WITH HEADER [ ( <col_name> [, ...] ) ]
 [WITH (RETAIN HISTORY FOR <retention_period>)]
 
 ```
-
 
 **Format Protobuf:**
 
@@ -7760,7 +7102,6 @@ FORMAT PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
 [WITH (RETAIN HISTORY FOR <retention_period>)]
 
 ```
-
 
 **KEY FORMAT VALUE FORMAT:**
 
@@ -7801,12 +7142,7 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 
 ```
 
-
-
-
-
 For details, see [CREATE SOURCE: Kafka/Redpanda](/sql/create-source/kafka/).
-
 
 **Webhook:**
 
@@ -7827,9 +7163,6 @@ FROM WEBHOOK
 ```
 
 For details, see [CREATE SOURCE: Webhook](/sql/create-source/webhook/).
-
-
-
 
 ## Privileges
 
@@ -7886,8 +7219,6 @@ The following guides step you through setting up sources:
 
 </div>
 
-
-
 ## Best practices
 
 ### Separate cluster(s) for sources
@@ -7912,8 +7243,6 @@ align with the steady-state ingestion.</p>
 </li>
 </ul>
 
-
-
 ### Sizing a source
 
 Some sources are low traffic and require relatively few resources to handle data ingestion, while others are high traffic and require hefty resource allocations. The cluster in which you place a source determines the amount of CPU, memory, and disk available to the source.
@@ -7936,7 +7265,6 @@ the cluster. Colocating multiple sources onto the same cluster can be more
 resource efficient when you have many low-traffic sources that occasionally need
 some burst capacity.
 
-
 ## Related pages
 
 - [Sources](/concepts/sources/)
@@ -7944,11 +7272,9 @@ some burst capacity.
 - [`SHOW COLUMNS`](/sql/show-columns/)
 - [`SHOW CREATE SOURCE`](/sql/show-create-source/)
 
-
 ---
 
 ## CREATE TABLE
-
 
 `CREATE TABLE` defines a table that is persisted in durable storage.
 
@@ -7961,7 +7287,6 @@ In Materialize, you can create:
   [`UPDATE`], [`DELETE`]) to these tables. These tables are populated by [data
   ingestion from a source](/ingest-data/postgres/). 
 
-
 Tables in Materialize are similar to tables in standard relational databases:
 they consist of rows and columns where the columns are fixed when the table is
 created.
@@ -7969,12 +7294,10 @@ created.
 Tables can be joined with other tables, materialized views, views, and
 subsources; and you can create views/materialized views/indexes on tables.
 
-
 [//]: # "TODO(morsapaes) Bring back When to use a table? once there's more
 clarity around best practices."
 
 ## Syntax
-
 
 **Read-write table:**
 ### Read-write table
@@ -7982,7 +7305,6 @@ clarity around best practices."
 To create a new read-write table (i.e., users can perform
 [`SELECT`](/sql/select/), [`INSERT`](/sql/insert/),
 [`UPDATE`](/sql/update/), and [`DELETE`](/sql/delete/) operations):
-
 
 ```mzsql
 CREATE [TEMP|TEMPORARY] TABLE [IF NOT EXISTS] <table_name> (
@@ -8008,20 +7330,14 @@ CREATE [TEMP|TEMPORARY] TABLE [IF NOT EXISTS] <table_name> (
 | **DEFAULT <default_expr>** | *Optional.* If specified, use the `<default_expr>` as the default value for the column. If not specified, `NULL` is used as the default value.  |
 | **WITH (<with_option>[,...])** |  The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION BY (<column> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \| \| `RETAIN HISTORY <duration>` \| *Optional.* ***Private preview.** This option has known performance or stability issues and is under active development.* <br>If specified, Materialize retains historical data for the specified duration, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period).<br>Accepts positive [interval](/sql/types/interval/) values (e.g., `'1hr'`).\|  |
 
-
-
 **PostgreSQL source table:**
 ### PostgreSQL source table
 
-
-
 > **Note:** You must be on **v26+** to use the new syntax.
-
 
 To create a read-only table from a [source](/sql/create-source/) connected
 (via native connector) to an external PostgreSQL:
 
-
 ```mzsql
 CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <upstream_table>)
 [WITH (
@@ -8041,23 +7357,17 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
 | **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
 | **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
-
 
 For an example, see [Create a table (PostgreSQL
 source)](/sql/create-table/#create-a-table-postgresql-source).
 
-
 **SQL Server source table:**
 ### SQL Server source table
 
-
-
 > **Note:** You must be on **v26+** to use the new syntax.
-
 
 To create a read-only table from a [source](/sql/create-source/) connected
 (via native connector) to an external SQL Server database:
-
 
 ```mzsql
 CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <upstream_table>)
@@ -8078,12 +7388,6 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
 | **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
 | **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
-
-
-
-
-
-
 
 ## Read-write tables
 
@@ -8105,10 +7409,7 @@ See also the known limitations for [`INSERT`](/sql/insert#known-limitations),
 
 ## Source-populated tables
 
-
-
 > **Note:** You must be on **v26+** to use the new syntax.
-
 
 ### Table names and column names
 
@@ -8129,7 +7430,6 @@ these tables.
 For performance, when issuing multiple `CREATE TABLE FROM SOURCE...` statements,
 use within a [transaction block](/sql/begin/#ddl-only-transactions).
 
-
 ### Source-populated tables and snapshotting
 
 <p>Creating the tables from sources starts the <a href="/ingest-data/#snapshotting" >snapshotting</a> process. Snapshotting syncs the
@@ -8142,7 +7442,6 @@ timestamp), you are not able to query the table until snapshotting is complete.<
 > once the process finishes, resize the cluster for steady-state.
 
 ### Supported data types
-
 
 **PostgreSQL:**
 #### PostgreSQL types
@@ -8196,8 +7495,6 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
-
-
 
 **SQL Server:**
 #### SQL Server types
@@ -8268,12 +7565,6 @@ value when said column is updated.</p>
 </li>
 </ul>
 
-
-
-
-
-
-
 ### Handling table schema changes
 
 The use of [`CREATE SOURCE`](/sql/create-source/postgres-v2/) with `CREATE
@@ -8294,7 +7585,6 @@ Materialize tables into an error state, preventing reads from these tables.</p>
 <p>To handle <a href="#incompatible-schema-changes" >incompatible schema changes</a>, drop
 the affected table <a href="/sql/drop-table/" ><code>DROP TABLE</code></a> , and then, <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> to recreate the table with the
 updated schema.</p>
-
 
 ### Upstream table truncation restrictions
 
@@ -8318,7 +7608,6 @@ i.e. the inheriting data is <em>not</em> treated as part of the inherited table.
 so inheriting tables&rsquo; data will only be ingested as part of the inheriting
 table, i.e. in Materialize, the data will not be returned when serving
 <code>SELECT</code>s from the inherited table.</p>
-
 
 You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
@@ -8373,10 +7662,7 @@ SELECT * FROM mytable;
 | 2 | goodbye |
 ```
 
-
 ### Create a table (PostgreSQL source)
-
-
 
 > **Note:** You must be on **v26+** to use the new syntax.
 > The example assumes you have configured your upstream PostgreSQL 11+ (i.e.,
@@ -8384,8 +7670,6 @@ SELECT * FROM mytable;
 > replication user, and updated the network configuration).
 > For details about configuring your upstream system, see the [PostgreSQL
 > integration guides](/ingest-data/postgres/#supported-versions-and-services).
-
-
 
 To create new **read-only** tables from a source table, use the `CREATE
 TABLE ... FROM SOURCE ... (REFERENCE <upstream_table>)` statement in a [DDL
@@ -8444,19 +7728,16 @@ file="shared-content/create-table-from-source-snapshotting.md" >}}
 
 {{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}
 
-
 Source-populated tables are <strong>read-only</strong> tables. Users <strong>cannot</strong> perform write
 operations
 (<a href="/sql/insert/" ><code>INSERT</code></a>/<a href="/sql/update/" ><code>UPDATE</code></a>/<a href="/sql/delete/" ><code>DELETE</code></a>) on
 these tables.
-
 
 Once the snapshotting process completes and the table is in the running state, you can query the table:
 ```mzsql
 SELECT * FROM items;
 
 ```
-
 
 ## Related pages
 
@@ -8468,11 +7749,9 @@ SELECT * FROM items;
 [`UPDATE`]: /sql/update/
 [`DELETE`]: /sql/delete/
 
-
 ---
 
 ## CREATE TYPE
-
 
 `CREATE TYPE` defines a custom data type, which let you create named versions of
 anonymous types or provide a shorthand for other types. For more information,
@@ -8480,10 +7759,8 @@ see [SQL Data Types: Custom types](../types/#custom-types).
 
 ## Syntax
 
-
 **Row type:**
 ### Row type
-
 
 ```mzsql
 CREATE TYPE <type_name> AS (<field_name> <field_type>, ...);
@@ -8496,11 +7773,8 @@ CREATE TYPE <type_name> AS (<field_name> <field_type>, ...);
 | `<field_name>` | The name of a field in a row type.  |
 | `<field_type>` | The data type of a field indicated by `field_name`.  |
 
-
-
 **List type:**
 ### List type
-
 
 ```mzsql
 CREATE TYPE <type_name> AS LIST (ELEMENT TYPE = <element_type>);
@@ -8512,11 +7786,8 @@ CREATE TYPE <type_name> AS LIST (ELEMENT TYPE = <element_type>);
 | `<type_name>` | A name for the type.  |
 | `<element_type>` | Creates a custom [`list`](/sql/types/list) whose elements are of `<element_type>`.  |
 
-
-
 **Map type:**
 ### Map type
-
 
 ```mzsql
 CREATE TYPE <type_name> AS MAP (KEY TYPE = <key_type>, VALUE TYPE = <value_type>);
@@ -8528,11 +7799,6 @@ CREATE TYPE <type_name> AS MAP (KEY TYPE = <key_type>, VALUE TYPE = <value_type>
 | `<type_name>` | A name for the type.  |
 | `<key_type>` | Creates a custom [`map`](/sql/types/map) whose keys are of `<key_type>`. Must resolve to [`text`](/sql/types/text).  |
 | `<value_type>` | Creates a custom [`map`](/sql/types/map) whose values are of `<value_type>`.  |
-
-
-
-
-
 
 ## Details
 
@@ -8638,11 +7904,9 @@ The privileges required to execute this statement are:
 * [`DROP TYPE`](../drop-type)
 * [`SHOW TYPES`](../show-types)
 
-
 ---
 
 ## CREATE VIEW
-
 
 Use `CREATE VIEW` to define a view, which simply provides an alias for the
 embedded `SELECT` statement. The results of a view can be incrementally
@@ -8652,12 +7916,9 @@ of materializing the view.
 
 ## Syntax
 
-
 **CREATE VIEW:**
 ### Create view
 To create a view:
-
-
 
 ```mzsql
 CREATE [TEMP|TEMPORARY] VIEW [IF NOT EXISTS] <view_name>[(<col_ident>, ...)] AS
@@ -8673,7 +7934,6 @@ CREATE [TEMP|TEMPORARY] VIEW [IF NOT EXISTS] <view_name>[(<col_ident>, ...)] AS
 | `(<col_ident>, ...)` | Optional if the `SELECT` statement return columns with unique names; else, is required if the `SELECT` statement returns multiple columns with the same identifier. If specified, renames the `SELECT` statement's columns to the list of identifiers. Both must be the same length.  |
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) that defines the view.  |
 
-
 **CREATE OR REPLACE VIEW:**
 ### Create or replace view
 To create, or if a view exists with the same name, replace it with the view
@@ -8681,9 +7941,6 @@ defined in this statement:
 
 > **Note:** You cannot replace views that other views depend on,
 > nor can you replace a non-view object with a view.
-
-
-
 
 ```mzsql
 CREATE OR REPLACE VIEW <view_name> [(<col_ident>, ...)] AS <select_stmt>;
@@ -8695,9 +7952,6 @@ CREATE OR REPLACE VIEW <view_name> [(<col_ident>, ...)] AS <select_stmt>;
 | `<view_name>` | A name for the view.  |
 | `(<col_ident>, ...)` | Optional if the `SELECT` statement return columns with unique names; else, is required if the `SELECT` statement returns multiple columns with the same identifier. If specified, renames the `SELECT` statement's columns to the list of identifiers. Both must be the same length.  |
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) that defines the view.  |
-
-
-
 
 ## Details
 
@@ -8752,11 +8006,9 @@ The privileges required to execute this statement are:
 - [`CREATE MATERIALIZED VIEW`](../create-materialized-view)
 - [`CREATE INDEX`](../create-index)
 
-
 ---
 
 ## DEALLOCATE
-
 
 `DEALLOCATE` clears [prepared statements](../prepare) that have been created during the current session. Even without an explicit `DEALLOCATE` command, all prepared statements will be cleared at the end of a session.
 
@@ -8785,11 +8037,9 @@ DEALLOCATE a;
 [`PREPARE`]:../prepare
 [`EXECUTE`]:../execute
 
-
 ---
 
 ## DECLARE
-
 
 `DECLARE` creates a cursor, which can be used with
 [`FETCH`](/sql/fetch), to retrieve a limited number of rows at a time
@@ -8810,11 +8060,9 @@ Syntax element | Description
 `<cursor_name>` | The name of the cursor to be created.
 `<query>` | The query ([`SELECT`](/sql/select) or [`SUBSCRIBE`](/sql/subscribe)) that will provide the rows to be returned by the cursor.
 
-
 ---
 
 ## DELETE
-
 
 `DELETE` removes values stored in [user-created tables](../create-table).
 
@@ -8903,11 +8151,9 @@ The privileges required to execute this statement are:
 - [`INSERT`](../insert)
 - [`SELECT`](../select)
 
-
 ---
 
 ## DISCARD
-
 
 `DISCARD` resets state associated with the current session.
 
@@ -8917,18 +8163,15 @@ The privileges required to execute this statement are:
 DISCARD TEMP|TEMPORARY|ALL ;
 ```
 
-
 Syntax element | Description
 ---------------|------------
 **TEMP**  | Drops any temporary objects created by the current session.
 **TEMPORARY** | Alias for `TEMP`.
 **ALL** | Drops any temporary objects, deallocates any extant prepared statements, and closes any extant cursors that were created by the current session.
 
-
 ---
 
 ## DROP CLUSTER
-
 
 `DROP CLUSTER` removes an existing cluster from Materialize. If there are indexes or materialized views depending on the cluster, you must explicitly drop them first, or use the `CASCADE` option.
 
@@ -8990,11 +8233,9 @@ The privileges required to execute this statement are:
 - [`SHOW CLUSTERS`](../show-clusters)
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## DROP CLUSTER REPLICA
-
 
 `DROP CLUSTER REPLICA` deprovisions an existing replica of the specified
 [unmanaged cluster](/sql/create-cluster/#unmanaged-clusters). To remove
@@ -9002,7 +8243,6 @@ the cluster itself, use the [`DROP CLUSTER`](/sql/drop-cluster) command.
 
 > **Tip:** When getting started with Materialize, we recommend starting with managed
 > clusters.
-
 
 ## Syntax
 
@@ -9039,18 +8279,15 @@ The privileges required to execute this statement are:
 - Ownership of the dropped cluster replica.
 - `USAGE` privileges on the containing cluster.
 
-
 ## Related pages
 
 - [`CREATE CLUSTER REPLICA`](../create-cluster-replica)
 - [`SHOW CLUSTER REPLICAS`](../show-cluster-replicas)
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## DROP CONNECTION
-
 
 `DROP CONNECTION` removes a connection from Materialize. If there are sources
 depending on the connection, you must explicitly drop them first, or use the
@@ -9111,23 +8348,19 @@ The privileges required to execute this statement are:
 - Ownership of the dropped connection.
 - `USAGE` privileges on the containing schema.
 
-
 ## Related pages
 
 - [`SHOW CONNECTIONS`](../show-connections)
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## DROP DATABASE
-
 
 `DROP DATABASE` removes a database from Materialize.
 
 > **Warning:** `DROP DATABASE` immediately removes all objects within the
 > database without confirmation. Use with care!
-
 
 ## Syntax
 
@@ -9174,11 +8407,9 @@ The privileges required to execute this statement are:
 
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## DROP INDEX
-
 
 `DROP INDEX` removes an index from Materialize.
 
@@ -9198,7 +8429,6 @@ Syntax element | Description
 > **Note:** Since indexes do not have dependent objects, `DROP INDEX`, `DROP INDEX
 > RESTRICT`, and `DROP INDEX CASCADE` are equivalent.
 
-
 ## Privileges
 
 To execute the `DROP INDEX` statement, you need:
@@ -9213,7 +8443,6 @@ To execute the `DROP INDEX` statement, you need:
 > **Tip:** In the **Materialize Console**, you can view existing indexes in the [**Database
 > object explorer**](/console/data/). Alternatively, you can use the
 > [`SHOW INDEXES`](/sql/show-indexes) command.
-
 
 Using the  `DROP INDEX` commands, the following example drops an index named `q01_geo_idx`.
 
@@ -9239,11 +8468,9 @@ DROP INDEX IF EXISTS q01_geo_idx;
 - [`SHOW INDEXES`](/sql/show-indexes)
 - [`DROP OWNED`](/sql/drop-owned)
 
-
 ---
 
 ## DROP MATERIALIZED VIEW
-
 
 `DROP MATERIALIZED VIEW` removes a materialized view from Materialize. If there
 are other views depending on the materialized view, you must explicitly drop
@@ -9298,11 +8525,9 @@ The privileges required to execute this statement are:
 - [`SHOW CREATE MATERIALIZED VIEW`](../show-create-materialized-view)
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## DROP NETWORK POLICY (Cloud)
-
 
 *Available for Materialize Cloud only*
 
@@ -9335,18 +8560,15 @@ The privileges required to execute this statement are:
 - [`ALTER NETWORK POLICY`](../alter-network-policy)
 - [`CREATE NETWORK POLICY`](../create-network-policy)
 
-
 ---
 
 ## DROP OWNED
-
 
 `DROP OWNED` drops all the objects that are owned by one of the specified roles.
 Any privileges granted to the given roles on objects will also be revoked.
 
 > **Note:** Unlike [PostgreSQL](https://www.postgresql.org/docs/current/sql-drop-owned.html), Materialize drops
 > all objects across all databases, including the database itself.
-
 
 ## Syntax
 
@@ -9395,11 +8617,9 @@ The privileges required to execute this statement are:
 - [`DROP TYPE`](../drop-type)
 - [`DROP VIEW`](../drop-view)
 
-
 ---
 
 ## DROP ROLE
-
 
 `DROP ROLE` removes a role from Materialize.
 
@@ -9435,11 +8655,9 @@ The privileges required to execute this statement are:
 - [`GRANT PRIVILEGE`](../grant-privilege)
 - [`REVOKE PRIVILEGE`](../revoke-privilege)
 
-
 ---
 
 ## DROP SCHEMA
-
 
 `DROP SCHEMA` removes a schema from Materialize.
 
@@ -9515,11 +8733,9 @@ The privileges required to execute this statement are:
 - [`CREATE SCHEMA`](../create-schema)
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## DROP SECRET
-
 
 `DROP SECRET` removes a secret from Materialize's secret management system. If
 there are connections depending on the secret, you must explicitly drop them
@@ -9585,16 +8801,13 @@ The privileges required to execute this statement are:
 - [`SHOW SECRETS`](../show-secrets)
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## DROP SINK
 
-
 `DROP SINK` removes a sink from Materialize.
 
 Dropping a Kafka sink doesn't drop the corresponding topic. For more information, see the [Kafka documentation](https://kafka.apache.org/documentation/).
-
 
 ## Syntax
 
@@ -9635,11 +8848,9 @@ The privileges required to execute this statement are:
 - [`CREATE SINK`](../create-sink)
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## DROP SOURCE
-
 
 `DROP SOURCE` removes a source from Materialize. If there are objects depending
 on the source, you must explicitly drop them first, or use the `CASCADE`
@@ -9717,11 +8928,9 @@ The privileges required to execute this statement are:
 - [`SHOW CREATE SOURCE`](../show-create-source)
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## DROP TABLE
-
 
 `DROP TABLE` removes a table from Materialize.
 
@@ -9825,11 +9034,9 @@ The privileges required to execute this statement are:
 - [`INSERT`](../insert)
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## DROP TYPE
-
 
 `DROP TYPE` removes a [custom data type](../create-type). You cannot use it on default data types.
 
@@ -9939,14 +9146,11 @@ The privileges required to execute this statement are:
 * [`SHOW TYPES`](../show-types)
 * [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## DROP USER
 
-
 `DROP USER` removes a role from Materialize. `DROP USER` is an alias for [`DROP ROLE`](../drop-role).
-
 
 ## Syntax
 
@@ -9975,11 +9179,9 @@ The privileges required to execute this statement are:
 - [`GRANT PRIVILEGE`](../grant-privilege)
 - [`REVOKE PRIVILEGE`](../revoke-privilege)
 
-
 ---
 
 ## DROP VIEW
-
 
 `DROP VIEW` removes a view from Materialize.
 
@@ -10035,20 +9237,15 @@ The privileges required to execute this statement are:
 - [`SHOW CREATE VIEW`](../show-create-view)
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## EXECUTE
-
 
 `EXECUTE` plans and executes [prepared statements](../prepare). Since prepared statements only last the duration of a session, the statement must have been prepared during the current session.
 
 If the `PREPARE` statement specified some parameters, you must pass values compatible with those parameters to `EXECUTE`. Values are considered compatible here when they can be [_assignment cast_](../../sql/functions/cast/#valid-casts). (This is the same category of casting that happens for `INSERT`.)
 
-
 ## Syntax
-
-
 
 ```mzsql
 EXECUTE <name> [ ( <parameter> [, ...] ) ]
@@ -10059,7 +9256,6 @@ EXECUTE <name> [ ( <parameter> [, ...] ) ]
 | --- | --- |
 | `<name>` | The name of the prepared statement to execute.  |
 | `<parameter>` | The actual value of a parameter to the prepared statement.  |
-
 
 ## Example
 
@@ -10074,7 +9270,6 @@ EXECUTE a (2);
 All prepared statements will be cleared at the end of a session. You can also
 explicitly deallocate the statement using [`DEALLOCATE`].
 
-
 ## Related pages
 
 - [`PREPARE`]
@@ -10083,11 +9278,9 @@ explicitly deallocate the statement using [`DEALLOCATE`].
 [`PREPARE`]:../prepare
 [`DEALLOCATE`]:../deallocate
 
-
 ---
 
 ## EXPLAIN ANALYZE
-
 
 `EXPLAIN ANALYZE`:
 
@@ -10100,7 +9293,6 @@ explicitly deallocate the statement using [`DEALLOCATE`].
 > **Warning:** `EXPLAIN` is not part of Materialize's stable interface and is not subject to
 > our backwards compatibility guarantee. The syntax and output of `EXPLAIN` may
 > change arbitrarily in future versions of Materialize.
-
 
 ## Syntax
 
@@ -10121,7 +9313,6 @@ EXPLAIN ANALYZE CLUSTER
 ```
 > **Tip:** If you want to specify both `CPU` or `MEMORY`, they may be listed in any order;
 > however, each may appear only once.
-
 
 Parameter    | Description
 -------------|-----
@@ -10212,7 +9403,6 @@ operator (not inclusive of its child operators) in the dataflow:
 |     Arrange                 | 00:00:00.171586 |
 |       Read u4               |                 |
 
-
 ### `EXPLAIN ANALYZE CPU, MEMORY`
 
 You can report on both CPU and memory usage simultaneously:
@@ -10254,7 +9444,6 @@ For the below example, assume there are 2 workers in the cluster.
 
 > **Tip:** To determine how many workers a given cluster size has, you can query
 > [`mz_catalog.mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes).
-
 
 You can explain `MEMORY` and/or `CPU` with the `WITH SKEW` option. For example,
 the following runs `EXPLAIN ANALYZE MEMORY WITH SKEW`:
@@ -10326,7 +9515,6 @@ suggests the hint (i.e, the `DISTINCT ON INPUT GROUP SIZE=` value) of `255.0`.
 |       Stream u5             |        |        |      |         |
 |     Arrange                 |        |        |      |         |
 |       Read u4               |        |        |      |         |
-
 
 With the hint information, you can recreate the view and index to improve memory
 usage:
@@ -10432,22 +9620,16 @@ for the `wins_by_items` index.
 
 [TopK hints]: /transform-data/idiomatic-materialize-sql/top-k/#query-hints-1
 
-
 ---
 
 ## EXPLAIN FILTER PUSHDOWN
 
-
-
 > **Public Preview:** This feature is in public preview.
-
 
 `EXPLAIN FILTER PUSHDOWN` reports filter pushdown statistics for `SELECT`
 statements and materialized views.
 
 ## Syntax
-
-
 
 ```mzsql
 EXPLAIN FILTER PUSHDOWN
@@ -10459,7 +9641,6 @@ FOR <select_stmt | MATERIALIZED VIEW <name>>
 | --- | --- |
 | **FOR** `<select_stmt>` | Display statistics for an ad-hoc [`SELECT`](/sql/select) statement.  |
 | **FOR MATERIALIZED VIEW** `<name>` | Display statistics for an existing materialized view.  |
-
 
 ## Details
 
@@ -10564,11 +9745,9 @@ The privileges required to execute this statement are:
 - `USAGE` privileges on the schemas that all relations in the explainee are
   contained in.
 
-
 ---
 
 ## EXPLAIN PLAN
-
 
 `EXPLAIN PLAN` displays the plans used for:
 
@@ -10580,9 +9759,7 @@ The privileges required to execute this statement are:
 > our backwards compatibility guarantee. The syntax and output of `EXPLAIN` may
 > change arbitrarily in future versions of Materialize.
 
-
 ## Syntax
-
 
 **FOR SELECT:**
 ```mzsql
@@ -10664,8 +9841,6 @@ FOR ]  -- The FOR keyword is required if the PLAN keyword is specified
     <SUBSCRIBE ...>
 ;
 ```
-
-
 
 Note that the `FOR` keyword is required if the `PLAN` keyword is present. The following three statements are equivalent:
 
@@ -10818,7 +9993,6 @@ Used Indexes:
   - materialize.public.t1_x_idx (lookup)
 ```
 
-
 ### Reading plans
 
 Materialize plans are directed, potentially cyclic, graphs of operators. Each operator in the graph
@@ -10931,8 +10105,6 @@ closer to LIR than SQL. The raw plans from `EXPLAIN RAW PLAN FOR ...`
 are closer to SQL (and therefore less indicative of how the query will
 actually run).
 
-
-
 **In fully optimized physical (LIR) plans (Default):**
 The following table lists the operators that are available in the LIR plan.
 
@@ -10955,7 +10127,6 @@ The following table lists the operators that are available in the LIR plan.
 **Notes:**
 - **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
 - **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
-
 
 **In decorrelated and optimized plans:**
 The following table lists the operators that are available in the optimized plan.
@@ -10983,7 +10154,6 @@ The following table lists the operators that are available in the optimized plan
 - **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
 - **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
 
-
 **In raw plans:**
 The following table lists the operators that are available in the raw plan.
 
@@ -11007,9 +10177,6 @@ The following table lists the operators that are available in the raw plan.
 **Notes:**
 - **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
 - **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
-
-
-
 
 Operators are sometimes marked as `Fused ...`. This indicates that the operator is fused with its input, i.e., the operator below it. That is, if you see a `Fused X` operator above a `Y` operator:
 
@@ -11164,7 +10331,6 @@ You can also explain `SUBSCRIBE` statements to understand how data changes will 
 
 > **Note:** `SUBSCRIBE` only supports `OPTIMIZED PLAN` and `PHYSICAL PLAN` stages. The `RAW`, `DECORRELATED`, and `LOCALLY OPTIMIZED` stages are not available for `SUBSCRIBE` because it takes MIR (mid-level intermediate representation) directly rather than going through HIR lowering.
 
-
 Explain the optimized plan for subscribing to a table:
 
 ```mzsql
@@ -11197,11 +10363,9 @@ The privileges required to execute this statement are:
 - `USAGE` privileges on the schemas that all relations in the explainee are
   contained in.
 
-
 ---
 
 ## EXPLAIN SCHEMA
-
 
 `EXPLAIN KEY SCHEMA` or `EXPLAIN VALUE SCHEMA` shows the generated schemas for a `CREATE SINK` statement without creating the sink.
 
@@ -11209,10 +10373,7 @@ The privileges required to execute this statement are:
 > our backwards compatibility guarantee. The syntax and output of `EXPLAIN` may
 > change arbitrarily in future versions of Materialize.
 
-
 ## Syntax
-
-
 
 ```mzsql
 EXPLAIN (KEY | VALUE) SCHEMA [AS JSON]
@@ -11259,7 +10420,6 @@ INTO KAFKA CONNECTION <connection_name> (
 | **KEY FORMAT** `<sink_format_spec>` **VALUE FORMAT** `<sink_format_spec>` | Optional. Specifies the key format and value formats separately. See [Formats](/sql/create-sink/kafka/#formats) for details.  |
 | **ENVELOPE** (`DEBEZIUM` \| `UPSERT`) | Optional. Specifies how changes to the sink's upstream relation are mapped to Kafka messages. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `DEBEZIUM` \| The generated schemas have a [Debezium-style diff envelope](/sql/create-sink/kafka/#debezium) to capture changes in the input view or source. \| \| `UPSERT` \| The sink emits data with [upsert semantics](/sql/create-sink/kafka/#upsert). Requires a unique key specified using the `KEY` option. \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `SNAPSHOT = <snapshot>` \| Default: `true`. Whether to emit the consolidated results of the query before the sink was created at the start of the sink. To see only results after the sink is created, specify `WITH (SNAPSHOT = false)`. \|  |
-
 
 ## Details
 When creating a an Avro-formatted Kafka sink, Materialize automatically generates Avro schemas for the message key and value and publishes them to a schema registry.
@@ -11315,11 +10475,9 @@ The privileges required to execute this statement are:
 - `USAGE` privileges on the schemas that all items in the query are contained
   in.
 
-
 ---
 
 ## EXPLAIN TIMESTAMP
-
 
 `EXPLAIN TIMESTAMP` displays the timestamps used for a `SELECT` statement -- valuable information to investigate query delays.
 
@@ -11327,10 +10485,7 @@ The privileges required to execute this statement are:
 > our backwards compatibility guarantee. The syntax and output of `EXPLAIN` may
 > change arbitrarily in future versions of Materialize.
 
-
 ## Syntax
-
-
 
 ```mzsql
 EXPLAIN TIMESTAMP [AS (TEXT | JSON)]
@@ -11342,7 +10497,6 @@ FOR <select_stmt>
 | --- | --- |
 | **AS** (`TEXT` \| `JSON`) | Optional. Specifies the output format of the explanation:  \| Format \| Description \| \|--------\|-------------\| \| `TEXT` \| Format the explanation output as UTF-8 text (default). \| \| `JSON` \| Format the explanation output as a JSON object. \|  |
 | **FOR** `<select_stmt>` | The [`SELECT`](/sql/select) statement to explain.  |
-
 
 ## Details
 
@@ -11388,7 +10542,6 @@ Field | Meaning | Example
 **source** | Source’s identifiers | `source materialize.public.raw_users (u2014, storage)`
 **read frontier** | Minimum logical timestamp. |`[1673612423000 (2023-01-13 12:20:23.000)]`
 **write frontier** | Maximum logical timestamp. | `[1673612424152 (2023-01-13 12:20:24.152)]`
-
 
 ## Examples
 
@@ -11444,7 +10597,6 @@ pub struct TimestampDetermination<T> {
     pub largest_not_in_advance_of_upper: T,
 }
 
-
 *Query timestamp: The timestamp in a timeline at which the query makes the read
 oracle read: The value of the timeline's oracle timestamp, if used.
 largest not in advance of upper: The largest timestamp not in advance of upper.
@@ -11474,7 +10626,6 @@ Each source contains two frontiers:
                            upper:[1673612424152 (2023-01-13 12:20:24.152)]+
                            since:[1673612423000 (2023-01-13 12:20:23.000)]+
 
-
                                  Timestamp
 ---------------------------------------------------------------------------
                  query timestamp: 1673612424151 (2023-01-13 12:20:24.151) +
@@ -11496,17 +10647,13 @@ The privileges required to execute this statement are:
 - `USAGE` privileges on the schemas that all relations in the query are
   contained in.
 
-
 ---
 
 ## FETCH
 
-
 `FETCH` retrieves rows from a query using a cursor previously opened with [`DECLARE`](/sql/declare).
 
 ## Syntax
-
-
 
 ```mzsql
 FETCH [ <count> | ALL ] [FROM] <cursor_name> [ WITH ( TIMEOUT = <interval> ) ]
@@ -11520,7 +10667,6 @@ FETCH [ <count> | ALL ] [FROM] <cursor_name> [ WITH ( TIMEOUT = <interval> ) ]
 | `<cursor_name>` | The name of an open cursor.  |
 | `TIMEOUT` | When fetching from a [`SUBSCRIBE`](/sql/subscribe) cursor, complete if there are no more rows ready after this timeout. The default will cause `FETCH` to wait for at least one row to be available.  |
 
-
 ## Details
 
 `FETCH` will return at most the specified _count_ of available rows. Specifying a _count_ of `ALL` indicates that there is no limit on the number of
@@ -11529,11 +10675,9 @@ rows to be returned.
 For [`SUBSCRIBE`](/sql/subscribe) queries, `FETCH` by default will wait for rows to be available before returning.
 Specifying a _timeout_ of `0s` returns only rows that are immediately available.
 
-
 ---
 
 ## GRANT PRIVILEGE
-
 
 `GRANT PRIVILEGE` grants privileges to [database
 role(s)](/sql/create-role/).
@@ -11543,9 +10687,6 @@ role(s)](/sql/create-role/).
 > **Note:** The syntax supports the `ALL [PRIVILEGES]` shorthand to refer to all
 > [*applicable* privileges](/sql/grant-privilege/#available-privileges) for the
 > object type.
-
-
-
 
 <!-- ============ CLUSTER syntax ==============  -->
 
@@ -11566,7 +10707,6 @@ GRANT <USAGE | CREATE | ALL [PRIVILEGES]> [, ... ]
 ON ALL CLUSTERS
 TO <role_name> [, ... ];
 ```
-
 
 <!-- ================== Connection syntax ======================  -->
 
@@ -11589,8 +10729,6 @@ ON ALL CONNECTIONS
 TO <role_name> [, ... ];
 ```
 
-
-
 <!-- ================== Database syntax =====================  -->
 
 **Database:**
@@ -11611,8 +10749,6 @@ ON ALL DATABASES
 TO <role_name> [, ... ];
 ```
 
-
-
 <!-- =============== Materialized view syntax ===================  -->
 
 **Materialized view/view/source:**
@@ -11621,7 +10757,6 @@ TO <role_name> [, ... ];
 > on the view/materialized views. That is, having `SELECT` privileges on the
 > underlying objects defining the view/materialized view is insufficient.
 
-
 For specific materialized view(s)/view(s)/source(s):
 
 ```mzsql
@@ -11629,8 +10764,6 @@ GRANT <SELECT | ALL [PRIVILEGES]>
 ON [TABLE] <name> [, <name> ...] -- For PostgreSQL compatibility, if specifying type, use TABLE
 TO <role_name> [, ... ];
 ```
-
-
 
 <!-- ==================== Schema syntax =====================  -->
 
@@ -11652,8 +10785,6 @@ ON ALL SCHEMAS [IN DATABASE <name> [, <name> ...]]
 TO <role_name> [, ... ];
 ```
 
-
-
 <!-- ==================== Secret syntax =====================  -->
 
 **Secret:**
@@ -11674,8 +10805,6 @@ ON ALL SECRET [IN DATABASE <name> [, <name> ...]]
 TO <role_name> [, ... ];
 ```
 
-
-
 <!-- ==================== System syntax =====================  -->
 
 **System:**
@@ -11685,8 +10814,6 @@ GRANT <CREATEROLE | CREATEDB | CREATECLUSTER | CREATENETWORKPOLICY | ALL [PRIVIL
 ON SYSTEM
 TO <role_name> [, ... ];
 ```
-
-
 
 <!-- ==================== Type syntax =======================  -->
 
@@ -11709,8 +10836,6 @@ ON ALL TYPES
 TO <role_name> [, ... ];
 ```
 
-
-
 <!-- ======================= Table syntax =====================  -->
 
 **Table:**
@@ -11728,7 +10853,6 @@ For all tables or all tables in a specific schema(s) or in a specific database(s
 > **Note:** Granting privileges via `ALL TABLES [...]` also applies to sources, views, and
 > materialized views (for the applicable privileges).
 
-
 ```mzsql
 GRANT <SELECT | INSERT | UPDATE | DELETE | ALL [PRIVILEGES]> [, ...]
 ON ALL TABLES
@@ -11736,14 +10860,9 @@ ON ALL TABLES
 TO <role_name> [, ... ];
 ```
 
-
-
-
-
 ## Details
 
 ### Available privileges
-
 
 **By Privilege:**
 
@@ -11760,7 +10879,6 @@ TO <role_name> [, ... ];
 | <strong>CREATECLUSTER</strong> | Permission to create new clusters. | <code>N</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 | <strong>CREATENETWORKPOLICY</strong> | Permission to create network policies to control access at the network layer. | <code>P</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 
-
 **By Object:**
 
 | Object | Privileges |
@@ -11776,9 +10894,6 @@ TO <role_name> [, ... ];
 | <code>TABLE</code> | <ul> <li><code>INSERT</code></li> <li><code>SELECT</code></li> <li><code>UPDATE</code></li> <li><code>DELETE</code></li> </ul>  |
 | <code>TYPE</code> | <ul> <li><code>USAGE</code></li> </ul>  |
 | <code>VIEW</code> | <ul> <li><code>SELECT</code></li> </ul>  |
-
-
-
 
 ## Privileges
 
@@ -11835,18 +10950,14 @@ GRANT CREATEDB ON SYSTEM TO source_owners;
 - [`REVOKE PRIVILEGE`](../revoke-privilege)
 - [`ALTER DEFAULT PRIVILEGES`](../alter-default-privileges)
 
-
 ---
 
 ## GRANT ROLE
-
 
 `GRANT` grants membership of one role to another role. Roles can be members of
 other roles, as well as inherit all the privileges of those roles.
 
 ## Syntax
-
-
 
 ```mzsql
 GRANT <role_name> [, ...] TO <grantee> [, ...]
@@ -11857,7 +10968,6 @@ GRANT <role_name> [, ...] TO <grantee> [, ...]
 | --- | --- |
 | `<role_name>` | The name of the role being granted.  |
 | `<grantee>` | The name of the receiving role; i.e., the grantee.  |
-
 
 ## Examples
 
@@ -11892,11 +11002,9 @@ The privileges required to execute this statement are:
 - [`GRANT PRIVILEGE`](../grant-privilege)
 - [`REVOKE PRIVILEGE`](../revoke-privilege)
 
-
 ---
 
 ## Identifiers
-
 
 In Materialize, identifiers are used to refer to columns and database objects
 like sources, views, and indexes.
@@ -11914,7 +11022,6 @@ To override these restrictions, you can enclose the identifier in double quotes;
 e.g., `"123_source"` or `"fun_source_@"`. Inside double quotes, characters are interpreted literally, except for the double-quote character itself. To include a double quote within a double-quoted identifier, escape it by writing two adjacent double quotes, as in "includes""quote".
 
 > **Note:** The identifiers `"."` and `".."` are not allowed.
-
 
 ## Case sensitivity
 
@@ -12014,19 +11121,15 @@ the syntax errors that result are not always obvious.
 The current keywords are listed below.
 
 | | | | |
-|--|--|--|--||`ABORT` |`ACCESS` |`ACTION` |`ADD`||`ADDED` |`ADDRESS` |`ADDRESSES` |`AFTER`||`AGGREGATE` |`AGGREGATION` |`ALIGNED` |`ALL`||`ALTER` |`ANALYSE` |`ANALYSIS` |`ANALYZE`||`AND` |`ANY` |`APPEND` |`APPLY`||`ARITY` |`ARN` |`ARRANGED` |`ARRANGEMENT`||`ARRAY` |`AS` |`ASC` |`ASSERT`||`ASSUME` |`AT` |`AUCTION` |`AUTHORITY`||`AVAILABILITY` |`AVRO` |`AWS` |`BATCH`||`BEGIN` |`BETWEEN` |`BIGINT` |`BILLED`||`BODY` |`BOOLEAN` |`BOTH` |`BPCHAR`||`BROKEN` |`BROKER` |`BROKERS` |`BY`||`BYTES` |`CAPTURE` |`CARDINALITY` |`CASCADE`||`CASE` |`CAST` |`CATALOG` |`CERTIFICATE`||`CHAIN` |`CHAINS` |`CHAR` |`CHARACTER`||`CHARACTERISTICS` |`CHECK` |`CLASS` |`CLIENT`||`CLOCK` |`CLOSE` |`CLUSTER` |`CLUSTERS`||`COALESCE` |`COLLATE` |`COLUMN` |`COLUMNS`||`COMMENT` |`COMMIT` |`COMMITTED` |`COMPACTION`||`COMPATIBILITY` |`COMPRESSION` |`COMPUTE` |`COMPUTECTL`||`CONFIG` |`CONFLUENT` |`CONNECTION` |`CONNECTIONS`||`CONSTRAINT` |`CONTINUAL` |`COPY` |`COUNT`||`COUNTER` |`CPU` |`CREATE` |`CREATECLUSTER`||`CREATEDB` |`CREATENETWORKPOLICY` |`CREATEROLE` |`CREATION`||`CREDENTIAL` |`CROSS` |`CSE` |`CSV`||`CURRENT` |`CURSOR` |`DATABASE` |`DATABASES`||`DATUMS` |`DAY` |`DAYS` |`DEALLOCATE`||`DEBEZIUM` |`DEBUG` |`DEBUGGING` |`DEC`||`DECIMAL` |`DECLARE` |`DECODING` |`DECORRELATED`||`DEFAULT` |`DEFAULTS` |`DELETE` |`DELIMITED`||`DELIMITER` |`DELTA` |`DESC` |`DETAILS`||`DIRECTION` |`DISCARD` |`DISK` |`DISTINCT`||`DOC` |`DOT` |`DOUBLE` |`DROP`||`EAGER` |`ELEMENT` |`ELSE` |`ENABLE`||`END` |`ENDPOINT` |`ENFORCED` |`ENVELOPE`||`EQUIVALENCES` |`ERROR` |`ERRORS` |`ESCAPE`||`ESTIMATE` |`EVERY` |`EXCEPT` |`EXCLUDE`||`EXECUTE` |`EXISTS` |`EXPECTED` |`EXPLAIN`||`EXPOSE` |`EXPRESSIONS` |`EXTERNAL` |`EXTRACT`||`FACTOR` |`FALSE` |`FAST` |`FEATURES`||`FETCH` |`FIELDS` |`FILE` |`FILES`||`FILTER` |`FIRST` |`FIXPOINT` |`FLOAT`||`FOLLOWING` |`FOR` |`FOREIGN` |`FORMAT`||`FORWARD` |`FROM` |`FULL` |`FULLNAME`||`FUNCTION` |`FUSION` |`GENERATOR` |`GRANT`||`GREATEST` |`GROUP` |`GROUPS` |`HAVING`||`HEADER` |`HEADERS` |`HINTS` |`HISTORY`||`HOLD` |`HOST` |`HOUR` |`HOURS`||`HUMANIZED` |`HYDRATION` |`ICEBERG` |`ID`||`IDENTIFIERS` |`IDS` |`IF` |`IGNORE`||`ILIKE` |`IMPLEMENTATIONS` |`IMPORTED` |`IN`||`INCLUDE` |`INDEX` |`INDEXES` |`INFO`||`INHERIT` |`INLINE` |`INNER` |`INPUT`||`INSERT` |`INSIGHTS` |`INSPECT` |`INSTANCE`||`INT` |`INTEGER` |`INTERNAL` |`INTERSECT`||`INTERVAL` |`INTO` |`INTROSPECTION` |`IS`||`ISNULL` |`ISOLATION` |`JOIN` |`JOINS`||`JSON` |`KAFKA` |`KEY` |`KEYS`||`LAST` |`LATERAL` |`LATEST` |`LEADING`||`LEAST` |`LEFT` |`LEGACY` |`LETREC`||`LEVEL` |`LIKE` |`LIMIT` |`LINEAR`||`LIST` |`LOAD` |`LOCAL` |`LOCALLY`||`LOG` |`LOGICAL` |`LOGIN` |`LOWERING`||`MANAGED` |`MANUAL` |`MAP` |`MARKETING`||`MATERIALIZE` |`MATERIALIZED` |`MAX` |`MECHANISMS`||`MEMBERSHIP` |`MEMORY` |`MESSAGE` |`METADATA`||`MINUTE` |`MINUTES` |`MODE` |`MONTH`||`MONTHS` |`MUTUALLY` |`MYSQL` |`NAME`||`NAMES` |`NAMESPACE` |`NATURAL` |`NEGATIVE`||`NETWORK` |`NEW` |`NEXT` |`NFC`||`NFD` |`NFKC` |`NFKD` |`NO`||`NOCREATECLUSTER` |`NOCREATEDB` |`NOCREATEROLE` |`NODE`||`NOINHERIT` |`NOLOGIN` |`NON` |`NONE`||`NORMALIZE` |`NOSUPERUSER` |`NOT` |`NOTICE`||`NOTICES` |`NULL` |`NULLIF` |`NULLS`||`OBJECTS` |`OF` |`OFFSET` |`ON`||`ONLY` |`OPERATOR` |`OPTIMIZED` |`OPTIMIZER`||`OPTIONS` |`OR` |`ORDER` |`ORDINALITY`||`OUTER` |`OVER` |`OWNED` |`OWNER`||`PARTITION` |`PARTITIONS` |`PASSWORD` |`PATH`||`PATTERN` |`PHYSICAL` |`PLAN` |`PLANS`||`POLICIES` |`POLICY` |`PORT` |`POSITION`||`POSTGRES` |`PRECEDING` |`PRECISION` |`PREFIX`||`PREPARE` |`PRIMARY` |`PRIORITIZE` |`PRIVATELINK`||`PRIVILEGES` |`PROGRESS` |`PROJECTION` |`PROTOBUF`||`PROTOCOL` |`PUBLIC` |`PUBLICATION` |`PUSHDOWN`||`QUALIFY` |`QUERY` |`QUOTE` |`RAISE`||`RANGE` |`RATE` |`RAW` |`READ`||`READY` |`REAL` |`REASSIGN` |`RECURSION`||`RECURSIVE` |`REDACTED` |`REDUCE` |`REFERENCE`||`REFERENCES` |`REFRESH` |`REGEX` |`REGION`||`REGISTRY` |`RELATION` |`RENAME` |`REOPTIMIZE`||`REPEATABLE` |`REPLACE` |`REPLACEMENT` |`REPLAN`||`REPLICA` |`REPLICAS` |`REPLICATION` |`RESET`||`RESPECT` |`RESTRICT` |`RETAIN` |`RETURN`||`RETURNING` |`REVOKE` |`RIGHT` |`ROLE`||`ROLES` |`ROLLBACK` |`ROTATE` |`ROUNDS`||`ROW` |`ROWS` |`RULES` |`SASL`||`SCALE` |`SCHEDULE` |`SCHEMA` |`SCHEMAS`||`SCOPE` |`SECOND` |`SECONDS` |`SECRET`||`SECRETS` |`SECURITY` |`SEED` |`SELECT`||`SEQUENCES` |`SERIALIZABLE` |`SERVER` |`SERVICE`||`SESSION` |`SET` |`SHARD` |`SHOW`||`SINK` |`SINKS` |`SIZE` |`SKEW`||`SMALLINT` |`SNAPSHOT` |`SOME` |`SOURCE`||`SOURCES` |`SQL` |`SSH` |`SSL`||`START` |`STDIN` |`STDOUT` |`STORAGE`||`STORAGECTL` |`STRATEGY` |`STRICT` |`STRING`||`STRONG` |`SUBSCRIBE` |`SUBSOURCE` |`SUBSOURCES`||`SUBSTRING` |`SUBTREE` |`SUPERUSER` |`SWAP`||`SYNTAX` |`SYSTEM` |`TABLE` |`TABLES`||`TAIL` |`TASK` |`TASKS` |`TEMP`||`TEMPORARY` |`TEXT` |`THEN` |`TICK`||`TIES` |`TIME` |`TIMEOUT` |`TIMESTAMP`||`TIMESTAMPTZ` |`TIMING` |`TO` |`TOKEN`||`TOPIC` |`TPCH` |`TRACE` |`TRAILING`||`TRANSACTION` |`TRANSACTIONAL` |`TRANSFORM` |`TRIM`||`TRUE` |`TUNNEL` |`TYPE` |`TYPES`||`UNBOUNDED` |`UNCOMMITTED` |`UNION` |`UNIQUE`||`UNKNOWN` |`UNNEST` |`UNTIL` |`UP`||`UPDATE` |`UPSERT` |`URL` |`USAGE`||`USER` |`USERNAME` |`USERS` |`USING`||`VALIDATE` |`VALUE` |`VALUES` |`VARCHAR`||`VARIADIC` |`VARYING` |`VERBOSE` |`VERSION`||`VIEW` |`VIEWS` |`WAIT` |`WAREHOUSE`||`WARNING` |`WEBHOOK` |`WHEN` |`WHERE`||`WHILE` |`WINDOW` |`WIRE` |`WITH`||`WITHIN` |`WITHOUT` |`WORK` |`WORKERS`||`WORKLOAD` |`WRITE` |`YEAR` |`YEARS`||`ZONE` |`ZONES` |&nbsp; |&nbsp;|
-
+|--|--|--|--||`ABORT` |`ACCESS` |`ACTION` |`ADD`||`ADDED` |`ADDRESS` |`ADDRESSES` |`AFTER`||`AGGREGATE` |`AGGREGATION` |`ALIGNED` |`ALL`||`ALTER` |`ANALYSE` |`ANALYSIS` |`ANALYZE`||`AND` |`ANY` |`APPEND` |`APPLY`||`ARITY` |`ARN` |`ARRANGED` |`ARRANGEMENT`||`ARRAY` |`AS` |`ASC` |`ASSERT`||`ASSUME` |`AT` |`AUCTION` |`AUTHORITY`||`AVAILABILITY` |`AVRO` |`AWS` |`BATCH`||`BEGIN` |`BETWEEN` |`BIGINT` |`BILLED`||`BODY` |`BOOLEAN` |`BOTH` |`BPCHAR`||`BROKEN` |`BROKER` |`BROKERS` |`BY`||`BYTES` |`CAPTURE` |`CARDINALITY` |`CASCADE`||`CASE` |`CAST` |`CATALOG` |`CERTIFICATE`||`CHAIN` |`CHAINS` |`CHAR` |`CHARACTER`||`CHARACTERISTICS` |`CHECK` |`CLASS` |`CLIENT`||`CLOCK` |`CLOSE` |`CLUSTER` |`CLUSTERS`||`COALESCE` |`COLLATE` |`COLUMN` |`COLUMNS`||`COMMENT` |`COMMIT` |`COMMITTED` |`COMPACTION`||`COMPATIBILITY` |`COMPRESSION` |`COMPUTE` |`COMPUTECTL`||`CONFIG` |`CONFLUENT` |`CONNECTION` |`CONNECTIONS`||`CONSTRAINT` |`COPY` |`COUNT` |`COUNTER`||`CPU` |`CREATE` |`CREATECLUSTER` |`CREATEDB`||`CREATENETWORKPOLICY` |`CREATEROLE` |`CREATION` |`CREDENTIAL`||`CROSS` |`CSE` |`CSV` |`CURRENT`||`CURSOR` |`DATABASE` |`DATABASES` |`DATUMS`||`DAY` |`DAYS` |`DEALLOCATE` |`DEBEZIUM`||`DEBUG` |`DEBUGGING` |`DEC` |`DECIMAL`||`DECLARE` |`DECODING` |`DECORRELATED` |`DEFAULT`||`DEFAULTS` |`DELETE` |`DELIMITED` |`DELIMITER`||`DELTA` |`DESC` |`DETAILS` |`DIRECTION`||`DISCARD` |`DISK` |`DISTINCT` |`DOC`||`DOT` |`DOUBLE` |`DROP` |`EAGER`||`ELEMENT` |`ELSE` |`ENABLE` |`END`||`ENDPOINT` |`ENFORCED` |`ENVELOPE` |`EQUIVALENCES`||`ERROR` |`ERRORS` |`ESCAPE` |`ESTIMATE`||`EVERY` |`EXCEPT` |`EXCLUDE` |`EXECUTE`||`EXISTS` |`EXPECTED` |`EXPLAIN` |`EXPOSE`||`EXPRESSIONS` |`EXTERNAL` |`EXTRACT` |`FACTOR`||`FALSE` |`FAST` |`FEATURES` |`FETCH`||`FIELDS` |`FILE` |`FILES` |`FILTER`||`FIRST` |`FIXPOINT` |`FLOAT` |`FOLLOWING`||`FOR` |`FOREIGN` |`FORMAT` |`FORWARD`||`FROM` |`FULL` |`FULLNAME` |`FUNCTION`||`FUSION` |`GENERATOR` |`GRANT` |`GREATEST`||`GROUP` |`GROUPS` |`HAVING` |`HEADER`||`HEADERS` |`HINTS` |`HISTORY` |`HOLD`||`HOST` |`HOUR` |`HOURS` |`HUMANIZED`||`HYDRATION` |`ICEBERG` |`ID` |`IDENTIFIERS`||`IDS` |`IF` |`IGNORE` |`ILIKE`||`IMPLEMENTATIONS` |`IMPORTED` |`IN` |`INCLUDE`||`INDEX` |`INDEXES` |`INFO` |`INHERIT`||`INLINE` |`INNER` |`INPUT` |`INSERT`||`INSIGHTS` |`INSPECT` |`INSTANCE` |`INT`||`INTEGER` |`INTERNAL` |`INTERSECT` |`INTERVAL`||`INTO` |`INTROSPECTION` |`IS` |`ISNULL`||`ISOLATION` |`JOIN` |`JOINS` |`JSON`||`KAFKA` |`KEY` |`KEYS` |`LAST`||`LATERAL` |`LATEST` |`LEADING` |`LEAST`||`LEFT` |`LEGACY` |`LETREC` |`LEVEL`||`LIKE` |`LIMIT` |`LINEAR` |`LIST`||`LOAD` |`LOCAL` |`LOCALLY` |`LOG`||`LOGICAL` |`LOGIN` |`LOWERING` |`MANAGED`||`MANUAL` |`MAP` |`MARKETING` |`MATCHING`||`MATERIALIZE` |`MATERIALIZED` |`MAX` |`MECHANISMS`||`MEMBERSHIP` |`MEMORY` |`MESSAGE` |`METADATA`||`MINUTE` |`MINUTES` |`MOCK` |`MODE`||`MONTH` |`MONTHS` |`MUTUALLY` |`MYSQL`||`NAME` |`NAMES` |`NAMESPACE` |`NATURAL`||`NEGATIVE` |`NETWORK` |`NEW` |`NEXT`||`NFC` |`NFD` |`NFKC` |`NFKD`||`NO` |`NOCREATECLUSTER` |`NOCREATEDB` |`NOCREATEROLE`||`NODE` |`NOINHERIT` |`NOLOGIN` |`NON`||`NONE` |`NORMALIZE` |`NOSUPERUSER` |`NOT`||`NOTICE` |`NOTICES` |`NULL` |`NULLIF`||`NULLS` |`OBJECTS` |`OF` |`OFFSET`||`ON` |`ONLY` |`OPERATOR` |`OPTIMIZED`||`OPTIMIZER` |`OPTIONS` |`OR` |`ORDER`||`ORDINALITY` |`OUTER` |`OVER` |`OWNED`||`OWNER` |`PARTITION` |`PARTITIONS` |`PASSWORD`||`PATH` |`PATTERN` |`PHYSICAL` |`PLAN`||`PLANS` |`POLICIES` |`POLICY` |`PORT`||`POSITION` |`POSTGRES` |`PRECEDING` |`PRECISION`||`PREFIX` |`PREPARE` |`PRIMARY` |`PRIORITIZE`||`PRIVATELINK` |`PRIVILEGES` |`PROGRESS` |`PROJECTION`||`PROTOBUF` |`PROTOCOL` |`PUBLIC` |`PUBLICATION`||`PUSHDOWN` |`QUALIFY` |`QUERY` |`QUOTE`||`RAISE` |`RANGE` |`RATE` |`RAW`||`READ` |`READY` |`REAL` |`REASSIGN`||`RECURSION` |`RECURSIVE` |`REDACTED` |`REDUCE`||`REFERENCE` |`REFERENCES` |`REFRESH` |`REGEX`||`REGION` |`REGISTRY` |`RELATION` |`RENAME`||`REOPTIMIZE` |`REPEATABLE` |`REPLACE` |`REPLACEMENT`||`REPLAN` |`REPLICA` |`REPLICAS` |`REPLICATION`||`RESET` |`RESPECT` |`RESTRICT` |`RETAIN`||`RETURN` |`RETURNING` |`REVOKE` |`RIGHT`||`ROLE` |`ROLES` |`ROLLBACK` |`ROTATE`||`ROUNDS` |`ROW` |`ROWS` |`RULES`||`SASL` |`SCALE` |`SCHEDULE` |`SCHEMA`||`SCHEMAS` |`SCOPE` |`SECOND` |`SECONDS`||`SECRET` |`SECRETS` |`SECURITY` |`SEED`||`SELECT` |`SEQUENCES` |`SERIALIZABLE` |`SERVER`||`SERVICE` |`SESSION` |`SET` |`SHARD`||`SHOW` |`SINK` |`SINKS` |`SIZE`||`SKEW` |`SMALLINT` |`SNAPSHOT` |`SOME`||`SOURCE` |`SOURCES` |`SQL` |`SSH`||`SSL` |`START` |`STDIN` |`STDOUT`||`STORAGE` |`STORAGECTL` |`STRATEGY` |`STRICT`||`STRING` |`STRONG` |`SUBSCRIBE` |`SUBSOURCE`||`SUBSOURCES` |`SUBSTRING` |`SUBTREE` |`SUPERUSER`||`SWAP` |`SYNTAX` |`SYSTEM` |`TABLE`||`TABLES` |`TAIL` |`TEMP` |`TEMPORARY`||`TEST` |`TEXT` |`THEN` |`TICK`||`TIES` |`TIME` |`TIMEOUT` |`TIMESTAMP`||`TIMESTAMPTZ` |`TIMING` |`TO` |`TOKEN`||`TOPIC` |`TPCH` |`TRACE` |`TRAILING`||`TRANSACTION` |`TRANSACTIONAL` |`TRANSFORM` |`TRIM`||`TRUE` |`TUNNEL` |`TYPE` |`TYPES`||`UNBOUNDED` |`UNCOMMITTED` |`UNION` |`UNIQUE`||`UNIT` |`UNKNOWN` |`UNNEST` |`UNTIL`||`UP` |`UPDATE` |`UPSERT` |`URL`||`USAGE` |`USER` |`USERNAME` |`USERS`||`USING` |`VALIDATE` |`VALUE` |`VALUES`||`VARCHAR` |`VARIADIC` |`VARYING` |`VERBOSE`||`VERSION` |`VIEW` |`VIEWS` |`WAIT`||`WAREHOUSE` |`WARNING` |`WEBHOOK` |`WHEN`||`WHERE` |`WHILE` |`WINDOW` |`WIRE`||`WITH` |`WITHIN` |`WITHOUT` |`WORK`||`WORKERS` |`WORKLOAD` |`WRITE` |`YEAR`||`YEARS` |`ZONE` |`ZONES` |&nbsp;|
 
 ---
 
 ## INSERT
 
-
 `INSERT` writes values to [user-defined tables](../create-table).
 
 ## Syntax
-
-
 
 ```mzsql
 INSERT INTO <table_name> [[AS] <alias>] [ ( <col1> [, ...] ) ]
@@ -12043,7 +11146,6 @@ VALUES ( <expr1> [, ...] ) [, ...] | DEFAULT VALUES | <query>
 | `DEFAULT VALUES` | Insert a single row using the default value for all columns.  |
 | `<query>` | A [`SELECT`](/sql/select) statement whose returned rows you want to write to the table.  |
 | `RETURNING <output_expr \| *> [, ...]` | Causes `INSERT` to return values based on each inserted row: - `*` to return all columns - `<output_expr> [[AS] <alias>]`. [Aggregate functions](/sql/functions/#aggregate-functions) are not allowed in the `RETURNING` clause.  |
-
 
 ## Details
 
@@ -12130,11 +11232,9 @@ The privileges required to execute this statement are:
 - [`DROP TABLE`](../drop-table)
 - [`SELECT`](../select)
 
-
 ---
 
 ## PREPARE
-
 
 `PREPARE` creates a prepared statement by parsing the initial `SELECT`, `INSERT`, `UPDATE`, or `DELETE` statement. A subsequent [`EXECUTE`] statement then plans and executes the statement.
 
@@ -12183,17 +11283,14 @@ DEALLOCATE a;
 [`DEALLOCATE`]:../deallocate
 [`EXECUTE`]:../execute
 
-
 ---
 
 ## REASSIGN OWNED
-
 
 `REASSIGN OWNED` reassigns the owner of all the objects that are owned by one of the specified roles.
 
 > **Note:** Unlike [PostgreSQL](https://www.postgresql.org/docs/current/sql-drop-owned.html), Materialize reassigns
 > all objects across all databases, including the databases themselves.
-
 
 ## Syntax
 
@@ -12227,11 +11324,9 @@ The privileges required to execute this statement are:
 - [`ALTER OWNER`](/sql/#rbac)
 - [`DROP OWNED`](../drop-owned)
 
-
 ---
 
 ## RESET
-
 
 `RESET` restores the value of a configuration parameter to its default value.
 This command is an alternative spelling for [`SET...TO DEFAULT`](../set).
@@ -12243,7 +11338,6 @@ To see the current value of a configuration parameter, use [`SHOW`](../show).
 ```mzsql
 RESET <parameter_name>;
 ```
-
 
 Syntax element | Description
 ---------------|------------
@@ -12337,11 +11431,9 @@ SHOW search_path;
 - [`SHOW`](../show)
 - [`SET`](../set)
 
-
 ---
 
 ## REVOKE PRIVILEGE
-
 
 `REVOKE` revokes privileges from a database object. The `PUBLIC` pseudo-role can
 be used to indicate that the privileges should be revoked from all roles
@@ -12352,10 +11444,6 @@ be used to indicate that the privileges should be revoked from all roles
 > **Note:** The syntax supports the `ALL [PRIVILEGES]` shorthand to refer to all
 > [*applicable* privileges](#applicable-privileges-to-revoke) for the
 > object type.
-
-
-
-
 
 <!-- ============ CLUSTER syntax ==============  -->
 
@@ -12379,7 +11467,6 @@ FROM <role_name> [, ... ]
 ;
 ```
 
-
 <!-- ================== Connection syntax ======================  -->
 
 **Connection:**
@@ -12401,8 +11488,6 @@ ON ALL CONNECTIONS
 FROM <role_name> [, ... ];
 ```
 
-
-
 <!-- ================== Database syntax =====================  -->
 
 **Database:**
@@ -12423,8 +11508,6 @@ ON ALL DATABASES
 FROM <role_name> [, ... ];
 ```
 
-
-
 <!-- =============== Materialized view syntax ===================  -->
 
 **Materialized view/view/source:**
@@ -12433,7 +11516,6 @@ FROM <role_name> [, ... ];
 > on the view/materialized views. That is, having `SELECT` privileges on the
 > underlying objects defining the view/materialized view is insufficient.
 
-
 For specific materialized view(s)/view(s)/source(s):
 
 ```mzsql
@@ -12441,8 +11523,6 @@ REVOKE <SELECT | ALL [PRIVILEGES]>
 ON [TABLE] <name> [, <name> ...] -- For PostgreSQL compatibility, if specifying type, use TABLE
 FROM <role_name> [, ... ];
 ```
-
-
 
 <!-- ==================== Schema syntax =====================  -->
 
@@ -12464,8 +11544,6 @@ ON ALL SCHEMAS [IN DATABASE <name> [, <name> ...]]
 FROM <role_name> [, ... ];
 ```
 
-
-
 <!-- ==================== Secret syntax =====================  -->
 
 **Secret:**
@@ -12486,8 +11564,6 @@ ON ALL SECRET [IN DATABASE <name> [, <name> ...]]
 FROM <role_name> [, ... ];
 ```
 
-
-
 <!-- ==================== System syntax =====================  -->
 
 **System:**
@@ -12497,8 +11573,6 @@ REVOKE <CREATEROLE | CREATEDB | CREATECLUSTER | CREATENETWORKPOLICY | ALL [PRIVI
 ON SYSTEM
 FROM <role_name> [, ... ];
 ```
-
-
 
 <!-- ==================== Type syntax =======================  -->
 
@@ -12521,8 +11595,6 @@ ON ALL TYPES
 FROM <role_name> [, ... ];
 ```
 
-
-
 <!-- ======================= Table syntax =====================  -->
 
 **Table:**
@@ -12540,7 +11612,6 @@ For all tables or all tables in a specific schema(s) or in a specific database(s
 > **Note:** Granting privileges via `ALL TABLES [...]` also applies to sources, views, and
 > materialized views (for the applicable privileges).
 
-
 ```mzsql
 REVOKE <SELECT | INSERT | UPDATE | DELETE | ALL [PRIVILEGES]> [, ...]
 ON ALL TABLES
@@ -12548,14 +11619,9 @@ ON ALL TABLES
 FROM <role_name> [, ... ];
 ```
 
-
-
-
-
 ## Details
 
 ### Applicable privileges to revoke
-
 
 **By Privilege:**
 
@@ -12571,7 +11637,6 @@ FROM <role_name> [, ... ];
 | <strong>CREATEDB</strong> | Permission to create new databases. | <code>B</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 | <strong>CREATECLUSTER</strong> | Permission to create new clusters. | <code>N</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 | <strong>CREATENETWORKPOLICY</strong> | Permission to create network policies to control access at the network layer. | <code>P</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
-
 
 **By Object:**
 
@@ -12589,10 +11654,6 @@ FROM <role_name> [, ... ];
 | <code>TYPE</code> | <ul> <li><code>USAGE</code></li> </ul>  |
 | <code>VIEW</code> | <ul> <li><code>SELECT</code></li> </ul>  |
 
-
-
-
-
 ### Privileges
 
 The privileges required to execute this statement are:
@@ -12601,7 +11662,6 @@ The privileges required to execute this statement are:
 - `USAGE` privileges on the containing database if the affected object is a schema.
 - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema.
 - _superuser_ status if the privilege is a system privilege.
-
 
 ## Examples
 
@@ -12620,7 +11680,6 @@ REVOKE ALL ON CLUSTER dev FROM joe;
 ```mzsql
 REVOKE CREATEDB ON SYSTEM FROM joe;
 ```
-
 
 ## Useful views
 
@@ -12650,11 +11709,9 @@ REVOKE CREATEDB ON SYSTEM FROM joe;
 - [`GRANT PRIVILEGE`](../revoke-privilege)
 - [`ALTER DEFAULT PRIVILEGES`](../alter-default-privileges)
 
-
 ---
 
 ## REVOKE ROLE
-
 
 `REVOKE` revokes membership of a role from the target role.
 
@@ -12668,7 +11725,6 @@ Syntax element       | Description
 ---------------------|------------------
 `<role_to_remove>`   | The name of the role to remove from the `<target_role>`.
 `<target_role>`      | The name of the role from which the to remove the `<role_to_remove>`.
-
 
 ## Examples
 
@@ -12702,11 +11758,9 @@ The privileges required to execute this statement are:
 - [`GRANT PRIVILEGE`](../grant-privilege)
 - [`REVOKE PRIVILEGE`](../revoke-privilege)
 
-
 ---
 
 ## ROLLBACK
-
 
 `ROLLBACK` aborts the current [transaction](/sql/begin/#details) and rolls back
 all changes made by the transaction.
@@ -12726,11 +11780,9 @@ Rolls back the current transaction, discarding all changes made by the transacti
 - [`BEGIN`](/sql/begin)
 - [`COMMIT`](/sql/commit)
 
-
 ---
 
 ## SELECT
-
 
 [//]: # "TODO(morsapaes) More than adapting this to the new architecture,
 rewrite the page entirely at some point."
@@ -12741,8 +11793,6 @@ queries to named [views](../create-view) or [materialized views](../create-mater
 on the underlying relations based on common query patterns.
 
 ## Syntax
-
-
 
 ```mzsql
 [WITH <cte_binding> [, ...]]
@@ -12778,12 +11828,9 @@ SELECT [ALL | DISTINCT [ON ( <col_ref> [, ...] )]]
 | **INTERSECT** [**ALL** \| **DISTINCT**] `<another_select_stmt>` | Optional. Records present in both `select_stmt` and `another_select_stmt`. `DISTINCT` returns only unique rows from these results (implied default). With `ALL` specified, each record occurs a number of times equal to the lesser of the times it occurs in each input statement.  |
 | **EXCEPT** [**ALL** \| **DISTINCT**] `<another_select_stmt>` | Optional. Records present in `select_stmt` but not in `another_select_stmt`. `DISTINCT` returns only unique rows from these results (implied default). With `ALL` specified, each record occurs a number of times equal to the times it occurs in `select_stmt` less the times it occurs in `another_select_stmt`, or not at all if the former is greater than latter.  |
 
-
 ### Common table expressions (CTEs)
 
 #### Regular CTEs
-
-
 
 ```mzsql
 WITH <cte_ident> [( <col_ident> [, ...] )] AS ( <select_stmt> )
@@ -12798,10 +11845,7 @@ WITH <cte_ident> [( <col_ident> [, ...] )] AS ( <select_stmt> )
 | ( `<col_ident>` [, ...] ) | Optional. Rename the CTE's columns to the list of identifiers. The number of identifiers must match the number of columns returned by the CTE's `select_stmt`.  |
 | **AS** ( `<select_stmt>` ) | The `SELECT` statement that defines the CTE. Any `cte_ident` alias can be referenced in subsequent `cte_binding` definitions and in the final `select_stmt`.  |
 
-
 #### Recursive CTEs
-
-
 
 ```mzsql
 WITH MUTUALLY RECURSIVE
@@ -12817,7 +11861,6 @@ WITH MUTUALLY RECURSIVE
 | **(RETURN AT \| ERROR AT) RECURSION LIMIT** `<limit>` | Optional. Control the recursion behavior:  \| Option \| Description \| \|--------\|-------------\| \| `RETURN AT RECURSION LIMIT <limit>` \| Stop the fixpoint computation after `<limit>` iterations and use the current values computed for each recursive CTE binding in the `select_stmt`. Useful when debugging and validating the correctness of recursive queries. \| \| `ERROR AT RECURSION LIMIT <limit>` \| Stop the fixpoint computation after `<limit>` iterations and fail the query with an error. A good safeguard against accidentally running a non-terminating dataflow in production clusters. \|  |
 | `<cte_ident>` ( `<col_ident>` `<col_type>` [, ...] ) | A binding that gives the SQL fragment defined under `select_stmt` a `cte_ident` alias. Unlike regular CTEs, a recursive CTE binding must explicitly state its type as a comma-separated list of (`col_ident` `col_type`) pairs. This alias can be used in the same binding or in all other (preceding and subsequent) bindings in the enclosing recursive CTE block.  |
 | **AS** ( `<select_stmt>` ) | The `SELECT` statement that defines the recursive CTE. Any `cte_ident` alias can be referenced in all `recursive_cte_binding` definitions that live under the same block, as well as in the final `select_stmt` for that block.  |
-
 
 For details and examples, see the [Recursive CTEs](/sql/select/recursive-ctes) page.
 
@@ -12860,7 +11903,6 @@ SET cluster = <cluster name>;
 ```
 
 Materialize will remove the dataflow as soon as it has returned the query results to you.
-
 
 #### Known limitations
 
@@ -13012,11 +12054,9 @@ The privileges required to execute this statement are:
 - [`CREATE MATERIALIZED VIEW`](../create-materialized-view)
 - [`SHOW FULL VIEWS`](../show-views)
 
-
 ---
 
 ## SET
-
 
 `SET` modifies the value of a configuration parameter for the current session.
 By default, values are set for the duration of the current session.
@@ -13150,11 +12190,9 @@ SET schema = qck;
 - [`RESET`](../reset)
 - [`SHOW`](../show)
 
-
 ---
 
 ## SHOW
-
 
 `SHOW` displays the value of either a specified configuration parameter or all
 configuration parameters.
@@ -13265,11 +12303,9 @@ SHOW transaction_isolation;
 - [`RESET`](../reset)
 - [`SET`](../set)
 
-
 ---
 
 ## SHOW CLUSTER REPLICAS
-
 
 `SHOW CLUSTER REPLICAS` lists the [replicas](/sql/create-cluster#replication-factor) for each
 cluster configured in Materialize.
@@ -13287,6 +12323,16 @@ Syntax element                | Description
 **LIKE** \<pattern\>          | If specified, only show clusters that match the pattern.
 **WHERE** <condition(s)>      | If specified, only show clusters that match the condition(s).
 
+## Output
+
+Column       | Description
+-------------|------------
+**cluster**  | The name of the cluster.
+**replica**  | The name of the replica.
+**size**     | The [size](/sql/create-cluster#available-sizes) of the replica.
+**ready**    | Whether all indexes, materialized views, sources, and sinks on the cluster have hydrated.
+**comment**  | The [comment](/sql/comment-on) associated with the cluster replica, if any.
+
 ## Examples
 
 ```mzsql
@@ -13294,8 +12340,8 @@ SHOW CLUSTER REPLICAS;
 ```
 
 ```nofmt
-    cluster    | replica |  size  | ready |
----------------+---------|--------|-------|
+    cluster    | replica |  size  | ready | comment
+---------------+---------|--------|-------|--------
  auction_house | bigger  | 1600cc | t     |
  quickstart    | r1      | 25cc   | t     |
 ```
@@ -13305,22 +12351,19 @@ SHOW CLUSTER REPLICAS WHERE cluster = 'quickstart';
 ```
 
 ```nofmt
-    cluster    | replica |  size  | ready|
----------------+---------|--------|-------
- quickstart    | r1      | 25cc   | t    |
+    cluster    | replica |  size  | ready | comment
+---------------+---------|--------|-------|--------
+ quickstart    | r1      | 25cc   | t     |
 ```
-
 
 ## Related pages
 
 - [`CREATE CLUSTER REPLICA`](../create-cluster-replica)
 - [`DROP CLUSTER REPLICA`](../drop-cluster-replica)
 
-
 ---
 
 ## SHOW CLUSTERS
-
 
 `SHOW CLUSTERS` lists the [clusters](/concepts/clusters/) configured in Materialize.
 
@@ -13354,7 +12397,6 @@ cluster at any time.
 > to choose a valid cluster in order to run `SELECT` queries. A _superuser_ (i.e. `Organization Admin`)
 > can also run [`ALTER SYSTEM SET cluster`](/sql/alter-system-set) to change the
 > default value.
-
 
 ### `mz_catalog_server` system cluster
 
@@ -13412,7 +12454,6 @@ The following characteristics apply to the `mz_system` cluster:
   * You cannot drop this cluster.
   * You cannot run `SELECT` or `SUBSCRIBE` queries in this cluster.
 
-
 ## Examples
 
 ```mzsql
@@ -13442,17 +12483,14 @@ SHOW CLUSTERS LIKE 'auction_%';
  auction_house        |  r1 (25cc)
 ```
 
-
 ## Related pages
 
 - [`CREATE CLUSTER`](../create-cluster)
 - [`DROP CLUSTER`](../drop-cluster)
 
-
 ---
 
 ## SHOW COLUMNS
-
 
 `SHOW COLUMNS` lists the columns available for an object. This can be a source,
 subsource, materialized view, view, or table.
@@ -13525,11 +12563,9 @@ The privileges required to execute this statement are:
 - [`SHOW VIEWS`](../show-views)
 - [`SHOW INDEXES`](../show-indexes)
 
-
 ---
 
 ## SHOW CONNECTIONS
-
 
 `SHOW CONNECTIONS` lists the connections configured in Materialize.
 
@@ -13571,17 +12607,14 @@ SHOW CONNECTIONS LIKE 'kafka%';
  kafka_connection | kafka
 ```
 
-
 ## Related pages
 
 - [`CREATE CONNECTION`](../create-connection)
 - [`DROP CONNECTION`](../drop-connection)
 
-
 ---
 
 ## SHOW CREATE CLUSTER
-
 
 `SHOW CREATE CLUSTER` returns the DDL statement used to create the cluster.
 
@@ -13614,11 +12647,9 @@ There are no privileges required to execute this statement.
 - [`SHOW CLUSTERS`](../show-clusters)
 - [`CREATE CLUSTER`](../create-cluster)
 
-
 ---
 
 ## SHOW CREATE CONNECTION
-
 
 `SHOW CREATE CONNECTION` returns the DDL statement used to create the connection.
 
@@ -13628,11 +12659,9 @@ There are no privileges required to execute this statement.
 SHOW [REDACTED] CREATE CONNECTION <connection_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available connection names, see [`SHOW CONNECTIONS`](/sql/show-connections).
 
@@ -13659,11 +12688,9 @@ The privileges required to execute this statement are:
 - [`SHOW CONNECTIONS`](../show-sources)
 - [`CREATE CONNECTION`](../create-connection)
 
-
 ---
 
 ## SHOW CREATE INDEX
-
 
 `SHOW CREATE INDEX` returns the DDL statement used to create the index.
 
@@ -13673,11 +12700,9 @@ The privileges required to execute this statement are:
 SHOW [REDACTED] CREATE INDEX <index_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available index names, see [`SHOW INDEXES`](/sql/show-indexes).
 
@@ -13714,11 +12739,9 @@ The privileges required to execute this statement are:
 - [`SHOW INDEXES`](../show-indexes)
 - [`CREATE INDEX`](../create-index)
 
-
 ---
 
 ## SHOW CREATE MATERIALIZED VIEW
-
 
 `SHOW CREATE MATERIALIZED VIEW` returns the DDL statement used to create the materialized view.
 
@@ -13728,11 +12751,9 @@ The privileges required to execute this statement are:
 SHOW [REDACTED] CREATE MATERIALIZED VIEW <view_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available materialized view names, see [`SHOW MATERIALIZED VIEWS`](/sql/show-materialized-views).
 
@@ -13758,11 +12779,9 @@ The privileges required to execute this statement are:
 - [`SHOW MATERIALIZED VIEWS`](../show-materialized-views)
 - [`CREATE MATERIALIZED VIEW`](../create-materialized-view)
 
-
 ---
 
 ## SHOW CREATE SINK
-
 
 `SHOW CREATE SINK` returns the DDL statement used to create the sink.
 
@@ -13772,11 +12791,9 @@ The privileges required to execute this statement are:
 SHOW [REDACTED] CREATE SINK <sink_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available sink names, see [`SHOW SINKS`](/sql/show-sinks).
 
@@ -13813,11 +12830,9 @@ The privileges required to execute this statement are:
 - [`SHOW SINKS`](../show-sinks)
 - [`CREATE SINK`](../create-sink)
 
-
 ---
 
 ## SHOW CREATE SOURCE
-
 
 `SHOW CREATE SOURCE` returns the DDL statement used to create the source.
 
@@ -13827,11 +12842,9 @@ The privileges required to execute this statement are:
 SHOW [REDACTED] CREATE SOURCE <source_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available source names, see [`SHOW SOURCES`](/sql/show-sources).
 
@@ -13858,11 +12871,9 @@ The privileges required to execute this statement are:
 - [`SHOW SOURCES`](../show-sources)
 - [`CREATE SOURCE`](../create-source)
 
-
 ---
 
 ## SHOW CREATE TABLE
-
 
 `SHOW CREATE TABLE` returns the SQL used to create the table.
 
@@ -13872,11 +12883,9 @@ The privileges required to execute this statement are:
 SHOW [REDACTED] CREATE TABLE <table_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available table names, see [`SHOW TABLES`](/sql/show-tables).
 
@@ -13906,11 +12915,9 @@ The privileges required to execute this statement are:
 - [`SHOW TABLES`](../show-tables)
 - [`CREATE TABLE`](../create-table)
 
-
 ---
 
 ## SHOW CREATE TYPE
-
 
 `SHOW CREATE TYPE` returns the DDL statement used to create the custom type.
 
@@ -13920,13 +12927,11 @@ The privileges required to execute this statement are:
 SHOW [REDACTED] CREATE TYPE <type_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
 
-
-For available type names names, see [`SHOW TYPES`](/sql/show-types).
+For available type names, see [`SHOW TYPES`](/sql/show-types).
 
 ## Examples
 
@@ -13936,25 +12941,23 @@ SHOW CREATE TYPE point;
 ```
 
 ```nofmt
-    name          |    create_sql
-------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- point            | CREATE TYPE materialize.public.point AS (x pg_catalog.int4, y pg_catalog.int4);
+    name                    |    create_sql
+----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ materialize.public.point   | CREATE TYPE materialize.public.point AS (x pg_catalog.int4, y pg_catalog.int4);
 ```
 
 ## Privileges
 
-- `USAGE` privileges on the schema containing the table.
+- `USAGE` privileges on the schema containing the type.
 
 ## Related pages
 
 - [`SHOW TYPES`](../show-types)
 - [`CREATE TYPE`](../create-type)
 
-
 ---
 
 ## SHOW CREATE VIEW
-
 
 `SHOW CREATE VIEW` returns the [`SELECT`](../select) statement used to create the view.
 
@@ -13964,11 +12967,9 @@ SHOW CREATE TYPE point;
 SHOW [REDACTED] CREATE VIEW <view_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available view names, see [`SHOW VIEWS`](/sql/show-views).
 
@@ -13994,11 +12995,9 @@ The privileges required to execute this statement are:
 - [`SHOW VIEWS`](../show-views)
 - [`CREATE VIEW`](../create-view)
 
-
 ---
 
 ## SHOW DATABASES
-
 
 `SHOW DATABASES` returns a list of all databases in Materialize.
 
@@ -14034,11 +13033,9 @@ materialize
 my_db
 ```
 
-
 ---
 
 ## SHOW DEFAULT PRIVILEGES
-
 
 `SHOW DEFAULT PRIVILEGES` lists the default privileges granted on objects in Materialize.
 
@@ -14047,7 +13044,6 @@ my_db
 ```sql
 SHOW DEFAULT PRIVILEGES [ON <object_type>] [FOR <role_name>];
 ```
-
 
 Syntax element               | Description
 -----------------------------|--------------------------------------
@@ -14097,11 +13093,9 @@ SHOW DEFAULT PRIVILEGES FOR joe;
 
 - [`ALTER DEFAULT PRIVILEGES`](../alter-default-privileges)
 
-
 ---
 
 ## SHOW INDEXES
-
 
 `SHOW INDEXES` provides details about indexes built on a source, view, or materialized view.
 
@@ -14167,11 +13161,9 @@ SHOW INDEXES ON my_materialized_view;
 - [`SHOW CREATE INDEX`](../show-create-index)
 - [`DROP INDEX`](../drop-index)
 
-
 ---
 
 ## SHOW MATERIALIZED VIEWS
-
 
 `SHOW MATERIALIZED VIEWS` returns a list of materialized views being maintained
 in Materialize.
@@ -14214,11 +13206,9 @@ SHOW MATERIALIZED VIEWS LIKE '%bid%';
 - [`SHOW CREATE MATERIALIZED VIEW`](../show-create-materialized-view)
 - [`CREATE MATERIALIZED VIEW`](../create-materialized-view)
 
-
 ---
 
 ## SHOW NETWORK POLICIES (Cloud)
-
 
 *Available for Materialize Cloud only*
 
@@ -14246,7 +13236,6 @@ will be pre-installed. This policy has a wide open ingress rule `allow
 > Before dropping the `default` network policy, a _superuser_ (i.e. `Organization
 > Admin`) must run [`ALTER SYSTEM SET network_policy`](/sql/alter-system-set) to
 > change the default value.
-
 
 ## Examples
 
@@ -14281,11 +13270,9 @@ SELECT * FROM mz_internal.mz_network_policy_rules;
 - [`ALTER NETWORK POLICY`](../alter-network-policy)
 - [`DROP NETWORK POLICY`](../drop-network-policy)
 
-
 ---
 
 ## SHOW OBJECTS
-
 
 `SHOW OBJECTS` returns a list of all objects in Materialize for a given schema.
 Objects include tables, sources, sinks, views, materialized views, indexes,
@@ -14349,11 +13336,9 @@ my_view   | view
 - [`SHOW SECRETS`](../show-secrets)
 - [`SHOW CONNECTIONS`](../show-connections)
 
-
 ---
 
 ## SHOW PRIVILEGES
-
 
 `SHOW PRIVILEGES` lists the privileges granted on all objects via
 [role-based access control](/security/) (RBAC).
@@ -14429,11 +13414,9 @@ SHOW PRIVILEGES FOR materialize;
 - [`GRANT PRIVILEGE`](../grant-privilege)
 - [`REVOKE PRIVILEGE`](../revoke-privilege)
 
-
 ---
 
 ## SHOW ROLE MEMBERSHIP
-
 
 `SHOW ROLE MEMBERSHIP` lists the members of each role granted (directly or
 indirectly) via [role-based access
@@ -14482,11 +13465,9 @@ SHOW ROLE MEMBERSHIP FOR r2;
 - [`GRANT ROLE`](../grant-role)
 - [`REVOKE ROLE`](../revoke-role)
 
-
 ---
 
 ## SHOW ROLES
-
 
 `SHOW ROLES` lists the roles available in Materialize.
 
@@ -14531,17 +13512,14 @@ SHOW ROLES WHERE name = 'mike@ko.sh';
  mike@ko.sh
 ```
 
-
 ## Related pages
 
 - [`CREATE ROLE`](../create-role)
 - [`DROP ROLE`](../drop-role)
 
-
 ---
 
 ## SHOW SCHEMAS
-
 
 `SHOW SCHEMAS` returns a list of all schemas available in Materialize.
 
@@ -14586,11 +13564,9 @@ SHOW SCHEMAS FROM my_db
 - [`CREATE SCHEMA`](../create-schema)
 - [`DROP SCHEMA`](../drop-schema)
 
-
 ---
 
 ## SHOW SECRETS
-
 
 `SHOW SECRETS` lists the names of the secrets securely stored in Materialize's
 secret management system. There is no way to show the contents of an existing
@@ -14639,11 +13615,9 @@ SHOW SECRETS FROM public LIKE '%cert%';
 - [`ALTER SECRET`](../alter-secret)
 - [`DROP SECRET`](../drop-secret)
 
-
 ---
 
 ## SHOW SINKS
-
 
 `SHOW SINKS` returns a list of all sinks available in Materialize.
 
@@ -14703,11 +13677,9 @@ my_sink | kafka | c1
 - [`DROP SINK`](../drop-sink)
 - [`SHOW CREATE SINK`](../show-create-sink)
 
-
 ---
 
 ## SHOW SOURCES
-
 
 `SHOW SOURCES` returns a list of all sources available in Materialize.
 
@@ -14767,11 +13739,9 @@ my_postgres_source | postgres | c2
 - [`DROP SOURCE`](../drop-source)
 - [`SHOW CREATE SOURCE`](../show-create-source)
 
-
 ---
 
 ## SHOW SUBSOURCES
-
 
 `SHOW SUBSOURCES` returns the subsources in the current schema.
 
@@ -14850,11 +13820,9 @@ SHOW SUBSOURCES ON kafka;
 - [`SHOW CREATE SOURCE`](../show-create-source)
 - [`CREATE SOURCE`](../create-source)
 
-
 ---
 
 ## SHOW TABLES
-
 
 `SHOW TABLES` returns a list of all tables available in Materialize.
 
@@ -14911,11 +13879,9 @@ SHOW TABLES FROM public;
 - [`SHOW CREATE TABLE`](../show-create-table)
 - [`CREATE TABLE`](../create-table)
 
-
 ---
 
 ## SHOW TYPES
-
 
 `SHOW TYPES` returns a list of the data types in Materialize. Only custom types
 are returned.
@@ -14948,11 +13914,9 @@ SHOW TYPES;
 * [`CREATE TYPE`](../create-type)
 * [`DROP TYPE`](../drop-type)
 
-
 ---
 
 ## SHOW VIEWS
-
 
 `SHOW VIEWS` returns a list of views in Materialize.
 
@@ -14998,11 +13962,9 @@ SHOW VIEWS;
 - [`SHOW CREATE VIEW`](../show-create-view)
 - [`CREATE VIEW`](../create-view)
 
-
 ---
 
 ## SQL data types
-
 
 Materialize's type system consists of two classes of types:
 
@@ -15239,11 +14201,9 @@ SELECT pg_typeof(
 
 [create-type]: ../create-type
 
-
 ---
 
 ## SQL functions & operators
-
 
 This page details Materialize's supported SQL [functions](#functions) and [operators](#operators).
 
@@ -15591,6 +14551,8 @@ separate element in the array.</p>
 field.</p>
 <p>If <code>null_string</code> is supplied and is not NULL, fields matching that string
 are replaced by NULL.</p>
+<p>If <code>s</code> is NULL, the result is NULL. If <code>s</code> is the empty string, the
+result is an empty array (regardless of <code>delimiter</code> or <code>null_string</code>).</p>
 <p>For example: <code>string_to_array('xx~~yy~~zz', '~~', 'yy')</code> → <code>{xx,NULL,zz}</code></p>
 ### Scalar functionsScalar functions take a list of scalar expressions#### `expression bool_op ALL(s: Scalars) -> bool`
 
@@ -16118,7 +15080,6 @@ after compiling it.
 > **Warning:** Materialize regular expressions are similar to, but not identical to, PostgreSQL
 > regular expressions.
 
-
 ### Time-like operators
 
 Operation | Computes
@@ -16148,7 +15109,6 @@ Operator | RHS Type | Description
 <code>&lt;@</code> | `jsonb` | Does RHS contain element? ([docs](/sql/types/jsonb/#rhs-contains-lhs-))
 `?` | `text` | Is RHS a top-level key? ([docs](/sql/types/jsonb/#search-top-level-keys-))
 
-
 ### Map operators
 
 Operator | RHS Type | Description
@@ -16159,7 +15119,6 @@ Operator | RHS Type | Description
 `?` | `string` | Is RHS a top-level key? ([docs](/sql/types/map/#search-top-level-keys-))
 `?&` | `string[]` | Does LHS contain all RHS top-level keys? ([docs](/sql/types/map/#search-for-all-top-level-keys-))
 <code>?&#124;</code> | `string[]` | Does LHS contain any RHS top-level keys? ([docs](/sql/types/map/#search-for-any-top-level-keys-))
-
 
 ### List operators
 
@@ -16173,12 +15132,9 @@ Operator | Description
 <code>listany @&gt; listany</code> | Check if the first list contains all elements of the second list.
 <code>listany &lt;@ listany</code> | Check if all elements of the first list are contained in the second list.
 
-
-
 ---
 
 ## SUBSCRIBE
-
 
 `SUBSCRIBE` streams updates from a source, table, view, or materialized view as
 they occur.
@@ -16230,7 +15186,6 @@ the input view or source.
 | **WITH** \<option_name\> [= \<option_value\>] | If specified, use the specified option. For more information, see [`WITH` options](#with-options). |
 | **AS OF** \<timestamp_expression\> | If specified, no rows whose timestamp is earlier than the specified timestamp will be returned. For more information, see [`AS OF`](#as-of). |
 | **UP TO** \<timestamp_expression\> | If specified, no rows whose timestamp is greater than or equal to the specified timestamp will be returned. For more information, see [`UP TO`](#up-to). |
-
 
 #### `WITH` options
 
@@ -16355,7 +15310,6 @@ tailing constant views (e.g. `CREATE VIEW v AS SELECT 1`).
 > to fetch rows from `SUBSCRIBE` in batches.
 > See the [examples](#examples) for details.
 
-
 ### `SNAPSHOT`
 
 By default, `SUBSCRIBE` begins by emitting a snapshot of the subscribed relation, which
@@ -16382,7 +15336,6 @@ To see only updates after the initial timestamp, specify `WITH (SNAPSHOT = false
 > SUBSCRIBE TO <object> WITH (SNAPSHOT = false)
 > ```
 > where `<object>` is a materialized view, table, source, or index, Materialize can generally skip fetching or processing the snapshot data from that collection entirely.
-
 
 ### `PROGRESS`
 
@@ -16608,8 +15561,6 @@ column. Each progress row will have a `NULL` key and a `NULL` value.
 
 #### `ENVELOPE DEBEZIUM`
 
-
-
 To modify the output of `SUBSCRIBE` to support upserts using a
 [Debezium-style diff envelope](/sql/create-sink/kafka/#debezium-envelope),
 use `ENVELOPE DEBEZIUM`. This clause allows you to specify a `KEY` that
@@ -16704,8 +15655,6 @@ before and after value.
 
 #### `WITHIN TIMESTAMP ORDER BY`
 
-
-
 To modify the ordering of the output of `SUBSCRIBE`, use `WITHIN TIMESTAMP ORDER
 BY`. This clause allows you to specify an `ORDER BY` expression which is used
 to sort the rows within each distinct timestamp.
@@ -16761,11 +15710,9 @@ The privileges required to execute this statement are:
 - `USAGE` privileges on all types used in the query.
 - `USAGE` privileges on the active cluster.
 
-
 ---
 
 ## TABLE
-
 
 The `TABLE` expression retrieves all rows from a single table.
 
@@ -16813,11 +15760,9 @@ TABLE t ORDER BY a DESC LIMIT 1;
 
 [`SELECT`]: ../select
 
-
 ---
 
 ## UPDATE
-
 
 `UPDATE` changes values stored in [user-created tables](../create-table).
 
@@ -16941,11 +15886,9 @@ The returned results show that all rows were updated:
 - [`INSERT`](../insert)
 - [`SELECT`](../select)
 
-
 ---
 
 ## VALIDATE CONNECTION
-
 
 `VALIDATE CONNECTION` validates the connection and authentication parameters
 provided in a `CREATE CONNECTION` statement against the target external
@@ -16978,11 +15921,9 @@ The privileges required to execute this statement are:
 - [`CREATE CONNECTION`](/sql/create-connection/)
 - [`SHOW CONNECTIONS`](/sql/show-connections)
 
-
 ---
 
 ## VALUES
-
 
 `VALUES` constructs a relation from a list of parenthesized value expressions.
 

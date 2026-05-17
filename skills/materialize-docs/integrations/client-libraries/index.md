@@ -2,14 +2,11 @@
 
 Connect via client libraries/SQL drivers
 
-
-
 Applications can use various common language-specific PostgreSQL client
 libraries to interact with Materialize and **create relations**, **execute
 queries** and **stream out results**.
 
 > **Note:** Client libraries tend to run complex introspection queries that may use configuration settings, system tables or features not yet implemented in Materialize. This means that even if PostgreSQL is supported, it's **not guaranteed** that the same integration will work out-of-the-box.
-
 
 | Language | Tested drivers                                                  | Notes                                                 |
 | -------- | --------------------------------------------------------------- | ----------------------------------------------------- |
@@ -25,12 +22,9 @@ queries** and **stream out results**.
 [feature
 request](https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests&labels=A-integration)._
 
-
-
 ---
 
 ## Golang cheatsheet
-
 
 Materialize is **wire-compatible** with PostgreSQL, which means that Go applications can use the standard library's [`database/sql`](https://pkg.go.dev/database/sql) package with a PostgreSQL driver to interact with Materialize. In this guide, we'll use the [`pgx` driver](https://github.com/jackc/pgx) to connect to Materialize and issue SQL commands.
 
@@ -226,11 +220,9 @@ ORM frameworks like **GORM** tend to run complex introspection queries that may 
 
 The level of support for these tools will improve as we extend the coverage of `pg_catalog` in Materialize and join efforts with each community to make the integrations Just Work™️.
 
-
 ---
 
 ## Java cheatsheet
-
 
 Materialize is **wire-compatible** with PostgreSQL, which means that Java
 applications can use common PostgreSQL clients to interact with Materialize.
@@ -627,11 +619,9 @@ ORM frameworks like **Hibernate** tend to run complex introspection queries that
 
 The level of support for these tools will improve as we extend the coverage of `pg_catalog` in Materialize and join efforts with each community to make the integrations Just Work™️.
 
-
 ---
 
 ## Node.js cheatsheet
-
 
 Materialize is **wire-compatible** with PostgreSQL, which means that Node.js applications can use common PostgreSQL clients to interact with Materialize. In this guide, we'll use the  [`node-postgres` library](https://node-postgres.com/) to connect to Materialize and issue SQL commands.
 
@@ -899,11 +889,9 @@ ORM frameworks like **Prisma**, **Sequelize**, or **TypeORM** tend to run comple
 
 The level of support for these tools will improve as we extend the coverage of `pg_catalog` in Materialize and join efforts with each community to make the integrations Just Work™️.
 
-
 ---
 
 ## PHP cheatsheet
-
 
 Materialize is **wire-compatible** with PostgreSQL, which means that PHP applications can use common PostgreSQL clients to interact with Materialize. In this guide, we'll use the [PDO_PGSQL driver](https://www.php.net/manual/en/ref.pdo-pgsql.php) to connect to Materialize and issue SQL commands.
 
@@ -1120,11 +1108,9 @@ ORM frameworks like **Eloquent** tend to run complex introspection queries that 
 
 The level of support for these tools will improve as we extend the coverage of `pg_catalog` in Materialize and join efforts with each community to make the integrations Just Work™️.
 
-
 ---
 
 ## Python cheatsheet
-
 
 Materialize is **wire-compatible** with PostgreSQL, which means that Python applications can use common PostgreSQL clients to interact with Materialize. In this guide, we'll use the [`psycopg2`](https://pypi.org/project/psycopg2/) adapter to connect to Materialize and issue SQL commands.
 
@@ -1343,11 +1329,9 @@ The level of support for these tools will improve as we extend the coverage of `
 Check out the [integrations page](/integrations/) for a list of ORM frameworks
 that are known to work well with Materialize.
 
-
 ---
 
 ## Ruby cheatsheet
-
 
 Materialize is **wire-compatible** with PostgreSQL, which means that Ruby applications can use common PostgreSQL clients to interact with Materialize. In this guide, we'll use the  [`pg` gem](https://rubygems.org/gems/pg/) to connect to Materialize and issue SQL commands.
 
@@ -1479,7 +1463,6 @@ end
 
 For more information, see [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view/).
 
-
 ## Stream
 
 To take full advantage of incrementally updated materialized views from a Ruby application, instead of [querying](#query) Materialize for the state of a view at a point in time, use a [`SUBSCRIBE` statement](/sql/subscribe/) to request a stream of updates as the view changes.
@@ -1532,11 +1515,9 @@ ORM frameworks like **Active Record** tend to run complex introspection queries 
 
 The level of support for these tools will improve as we extend the coverage of `pg_catalog` in Materialize and join efforts with each community to make the integrations Just Work™️.
 
-
 ---
 
 ## Rust cheatsheet
-
 
 Materialize is **wire-compatible** with PostgreSQL, which means that Rust applications can use common PostgreSQL clients to interact with Materialize. In this guide, we'll use the [`postgres-openssl`](https://docs.rs/postgres-openssl/latest/postgres_openssl/) crate (the TLS support for [`tokio-postgres`](https://crates.io/crates/tokio-postgres) via `openssl`) to connect to Materialize and issue SQL commands.
 

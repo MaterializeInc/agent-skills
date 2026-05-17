@@ -6,7 +6,6 @@ into Materialize using the [Webhook source](/sql/create-source/webhook/).
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 ### Before you begin
 
 Ensure that you have:
@@ -19,7 +18,6 @@ Ensure that you have:
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 To create a cluster in Materialize, use the [`CREATE CLUSTER` command](/sql/create-cluster):
 
@@ -81,7 +79,6 @@ system table.
 > actors from injecting data into your source, it is **strongly encouraged** that
 > you define a `CHECK` statement with your webhook sources.
 
-
 The `CHECK` clause defines how to validate each request. At the time of writing,
 Segment validates requests by signing them with an HMAC in the `X-Signature`
 request header. The HMAC is a hex-encoded SHA1 hash using the secret
@@ -136,7 +133,6 @@ mapping:
 >  3. In **Shared Secret**, enter the secret created in the **Step 2**.
 >  4. Click **Save Changes**.
 
-
 ## Step 6. Validate incoming data
 
 With the source set up in Materialize and the webhook destination configured in
@@ -158,8 +154,6 @@ Segment, you can now query the incoming data:
 Webhook data is ingested as a JSON blob. We recommend creating a parsing view on
 top of your webhook source that uses [`jsonb` operators](/sql/types/jsonb/#operators)
 to map the individual fields to columns with the required data types.
-
-
 
 **Page:**
 ```mzsql
@@ -183,7 +177,6 @@ CREATE VIEW parse_segment AS SELECT
     body->>'version' AS version
 FROM segment_source;
 ```
-
 
 **Track:**
 
@@ -210,8 +203,6 @@ CREATE VIEW parse_segment AS SELECT
     try_parse_monotonic_iso8601_timestamp(body->>'originalTimestamp') AS original_timestamp
 FROM segment_source;
 ```
-
-
 
 **Identity:**
 ```mzsql
@@ -242,10 +233,7 @@ CREATE VIEW parse_segment AS SELECT
 FROM segment_source;
 ```
 
-
-
 Manually parsing JSON-formatted data in SQL can be tedious. You can use the [interactive JSON parser widget](https://materialize.com/docs/sql/types/jsonb/#parsing) to automatically turn a sample JSON payload into a parsing view with the individual fields mapped to columns.
-
 
 ### Timestamp handling
 

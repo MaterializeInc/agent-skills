@@ -2,18 +2,13 @@
 
 Querying results from Materialize using external BI/data collaboration tools
 
-
-
 Materialize uses the PostgreSQL wire protocol, which allows it to integrate out-of-the-box with various BI/data collaboration tools that support PostgreSQL.
 
 To help you get started, the following guides are available:
 
-
-
 ---
 
 ## Deepnote
-
 
 This guide walks you through the steps required to use the collaborative data notebook [Deepnote](https://deepnote.com/) with Materialize.
 
@@ -49,7 +44,6 @@ level</a> using the following SQL statement:</p>
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
 
-
 ## Execute and visualize a query
 
 1. Create a new SQL block.
@@ -82,23 +76,19 @@ connection.</p>
 
    <img width="1002" alt="Deepnote guide" src="https://github.com/joacoc/materialize/assets/11491779/fdd21c0c-db2f-4096-8d7a-dd38bdfb646d">
 
-
 ### Related pages
 
 For more information about Deepnote and the integration, visit [their documentation.](https://deepnote.com/docs/materialize)
 
-
 ---
 
 ## Excel
-
 
 Because Materialize is PostgreSQL wire-compatible, you can use a standard
 PostgreSQL ODBC driver to serve data from Materialize into Excel spreadsheets.
 
 > **Note:** The following procedure has only been tested on Windows machines using
 > Materialize Cloud.
-
 
 ## Prerequisites
 
@@ -118,8 +108,6 @@ Install the latest version of the Postgres ODBC driver on your Windows machine f
 
 You can set up your ODBC data source via the Windows Control Panel or via a
 `.reg` file.
-
-
 
 **Windows Control Panel:**
 1. From the Windows control panel, find the `Set up ODBC data sources (64-bit)`
@@ -146,7 +134,6 @@ configuration.")
    ![Image of the Advanced Options](/images/excel/excel-advanced-options.png "In
 Advanced Options, specify the cluster in the **Connect Settings** field.")
 
-
 **.reg File:**
 
 If you are deploying to multiple machines and do not want to use the GUI to
@@ -165,7 +152,6 @@ registry settings. For example, you can save the following sample content as a
 > the file.
 > - This example creates a User DSN. To create a System DSN, use
 > HKEY_LOCAL_MACHINE instead.
-
 
 ```reg {hl_lines="4 19-25"}
 Windows Registry Editor Version 5.00
@@ -219,8 +205,6 @@ Windows Registry Editor Version 5.00
 "IgnoreTimeout"="0"
 "FetchRefcursors"="0"
 ```
-
-
 
 ### Step 3: Connect to Materialize from Excel
 
@@ -278,7 +262,6 @@ to refresh more frequently for your use case, you can use a custom VBA script:
 > if a refresh does not complete before the next one begins. Depending on your
 > machine, this is typically between 5 and 15 seconds.
 
-
 1. Press `Alt-F11` to open the VBA editor. On the left side, navigate to the
    VBAProject for your open spreadsheet.
 
@@ -295,7 +278,6 @@ to refresh more frequently for your use case, you can use a custom VBA script:
    > **Note:** When configuring your refresh interval, note that Excel will throw an error
 >    if a refresh does not complete before the next one begins. Depending on your
 >    machine, this is typically between 5 and 15 seconds.
-
 
     ```text {hl_lines="7 13"}
     Sub AutoRefresh()
@@ -323,7 +305,6 @@ to refresh more frequently for your use case, you can use a custom VBA script:
    AutoRefresh](/images/excel/excel-macro-autorefresh.png "Macro window: run
    AutoRefresh.").
 
-
    Excel should now start updating your Materialize data at the refresh rate set
    in the macro.
 
@@ -333,11 +314,9 @@ to refresh more frequently for your use case, you can use a custom VBA script:
   indexed views/indexed materialized views, ensure your views are properly
   indexed to support frequent refreshes without impacting performance.
 
-
 ---
 
 ## Hex
-
 
 This guide walks you through the steps required to use the collaborative data notebook [Hex](https://hex.tech/) with Materialize.
 
@@ -375,7 +354,6 @@ level</a> using the following SQL statement:</p>
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
 
-
 ## Execute and visualize a query
 
 1. Create a new SQL cell.
@@ -408,16 +386,13 @@ connection.</p>
 
    <img width="1091" alt="Hex" src="https://github.com/MaterializeInc/materialize/assets/11491779/2da93aad-9332-4d7c-a407-c068a856b9ed">
 
-
 ### Related pages
 
 For more information about Hex and data connections, visit [their documentation.](https://learn.hex.tech/docs/connect-to-data/data-connections/overview)
 
-
 ---
 
 ## Looker
-
 
 You can use [Looker](https://cloud.google.com/looker-bi) to create dashboards
 based on the data maintained in Materialize.
@@ -449,7 +424,6 @@ level</a> using the following SQL statement:</p>
 <p>Once set, all new sessions for that user will automatically run in the specified
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
-
 
 ## Known limitations
 
@@ -495,11 +469,9 @@ When using Looker with Materialize, be aware of the following limitations:
 
    c. For use cases requiring symmetric aggregates, contact Materialize support for optimization guidance.
 
-
 ---
 
 ## Metabase
-
 
 You can use [Metabase](https://www.metabase.com/) to create real-time dashboards
 based on the data maintained in Materialize.
@@ -533,7 +505,6 @@ level</a> using the following SQL statement:</p>
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
 
-
 ## Refresh rate
 
 By default, the lowest [refresh rate](https://www.metabase.com/docs/latest/users-guide/07-dashboards.html#auto-refresh)
@@ -550,11 +521,9 @@ for any objects serving results to Metabase.
 [//]: # "TODO(morsapaes) Once we revamp quickstarts, add Related pages section
 pointing to a quickstart that uses Metabase"
 
-
 ---
 
 ## Power BI
-
 
 You can use [Power BI](https://powerbi.microsoft.com/) to create dashboards
 based on the data maintained in Materialize.
@@ -585,7 +554,6 @@ level</a> using the following SQL statement:</p>
 <p>Once set, all new sessions for that user will automatically run in the specified
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
-
 
 ## Troubleshooting
 
@@ -634,11 +602,9 @@ To work around this Power BI limitation, you can use one of the following option
     = Value.NativeQuery(Source, "select * from my_view;")
     ```
 
-
 ---
 
 ## Tableau
-
 
 You can use [Tableau Cloud](https://www.tableau.com/products/cloud-bi) and
 [Tableau Desktop](https://www.tableau.com/products/desktop) to create real-time
@@ -671,7 +637,6 @@ connections"
 
 ### Setup
 
-
 **macOS:**
 
 To set up a connection from Tableau Desktop to Materialize, you must:
@@ -680,8 +645,6 @@ To set up a connection from Tableau Desktop to Materialize, you must:
 1. Copy the `.jar` file to the following directory (which may have to be created manually):
 
    `~/Library/Tableau/Drivers`
-
-
 
 **Linux:**
 
@@ -692,8 +655,6 @@ To set up a connection from Tableau Desktop to Materialize, you must:
 
    `/opt/tableau/tableau_driver/jdbc`
 
-
-
 **Windows:**
 
 To set up a connection from Tableau Desktop to Materialize, you must:
@@ -702,9 +663,6 @@ To set up a connection from Tableau Desktop to Materialize, you must:
 1. Copy the `.jar` file to the following directory (which may have to be created manually):
 
    `C:\Program Files\Tableau\Drivers`
-
-
-
 
 ### Database connection details
 
@@ -742,7 +700,6 @@ level</a> using the following SQL statement:</p>
 <p>Once set, all new sessions for that user will automatically run in the specified
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
-
 
 ### Troubleshooting
 

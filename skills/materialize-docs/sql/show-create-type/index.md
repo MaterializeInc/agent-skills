@@ -1,5 +1,5 @@
 # SHOW CREATE TYPE
-`SHOW CREATE TYPE` returns the DDL statement used to custom create the type.
+`SHOW CREATE TYPE` returns the DDL statement used to create the custom type.
 `SHOW CREATE TYPE` returns the DDL statement used to create the custom type.
 
 ## Syntax
@@ -8,13 +8,11 @@
 SHOW [REDACTED] CREATE TYPE <type_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
 
-
-For available type names names, see [`SHOW TYPES`](/sql/show-types).
+For available type names, see [`SHOW TYPES`](/sql/show-types).
 
 ## Examples
 
@@ -24,14 +22,14 @@ SHOW CREATE TYPE point;
 ```
 
 ```nofmt
-    name          |    create_sql
-------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- point            | CREATE TYPE materialize.public.point AS (x pg_catalog.int4, y pg_catalog.int4);
+    name                    |    create_sql
+----------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ materialize.public.point   | CREATE TYPE materialize.public.point AS (x pg_catalog.int4, y pg_catalog.int4);
 ```
 
 ## Privileges
 
-- `USAGE` privileges on the schema containing the table.
+- `USAGE` privileges on the schema containing the type.
 
 ## Related pages
 

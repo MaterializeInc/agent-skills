@@ -6,7 +6,6 @@ representative of Materialize's performance and full feature set.
 
 > **Important:** The Materialize Emulator is <redb> not suitable for production workloads.</redb>.
 
-
 ### Materialize Emulator
 
 Materialize Emulator is the easiest way to get started with Materialize, but is
@@ -31,13 +30,12 @@ not suitable for full feature set evaluations or production workloads.
 > **Note:** - Use of the Docker image is subject to Materialize's [BSL License](https://github.com/MaterializeInc/materialize/blob/main/LICENSE).
 > - By downloading the Docker image, you are agreeing to Materialize's [privacy policy](https://materialize.com/privacy-policy/).
 
-
 1. In a terminal, issue the following command to run a Docker container from the
    Materialize Emulator image. The command downloads the image, if one has not
    been already downloaded.
 
    ```sh
-   docker run -d -p 127.0.0.1:6874:6874 -p 127.0.0.1:6875:6875 -p 127.0.0.1:6876:6876 -p 127.0.0.1:6877:6877 materialize/materialized:v26.20.0
+   docker run -d -p 127.0.0.1:6874:6874 -p 127.0.0.1:6875:6875 -p 127.0.0.1:6876:6876 -p 127.0.0.1:6877:6877 materialize/materialized:v26.24.0
    ```
 
    When running locally:
@@ -53,7 +51,11 @@ not suitable for full feature set evaluations or production workloads.
 
    Open the Materialize Console in your browser at [http://localhost:6874](http://localhost:6874).
 
-   Alternatively, you can connect to the Materialize Emulator using your
+   To streamline development and troubleshooting, we recommend configuring our
+   [MCP
+   Server](https://materialize.com/docs/integrations/mcp-server/mcp-developer/).
+
+   You can also connect to the Materialize Emulator using your
    preferred SQL client, using the following connection field values:
 
    | Field    | Value         |
@@ -85,7 +87,6 @@ not suitable for full feature set evaluations or production workloads.
   The full experience of Materialize is also available as a self-managed
   offering. See [Self-managed Materialize](/self-managed-deployments/).
 
-
 ### Technical Support
 
 For questions, discussions, or general technical support, join the [Materialize
@@ -106,7 +107,6 @@ mz-debug emulator --docker-container-id <your-container-id>
 This debug information can be particularly helpful when troubleshooting issues or when working with the Materialize support team.
 
 For more detailed information about the debug tool, see the [`mz-debug` documentation](/integrations/mz-debug/).
-
 
 ### License and privacy policy
 

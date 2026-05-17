@@ -2,21 +2,15 @@
 Connecting Materialize to a Kafka or Redpanda broker
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
 
-
-
 To connect to a Kafka/Redpanda broker (and optionally a schema registry), you
 first need to [create a connection](#prerequisite-creating-a-connection) that specifies
 access and authentication parameters. Once created, a connection is **reusable**
 across multiple `CREATE SOURCE` and `CREATE SINK` statements. 
 
-
 > **Note:** The same syntax, supported formats and features can be used to connect to a
 > [Redpanda](/integrations/redpanda/) broker.
 
-
 ## Syntax
-
-
 
 **Format Avro:**
 ### Format Avro
@@ -24,8 +18,6 @@ across multiple `CREATE SOURCE` and `CREATE SINK` statements.
 Materialize can decode Avro messages by integrating with a schema registry to
 retrieve a schema, and automatically determine the columns and data types to use
 in the source.
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -76,8 +68,6 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
-
 #### Schema versioning
 
 The _latest_ schema is retrieved using the [`TopicNameStrategy`](https://docs.confluent.io/current/schema-registry/serdes-develop/index.html) strategy at the time the `CREATE SOURCE` statement is issued.
@@ -96,16 +86,12 @@ Materialize supports all [Avro
 types](https://avro.apache.org/docs/++version++/specification/), _except for_
 recursive types and union types in arrays.
 
-
-
 **Format JSON:**
 ### Format JSON
 
 Materialize can decode JSON messages into a single column named `data` with type
 `jsonb`. Refer to the [`jsonb` type](/sql/types/jsonb) documentation for the
 supported operations on this type.
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -147,7 +133,6 @@ FORMAT JSON
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
 If your JSON messages have a consistent shape, we recommend creating a parsing
 [view](/concepts/views) that maps the individual fields to
 columns with the required data types:
@@ -165,12 +150,9 @@ CREATE VIEW my_typed_source AS
 To avoid doing this task manually, you can use [this **JSON parsing
 widget**](/sql/types/jsonb/#parsing).
 
-
 #### Schema registry integration
 
 Retrieving schemas from a schema registry is not supported yet for JSON-formatted sources. This means that Materialize cannot decode messages serialized using the [JSON Schema](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/serdes-json.html#json-schema-serializer-and-deserializer) serialization format (`JSON_SR`).
-
-
 
 **Format TEXT/BYTES:**
 ### Format Text/Bytes
@@ -183,9 +165,6 @@ Materialize can:
 - Read raw bytes without applying any formatting or decoding. Raw byte-formatted
 sources have a single column, by default named `data`. For details on encodings
 and casting, check the [`bytea`](/sql/types/bytea/) documentation.
-
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -227,16 +206,11 @@ FORMAT TEXT | BYTES
 | `EXPOSE PROGRESS AS <progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | `WITH (<with_option> [, ...])` | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
-
-
 **Format CSV:**
 ### Format CSV
 
 Materialize can parse CSV-formatted data. The data in CSV sources is read as
 [`text`](/sql/types/text).
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name> ( <col_name> [, ...] )
@@ -278,17 +252,12 @@ FORMAT CSV WITH <n> COLUMNS | WITH HEADER [ ( <col_name> [, ...] ) ]
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
-
-
 **Format Protobuf:**
 ### Format Protobuf
 
 Materialize can decode Protobuf messages by integrating with a schema registry
 or parsing an inline schema to retrieve a `.proto` schema definition. It can
 then automatically define the columns and data types to use in the source.
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -335,7 +304,6 @@ FORMAT PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
 Unlike Avro, Protobuf does not serialize a schema with the message, so Materialize expects:
 
 * A `FileDescriptorSet` that encodes the Protobuf message schema. You can generate the `FileDescriptorSet` with [`protoc`](https://grpc.io/docs/protoc-installation/), for example:
@@ -370,15 +338,11 @@ Materialize supports all [well-known](https://developers.google.com/protocol-buf
 
 When using a schema registry with Protobuf sources, the registered schemas must contain exactly one `Message` definition.
 
-
-
 **KEY FORMAT VALUE FORMAT:**
 ### KEY FORMAT VALUE FORMAT
 By default, the message key is decoded using the same format as the message
 value. However, you can set the key and value encodings explicitly using the
 `KEY FORMAT ... VALUE FORMAT`.
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -434,11 +398,6 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
-
-
-
-
 ## Envelopes
 
 In addition to determining how to decode incoming records, Materialize also needs to understand how to interpret them. Whether a new record inserts, updates, or deletes existing data in Materialize depends on the `ENVELOPE` specified in the `CREATE SOURCE` statement.
@@ -476,7 +435,6 @@ The upsert envelope treats all records as having a **key** and a **value**, and 
 >   maintaining the source. We recommend using a standard-sized cluster, rather
 >   than a legacy-sized cluster, to automatically spill the workload to disk. See
 >   [spilling to disk](#spilling-to-disk) for details.
-
 
 #### Null keys
 
@@ -541,7 +499,6 @@ WHERE error IS NULL;
   <strong class="gutter">NOTE:</strong> Currently, Materialize only supports Avro-encoded Debezium records. If you're interested in JSON support, please reach out in the community Slack or submit a <a href="https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests">feature request</a>.
 </div>
 
-
 Materialize provides a dedicated envelope (`ENVELOPE DEBEZIUM`) to decode Kafka
 messages produced by [Debezium](https://debezium.io/). For example:
 
@@ -564,7 +521,6 @@ This envelope treats all records as [change events](https://debezium.io/document
  **Update** | If the `before` and `after` fields are _non-null_, the record represents an upstream [`update` event](https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-update-events), and Materialize updates the existing record with the new value.
  **Delete** | If the `after` field is _null_, the record represents an upstream [`delete` event](https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-delete-events), and Materialize deletes the record.
 
-
 > **Note:** - This envelope can lead to high memory utilization in the cluster maintaining
 >   the source. Materialize can automatically offload processing to
 >   disk as needed. See [spilling to disk](#spilling-to-disk) for details.
@@ -572,7 +528,6 @@ This envelope treats all records as [change events](https://debezium.io/document
 >   before and after the change event, which is **not guaranteed** for every
 >   Debezium connector. For more details, check the [Debezium integration
 >   guide](/integrations/debezium/).
-
 
 #### Truncation
 
@@ -587,8 +542,6 @@ The envelope exposes the `before` and `after` value fields from change events.
 Debezium may produce duplicate records if the connector is interrupted. Materialize makes a best-effort attempt to detect and filter out duplicates.
 
 ## Features
-
-
 
 ### Spilling to disk
 
@@ -785,7 +738,6 @@ If you need to limit the amount of data maintained as state after source
 creation, consider using [temporal filters](/sql/patterns/temporal-filters/)
 instead.
 
-
 ### Monitoring source progress
 
 By default, Kafka sources expose progress metadata as a subsource that you can
@@ -838,7 +790,6 @@ more up-to-date information.
 > Materialize does not participate in the consumer group protocol nor does it
 > recover on restart by reading the committed offsets. The committed offsets are
 > provided solely for the benefit of Kafka monitoring tools.
-
 
 Committed offsets are associated with a consumer group specific to the source.
 The ID of the consumer group consists of the prefix configured with the [`GROUP
@@ -894,7 +845,6 @@ statements. For more details on creating connections, check the
 
 #### Broker
 
-
 **SSL:**
 ```mzsql
 CREATE SECRET kafka_ssl_key AS '<BROKER_SSL_KEY>';
@@ -920,17 +870,12 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 );
 ```
 
-
-
 If your Kafka broker is not exposed to the public internet, you can [tunnel the connection](/sql/create-connection/#network-security-connections)
 through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host:
-
 
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ```mzsql
 CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
@@ -951,7 +896,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
-
 
 **SSH tunnel:**
 
@@ -975,10 +919,7 @@ BROKERS (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
 
-
-
 #### Confluent Schema Registry
-
 
 **SSL:**
 ```mzsql
@@ -1007,18 +948,13 @@ CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
 );
 ```
 
-
-
 If your Confluent Schema Registry server is not exposed to the public internet,
 you can [tunnel the connection](/sql/create-connection/#network-security-connections)
 through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host:
 
-
 **AWS PrivateLink (Materialize Cloud):**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ```mzsql
 CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
@@ -1057,10 +993,7 @@ CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
 
-
-
 ### Creating a source
-
 
 **Avro:**
 
@@ -1071,7 +1004,6 @@ CREATE SOURCE avro_source
   FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
   FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection;
 ```
-
 
 **JSON:**
 
@@ -1095,7 +1027,6 @@ parsing view on top of your Kafka source that maps the individual fields to
 columns with the required data types. To avoid doing this tedious task
 manually, you can use [this **JSON parsing widget**](/sql/types/jsonb/#parsing)!
 
-
 **Text/bytes:**
 
 ```mzsql
@@ -1105,7 +1036,6 @@ CREATE SOURCE text_source
   ENVELOPE UPSERT;
 ```
 
-
 **CSV:**
 
 ```mzsql
@@ -1113,7 +1043,6 @@ CREATE SOURCE csv_source (col_foo, col_bar, col_baz)
   FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
   FORMAT CSV WITH 3 COLUMNS;
 ```
-
 
 **Protobuf:**
 
@@ -1161,9 +1090,6 @@ schema with the message, so before creating a source you must:
     FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
     FORMAT PROTOBUF MESSAGE 'Batch' USING SCHEMA '\x0a300a0d62696...';
   ```
-
-
-
 
 ## Related pages
 

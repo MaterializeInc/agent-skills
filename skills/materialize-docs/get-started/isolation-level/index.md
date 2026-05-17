@@ -20,7 +20,6 @@ Isolation level is a configuration parameter that can be set by the user on a se
 SET TRANSACTION_ISOLATION TO|= <isolation_level>
 ```
 
-
 | Valid Isolation Levels                      |
 | ------------------------------------------- |
 | [Read Uncommitted](#serializable)           |
@@ -109,8 +108,6 @@ piece of data has been fully ingested from an upstream source AND is included in
 THEN all subsequent read transactions are guaranteed to see that piece of data.
 
 ### Real-time recency
-
-
 
 Materialize offers a form of "end-to-end linearizability" known as real-time
 recency. When using real-time recency, all client-issued `SELECT` statements

@@ -37,5 +37,4 @@ Argument           | Environment variables     | Description
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
 
-
 [authentication profile]: ../../configuration/#authentication-profiles

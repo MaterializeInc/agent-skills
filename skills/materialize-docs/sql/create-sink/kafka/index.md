@@ -4,12 +4,10 @@ Connecting Materialize to a Kafka or Redpanda broker sink
 > same for Kafka and Redpanda broker. For simplicity, this page uses
 > "Kafka" to refer to both Kafka and Redpanda.
 
-
 `CREATE SINK` connects Materialize to an external system
 you want to write data to, and provides details about how to encode that data.
 
 To use a Kafka broker (and optionally a schema registry) as a sink, make sure that a connection that specifies access and authentication parameters to that broker already exists; otherwise, you first need to [create a connection](#creating-a-connection). Once created, a connection is **reusable** across multiple `CREATE SINK` and `CREATE SOURCE` statements.
-
 
 Sink source type      | Description
 ----------------------|------------
@@ -19,11 +17,7 @@ Sink source type      | Description
 
 ## Syntax
 
-
-
 **Format Avro:**
-
-
 
 ```mzsql
 CREATE SINK [IF NOT EXISTS] <sink_name>
@@ -83,12 +77,7 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name> [
 | **ENVELOPE** `<envelope>` | Optional. Specifies how changes to the sink's upstream relation are mapped to Kafka messages. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `DEBEZIUM` \| The generated schemas have a [Debezium-style diff envelope](#debezium-envelope) to capture changes in the input view or source. \| \| `UPSERT` \| The sink emits data with [upsert semantics](#upsert-envelope). Requires a unique key specified using the `KEY` option. \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `SNAPSHOT = <snapshot>` \| Default: `true`. Whether to emit the consolidated results of the query before the sink was created at the start of the sink. To see only results after the sink is created, specify `WITH (SNAPSHOT = false)`. \|  |
 
-
-
-
 **Format JSON:**
-
-
 
 ```mzsql
 CREATE SINK [IF NOT EXISTS] <sink_name>
@@ -133,12 +122,7 @@ FORMAT JSON
 | **ENVELOPE** `<envelope>` | Optional. Specifies how changes to the sink's upstream relation are mapped to Kafka messages. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `DEBEZIUM` \| The generated schemas have a [Debezium-style diff envelope](#debezium-envelope) to capture changes in the input view or source. \| \| `UPSERT` \| The sink emits data with [upsert semantics](#upsert-envelope). Requires a unique key specified using the `KEY` option. \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `SNAPSHOT = <snapshot>` \| Default: `true`. Whether to emit the consolidated results of the query before the sink was created at the start of the sink. To see only results after the sink is created, specify `WITH (SNAPSHOT = false)`. \|  |
 
-
-
-
 **Format TEXT/BYTES:**
-
-
 
 ```mzsql
 CREATE SINK [IF NOT EXISTS] <sink_name>
@@ -180,14 +164,9 @@ FORMAT TEXT | BYTES
 | **ENVELOPE** `<envelope>` | Optional. Specifies how changes to the sink's upstream relation are mapped to Kafka messages. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `DEBEZIUM` \| The generated schemas have a [Debezium-style diff envelope](#debezium-envelope) to capture changes in the input view or source. \| \| `UPSERT` \| The sink emits data with [upsert semantics](#upsert-envelope). Requires a unique key specified using the `KEY` option. \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `SNAPSHOT = <snapshot>` \| Default: `true`. Whether to emit the consolidated results of the query before the sink was created at the start of the sink. To see only results after the sink is created, specify `WITH (SNAPSHOT = false)`. \|  |
 
-
-
-
 **KEY FORMAT VALUE FORMAT:**
 
 By default, the message key is encoded using the same format as the message value. However, you can set the key and value encodings explicitly using the `KEY FORMAT ... VALUE FORMAT`.
-
-
 
 ```mzsql
 CREATE SINK [IF NOT EXISTS] <sink_name>
@@ -245,16 +224,7 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 | **ENVELOPE** `<envelope>` | Optional. Specifies how changes to the sink's upstream relation are mapped to Kafka messages. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `DEBEZIUM` \| The generated schemas have a [Debezium-style diff envelope](#debezium-envelope) to capture changes in the input view or source. \| \| `UPSERT` \| The sink emits data with [upsert semantics](#upsert-envelope). Requires a unique key specified using the `KEY` option. \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `SNAPSHOT = <snapshot>` \| Default: `true`. Whether to emit the consolidated results of the query before the sink was created at the start of the sink. To see only results after the sink is created, specify `WITH (SNAPSHOT = false)`. \|  |
 
-
-
-
-
-
-
-
 ## Headers
-
-
 
 Materialize always adds a header with key `materialize-timestamp` to each
 message emitted by the sink. The value of this header indicates the logical time
@@ -446,7 +416,6 @@ cannot be used for keys or values with multiple columns.
 
 Additionally, the `BYTES` format only works with scalar data types.
 
-
 ## Envelopes
 
 The sink's envelope determines how changes to the sink's upstream relation are
@@ -546,7 +515,6 @@ running `CREATE SINK`, observe the following guidance:
 | Progress topic | Retention           | **Must be disabled.** Enabling retention can cause Materialize to violate its [exactly-once guarantees](#exactly-once-processing).
 | Progress topic | Tiered storage      | We recommend disabling tiered storage to allow for more aggressive data compaction. Fully compacted data requires minimal storage, typically only tens of bytes per sink, making it cost-effective to maintain directly on local disk.
 > **Warning:** Dropping a Kafka sink doesn't drop the corresponding topic. For more information, see the [Kafka documentation](https://kafka.apache.org/documentation/).
-
 
 ### Exactly-once processing
 
@@ -735,7 +703,6 @@ There are three ways to resolve this error:
 >   number of records in `original_input`. Be sure to assign `deduped`
 >   to a cluster with adequate resources to handle your data volume.
 
-
 * Use the `NOT ENFORCED` clause to disable Materialize's validation of the key's
   uniqueness:
 
@@ -757,9 +724,6 @@ There are three ways to resolve this error:
 >   correctly interpret the data in the topic, and Kafka key compaction may
 >   incorrectly garbage collect records from the topic.
 
-
-
-
 ## Examples
 
 ### Creating a connection
@@ -772,7 +736,6 @@ statements. For more details on creating connections, check the
 [`CREATE CONNECTION`](/sql/create-connection) documentation page.
 
 #### Broker
-
 
 **SSL:**
 
@@ -787,7 +750,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 );
 ```
 
-
 **SASL:**
 
 ```mzsql
@@ -801,11 +763,7 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 );
 ```
 
-
-
-
 #### Confluent Schema Registry
-
 
 **SSL:**
 
@@ -823,7 +781,6 @@ CREATE CONNECTION csr_ssl TO CONFLUENT SCHEMA REGISTRY (
 );
 ```
 
-
 **Basic HTTP Authentication:**
 
 ```mzsql
@@ -837,13 +794,9 @@ CREATE CONNECTION csr_basic_http
   PASSWORD = SECRET csr_password;
 ```
 
-
-
-
 ### Creating a sink
 
 #### Upsert envelope
-
 
 **Avro:**
 
@@ -855,7 +808,6 @@ CREATE SINK avro_sink
   FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
   ENVELOPE UPSERT;
 ```
-
 
 **JSON:**
 
@@ -868,11 +820,7 @@ CREATE SINK json_sink
   ENVELOPE UPSERT;
 ```
 
-
-
-
 #### Debezium envelope
-
 
 **Avro:**
 
@@ -883,9 +831,6 @@ CREATE SINK avro_sink
   FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
   ENVELOPE DEBEZIUM;
 ```
-
-
-
 
 #### Topic configuration
 

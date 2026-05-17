@@ -24,7 +24,6 @@ This guide focuses on the ConfigMap approach for self-managed deployments.
 
 > **Public Preview:** This feature is in public preview.
 
-
 ## Configure System Parameters via ConfigMap
 
 ### Step 1: Create a System Parameters ConfigMap
@@ -131,7 +130,6 @@ spec:
 
 > **Note:** Even after the ConfigMap is synced, some parameters may require a restart to
 > take effect.
-
 
 ## Available System Parameters
 

@@ -10,14 +10,11 @@ Use `ALTER CONNECTION` to:
 
 ## Syntax
 
-
 **SET/DROP/RESET options:**
 
 ### SET/DROP/RESET options
 
 To modify connection parameters:
-
-
 
 ```mzsql
 ALTER CONNECTION [IF EXISTS] <name>
@@ -39,15 +36,11 @@ ALTER CONNECTION [IF EXISTS] <name>
 | `<value>` | The value to assign to the option.  |
 | **WITH (VALIDATE `<bool>`)** | Optional. Whether [connection validation](/sql/create-connection#connection-validation) should be performed. Defaults to `true`.  |
 
-
-
 **ROTATE KEYS:**
 
 ### ROTATE KEYS
 
 To rotate SSH tunnel connection key pairs:
-
-
 
 ```mzsql
 ALTER CONNECTION [IF EXISTS] <name> ROTATE KEYS;
@@ -59,17 +52,11 @@ ALTER CONNECTION [IF EXISTS] <name> ROTATE KEYS;
 | **IF EXISTS** | Optional. If specified, do not return an error if the specified connection does not exist.  |
 | `<name>` | The identifier of the SSH tunnel connection.  |
 
-
-
-
-
 **Rename:**
 
 ### Rename
 
 To rename a connection
-
-
 
 ```mzsql
 ALTER CONNECTION <name> RENAME TO <new_name>;
@@ -82,15 +69,11 @@ ALTER CONNECTION <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the connection.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a connection:
-
-
 
 ```mzsql
 ALTER CONNECTION <name> OWNER TO <new_owner_role>;
@@ -103,10 +86,6 @@ ALTER CONNECTION <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the connection.  |
 To change the owner of a connection, you must be the owner of the connection and
 have membership in the `<new_owner_role>`. See also [Privileges](#privileges).
-
-
-
-
 
 ## Details
 

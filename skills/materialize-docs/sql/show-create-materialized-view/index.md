@@ -8,11 +8,9 @@
 SHOW [REDACTED] CREATE MATERIALIZED VIEW <view_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available materialized view names, see [`SHOW MATERIALIZED VIEWS`](/sql/show-materialized-views).
 

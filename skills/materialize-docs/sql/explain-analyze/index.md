@@ -12,7 +12,6 @@ Reference page for `EXPLAIN ANALYZE`. `EXPLAIN ANALYZE` is used to understand th
 > our backwards compatibility guarantee. The syntax and output of `EXPLAIN` may
 > change arbitrarily in future versions of Materialize.
 
-
 ## Syntax
 
 ```mzsql
@@ -32,7 +31,6 @@ EXPLAIN ANALYZE CLUSTER
 ```
 > **Tip:** If you want to specify both `CPU` or `MEMORY`, they may be listed in any order;
 > however, each may appear only once.
-
 
 Parameter    | Description
 -------------|-----
@@ -123,7 +121,6 @@ operator (not inclusive of its child operators) in the dataflow:
 |     Arrange                 | 00:00:00.171586 |
 |       Read u4               |                 |
 
-
 ### `EXPLAIN ANALYZE CPU, MEMORY`
 
 You can report on both CPU and memory usage simultaneously:
@@ -165,7 +162,6 @@ For the below example, assume there are 2 workers in the cluster.
 
 > **Tip:** To determine how many workers a given cluster size has, you can query
 > [`mz_catalog.mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes).
-
 
 You can explain `MEMORY` and/or `CPU` with the `WITH SKEW` option. For example,
 the following runs `EXPLAIN ANALYZE MEMORY WITH SKEW`:
@@ -237,7 +233,6 @@ suggests the hint (i.e, the `DISTINCT ON INPUT GROUP SIZE=` value) of `255.0`.
 |       Stream u5             |        |        |      |         |
 |     Arrange                 |        |        |      |         |
 |       Read u4               |        |        |      |         |
-
 
 With the hint information, you can recreate the view and index to improve memory
 usage:

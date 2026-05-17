@@ -9,7 +9,6 @@ index in the system.
 > `*` expressions. Instead, project the required columns and convert all `NATURAL JOIN`s
 > to `USING` joins.
 
-
 ### `mz_array_types`
 
 The `mz_array_types` table contains a row for each array type in the system.
@@ -57,15 +56,6 @@ Field          | Type       | Meaning
 
 ### `mz_cluster_replica_frontiers`
 
-
-
-
-
-
-
-
-
-
 The `mz_cluster_replica_frontiers` table describes the per-replica frontiers of
 sources, sinks, materialized views, indexes, and subscriptions in the system,
 as observed from the coordinator.
@@ -98,7 +88,6 @@ This table was previously in the `mz_internal` schema. All queries previously re
 
 > **Warning:** The values in this table may change at any time. You should not rely on them for
 > any kind of capacity planning.
-
 
 <!-- RELATION_SPEC mz_catalog.mz_cluster_replica_sizes -->
 | Field                  | Type        | Meaning                                                                                                                                                      |
@@ -294,14 +283,6 @@ Field                | Type     | Meaning
 
 ### `mz_kafka_sources`
 
-
-
-
-
-
-
-
-
 The `mz_kafka_sources` table contains a row for each Kafka source in the system.
 
 This table was previously in the `mz_internal` schema. All queries previously referencing
@@ -313,11 +294,6 @@ This table was previously in the `mz_internal` schema. All queries previously re
 | `id`                   | [`text`]       | The ID of the Kafka source. Corresponds to [`mz_catalog.mz_sources.id`](../mz_catalog#mz_sources).        |
 | `group_id_prefix`      | [`text`]       | The value of the `GROUP ID PREFIX` connection option.                                                     |
 | `topic          `      | [`text`]       | The name of the Kafka topic the source is reading from.                                                              |
-
-
-
-
-
 
 ### `mz_list_types`
 
@@ -404,21 +380,12 @@ Field       | Type                 | Meaning
 `oid`       | [`oid`]              | A [PostgreSQL-compatible OID][`oid`] for the relation.
 `schema_id` | [`text`]             | The ID of the schema to which the relation belongs. Corresponds to [`mz_schemas.id`](/reference/system-catalog/mz_catalog/#mz_schemas).
 `name`      | [`text`]             | The name of the relation.
-`type`      | [`text`]             | The type of the relation: either `table`, `source`, `view`, or `materialized view`.
+`type`      | [`text`]             | The type of the relation: either `table`, `source`, `view`, or `materialized-view`.
 `owner_id`  | [`text`]             | The role ID of the owner of the relation. Corresponds to [`mz_roles.id`](/reference/system-catalog/mz_catalog/#mz_roles).
 `cluster_id`| [`text`]             | The ID of the cluster maintaining the source, materialized view, index, or sink. Corresponds to [`mz_clusters.id`](/reference/system-catalog/mz_catalog/#mz_clusters). `NULL` for other object types.
 `privileges`| [`mz_aclitem array`] | The privileges belonging to the relation.
 
 ### `mz_recent_storage_usage`
-
-
-
-
-
-
-
-
-
 
 The `mz_recent_storage_usage` table describes the storage utilization of each
 table, source, and materialized view in the system in the most recent storage
@@ -433,7 +400,6 @@ Field                  | Type                         | Meaning
 ---------------------- | ---------------------------- | -----------------------------------------------------------
 `object_id`            | [`text`]                     | The ID of the table, source, or materialized view.
 `size_bytes`           | [`uint8`]                    | The number of storage bytes used by the object in the most recent assessment.
-
 
 ### `mz_roles`
 
@@ -574,7 +540,6 @@ Field            | Type                 | Meaning
 
 > **Warning:** This view is not indexed in the `mz_catalog_server` cluster. Querying this view
 > can be slow due to the amount of unindexed data that must be scanned.
-
 
 The `mz_storage_usage` table describes the historical storage utilization of
 each table, source, and materialized view in the system. Storage utilization is

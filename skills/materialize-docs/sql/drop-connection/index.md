@@ -59,7 +59,6 @@ The privileges required to execute this statement are:
 - Ownership of the dropped connection.
 - `USAGE` privileges on the containing schema.
 
-
 ## Related pages
 
 - [`SHOW CONNECTIONS`](../show-connections)

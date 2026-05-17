@@ -9,7 +9,6 @@ Arrays are a multidimensional sequence of any non-array type.
 > interoperate well with modern data formats like JSON and Avro.
 > Use the [`list` type](/sql/types/list) instead.
 
-
 ## Details
 
 ### Type name

@@ -34,7 +34,6 @@ deployments</a></p>
 </li>
 </ul>
 
-
 #### Alternatives
 
 If a three-tier architecture is infeasible or unnecessary due to low volume or a
@@ -74,7 +73,6 @@ align with the steady-state ingestion.</p>
 </li>
 </ul>
 
-
 See also [Production cluster architecture](#three-tier-architecture).
 
 ## Sinks
@@ -101,13 +99,9 @@ See also [Cluster architecture](#three-tier-architecture).
 
 ## Role-based access control (RBAC)
 
-
-
 **Cloud:**
 
 ### Cloud
-
-
 
 ##### Follow the principle of least privilege
 
@@ -115,33 +109,21 @@ Role-based access control in Materialize should follow the principle of
 least privilege. Grant only the minimum access necessary for users and
 service accounts to perform their duties.
 
-
-
 ##### Restrict the assignment of **Organization Admin** role
-
 
 {{% include-headless "/headless/rbac-cloud/org-admin-recommendation" %}}
 
-
-
 ##### Restrict the granting of `CREATEROLE` privilege
-
 
 {{% include-headless "/headless/rbac-cloud/createrole-consideration" %}}
 
-
-
 ##### Use Reusable Roles for Privilege Assignment
-
 
 {{% include-headless "/headless/rbac-cloud/use-resusable-roles" %}}
 
 See also [Manage database roles](/security/access-control/manage-roles/).
 
-
-
 ##### Audit for unused roles and privileges.
-
 
 {{% include-headless "/headless/rbac-cloud/audit-remove-roles" %}}
 
@@ -150,15 +132,9 @@ system](/security/cloud/access-control/manage-roles/#show-roles-in-system) and [
 a role](/security/cloud/access-control/manage-roles/#drop-a-role) for more
 information.
 
-
-
-
-
 **Self-Managed:**
 
 ### Self-Managed
-
-
 
 ##### Follow the principle of least privilege
 
@@ -166,26 +142,17 @@ Role-based access control in Materialize should follow the principle of
 least privilege. Grant only the minimum access necessary for users and
 service accounts to perform their duties.
 
-
-
 ##### Restrict the granting of `CREATEROLE` privilege
-
 
 {{% include-headless "/headless/rbac-sm/createrole-consideration" %}}
 
-
-
 ##### Use Reusable Roles for Privilege Assignment
-
 
 {{% include-headless "/headless/rbac-sm/use-resusable-roles" %}}
 
 See also [Manage database roles](/security/self-managed/access-control/manage-roles/).
 
-
-
 ##### Audit for unused roles and privileges.
-
 
 {{% include-headless "/headless/rbac-sm/audit-remove-roles" %}}
 
@@ -194,8 +161,4 @@ system](/security/self-managed/access-control/manage-roles/#show-roles-in-system
 and [Drop a
 role](/security/self-managed/access-control/manage-roles/#drop-a-role) for
 more information.
-
-
-
-
 

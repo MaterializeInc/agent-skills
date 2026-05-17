@@ -9,9 +9,6 @@ role(s)](/sql/create-role/).
 > [*applicable* privileges](/sql/grant-privilege/#available-privileges) for the
 > object type.
 
-
-
-
 <!-- ============ CLUSTER syntax ==============  -->
 
 **Cluster:**
@@ -31,7 +28,6 @@ GRANT <USAGE | CREATE | ALL [PRIVILEGES]> [, ... ]
 ON ALL CLUSTERS
 TO <role_name> [, ... ];
 ```
-
 
 <!-- ================== Connection syntax ======================  -->
 
@@ -54,8 +50,6 @@ ON ALL CONNECTIONS
 TO <role_name> [, ... ];
 ```
 
-
-
 <!-- ================== Database syntax =====================  -->
 
 **Database:**
@@ -76,8 +70,6 @@ ON ALL DATABASES
 TO <role_name> [, ... ];
 ```
 
-
-
 <!-- =============== Materialized view syntax ===================  -->
 
 **Materialized view/view/source:**
@@ -86,7 +78,6 @@ TO <role_name> [, ... ];
 > on the view/materialized views. That is, having `SELECT` privileges on the
 > underlying objects defining the view/materialized view is insufficient.
 
-
 For specific materialized view(s)/view(s)/source(s):
 
 ```mzsql
@@ -94,8 +85,6 @@ GRANT <SELECT | ALL [PRIVILEGES]>
 ON [TABLE] <name> [, <name> ...] -- For PostgreSQL compatibility, if specifying type, use TABLE
 TO <role_name> [, ... ];
 ```
-
-
 
 <!-- ==================== Schema syntax =====================  -->
 
@@ -117,8 +106,6 @@ ON ALL SCHEMAS [IN DATABASE <name> [, <name> ...]]
 TO <role_name> [, ... ];
 ```
 
-
-
 <!-- ==================== Secret syntax =====================  -->
 
 **Secret:**
@@ -139,8 +126,6 @@ ON ALL SECRET [IN DATABASE <name> [, <name> ...]]
 TO <role_name> [, ... ];
 ```
 
-
-
 <!-- ==================== System syntax =====================  -->
 
 **System:**
@@ -150,8 +135,6 @@ GRANT <CREATEROLE | CREATEDB | CREATECLUSTER | CREATENETWORKPOLICY | ALL [PRIVIL
 ON SYSTEM
 TO <role_name> [, ... ];
 ```
-
-
 
 <!-- ==================== Type syntax =======================  -->
 
@@ -174,8 +157,6 @@ ON ALL TYPES
 TO <role_name> [, ... ];
 ```
 
-
-
 <!-- ======================= Table syntax =====================  -->
 
 **Table:**
@@ -193,7 +174,6 @@ For all tables or all tables in a specific schema(s) or in a specific database(s
 > **Note:** Granting privileges via `ALL TABLES [...]` also applies to sources, views, and
 > materialized views (for the applicable privileges).
 
-
 ```mzsql
 GRANT <SELECT | INSERT | UPDATE | DELETE | ALL [PRIVILEGES]> [, ...]
 ON ALL TABLES
@@ -201,14 +181,9 @@ ON ALL TABLES
 TO <role_name> [, ... ];
 ```
 
-
-
-
-
 ## Details
 
 ### Available privileges
-
 
 **By Privilege:**
 
@@ -225,7 +200,6 @@ TO <role_name> [, ... ];
 | <strong>CREATECLUSTER</strong> | Permission to create new clusters. | <code>N</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 | <strong>CREATENETWORKPOLICY</strong> | Permission to create network policies to control access at the network layer. | <code>P</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 
-
 **By Object:**
 
 | Object | Privileges |
@@ -241,9 +215,6 @@ TO <role_name> [, ... ];
 | <code>TABLE</code> | <ul> <li><code>INSERT</code></li> <li><code>SELECT</code></li> <li><code>UPDATE</code></li> <li><code>DELETE</code></li> </ul>  |
 | <code>TYPE</code> | <ul> <li><code>USAGE</code></li> </ul>  |
 | <code>VIEW</code> | <ul> <li><code>SELECT</code></li> </ul>  |
-
-
-
 
 ## Privileges
 

@@ -14,7 +14,6 @@ column values in change events. If for your trial/POC (Proof-of-concept) you can
 
   > **Note:** With the Outbox pattern, you will need to implement dual writes so that all changes apply to both the original and shadow tables.
 
-
   With the Outbox pattern, you create duplicate "shadow" tables for the ones you
   want to replicate and set the shadow tables to `REPLICA IDENTITY FULL`. You
   can then use these shadow tables for Materialize instead of the originals.
@@ -23,7 +22,6 @@ column values in change events. If for your trial/POC (Proof-of-concept) you can
 
   > **Note:** With the Sidecar pattern, you will need to keep the sidecar in sync with the
 >   source database (e.g., via logical replication or ETL processes).
-
 
   With the Sidecar pattern, you create a separate PostgreSQL instance as an
   integration layer. That is, in the sidecar instance, you recreate the tables
@@ -48,6 +46,5 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
-
 
 See also: [PostgreSQL considerations](/ingest-data/postgres/#considerations).

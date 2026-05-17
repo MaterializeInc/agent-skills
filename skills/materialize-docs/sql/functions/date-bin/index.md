@@ -27,8 +27,6 @@ strides, rather than only unit times.
 
 ## Signatures
 
-
-
 ```mzsql
 date_bin ( <stride>, <source> [, <origin>] )
 
@@ -39,7 +37,6 @@ date_bin ( <stride>, <source> [, <origin>] )
 | `<stride>` | An [`interval`](/sql/types/interval/) value defining the width of bins. Cannot contain any years or months, but can exceed 30 days. Must be between 1 and 9,223,372,036 seconds.  |
 | `<source>` | A [`timestamp`](/sql/types/timestamp/) or [`timestamp with time zone`](/sql/types/timestamp/) value to determine the bin for.  |
 | `<origin>` | Optional. Must be the same type as `<source>`. Align bins to this value. If not provided, defaults to the Unix epoch. Cannot be more than 2^63 nanoseconds apart from `<source>`.  |
-
 
 Parameter | Type | Description
 ----------|------|------------

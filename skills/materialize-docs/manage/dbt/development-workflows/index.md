@@ -20,7 +20,6 @@ types from each run using [node selection](https://docs.getdbt.com/reference/nod
 > **Note:** As you move towards productionizing your data model, we recommend managing
 > sources and sinks [using Terraform](/manage/terraform/) instead.
 
-
 You can manually exclude specific materialization types using the
 [`exclude` flag](https://docs.getdbt.com/reference/node-selection/exclude) in
 your dbt run invocations. To exclude sources and sinks, use:
@@ -85,7 +84,6 @@ For a full rundown of selection logic options, check the [dbt documentation](htt
 > [known performance limitations](/transform-data/troubleshooting/#result-filtering)
 > in Materialize.
 
-
 To debug and preview the results of your models **without** materializing the
 results, you can use the [`dbt show`](https://docs.getdbt.com/reference/commands/show)
 command:
@@ -122,7 +120,6 @@ database relation (see [`dbt-core` #7391](https://github.com/dbt-labs/dbt-core/i
 > **Note:** Complex types like [`map`](/sql/types/map/) and [`list`](/sql/types/list/) are
 > not supported in unit tests yet (see [`dbt-adapters` #113](https://github.com/dbt-labs/dbt-adapters/issues/113)).
 > For an overview of other known limitations, check the [dbt documentation](https://docs.getdbt.com/docs/build/unit-tests#before-you-begin).
-
 
 To validate your SQL logic without fully materializing a model, as well as
 future-proof it against edge cases, you can use [unit tests](https://docs.getdbt.com/docs/build/unit-tests).

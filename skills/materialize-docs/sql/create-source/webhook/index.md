@@ -2,14 +2,9 @@
 Ingesting data into Materialize with HTTP requests
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
 
-
 Webhook sources expose a [public URL](#webhook-url) that allows your applications to push webhook events into Materialize.
 
-
-
 ## Syntax
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -37,7 +32,6 @@ FROM WEBHOOK
 | `INCLUDE HEADERS [ ( [NOT] <header_name> [, [NOT] <header_name> ... ] ) ]` | Optional. Include a column named `headers` of type `map[text => text]` containing the headers of the request. To exclude specific header fields from the mapping, use the `NOT` option. This can be useful if you need to accept a dynamic list of fields but want to exclude sensitive information like authorization.  |
 | `CHECK ( [WITH ( ... )] <check_expression> )` | Optional. Specify a boolean expression that is used to validate each request received by the source. Without a `CHECK` statement, **all requests will be accepted**. To prevent bad actors from injecting data into your source, it is **strongly encouraged** that you define a `CHECK` statement with your webhook sources.  |
 | `WITH ( <BODY\|HEADERS\|SECRET <secret_name>> [AS <alias>] [BYTES] [, ...])` | Optional. Provide columns to the check expression. The headers and body of the request are only subject to validation if `WITH ( BODY, HEADERS, ... )` is specified as part of the `CHECK` statement. By default, the type of `body` used for validation is `text`, regardless of the `BODY FORMAT` you specified for the source.  - `BODY`: Provide a `body` column to the check expression. The column can be renamed with the optional **AS** `<alias>` statement, and the data type can be changed to `bytea` with the optional **BYTES** keyword. - `HEADERS`: Provide a column `headers` to the check expression. The column can be renamed with the optional **AS** `<alias>` statement, and the data type can be changed to `map[text => bytea]` with the optional **BYTES** keyword. - `SECRET <secret_name>`: Securely provide a [`SECRET`](/sql/create-secret) to the check expression. The `constant_time_eq` validation function **does not support** fully qualified secret names: if the secret is in a different namespace to the source, the column can be renamed with the optional **AS** `<alias>` statement. The data type can also be changed to `bytea` using the optional **BYTES** keyword.  |
-
 
 ## Supported formats
 
@@ -79,7 +73,6 @@ A breakdown of each component is as follows:
 > **Note:** This is a public URL that is open to the internet and has no security. To
 > validate that requests are legitimate, see [Validating requests](#validating-requests).
 > For limits imposed on this endpoint, see [Request limits](#request-limits).
-
 
 ## Features
 
@@ -135,7 +128,6 @@ the `headers` map column.
 > **Warning:** Without a `CHECK` statement, **all requests will be accepted**. To prevent bad
 > actors from injecting data into your source, it is **strongly encouraged** that
 > you define a `CHECK` statement with your webhook sources.
-
 
 It's common for applications using webhooks to provide a method for validating a
 request is legitimate. You can specify an expression to do this validation for
@@ -204,7 +196,6 @@ LIMIT 10;
 > **Note:** It's not possible to use secrets in a `SELECT` statement, so you'll need to
 > provide these values as raw text for debugging.
 
-
 ### Handling duplicated and partial events
 
 Given any number of conditions, e.g. a network hiccup, it's possible for your application to send
@@ -248,7 +239,6 @@ CREATE MATERIALIZED VIEW my_build_jobs_merged AS (
 
 > **Note:** When casting from `text` to `timestamp` you should prefer to use the [`try_parse_monotonic_iso8601_timestamp`](/sql/functions/pushdown/)
 > function, which enables [temporal filter pushdown](/transform-data/patterns/temporal-filters/#temporal-filter-pushdown).
-
 
 ### Handling batch events
 
@@ -335,7 +325,7 @@ Webhook sources apply the following limits to received requests:
 
 * The maximum size of the request body is **`2MB`**. Requests larger than this
   will fail with `413 Payload Too Large`.
-* The rate of concurrent requests/second across **all** webhook sources
+* The maximum number of concurrent requests across **all** webhook sources
   is **500**. Trying to connect when the server is at capacity will fail with
   `429 Too Many Requests`.
 * Requests that contain a header name specified more than once will be rejected

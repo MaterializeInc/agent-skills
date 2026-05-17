@@ -5,17 +5,13 @@ Use `ALTER SCHEMA` to:
 - Rename a schema.
 - Change owner of a schema.
 
-
 ## Syntax
-
 
 **Swap with:**
 
 ### Swap with
 
 To swap the name of a schema with that of another schema:
-
-
 
 ```mzsql
 ALTER SCHEMA <schema1> SWAP WITH <schema2>;
@@ -27,15 +23,11 @@ ALTER SCHEMA <schema1> SWAP WITH <schema2>;
 | `<schema1>` | The name of the schema you want to swap.  |
 | `<schema2>` | The name of the other schema you want to swap with.  |
 
-
-
 **Rename schema:**
 
 ### Rename schema
 
 To rename a schema:
-
-
 
 ```mzsql
 ALTER SCHEMA <name> RENAME TO <new_name>;
@@ -48,15 +40,11 @@ ALTER SCHEMA <name> RENAME TO <new_name>;
 | `<new_name>` | The new name of the schema.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
-
-
 **Change owner to:**
 
 ### Change owner to
 
 To change the owner of a schema:
-
-
 
 ```mzsql
 ALTER SCHEMA <name> OWNER TO <new_owner_role>;
@@ -69,12 +57,6 @@ ALTER SCHEMA <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the schema.  |
 To change the owner of a schema, you must be the owner of the schema and have
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
-
-
-
-
-
-
 
 ## Examples
 

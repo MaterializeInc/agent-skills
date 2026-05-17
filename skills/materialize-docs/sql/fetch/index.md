@@ -4,8 +4,6 @@
 
 ## Syntax
 
-
-
 ```mzsql
 FETCH [ <count> | ALL ] [FROM] <cursor_name> [ WITH ( TIMEOUT = <interval> ) ]
 
@@ -17,7 +15,6 @@ FETCH [ <count> | ALL ] [FROM] <cursor_name> [ WITH ( TIMEOUT = <interval> ) ]
 | `ALL` | Indicates that there is no limit on the number of rows to be returned.  |
 | `<cursor_name>` | The name of an open cursor.  |
 | `TIMEOUT` | When fetching from a [`SUBSCRIBE`](/sql/subscribe) cursor, complete if there are no more rows ready after this timeout. The default will cause `FETCH` to wait for at least one row to be available.  |
-
 
 ## Details
 

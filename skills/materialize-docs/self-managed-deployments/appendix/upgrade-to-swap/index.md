@@ -2,7 +2,6 @@
 Upgrade procedure for v26.0 if not using Materialize Terraform.
 > **Disambiguation:** This page outlines the general steps for upgrading from v25.2 to v26.0 if you are <red>**not**</red> using Materialize provided Terraforms. If you are using Materialize-provided Terraforms, `v0.6.1` and higher of the Terraforms handle the preparation for you.  If using Materialize-provided Terraforms, upgrade your Terraform version to `v0.6.1` or higher and follow the Upgrade notes: - <a href="https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#v061" >AWS Terraform v0.6.1 Upgrade Notes</a>. - <a href="https://github.com/MaterializeInc/terraform-google-materialize?tab=readme-ov-file#v061" >GCP Terraform v0.6.1 Upgrade Notes</a>. - <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#v061" >Azure Terraform v0.6.1 Upgrade Notes</a>. See also [Upgrade Overview](/self-managed-deployments/upgrading/). 
 
-
 <p>Starting in v26.0.0, Self-Managed Materialize enables swap by default. Swap
 allows for infrequently accessed data to be moved from memory to disk. Enabling
 swap reduces the memory required to operate Materialize and improves cost

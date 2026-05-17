@@ -2,8 +2,6 @@
 
 Get details about third-party tools and integrations supported by Materialize
 
-
-
 Materialize is **wire-compatible** with PostgreSQL and can integrate with many
 SQL clients and other tools that support PostgreSQL. To help you connect to
 Materialize using various clients and tools, the following references are
@@ -43,19 +41,15 @@ See also the following integration guides for BI tools:
 
 - [Foreign data wrapper](/integrations/fdw/)
 
-
-
 ---
 
 ## Client libraries
-
 
 Applications can use various common language-specific PostgreSQL client
 libraries to interact with Materialize and **create relations**, **execute
 queries** and **stream out results**.
 
 > **Note:** Client libraries tend to run complex introspection queries that may use configuration settings, system tables or features not yet implemented in Materialize. This means that even if PostgreSQL is supported, it's **not guaranteed** that the same integration will work out-of-the-box.
-
 
 | Language | Tested drivers                                                  | Notes                                                 |
 | -------- | --------------------------------------------------------------- | ----------------------------------------------------- |
@@ -71,11 +65,9 @@ queries** and **stream out results**.
 [feature
 request](https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests&labels=A-integration)._
 
-
 ---
 
 ## Coding Agent Skills
-
 
 Coding agents like [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://openai.com/index/codex/), [Cursor](https://www.cursor.com/), and others can work with Materialize using our open-source [agent skills](https://github.com/MaterializeInc/agent-skills). Once installed, these skills give your coding agent access to Materialize documentation and reference material so it can provide more accurate assistance when writing queries, setting up sources, creating materialized views, and more.
 
@@ -117,11 +109,9 @@ The **materialize-docs** skill bundles reference files across categories includi
 - [MCP Server](/integrations/llm/)
 - [GitHub: Materialize Agent Skills](https://github.com/MaterializeInc/agent-skills)
 
-
 ---
 
 ## Connect to Materialize via HTTP
-
 
 You can access Materialize through its "session-less" HTTP API endpoint:
 
@@ -424,13 +414,9 @@ Response:
 [simple-query]: https://www.postgresql.org/docs/current/protocol-flow.html#id-1.10.5.7.4
 [extended-query]: https://www.postgresql.org/docs/current/protocol-flow.html#PROTOCOL-FLOW-EXT-QUERY
 
-
 ---
 
 ## Connect to Materialize via WebSocket
-
-
-
 
 You can access Materialize through its interactive WebSocket API endpoint:
 
@@ -786,11 +772,9 @@ $ echo '{"query": "select 1,2; values (4), (5)"}' | websocat wss://<MZ host addr
 [simple-query]: https://www.postgresql.org/docs/current/protocol-flow.html#id-1.10.5.7.4
 [extended-query]: https://www.postgresql.org/docs/current/protocol-flow.html#PROTOCOL-FLOW-EXT-QUERY
 
-
 ---
 
 ## Connection Pooling
-
 
 Because Materialize is wire-compatible with PostgreSQL, you can use any
 PostgreSQL connection pooler with Materialize. In this guide, we’ll cover how to
@@ -835,7 +819,6 @@ SELECT rolname, rolpassword FROM pg_authid WHERE rolname = 'your_role_name';
 ```
 
 > **Note:** You must be a superuser to access the `pg_authid` table.
-
 
 Once you have the SCRAM secret, add it to the userlist file in the following format:
 ```
@@ -886,11 +869,9 @@ After configuring PgBouncer, you can start the service. You can then connect to 
 psql -h localhost -p 6432 -U your_role_name -d materialize
 ```
 
-
 ---
 
 ## Foreign data wrapper (FDW) 
-
 
 Materialize can be used as a remote server in a PostgreSQL foreign data wrapper
 (FDW). This allows you to query any object in Materialize as foreign tables from
@@ -909,7 +890,6 @@ requiring changes to application logic or tooling.
 >    service account to finish creating the new account. You will also need the
 >    connection details (host, port, password) when setting up the foreign server
 >    and user mappings in PostgreSQL.
-
 
 1. After you have connected at least once with the new service account to finish
    the new account creation, modify the `fdw_svc_account` role:
@@ -983,21 +963,21 @@ requiring changes to application logic or tooling.
    SELECT * from <local_view_name_in_postgres>;
    ```
 
-
 ---
 
 ## MCP Server
 
-
 Materialize provides built-in Model Context Protocol (MCP) endpoints that AI
 agents can use. The MCP interface is served directly by the database; no sidecar
-process or external server is required.
+process or external server is required. These endpoints use [JSON-RPC
+ 2.0](https://www.jsonrpc.org/specification) over HTTP POST (default port 6876)
+and support the MCP `initialize`, `tools/list`, and `tools/call` methods.
 
 ## MCP endpoints overview
 
 | Endpoint | Path | Description |
 |----------|------|-------------|
-| **Developer** | `/api/mcp/developer` | Read `mz_*` system catalog tables for troubleshooting and observability. <br>For details, see [MCP Server for developer](/integrations/mcp-server/mcp-developer/).|
+| [**Developer**](/integrations/mcp-server/mcp-developer/) | `/api/mcp/developer` | Read `mz_*` system catalog tables for troubleshooting and observability. <br>For details, see [MCP Server for developer](/integrations/mcp-server/mcp-developer/).|
 
 ## See also
 
@@ -1006,11 +986,9 @@ process or external server is required.
 - [Appendix: MCP Server (Python)](/integrations/mcp-server/llm) for locally-run,
   separate MCP Server.
 
-
 ---
 
 ## mz - Materialize CLI
-
 
 The Materialize command-line interface (CLI), lets you interact with
 Materialize from your terminal.
@@ -1102,7 +1080,6 @@ Argument           | Environment variables     | Description
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
 
-
 [Homebrew]: https://brew.sh
 [homebrew-tap]: https://github.com/MaterializeInc/homebrew-materialize
 [`app-password`]: reference/app-password
@@ -1113,17 +1090,13 @@ Argument           | Environment variables     | Description
 [`sql`]: reference/sql
 [`user`]: reference/user
 
-
 ---
 
 ## mz-debug
 
-
 `mz-debug` is a command-line interface tool that collects debug information for self-managed and emulator Materialize environments. By default, the tool creates a compressed file (`.zip`) containing logs and a dump of the system catalog. You can then share this file with support teams when investigating issues.
 
 ## Install `mz-debug`
-
-
 
 **macOS:**
 
@@ -1140,8 +1113,6 @@ ARCH=$(uname -m)
 sudo echo "Preparing to extract mz-debug..."
 curl -L "https://binaries.materialize.com/mz-debug-latest-$ARCH-unknown-linux-gnu.tar.gz" \
 | sudo tar -xzC /usr/local --strip-components=1
-
-
 
 ### Get version and help
 
@@ -1163,11 +1134,9 @@ To run `mz-debug`, see
 - [`mz-debug self-managed`](./self-managed)
 - [`mz-debug emulator`](./emulator)
 
-
 ---
 
 ## SQL clients
-
 
 Materialize is **wire-compatible** with PostgreSQL, which means it integrates
 with many SQL clients that support PostgreSQL. In this guide, we’ll cover how to
@@ -1197,7 +1166,6 @@ user. This password is auto-generated, and prefixed with `mzp_`.
 > session**, but do not affect other sessions. To permanently change the default
 > value of a configuration parameter for a specific user (i.e. role), use the
 > [`ALTER ROLE...SET`](/sql/alter-role) command.
-
 
 You can pass runtime connection parameters (like `cluster`, `isolation_level`,
 or `search_path`) to Materialize using the [`options` connection string
@@ -1237,7 +1205,6 @@ psql \
 > **Advanced** tab, select **Introspect using JDBC Metadata** from the **Expert
 > options** list. For more information, see the [DataGrip
 > documentation](https://www.jetbrains.com/help/datagrip/cannot-find-a-database-object-in-the-database-tree-view.html#temporarily-enable-introspection-with-jdbc-metadata).
-
 
 To connect to Materialize using [DataGrip](https://www.jetbrains.com/help/datagrip/connecting-to-a-database.html),
 follow the documentation to [create a connection](https://www.jetbrains.com/help/datagrip/connecting-to-a-database.html)
@@ -1307,7 +1274,6 @@ To show system objects in the database explorer:
 > **Note:** As we work on extending the coverage of `pg_catalog` in Materialize,
 > some TablePlus features might not work as expected.
 
-
 To connect to Materialize using [TablePlus](https://tableplus.com/),
 follow the documentation to [create a connection](https://docs.tableplus.com/gui-tools/manage-connections#create-a-connection)
 and use the **PostgreSQL database driver** with the credentials provided in the
@@ -1318,8 +1284,6 @@ Materialize console.
 ### `psql`
 
 > **Warning:** Not all features of `psql` are supported by Materialize yet, including some backslash meta-commands.
-
-
 
 **macOS:**
 
@@ -1341,8 +1305,6 @@ Then symlink the `psql` binary to your `/usr/local/bin` directory:
 brew link --force libpq
 ```
 
-
-
 **Linux:**
 
 Start by double-checking whether you already have `psql` installed:
@@ -1360,8 +1322,6 @@ The `postgresql-client` package includes only the client binaries, not the Postg
 
 For other Linux distributions, check out the [PostgreSQL documentation](https://www.postgresql.org/download/linux/).
 
-
-
 **Windows:**
 
 Start by double-checking whether you already have `psql` installed:
@@ -1371,8 +1331,6 @@ psql --version
 ```
 
 Download and install the [PostgreSQL installer](https://www.postgresql.org/download/windows/) certified by EDB.
-
-
 
 ## See also
 

@@ -5,8 +5,6 @@ converted to days.
 
 ## Signatures
 
-
-
 ```mzsql
 justify_hours ( <interval> )
 
@@ -16,11 +14,9 @@ justify_hours ( <interval> )
 | --- | --- |
 | `<interval>` | An [`interval`](/sql/types/interval/) value to justify. Returns a new interval such that 24-hour time periods are converted to days.  |
 
-
 Parameter | Type                                                                                                                                                                                            | Description
 ----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------
 _interval_ | [`interval`](../../types/interval) | The interval value to justify.
-
 
 ### Return value
 

@@ -13,7 +13,6 @@
   default**. You must [contact us](https://materialize.com/contact/) to enable
   this feature in your Materialize region.
 
-
 * Add `RESET schema` as an alias to `RESET search_path`. From this release, the
   following sequence of commands provide the same functionality:
 

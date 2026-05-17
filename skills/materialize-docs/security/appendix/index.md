@@ -1,13 +1,8 @@
 # Appendix
 
-
-
-
-
 ---
 
 ## Appendix: Built-in roles
-
 
 ## `Public` role
 
@@ -17,13 +12,11 @@ such, every role includes inherited privileges from `PUBLIC`.
 
 By default, the `PUBLIC` role has the following privileges:
 
-
 **Baseline privileges via PUBLIC role:**
 
 | Privilege | Description | On database object(s) |
 | --- | --- | --- |
 | <code>USAGE</code> | Permission to use or reference an object. | <ul> <li>All <code>*.public</code> schemas (e.g., <code>materialize.public</code>);</li> <li><code>materialize</code> database; and</li> <li><code>quickstart</code> cluster.</li> </ul>  |
-
 
 **Default privileges on future objects set up for PUBLIC:**
 
@@ -49,11 +42,9 @@ belonging to a particular builtin role, which superusers may
 | `mz_monitor`          | Grants access to objects that reveal actions taken by other users, in particular, SQL statements they have issued. Includes [`mz_recent_activity_log`](/reference/system-catalog/mz_internal#mz_recent_activity_log) and [`mz_notices`](/reference/system-catalog/mz_internal#mz_notices).                                                                                                                                    |
 | `mz_monitor_redacted` | Grants access to objects that reveal less sensitive information about actions taken by other users, for example, SQL statements they have issued with constant values redacted. Includes `mz_recent_activity_log_redacted`, [`mz_notices_redacted`](/reference/system-catalog/mz_internal#mz_notices_redacted), and [`mz_statement_lifecycle_history`](/reference/system-catalog/mz_internal#mz_statement_lifecycle_history). |
 
-
 ---
 
 ## Appendix: Privileges
-
 
 > **Note:** Various SQL operations require additional privileges on related objects, such
 > as:
@@ -63,9 +54,7 @@ belonging to a particular builtin role, which superusers may
 > For details on SQL operations and needed privileges, see [Appendix: Privileges
 > by command](/security/appendix/appendix-command-privileges/).
 
-
 The following privileges are available in Materialize:
-
 
 **By Privilege:**
 
@@ -81,7 +70,6 @@ The following privileges are available in Materialize:
 | <strong>CREATEDB</strong> | Permission to create new databases. | <code>B</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 | <strong>CREATECLUSTER</strong> | Permission to create new clusters. | <code>N</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 | <strong>CREATENETWORKPOLICY</strong> | Permission to create network policies to control access at the network layer. | <code>P</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
-
 
 **By Object:**
 
@@ -99,15 +87,9 @@ The following privileges are available in Materialize:
 | <code>TYPE</code> | <ul> <li><code>USAGE</code></li> </ul>  |
 | <code>VIEW</code> | <ul> <li><code>SELECT</code></li> </ul>  |
 
-
-
-
-
 ---
 
 ## Appendix: Privileges by commands
-
-
 
 | Command | Privileges |
 | --- | --- |
@@ -182,7 +164,7 @@ The following privileges are available in Materialize:
 | <a href="/sql/show-create-connection" ><code>SHOW CREATE CONNECTION</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the connection.</li> </ul>  |
 | <a href="/sql/show-create-index" ><code>SHOW CREATE INDEX</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the index.</li> </ul>  |
 | <a href="/sql/show-create-materialized-view" ><code>SHOW CREATE MATERIALIZED VIEW</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the materialized view.</li> </ul>  |
-| <a href="/sql/show-create-type" ><code>SHOW CREATE TYPE</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the table.</li> </ul>  |
+| <a href="/sql/show-create-type" ><code>SHOW CREATE TYPE</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the type.</li> </ul>  |
 | <a href="/sql/show-create-sink" ><code>SHOW CREATE SINK</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the sink.</li> </ul>  |
 | <a href="/sql/show-create-source" ><code>SHOW CREATE SOURCE</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the source.</li> </ul>  |
 | <a href="/sql/show-create-table" ><code>SHOW CREATE TABLE</code></a> | <ul> <li><code>USAGE</code> privileges on the schema containing the table.</li> </ul>  |
@@ -190,5 +172,4 @@ The following privileges are available in Materialize:
 | <a href="/sql/subscribe" ><code>SUBSCRIBE</code></a> | <ul> <li><code>USAGE</code> privileges on the schemas that all relations and types in the query are contained in.</li> <li><code>SELECT</code> privileges on all relations in the query. <ul> <li>NOTE: if any item is a view, then the view owner must also have the necessary privileges to execute the view definition. Even if the view owner is a <em>superuser</em>, they still must explicitly be granted the necessary privileges.</li> </ul> </li> <li><code>USAGE</code> privileges on all types used in the query.</li> <li><code>USAGE</code> privileges on the active cluster.</li> </ul>  |
 | <a href="/sql/update" ><code>UPDATE</code></a> | <ul> <li><code>USAGE</code> privileges on the schemas that all relations and types in the query are contained in.</li> <li><code>UPDATE</code> privileges on the table being updated.</li> <li><code>SELECT</code> privileges on all relations in the query. <ul> <li>NOTE: if any item is a view, then the view owner must also have the necessary privileges to execute the view definition. Even if the view owner is a <em>superuser</em>, they still must explicitly be granted the necessary privileges.</li> </ul> </li> <li><code>USAGE</code> privileges on all types used in the query.</li> <li><code>USAGE</code> privileges on the active cluster.</li> </ul>  |
 | <a href="/sql/validate-connection" ><code>VALIDATE CONNECTION</code></a> | <ul> <li><code>USAGE</code> privileges on the containing schema.</li> <li><code>USAGE</code> privileges on the connection.</li> </ul>  |
-
 

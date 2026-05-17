@@ -60,7 +60,6 @@ This is the most comprehensive measure of system responsiveness and is particula
 | Data Warehouse | High          |
 | Materialize    | Low           |
 
-
 ## Example
 
 Consider an e-commerce application that needs to monitor order fulfillment rates in real time. This requires both timely access to new orders and the ability to compute aggregates across multiple related tables.

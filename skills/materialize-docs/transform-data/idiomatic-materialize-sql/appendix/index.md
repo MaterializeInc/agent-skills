@@ -2,14 +2,9 @@
 
 Idiomatic Materialize appendix, containing example data and cheatsheets
 
-
-
-
-
 ---
 
 ## Example data: items and orders
-
 
 The following sample data is used in the various Idiomatic Materialize SQL
 pages:
@@ -99,7 +94,6 @@ SELECT date_trunc('day',order_date) AS order_date,
 FROM orders_view
 GROUP BY date_trunc('day',order_date);
 
-
 CREATE TABLE sales_items (
   week_of date NOT NULL,
   items text[]
@@ -110,11 +104,9 @@ INSERT INTO sales_items VALUES
 (date_trunc('week', current_timestamp + (1* interval '7 day')),ARRAY['chocolate chip cookie','donut','cupcake']);
 ```
 
-
 ---
 
 ## Idiomatic Materialize SQL chart
-
 
 Materialize follows the SQL standard (SQL-92) implementation and strives for
 compatibility with the PostgreSQL dialect. However, for some use cases,
@@ -124,9 +116,6 @@ performance.
 ## General
 
 ### Query Patterns
-
-
-
 
 <table>
 <thead>
@@ -191,11 +180,7 @@ retained.</li>
 </tbody>
 </table>
 
-
 ### Examples
-
-
-
 
 <table>
 <thead>
@@ -298,9 +283,6 @@ WHERE order_date + interval '30' minutes >= mz_now()
 </tbody>
 </table>
 
-
-
-
 ## Window Functions
 > ### Materialize and window functions
 > For [window functions](/sql/functions/#window-functions), when an input record
@@ -319,13 +301,7 @@ WHERE order_date + interval '30' minutes >= mz_now()
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
 
-
-
-
 ### Query Patterns
-
-
-
 
 <table>
 <thead>
@@ -464,11 +440,7 @@ ORDER BY fieldA;
 </tbody>
 </table>
 
-
 ### Examples
-
-
-
 
 <table>
 <thead>
@@ -621,9 +593,6 @@ condition.
 </tbody>
 </table>
 
-
-
-
 ## See also
 
 - [SQL Functions](/sql/functions/)
@@ -632,11 +601,9 @@ condition.
 - [DISTINCT](/sql/select/#select-distinct)
 - [DISTINCT ON](/sql/select/#select-distinct-on)
 
-
 ---
 
 ## Window function to idiomatic Materialize
-
 
 Materialize offers a wide range of [window
 functions](/sql/functions/#window-functions). However, for some
@@ -663,9 +630,6 @@ can provide better performance.
 > functions. If your query cannot be rewritten without the window functions and
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
-
-
-
 
 <table>
 <thead>
@@ -760,7 +724,6 @@ ORDER BY fieldA;
 
 **Last value within groups.** For more information and examples, see [Idiomatic Materialize SQL: Last value in
 group](/transform-data/idiomatic-materialize-sql/last-value/).
-
 
 </td>
 </tr>

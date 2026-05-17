@@ -5,10 +5,8 @@ How to propagate Change Data Capture (CDC) data from a MySQL database to Materia
 > we **strongly recommend** using the native [MySQL](/sql/create-source/mysql/)
 > source instead.
 
-
 For help getting started with your own data, you can schedule a [free guided
 trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 Change Data Capture (CDC) allows you to track and propagate changes in a MySQL
 database to downstream consumers based on its binary log (`binlog`). In this
@@ -66,8 +64,6 @@ connector by adding it to Kafka Connect.
 > **Warning:** If you deploy the MySQL Debezium connector in [Confluent Cloud](https://docs.confluent.io/cloud/current/connectors/cc-mysql-source-cdc-debezium.html),
 > you **must** override the default value of `After-state only` to `false`.
 
-
-
 **Debezium 1.5+:**
 
 1. Create a connector configuration file and save it as `register-mysql.json`:
@@ -95,7 +91,6 @@ connector by adding it to Kafka Connect.
 
     You can read more about each configuration property in the
     [Debezium documentation](https://debezium.io/documentation/reference/connectors/mysql.html#mysql-connector-properties).
-
 
 **Debezium 2.0+:**
 
@@ -148,9 +143,6 @@ connector by adding it to Kafka Connect.
     By default, the connector writes events for each table to a Kafka topic
     named `serverName.databaseName.tableName`.
 
-
-
-
 1. Start the Debezium MySQL connector using the configuration file:
 
     ```bash
@@ -184,7 +176,6 @@ connector by adding it to Kafka Connect.
   <strong class="gutter">NOTE:</strong> Currently, Materialize only supports Avro-encoded Debezium records. If you're interested in JSON support, please reach out in the community Slack or submit a <a href="https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests">feature request</a>.
 </div>
 
-
 Debezium emits change events using an envelope that contains detailed
 information about upstream database operations, like the `before` and `after`
 values for each record. To create a source that interprets the
@@ -213,7 +204,6 @@ CREATE VIEW cnt_table1 AS
     FROM kafka_repl
     GROUP BY field1;
 ```
-
 
 ### E. Create an index on the view
 

@@ -32,8 +32,6 @@ provide:
 > matches your intended deployment type, and do not switch to a
 > different deployment type afterward.
 
-
-
 **Materialize Cloud:**
 ### Materialize Cloud
 
@@ -122,8 +120,6 @@ output "production_dashboard_password" {
 }
 ```
 
-
-
 **Self-managed Materialize:**
 ### Self-managed Materialize
 
@@ -184,6 +180,4 @@ provider "materialize" {
 | `database` | Database name | `MZ_DATABASE` | `materialize` |
 | `password` | Database password | `MZ_PASSWORD` | - |
 | `sslmode` | SSL mode (`disable`, `require`, `verify-ca`, `verify-full`) | `MZ_SSLMODE` | `require` |
-
-
 

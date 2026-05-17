@@ -9,14 +9,12 @@ retrieve the AWS principal needed to configure the AWS PrivateLink service.
 
 ## Create an AWS PrivateLink connection
 
-
 **Kafka on AWS:**
 
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the Terraform module repositories for [Amazon MSK](https://github.com/MaterializeInc/terraform-aws-msk-privatelink)
 > and [self-managed Kafka clusters](https://github.com/MaterializeInc/terraform-aws-kafka-privatelink).
-
 
 This section covers how to create AWS PrivateLink connections
 and retrieve the AWS principal needed to configure the AWS PrivateLink service.
@@ -186,15 +184,11 @@ connection you just configured:
    * For **in-region connections**, the correct availability zone is specified
       for each broker.
 
-
-
-
 **PostgreSQL on AWS:**
 
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
-
 
 1. #### Create target groups
     Create a dedicated [target group](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-target-group.html) for your RDS or Aurora or Aurora instance with the following details:
@@ -334,15 +328,11 @@ CREATE CONNECTION pg_connection TO POSTGRES (
 
 This PostgreSQL connection can then be reused across multiple [`CREATE SOURCE`](https://materialize.com/docs/sql/create-source/postgres/) statements.
 
-
-
-
 **MySQL on AWS:**
 
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
-
 
 1. #### Create target groups
     Create a dedicated [target group](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-target-group.html) for your RDS instance with the following details:
@@ -481,11 +471,6 @@ CREATE CONNECTION mysql_connection TO MYSQL (
 ```
 
 This MySQL connection can then be reused across multiple [`CREATE SOURCE`](https://materialize.com/docs/sql/create-source/mysql/) statements.
-
-
-
-
-
 
 ## Related pages
 

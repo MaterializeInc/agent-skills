@@ -2,8 +2,6 @@
 
 Authentication and authorization in Self-Managed Materialize.
 
-
-
 This section covers security for Self-Managed Materialize.
 
 | Guide | Description |
@@ -17,16 +15,12 @@ See also
 - [Appendix: Privileges by commands](/security/appendix/appendix-command-privileges/)
 - [Appendix: Built-in roles](/security/appendix/appendix-built-in-roles/)
 
-
-
 ---
 
 ## Access control (Role-based)
 
-
 > **Note:** Initially, only the `mz_system` user (which has superuser/administrator
 > privileges) is available to manage roles.
-
 
 <a name="role-based-access-control-rbac" ></a>
 
@@ -39,7 +33,6 @@ roles](/security/self-managed/access-control/manage-roles/).
 ## Enabling RBAC
 
 > **Warning:** If RBAC is not enabled, all users have <red>**superuser**</red> privileges.
-
 
 By default, role-based access control (RBAC) checks are not enabled (i.e.,
 enforced) when using [authentication](/security/self-managed/authentication/#configuring-authentication-type). To
@@ -121,7 +114,6 @@ Once a role is created, you can:
 
 > **Disambiguation:** - Use `GRANT|REVOKE ...` to modify privileges on **existing** objects. - Use `ALTER DEFAULT PRIVILEGES` to ensure that privileges are automatically granted or revoked when **new objects** of a certain type are created by others. Then, as needed, you can use `GRANT|REVOKE <privilege>` to adjust those privileges. 
 
-
 ### Initial privileges
 
 All roles in Materialize are automatically members of
@@ -130,13 +122,11 @@ such, every role includes inherited privileges from `PUBLIC`.
 
 By default, the `PUBLIC` role has the following privileges:
 
-
 **Baseline privileges via PUBLIC role:**
 
 | Privilege | Description | On database object(s) |
 | --- | --- | --- |
 | <code>USAGE</code> | Permission to use or reference an object. | <ul> <li>All <code>*.public</code> schemas (e.g., <code>materialize.public</code>);</li> <li><code>materialize</code> database; and</li> <li><code>quickstart</code> cluster.</li> </ul>  |
-
 
 **Default privileges on future objects set up for PUBLIC:**
 
@@ -184,34 +174,23 @@ the target role still has the privilege(s) through the other role.
 
 ## Best practices
 
-
-
 ### Follow the principle of least privilege
 
 Role-based access control in Materialize should follow the principle of
 least privilege. Grant only the minimum access necessary for users and
 service accounts to perform their duties.
 
-
-
 ### Restrict the granting of `CREATEROLE` privilege
-
 
 {{% include-headless "/headless/rbac-sm/createrole-consideration" %}}
 
-
-
 ### Use Reusable Roles for Privilege Assignment
-
 
 {{% include-headless "/headless/rbac-sm/use-resusable-roles" %}}
 
 See also [Manage database roles](/security/self-managed/access-control/manage-roles/).
 
-
-
 ### Audit for unused roles and privileges.
-
 
 {{% include-headless "/headless/rbac-sm/audit-remove-roles" %}}
 
@@ -221,13 +200,9 @@ and [Drop a
 role](/security/self-managed/access-control/manage-roles/#drop-a-role) for
 more information.
 
-
-
-
 ---
 
 ## Authentication
-
 
 ## Configuring Authentication Type
 
@@ -238,20 +213,17 @@ for the authentication method.
 The `spec.authenticatorKind` setting determines which authentication method is
 used:
 
-
 | authenticatorKind Value | Description |
 | --- | --- |
 | <strong>None</strong> | Disables authentication. All users are trusted based on their claimed identity <strong>without</strong> any verification. <strong>Default</strong> |
 | <strong>SASL/SCRAM</strong> | <p>Enables:</p> <ul> <li> <p><a href="#configuring-saslscram-authentication" >SASL/SCRAM-SHA-256 authentication</a> for <strong>PostgreSQL wire protocol connections</strong>. SASL/SCRAM-SHA-256 is a challenge-response authentication mechanism that provides enhanced security compared to simple password authentication.</p> </li> <li> <p>Standard password authentication for HTTP/Web Console connections.</p> </li> </ul> <p>When enabled, users must authenticate with their password.</p> > **Tip:** When enabled, you must also set the `mz_system` user password in > `external_login_password_mz_system`. See [Configuring SASL/SCRAM > authentication](#configuring-saslscram-authentication) for details.   |
 | <strong>Password</strong> | <p>Enables <a href="#configuring-password-authentication" >password authentication</a> for users. When enabled, users must authenticate with their password.</p> > **Tip:** When enabled, you must also set the `mz_system` user password in > `external_login_password_mz_system`. See [Configuring password > authentication](#configuring-password-authentication) for details. |
 
-
 > **Warning:** Once enabled, ensure that the `authenticatorKind` field is set for any future version upgrades or rollouts of the Materialize CR. Having it undefined will reset `authenticationKind` to `None`.
 
 ### Configuring SASL/SCRAM authentication
 
 > **Note:** SASL/SCRAM-SHA-256 authentication requires Materialize `v26.0.0` or later.
-
 
 SASL authentication requires users to log in with a password.
 
@@ -307,7 +279,6 @@ spec:
 ### Configuring password authentication
 
 > **Public Preview:** This feature is in public preview.
-
 
 Password authentication requires users to log in with a password.
 
@@ -374,7 +345,6 @@ new users:
 >    `mz_system` since `mz_system` also used by the Materialize Operator for
 >    upgrades and maintenance tasks.
 
-
 1. Login as one of the created users.
 
 ## RBAC
@@ -383,7 +353,6 @@ For details on role-based access control (RBAC), including enabling RBAC, see
 [Access Control](/security/self-managed/access-control/).
 
 > **Warning:** If RBAC is not enabled, all users have <red>**superuser**</red> privileges.
-
 
 ## See also
 

@@ -8,9 +8,7 @@ List of available  privileges in Materialize.
 > For details on SQL operations and needed privileges, see [Appendix: Privileges
 > by command](/security/appendix/appendix-command-privileges/).
 
-
 The following privileges are available in Materialize:
-
 
 **By Privilege:**
 
@@ -27,7 +25,6 @@ The following privileges are available in Materialize:
 | <strong>CREATECLUSTER</strong> | Permission to create new clusters. | <code>N</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 | <strong>CREATENETWORKPOLICY</strong> | Permission to create network policies to control access at the network layer. | <code>P</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 
-
 **By Object:**
 
 | Object | Privileges |
@@ -43,6 +40,4 @@ The following privileges are available in Materialize:
 | <code>TABLE</code> | <ul> <li><code>INSERT</code></li> <li><code>SELECT</code></li> <li><code>UPDATE</code></li> <li><code>DELETE</code></li> </ul>  |
 | <code>TYPE</code> | <ul> <li><code>USAGE</code></li> </ul>  |
 | <code>VIEW</code> | <ul> <li><code>SELECT</code></li> </ul>  |
-
-
 

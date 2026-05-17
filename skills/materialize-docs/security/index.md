@@ -1,7 +1,5 @@
 # Security
 
-
-
 ## Cloud
 
 | Guide | Description |
@@ -25,18 +23,13 @@ See also:
 - [Appendix: Privileges by commands](/security/appendix/appendix-command-privileges/)
 - [Appendix: Built-in roles](/security/appendix/appendix-built-in-roles/)
 
-
-
 ---
 
 ## Appendix
 
-
-
 ---
 
 ## Cloud
-
 
 This section covers security for Materialize Cloud.
 
@@ -46,18 +39,15 @@ This section covers security for Materialize Cloud.
 | [Access control](/security/cloud/access-control/) | Reference for role-based access management (RBAC) |
 | [Manage network policies](/security/cloud/manage-network-policies/) | Set up network policies |
 
-
 See also:
 
 - [Appendix: Privileges](/security/appendix/appendix-privileges/)
 - [Appendix: Privileges by commands](/security/appendix/appendix-command-privileges/)
 - [Appendix: Built-in roles](/security/appendix/appendix-built-in-roles/)
 
-
 ---
 
 ## Self-managed
-
 
 This section covers security for Self-Managed Materialize.
 

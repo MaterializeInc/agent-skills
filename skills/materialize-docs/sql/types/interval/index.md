@@ -18,8 +18,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 INTERVAL '<time_expr>' [<head_time_unit> TO <tail_time_unit>]
 
@@ -31,10 +29,7 @@ INTERVAL '<time_expr>' [<head_time_unit> TO <tail_time_unit>]
 | `<head_time_unit>` | Optional. Return an interval without `time_unit`s larger than `<head_time_unit>`. Note that this differs from PostgreSQL's implementation, which ignores this clause.  |
 | **TO** `<tail_time_unit>` | Optional. If specified: (1) Return an interval without `time_unit` smaller than `<tail_time_unit>`. (2) If the final `time_expr` is only a number, treat the `time_expr` as belonging to `<tail_time_unit>`. This is the case of the most common `interval` format like `INTERVAL '1' MINUTE`.  |
 
-
 ### `time_expr` syntax
-
-
 
 ```mzsql
 [+ | -] (<ym_str> | <time_str> | <int> [.<frac>] [<time_unit>])
@@ -48,10 +43,7 @@ INTERVAL '<time_expr>' [<head_time_unit> TO <tail_time_unit>]
 | `<time_str>` | A string representing hours, minutes, seconds, and nanoseconds in `H:M:S.NS` format.  |
 | `<int>` [`.<frac>`] [`<time_unit>`] | An integer or decimal number, optionally followed by a time unit.  |
 
-
 ### `time_unit` syntax
-
-
 
 ```mzsql
 MILLENNIUM | CENTURY | DECADE | YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECONDS | MICROSECONDS
@@ -61,7 +53,6 @@ MILLENNIUM | CENTURY | DECADE | YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MI
 | Syntax element | Description |
 | --- | --- |
 | `<time_unit>` | A time unit keyword. Valid values: `MILLENNIUM`, `CENTURY`, `DECADE`, `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND`, `MILLISECONDS`, `MICROSECONDS`.  |
-
 
 ## Details
 

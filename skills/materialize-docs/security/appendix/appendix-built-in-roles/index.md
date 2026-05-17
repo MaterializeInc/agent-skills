@@ -8,13 +8,11 @@ such, every role includes inherited privileges from `PUBLIC`.
 
 By default, the `PUBLIC` role has the following privileges:
 
-
 **Baseline privileges via PUBLIC role:**
 
 | Privilege | Description | On database object(s) |
 | --- | --- | --- |
 | <code>USAGE</code> | Permission to use or reference an object. | <ul> <li>All <code>*.public</code> schemas (e.g., <code>materialize.public</code>);</li> <li><code>materialize</code> database; and</li> <li><code>quickstart</code> cluster.</li> </ul>  |
-
 
 **Default privileges on future objects set up for PUBLIC:**
 

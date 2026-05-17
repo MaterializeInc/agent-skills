@@ -32,7 +32,6 @@ machine type for optimal Materialize performance.
 > SSDs: `4`,`8`,`16`, or `24`. To determine the valid number of Local SSDs to attach for your machine type, see the [GCP
 > documentation](https://cloud.google.com/compute/docs/disks/local-ssd#lssd_disk_options).
 
-
 For example, the following table provides a minimum local SSD count to ensure
 the 2:1 disk-to-RAM ratio. Your actual
 count will depend on the [your machine
@@ -50,7 +49,6 @@ type](https://cloud.google.com/compute/docs/disks/local-ssd#lssd_disk_options).
 
 [N2D high-memory series]: https://cloud.google.com/compute/docs/general-purpose-machines#n2d_machine_types
 
-
 ## Locally-attached NVMe storage
 
 Configuring swap on nodes to use locally-attached NVMe storage allows
@@ -61,13 +59,11 @@ significantly degrade performance and is not supported.
 
 ### Swap support
 
-
 **New Terraform:**
 
 #### New Terraform
 
 The Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp/examples/simple) supports configuring swap out of the box.
-
 
 **Legacy Terraform:**
 #### Legacy Terraform
@@ -81,9 +77,6 @@ With this change, the Terraform:
 See [Upgrade Notes](https://github.com/MaterializeInc/terraform-google-materialize?tab=readme-ov-file#v061).
 
 > **Note:** If deploying `v25.2`, Materialize clusters will not automatically use swap unless they are configured with a `memory_request` less than their `memory_limit`. In `v26`, this will be handled automatically.
-
-
-
 
 ## CPU affinity
 

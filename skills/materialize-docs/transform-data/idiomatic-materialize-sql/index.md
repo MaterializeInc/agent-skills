@@ -2,15 +2,12 @@
 
 Learn about idiomatic Materialize SQL. Materialize offers various idiomatic query patterns, such as for top-k query pattern, first value/last value query paterrns, etc.
 
-
-
 Materialize follows the SQL standard (SQL-92) implementation and strives for
 compatibility with the PostgreSQL dialect. However, for some use cases,
 Materialize provides its own idiomatic query patterns that can provide better
 performance.
 
 ## Window functions
-
 
 | Window Function | Idiomatic Materialize |
 | --- | --- |
@@ -20,9 +17,7 @@ performance.
 | <a href="/transform-data/idiomatic-materialize-sql/lead/" >Lead over a regularly increasing field</a> | <a href="/transform-data/idiomatic-materialize-sql/lead/" >Use self join or a self <code>LEFT JOIN/LEFT OUTER JOIN</code> by an <strong>equality match</strong> on the regularly increasing field</a>. |
 | <a href="/transform-data/idiomatic-materialize-sql/top-k/" >Top-K</a> | <a href="/transform-data/idiomatic-materialize-sql/top-k/" >Use an <code>ORDER BY ... LIMIT</code> subquery with a <code>LATERAL JOIN</code> on a <code>DISTINCT</code> subquery (or, for K=1,  a <code>SELECT DISTINCT ON ... ORDER BY ... LIMIT</code> query)</a> |
 
-
 ## General query patterns
-
 
 | Query Pattern | Idiomatic Materialize |
 | --- | --- |
@@ -30,13 +25,9 @@ performance.
 | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#mz_now-expressions-to-calculate-past-or-future-timestamp" ><code>mz_now()</code> with date/time operators</a> | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#mz_now-expressions-to-calculate-past-or-future-timestamp" >Move the operation to the other side of the comparison</a>: |
 | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#disjunctions-or" ><code>mz_now()</code> with disjunctions (<code>OR</code>) in materialized/indexed view definitions and <code>SUBSCRIBE</code> statements</a>: | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#disjunctions-or" >Rewrite using <code>UNION ALL</code> or <code>UNION</code> (deduplicating as necessary) expression</a> |
 
-
-
-
 ---
 
 ## `ANY()` equi-join condition
-
 
 ## Overview
 
@@ -54,9 +45,6 @@ expression.
 > (i.e., `ON fieldX = ANY(<array|list|map>)`), Materialize performs a cross join,
 > which can lead to a significant increase in memory usage. If possible, rewrite
 > the query to perform an equi-join on the unnested values.
-
-
-
 
 ## Idiomatic Materialize SQL
 
@@ -111,7 +99,6 @@ equi-join on the unnested values.
 <br>
 <div style="background-color: var(--code-block)">
 
-
 ```mzsql
 -- array_field may contain duplicates.--
 
@@ -151,12 +138,10 @@ WHERE a.fieldZ = ANY(b.array_field) -- Anti-pattern. Avoid.
 </tbody>
 </table>
 
-
 ## Examples
 
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
-
 
 ### Find orders with any sales items
 
@@ -251,17 +236,13 @@ ORDER BY s.week_of, o.order_id, o.item, o.quantity
 
 - [`UNNEST()`](/sql/functions/#unnest)
 
-
 ---
 
 ## Appendix
 
-
-
 ---
 
 ## First value in group
-
 
 ## Overview
 
@@ -284,9 +265,6 @@ to some ordering, in each group.
 > functions. If your query cannot be rewritten without the window functions and
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
-
-
-
 
 ## Idiomatic Materialize SQL
 
@@ -382,7 +360,6 @@ For more information on setting `AGGREGATE INPUT GROUP SIZE`, see
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
 
-
 ### Use MIN() to find the first value
 
 Using idiomatic Materialize SQL, the following example finds the lowest item
@@ -426,7 +403,6 @@ window function](/sql/functions/#first_value) for first value within groups quer
 
 <br>
 <div style="background-color: var(--code-block)">
-
 
 ```nofmt
 -- Anti-pattern --
@@ -492,7 +468,6 @@ queries.</red>
 <br>
 <div style="background-color: var(--code-block)">
 
-
 ```nofmt
 -- Anti-pattern --
 SELECT order_id,
@@ -535,7 +510,6 @@ value if ordered by descending price values)
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-
 ```mzsql
 SELECT o.order_id, minmax.lowest_price, minmax.highest_price, o.item, o.price,
   o.price - minmax.lowest_price AS diff_lowest_price,
@@ -562,7 +536,6 @@ queries.</red>
 
 <br>
 <div style="background-color: var(--code-block)">
-
 
 ```nofmt
 -- Anti-pattern --
@@ -594,11 +567,9 @@ ORDER BY order_id, item;
 - [Query hints for MIN/MAX](/transform-data/optimization/#query-hints)
 - [Window functions](/sql/functions/#window-functions)
 
-
 ---
 
 ## Lag over
-
 
 ## Overview
 
@@ -627,14 +598,10 @@ function.
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
 
-
-
-
 ## Idiomatic Materialize SQL
 
 > **Important:** Do not use if the "lag over (order by)" ordering cannot be represented by an
 > equality match.
-
 
 ### Exclude the first row in results
 
@@ -666,7 +633,6 @@ row.
 
 > **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
-
 
 <br>
 
@@ -743,8 +709,6 @@ query *includes* the first row, returning `null` as its lag value.
 > **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
 
-
-
 <br>
 
 ```mzsql
@@ -788,12 +752,10 @@ FROM tableA;
 </tbody>
 </table>
 
-
 ## Examples
 
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
-
 
 ### Find previous row's value (exclude the first row in results)
 
@@ -829,7 +791,6 @@ ORDER BY order_date;
 
 > **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
-
 
 </td>
 </tr>
@@ -893,7 +854,6 @@ ORDER BY order_date;
 > **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
 
-
 </td>
 </tr>
 
@@ -929,11 +889,9 @@ FROM orders_daily_totals;
 - [`LAG()`](/sql/functions/#lag)
 - [Window functions](/sql/functions/#window-functions)
 
-
 ---
 
 ## Last value in group
-
 
 ## Overview
 
@@ -956,9 +914,6 @@ to some ordering, in each group.
 > functions. If your query cannot be rewritten without the window functions and
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
-
-
-
 
 ## Idiomatic Materialize SQL
 
@@ -1009,7 +964,6 @@ queries.</red>
 
 > **Note:** Materialize does not support `RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED
 > FOLLOWING`.
-
 
 <br>
 <div style="background-color: var(--code-block)">
@@ -1066,7 +1020,6 @@ For more information on setting `AGGREGATE INPUT GROUP SIZE`, see
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
 
-
 ### Use MAX() to find the last value
 
 Using idiomatic Materialize SQL, the following example finds the highest item
@@ -1086,7 +1039,6 @@ highest price (i.e., the last price if ordered by ascending price values):
 <tr>
 <td><blue>Idiomatic Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
-
 
 ```mzsql
 SELECT o.order_id, minmax.highest_price, o.item, o.price,
@@ -1112,7 +1064,6 @@ for last value in each group queries.</red>
 
 > **Note:** Materialize does not support `RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED
 > FOLLOWING`.
-
 
 <div style="background-color: var(--code-block)">
 
@@ -1161,7 +1112,6 @@ in the order and the lowest price.  That is, use a subquery that groups by the
 <td><blue>Idiomatic Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-
 ```mzsql
 SELECT o.order_id, minmax.lowest_price, o.item, o.price,
   o.price - minmax.lowest_price AS diff_lowest_price
@@ -1186,7 +1136,6 @@ for last value in each group queries.</red>
 
 > **Note:** Materialize does not support `RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED
 > FOLLOWING`.
-
 
 <div style="background-color: var(--code-block)">
 
@@ -1262,7 +1211,6 @@ ORDER BY o.order_id, o.item;
 > **Note:** Materialize does not support `RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED
 > FOLLOWING`.
 
-
 <div style="background-color: var(--code-block)">
 
 ```nofmt
@@ -1310,11 +1258,9 @@ ORDER BY order_id, item;
 - [Query hints for MIN/MAX](/transform-data/optimization/#query-hints)
 - [Window functions](/sql/functions/#window-functions)
 
-
 ---
 
 ## Lead over
-
 
 ## Overview
 
@@ -1343,14 +1289,10 @@ function.
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
 
-
-
-
 ## Idiomatic Materialize SQL
 
 > **Important:** Do not use if the "lead over (order by)" ordering cannot be represented by an
 > equality match.
-
 
 ### Exclude the last row in results
 
@@ -1381,7 +1323,6 @@ does not have a next row.
 
 > **Important:** The idiomatic Materialize SQL applies only to those "lead over" queries whose
 > ordering can be represented by some **equality condition**.
-
 
 <br>
 
@@ -1458,8 +1399,6 @@ last row, returning `null` as its lead value.
 > **Important:** The idiomatic Materialize SQL applies only to those "lead over" queries whose
 > ordering can be represented by some **equality condition**.
 
-
-
 ```mzsql
 -- Includes the last row in the response --
 SELECT t1.fieldA, t2.fieldB as next_row_value
@@ -1506,7 +1445,6 @@ FROM tableA;
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
 
-
 ### Find next row's value (exclude the last row in results)
 
 Using idiomatic Materialize SQL, the following example finds the next day's
@@ -1541,8 +1479,6 @@ ORDER BY order_date;
 
 > **Important:** The idiomatic Materialize SQL applies only to those "lead over" queries whose
 > ordering can be represented by some **equality condition**.
-
-
 
 </td>
 </tr>
@@ -1607,8 +1543,6 @@ ORDER BY order_date;
 > **Important:** The idiomatic Materialize SQL applies only to those "lead over" queries whose
 > ordering can be represented by some **equality condition**.
 
-
-
 </td>
 </tr>
 
@@ -1644,11 +1578,9 @@ FROM orders_daily_totals;
 - [`LEAD()`](/sql/functions/#lead)
 - [Window functions](/sql/functions/#window-functions)
 
-
 ---
 
 ## mz_now() expressions
-
 
 ## Overview
 
@@ -1677,10 +1609,8 @@ the other side of the comparison.
 
 #### Examples
 
-
 | <blue>Materialize SQL</blue> ✅ | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">mz_now</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">INTERVAL</span> <span class="s1">&#39;5min&#39;</span><span class="p">;</span> </span></span></code></pre></div> |
 | <red>Anti-pattern</red> ❌ | <p><red>Not supported</red></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">mz_now</span><span class="p">()</span> <span class="o">-</span> <span class="nb">INTERVAL</span> <span class="s1">&#39;5min&#39;</span> <span class="o">&gt;</span> <span class="n">order_date</span><span class="p">;</span> </span></span></code></pre></div> |
-
 
 ### Disjunctions (`OR`)
 
@@ -1698,9 +1628,7 @@ even if the <code>mz_now()</code> clause is nested.</p>
 </li>
 </ul>
 
-
 For example:
-
 
 | mz_now() Compound Clause | Valid/Invalid |
 | --- | --- |
@@ -1710,8 +1638,6 @@ For example:
 | <div style="background-color: var(--code-block)"> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">OR</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;1&#39;</span> <span class="k">days</span> <span class="o">&lt;=</span> <span class="n">mz_now</span><span class="p">()</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div></div>  | <p>❌ <strong>Invalid</strong></p> <p>In materialized view definitions, <code>mz_now()</code> clause can only be combined using an <code>AND</code>.</p>  |
 | <div style="background-color: var(--code-block)"> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Complete&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">OR</span> <span class="p">(</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> <span class="k">AND</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;1&#39;</span> <span class="k">days</span> <span class="o">&lt;=</span> <span class="n">mz_now</span><span class="p">())</span> </span></span></code></pre></div></div>  | <p>❌ <strong>Invalid</strong></p> <p>In materialized view definitions with <code>mz_now()</code> clauses, top-level conditions must be combined using an <code>AND</code>.</p>  |
 | <div style="background-color: var(--code-block)"> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Complete&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">OR</span> <span class="p">(</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> <span class="k">AND</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;1&#39;</span> <span class="k">days</span> <span class="o">&lt;=</span> <span class="n">mz_now</span><span class="p">())</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span><span class="line"><span class="cl"> </span></span><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">INDEX</span> <span class="n">idx_forecast_completed_orders</span> <span class="k">ON</span> <span class="n">forecast_completed_orders</span> </span></span><span class="line"><span class="cl"><span class="p">(</span><span class="n">order_date</span><span class="p">);</span> <span class="c1">-- Unsupported because of the `mz_now()` clause </span></span></span></code></pre></div></div>  | <p>❌ <strong>Invalid</strong></p> <p>To index a view whose definitions includes <code>mz_now()</code> clauses, top-level conditions must be combined using an <code>AND</code> in the view definition.</p>  |
-
-
 
 **Idiomatic Materialize SQL**: When `mz_now()` is included in a materialized
 view definition, a view definition that is being indexed, or a `SUBSCRIBE`
@@ -1727,16 +1653,12 @@ the query to use `UNION ALL` or `UNION` instead, deduplicating as necessary:
 
 #### Examples
 
-
 | <blue>Materialize SQL</blue> ✅ | <p><strong>Rewrite as UNION ALL with possible duplicates</strong></p> <span class="copyableCode"> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders_duplicates_possible</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">UNION</span> <span class="k">ALL</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;30&#39;</span> <span class="k">minutes</span> <span class="o">&gt;=</span> <span class="n">mz_now</span><span class="p">()</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div></span> <p><strong>Rewrite as UNION ALL that avoids duplicates across queries</strong></p> <span class="copyableCode"> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders_deduplicated_union_all</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">UNION</span> <span class="k">ALL</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;30&#39;</span> <span class="k">minutes</span> <span class="o">&gt;=</span> <span class="n">mz_now</span><span class="p">()</span> </span></span><span class="line"><span class="cl"><span class="k">AND</span> <span class="n">status</span> <span class="o">!=</span> <span class="s1">&#39;Shipped&#39;</span> <span class="c1">-- Deduplicate by excluding those with status &#39;Shipped&#39; </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">;</span> </span></span></code></pre></div></span> <p><strong>Rewrite as UNION to deduplicate any and all duplicated results</strong></p> <span class="copyableCode"> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders_deduplicated_results</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">UNION</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;30&#39;</span> <span class="k">minutes</span> <span class="o">&gt;=</span> <span class="n">mz_now</span><span class="p">()</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div></span>  |
 | <red>Anti-pattern</red> ❌ | <p><red>Not supported</red></p> <div style="background-color: var(--code-block)"> <pre tabindex="0"><code class="language-none" data-lang="none">-- Unsupported CREATE MATERIALIZED VIEW forecast_completed_orders_unsupported AS SELECT item, quantity, status from orders WHERE status = &#39;Shipped&#39; OR order_date + interval &#39;30&#39; minutes &gt;= mz_now(); </code></pre></div> |
-
-
 
 ---
 
 ## Top-K in group
-
 
 ## Overview
 
@@ -1759,9 +1681,6 @@ elements within each group according to some ordering.
 > functions. If your query cannot be rewritten without the window functions and
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
-
-
-
 
 ## Idiomatic Materialize SQL
 
@@ -1926,7 +1845,6 @@ For more information on setting `DISTINCT ON INPUT GROUP SIZE`, see
 
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
-
 
 ### Select Top-3 items
 

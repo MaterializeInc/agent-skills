@@ -12,9 +12,7 @@ objects. A few use cases are captured in the sections below.
 > **Note:** While Materialize offers support for its Terraform provider, Materialize does
 > not offer support for these cloud resources modules.
 
-
 ### AWS PrivateLink
-
 
 To get data into Materialize, you need a connection to allow your data source to
 communicate with Materialize. One option to connect securely to Materialize is
@@ -29,7 +27,6 @@ Materialize to communicate with the PrivateLink endpoint. After you deploy the
 module, you can create a new Materialize connection with the AWS resource
 information. The configuration below is an example of the Materialize provider,
 performing the same necessary steps as the [`CREATE CONNECTION`](/sql/create-connection/#aws-privatelink) statement in SQL:
-
 
 ```hcl
 resource "materialize_connection_aws_privatelink" "example_privatelink_connection" {
@@ -55,7 +52,6 @@ resource "materialize_connection_kafka" "example_kafka_connection_multiple_broke
 For a complete example of the Amazon MSK module with the Materialize provider,
 check out this [demo](https://github.com/MaterializeInc/demos/tree/main/integrations/terraform/msk-privatelink). The demo adds the Materialize provider configuration to the modules and bundles the entire deployment into one Terraform configuration file.
 
-
 ### EC2 SSH bastion host
 
 Another method for source connection is to use a bastion host to allow SSH
@@ -72,7 +68,6 @@ to your source. The provider will configure the same Materialize objects as the
 [`CREATE
 CONNECTION`](/sql/create-connection/#ssh-tunnel)
 statement.
-
 
 ### Amazon RDS for PostgreSQL
 

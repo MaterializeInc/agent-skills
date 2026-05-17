@@ -6,7 +6,6 @@ document that approach."
 
 > **Public Preview:** This feature is in public preview.
 
-
 This guide walks you through the steps required to bulk-export results from
 Materialize to Snowflake using Amazon S3 as the intermediate object store.
 
@@ -128,7 +127,6 @@ Next, you must attach the policy you just created to a Snowflake-specific
 > or a role with the [global `CREATE INTEGRATION` privilege](https://docs.snowflake.com/en/user-guide/security-access-control-privileges#global-privileges-account-level-privileges)
 > can execute this step.
 
-
 1. In [Snowsight](https://app.snowflake.com/), or your preferred SQL client
 connected to Snowflake, create a [storage integration](https://docs.snowflake.com/en/sql-reference/sql/create-storage-integration),
 replacing `<role>` with the name of the role you created in the previous step:
@@ -177,13 +175,11 @@ CREATE STAGE s3_stage
 > for the active schema, as well as the [`USAGE` privilege](https://docs.snowflake.com/en/sql-reference/sql/grant-privilege#syntax)
 > on the relevant storage integration.
 
-
 ## Step 4. Import data into Snowflake
 
 To import the data stored in S3 into Snowflake, you can then create a table and
 use the [`COPY INTO`](https://docs.snowflake.com/en/sql-reference/sql/copy-into-table)
 command to load it from the external stage.
-
 
 **Parquet:**
 
@@ -205,8 +201,6 @@ COPY INTO s3_table_parquet
 
 For more details on importing Parquet files staged in S3 into Snowflake, check the
 [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#type-parquet).
-
-
 
 **CSV:**
 
@@ -231,11 +225,6 @@ COPY INTO s3_table_csv
 
 For more details on importing CSV files staged in S3 into Snowflake, check the
 [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#type-csv).
-
-
-
-
-
 
 ## Step 5. (Optional) Add scheduling
 

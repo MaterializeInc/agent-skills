@@ -92,7 +92,6 @@ Both should return `ON` on every node in the replication chain.
 > **Warning:** This will cause Materialize to take a new snapshot of your MySQL tables, which
 > may take time and temporarily increase load on your MySQL server.
 
-
 Once Materialize reports this error, the data is considered potentially
 corrupted. You must **drop and recreate the source**. Dropping the source will
 also drop any dependent objects; be prepared to recreate them as part of the

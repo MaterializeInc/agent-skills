@@ -114,6 +114,5 @@ Argument           | Environment variables     | Description
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
 
-
 [global configuration parameters]: ../../configuration/#global-parameters
 [Global parameters]: ../../configuration/#global-parameters

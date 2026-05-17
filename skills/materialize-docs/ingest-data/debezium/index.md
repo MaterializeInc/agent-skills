@@ -27,7 +27,6 @@ Capture (CDC) data to Materialize.
   <strong class="gutter">NOTE:</strong> Currently, Materialize only supports Avro-encoded Debezium records. If you're interested in JSON support, please reach out in the community Slack or submit a <a href="https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests">feature request</a>.
 </div>
 
-
 Debezium captures row-level changes resulting from `INSERT`, `UPDATE`, and
 `DELETE` operations in the upstream database and publishes them as events to
 Kafka (and other Kafka API-compatible brokers) using Kafka Connect-compatible

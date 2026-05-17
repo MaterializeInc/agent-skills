@@ -11,7 +11,6 @@ In Materialize, you can create:
   [`UPDATE`], [`DELETE`]) to these tables. These tables are populated by [data
   ingestion from a source](/ingest-data/postgres/). 
 
-
 Tables in Materialize are similar to tables in standard relational databases:
 they consist of rows and columns where the columns are fixed when the table is
 created.
@@ -19,12 +18,10 @@ created.
 Tables can be joined with other tables, materialized views, views, and
 subsources; and you can create views/materialized views/indexes on tables.
 
-
 [//]: # "TODO(morsapaes) Bring back When to use a table? once there's more
 clarity around best practices."
 
 ## Syntax
-
 
 **Read-write table:**
 ### Read-write table
@@ -32,7 +29,6 @@ clarity around best practices."
 To create a new read-write table (i.e., users can perform
 [`SELECT`](/sql/select/), [`INSERT`](/sql/insert/),
 [`UPDATE`](/sql/update/), and [`DELETE`](/sql/delete/) operations):
-
 
 ```mzsql
 CREATE [TEMP|TEMPORARY] TABLE [IF NOT EXISTS] <table_name> (
@@ -58,20 +54,14 @@ CREATE [TEMP|TEMPORARY] TABLE [IF NOT EXISTS] <table_name> (
 | **DEFAULT <default_expr>** | *Optional.* If specified, use the `<default_expr>` as the default value for the column. If not specified, `NULL` is used as the default value.  |
 | **WITH (<with_option>[,...])** |  The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION BY (<column> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \| \| `RETAIN HISTORY <duration>` \| *Optional.* ***Private preview.** This option has known performance or stability issues and is under active development.* <br>If specified, Materialize retains historical data for the specified duration, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period).<br>Accepts positive [interval](/sql/types/interval/) values (e.g., `'1hr'`).\|  |
 
-
-
 **PostgreSQL source table:**
 ### PostgreSQL source table
 
-
-
 > **Note:** You must be on **v26+** to use the new syntax.
-
 
 To create a read-only table from a [source](/sql/create-source/) connected
 (via native connector) to an external PostgreSQL:
 
-
 ```mzsql
 CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <upstream_table>)
 [WITH (
@@ -91,23 +81,17 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
 | **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
 | **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
-
 
 For an example, see [Create a table (PostgreSQL
 source)](/sql/create-table/#create-a-table-postgresql-source).
 
-
 **SQL Server source table:**
 ### SQL Server source table
 
-
-
 > **Note:** You must be on **v26+** to use the new syntax.
-
 
 To create a read-only table from a [source](/sql/create-source/) connected
 (via native connector) to an external SQL Server database:
-
 
 ```mzsql
 CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <upstream_table>)
@@ -128,12 +112,6 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
 | **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
 | **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
-
-
-
-
-
-
 
 ## Read-write tables
 
@@ -155,10 +133,7 @@ See also the known limitations for [`INSERT`](/sql/insert#known-limitations),
 
 ## Source-populated tables
 
-
-
 > **Note:** You must be on **v26+** to use the new syntax.
-
 
 ### Table names and column names
 
@@ -179,7 +154,6 @@ these tables.
 For performance, when issuing multiple `CREATE TABLE FROM SOURCE...` statements,
 use within a [transaction block](/sql/begin/#ddl-only-transactions).
 
-
 ### Source-populated tables and snapshotting
 
 <p>Creating the tables from sources starts the <a href="/ingest-data/#snapshotting" >snapshotting</a> process. Snapshotting syncs the
@@ -192,7 +166,6 @@ timestamp), you are not able to query the table until snapshotting is complete.<
 > once the process finishes, resize the cluster for steady-state.
 
 ### Supported data types
-
 
 **PostgreSQL:**
 #### PostgreSQL types
@@ -246,8 +219,6 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
-
-
 
 **SQL Server:**
 #### SQL Server types
@@ -318,12 +289,6 @@ value when said column is updated.</p>
 </li>
 </ul>
 
-
-
-
-
-
-
 ### Handling table schema changes
 
 The use of [`CREATE SOURCE`](/sql/create-source/postgres-v2/) with `CREATE
@@ -344,7 +309,6 @@ Materialize tables into an error state, preventing reads from these tables.</p>
 <p>To handle <a href="#incompatible-schema-changes" >incompatible schema changes</a>, drop
 the affected table <a href="/sql/drop-table/" ><code>DROP TABLE</code></a> , and then, <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> to recreate the table with the
 updated schema.</p>
-
 
 ### Upstream table truncation restrictions
 
@@ -368,7 +332,6 @@ i.e. the inheriting data is <em>not</em> treated as part of the inherited table.
 so inheriting tables&rsquo; data will only be ingested as part of the inheriting
 table, i.e. in Materialize, the data will not be returned when serving
 <code>SELECT</code>s from the inherited table.</p>
-
 
 You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
@@ -423,10 +386,7 @@ SELECT * FROM mytable;
 | 2 | goodbye |
 ```
 
-
 ### Create a table (PostgreSQL source)
-
-
 
 > **Note:** You must be on **v26+** to use the new syntax.
 > The example assumes you have configured your upstream PostgreSQL 11+ (i.e.,
@@ -434,8 +394,6 @@ SELECT * FROM mytable;
 > replication user, and updated the network configuration).
 > For details about configuring your upstream system, see the [PostgreSQL
 > integration guides](/ingest-data/postgres/#supported-versions-and-services).
-
-
 
 To create new **read-only** tables from a source table, use the `CREATE
 TABLE ... FROM SOURCE ... (REFERENCE <upstream_table>)` statement in a [DDL
@@ -494,19 +452,16 @@ file="shared-content/create-table-from-source-snapshotting.md" >}}
 
 {{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}
 
-
 Source-populated tables are <strong>read-only</strong> tables. Users <strong>cannot</strong> perform write
 operations
 (<a href="/sql/insert/" ><code>INSERT</code></a>/<a href="/sql/update/" ><code>UPDATE</code></a>/<a href="/sql/delete/" ><code>DELETE</code></a>) on
 these tables.
-
 
 Once the snapshotting process completes and the table is in the running state, you can query the table:
 ```mzsql
 SELECT * FROM items;
 
 ```
-
 
 ## Related pages
 

@@ -9,7 +9,6 @@ Cloud Kafka cluster.
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 If you already have a Confluent Cloud Kafka cluster, you can skip step 1 and
 directly move on to [Create an API Key](#create-an-api-key). You can also skip
 step 3 if you already have a Confluent Cloud Kafka cluster up and running, and

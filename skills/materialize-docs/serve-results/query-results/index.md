@@ -42,7 +42,6 @@ also the following client library guides:
 
 <ul style="column-count: 2"><li><a href="/integrations/client-libraries/golang/#query" >Go</a></li></li><li><a href="/integrations/client-libraries/java-jdbc/#query" >Java</a></li></li><li><a href="/integrations/client-libraries/node-js/#query" >Node.js</a></li></li><li><a href="/integrations/client-libraries/php/#query" >PHP</a></li></li><li><a href="/integrations/client-libraries/python/#query" >Python</a></li></li><li><a href="/integrations/client-libraries/ruby/#query" >Ruby</a></li></li><li><a href="/integrations/client-libraries/rust/#query" >Rust</a></li></li></ul>
 
-
 ## SUBSCRIBE
 
 You can use [`SUBSCRIBE`](/sql/subscribe/) to stream query results.  For
@@ -66,7 +65,6 @@ You can use `SUBSCRIBE` to:
 - Replicate the complete history of a relation while `SUBSCRIBE` is active.
 
 > **Tip:** Use materialized view (instead of an indexed view) with `SUBSCRIBE`.
-
 
 For more information, see [`SUBSCRIBE`](/sql/subscribe/) reference page.  See
 also the following client library guides:

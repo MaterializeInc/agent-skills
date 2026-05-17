@@ -27,12 +27,9 @@ offers lower latency for direct querying within that cluster.
 
 ## Syntax
 
-
 **CREATE MATERIALIZED VIEW:**
 
 ### Create materialized view
-
-
 
 ```mzsql
 CREATE MATERIALIZED VIEW [IF NOT EXISTS] <view_name>
@@ -52,9 +49,6 @@ AS <select_stmt>;
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `ASSERT NOT NULL` *col_ident* \| `text` \| The column identifier for which to create a [non-null assertion](#non-null-assertions). To specify multiple columns, use the option multiple times. \| \| `PARTITION BY` *columns* \| `(ident [, ident]*)` \| The key by which Materialize should internally partition this durable collection. See the [partitioning guide](/transform-data/patterns/partition-by/) for restrictions on valid values and other details. \| \| `RETAIN HISTORY FOR` *retention_period* \| `interval` \| ***Private preview.*** Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `REFRESH` *refresh_strategy* \| \| ***Private preview.*** The refresh strategy for the materialized view. See [Refresh strategies](#refresh-strategies) for syntax options. Default: `ON COMMIT`. \|  |
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) whose results you want to maintain incrementally updated.  |
 
-
-
-
 **CREATE REPLACEMENT MATERIALIZED VIEW:**
 
 ### Create replacement materialized view
@@ -62,8 +56,6 @@ AS <select_stmt>;
 > **Public Preview:** This feature is in public preview.
 
 Create a replacement materialized view for an existing materialized view.
-
-
 
 ```mzsql
 CREATE REPLACEMENT MATERIALIZED VIEW <name>
@@ -82,14 +74,10 @@ AS <select_stmt>;
 | `WITH (<with_options>)` | Same options as `CREATE MATERIALIZED VIEW`.  |
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) for the replacement view. The statement must produce the same output schema as the target materialized view; i.e., column names, column types, column order, nullability, and keys must all match.  |
 
-
 The created replacement materialized view starts hydrating immediately and can
 later be applied to replace the specified materialized view. For more
 information, see [Creating replacement materialized
 views](#creating-replacement-materialized-views).
-
-
-
 
 ## Details
 
@@ -150,7 +138,6 @@ indexes in each cluster you are referencing the materialized view in.
 this exists+add detail about using indexes to optimize materialized view
 stacking."
 
-
 ### Non-null assertions
 
 Because materialized views may be created on arbitrary queries, it may not in
@@ -165,8 +152,6 @@ offending row is deleted.
 
 ### Refresh strategies
 
-
-
 Materialized views in Materialize are incrementally maintained by default, meaning their results are automatically updated as soon as new data arrives.
 This guarantees that queries returns the most up-to-date information available with minimal delay and that results are always as [fresh](/concepts/reaction-time) as the input data itself.
 
@@ -175,8 +160,6 @@ However, in some very specific scenarios like reporting over slow changing histo
 For these cases, Materialize supports refresh strategies, which allow you to configure a materialized view to recompute itself on a fixed schedule rather than maintaining them incrementally.
 
 > **Note:** The use of refresh strategies is discouraged unless you have a clear and measurable need to reduce maintenance costs on stale or archival data. For most use cases, the default incremental maintenance model provides a better experience.
-
-
 
 [//]: # "TODO(morsapaes) We should add a SQL pattern that walks through a
 full-blown example of how to implement the cold, warm, hot path with refresh
@@ -365,7 +348,6 @@ same output schema (including column order and keys) as the target view.</li>
 </ul>
 <p>Upon creation, the replacement view starts hydrating in the background.</p>
 
-
 Before applying the replacement view, verify that the replacement view is
 hydrated to avoid downtime:
 
@@ -461,8 +443,6 @@ non-indexed, and so on."
 
 > **Public Preview:** This feature is in public preview.
 
-
-
 The following example creates a replacement materialized view
 `winning_bids_replacement` for the `winning_bids` materialized view. The
 replacement view specifies a different filter `mz_now() > a.end_time` than
@@ -490,7 +470,6 @@ See also:
 
 - [Replace materialized views guide
 ](/transform-data/updating-materialized-views/replace-materialized-view/)
-
 
 ## Privileges
 

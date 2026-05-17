@@ -8,7 +8,6 @@ page answers some frequently asked questions about free trials.
 
 > **Tip:** For help getting started with your data or other questions about Materialize, you can schedule a [free guided trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 ### What are the limits of a free trial?
 
 In Materialize, [clusters](/concepts/clusters/) are the pools of

@@ -6,10 +6,8 @@ see [SQL Data Types: Custom types](../types/#custom-types).
 
 ## Syntax
 
-
 **Row type:**
 ### Row type
-
 
 ```mzsql
 CREATE TYPE <type_name> AS (<field_name> <field_type>, ...);
@@ -22,11 +20,8 @@ CREATE TYPE <type_name> AS (<field_name> <field_type>, ...);
 | `<field_name>` | The name of a field in a row type.  |
 | `<field_type>` | The data type of a field indicated by `field_name`.  |
 
-
-
 **List type:**
 ### List type
-
 
 ```mzsql
 CREATE TYPE <type_name> AS LIST (ELEMENT TYPE = <element_type>);
@@ -38,11 +33,8 @@ CREATE TYPE <type_name> AS LIST (ELEMENT TYPE = <element_type>);
 | `<type_name>` | A name for the type.  |
 | `<element_type>` | Creates a custom [`list`](/sql/types/list) whose elements are of `<element_type>`.  |
 
-
-
 **Map type:**
 ### Map type
-
 
 ```mzsql
 CREATE TYPE <type_name> AS MAP (KEY TYPE = <key_type>, VALUE TYPE = <value_type>);
@@ -54,11 +46,6 @@ CREATE TYPE <type_name> AS MAP (KEY TYPE = <key_type>, VALUE TYPE = <value_type>
 | `<type_name>` | A name for the type.  |
 | `<key_type>` | Creates a custom [`map`](/sql/types/map) whose keys are of `<key_type>`. Must resolve to [`text`](/sql/types/text).  |
 | `<value_type>` | Creates a custom [`map`](/sql/types/map) whose values are of `<value_type>`.  |
-
-
-
-
-
 
 ## Details
 

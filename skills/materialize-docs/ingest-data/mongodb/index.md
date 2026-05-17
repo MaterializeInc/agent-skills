@@ -2,8 +2,6 @@
 
 Connecting Materialize to a MongoDB database for Change Data Capture (CDC).
 
-
-
 Using Change Data Capture (CDC), you can track and propagate changes from
 MongoDB to downstream consumers. This guide outlines how to ingest data from a
 MongoDB replica set (`rs0`) into Materialize; specifically from the collections
@@ -70,7 +68,6 @@ The architecture consists of the following components:
 
 > **Important:** For Debezium to capture changes, your MongoDB deployment must be configured as a
 > replica set or a sharded cluster.
-
 
 Create a user (e.g., `debezium_materialize_user`) with the necessary permissions
 to read from the database. Depending on the connector's
@@ -145,7 +142,6 @@ Register the MongoDB connector with the following configuration:
 > forces Debezium to send the entire document state for every change, which allows
 > Materialize to use the `UPSERT` envelope.
 
-
 1. Create a `dbz_mongodb_connector.json` file with your connector configuration:
 
    ```json
@@ -198,7 +194,6 @@ Register the MongoDB connector with the following configuration:
 >    NumberDecimal("2.25")`.
 >    If you cannot enforce a consistent BSON type, you can omit the unwrap.
 
-
 2. Register the connector with Kafka Connect:
 
    ```bash
@@ -209,14 +204,12 @@ Register the MongoDB connector with the following configuration:
 
    Replace `<your-host>` with your Kafka Connect hostname or IP address.
 
-
 ## C. Ingest data in Materialize
 
 ### 1. Create the Kafka and CSR connections.
 
 In Materialize, Create the [Kafka connection](/sql/create-connection/#kafka) and the [Confluent
 Schema Registry connection](/sql/create-connection/#confluent-schema-registry)
-
 
 1. Create the [Kafka connection](/sql/create-connection/#kafka). For example,   if using `SASL_PLAINTEXT`:
 
@@ -270,7 +263,6 @@ Query the data using standard SQL.
 
   > **Note:** The query includes the Kafka message `id` field as a column in the table.
 
-
   ```none
               id            |           _id            | item_id |         item          | price | currency
   --------------------------+--------------------------+---------+-----------------------+-------+----------
@@ -284,7 +276,6 @@ Query the data using standard SQL.
 >   string in the `after` field in `mdb_items`. You can create a [parsing
 >   view](/sql/types/jsonb/#parsing) to map the individual document fields to columns instead.
 
-
 - To query the mdb_orders:
 
   ```mzsql
@@ -292,7 +283,6 @@ Query the data using standard SQL.
   ```
 
   > **Note:** The query includes the Kafka message `id` field as a column in the table.
-
 
   ```none
               id            |           _id            | order_id |       order_date        |         item          | quantity |   status
@@ -308,10 +298,8 @@ Query the data using standard SQL.
 >   view](/sql/types/jsonb/#parsing) to map the individual document fields to
 >   columns instead.
 
-
 ## Troubleshooting
 
 See also: [Debezium documentation on the MongoDB
 Connector](https://debezium.io/documentation/reference/stable/connectors/mongodb.html#mongodb-when-things-go-wrong)
-
 

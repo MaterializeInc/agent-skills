@@ -6,15 +6,11 @@
 
 ## Syntax
 
-
-
-
 **Cloud:**
 
 ### Cloud
 
 The following syntax is used to alter a role in Materialize Cloud.
-
 
 ```mzsql
 ALTER ROLE <role_name>
@@ -30,7 +26,6 @@ ALTER ROLE <role_name>
 | `SET <name> TO <value\|DEFAULT>` | *Optional.* If specified, sets the configuration parameter for the role to the `<value>` or if the value specified is `DEFAULT`, the system's default (equivalent to `ALTER ROLE ... RESET <name>`).  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
 | `RESET <name>` | *Optional.* If specified, resets the configuration parameter for the role to the system's default.  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
 
-
 **Note:**
 - Materialize Cloud does not support the `NOINHERIT` option for `ALTER
 ROLE`.
@@ -43,12 +38,10 @@ ability to alter top level objects such as databases and other roles.
 Instead, Materialize Cloud uses system level privileges. See [GRANT
 PRIVILEGE](../grant-privilege) for more details.
 
-
 **Self-Managed:**
 ### Self-Managed
 
 The following syntax is used to alter a role in Materialize Self-Managed.
-
 
 ```mzsql
 ALTER ROLE <role_name>
@@ -74,7 +67,6 @@ ALTER ROLE <role_name>
 | `SET <name> TO <value\|DEFAULT>` | *Optional.* If specified, sets the configuration parameter for the role to the `<value>` or if the value specified is `DEFAULT`, the system's default (equivalent to `ALTER ROLE ... RESET <name>`).  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
 | `RESET <name>` | *Optional.* If specified, resets the configuration parameter for the role to the system's default.  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
 
-
 **Note:**
 - Self-Managed Materialize does not support the `NOINHERIT` option for
 `ALTER ROLE`.
@@ -83,9 +75,6 @@ does not use role attributes to determine a role's ability to create top
 level objects such as databases and other roles. Instead, Self-Managed
 Materialize uses system level privileges. See [GRANT
 PRIVILEGE](../grant-privilege) for more details.
-
-
-
 
 ## Restrictions
 
@@ -127,7 +116,6 @@ SHOW cluster;
 quickstart
 ```
 
-
 #### Making a role a superuser  (Self-Managed)
 
 Unlike regular roles, superusers have unrestricted access to all objects in the system and can perform any action on them.
@@ -165,7 +153,6 @@ rj  f
 #### Removing a role's password (Self-Managed)
 
 > **Warning:** Setting a NULL password removes the password.
-
 
 ```mzsql
 ALTER ROLE rj PASSWORD NULL;

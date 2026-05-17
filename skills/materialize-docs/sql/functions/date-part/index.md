@@ -7,8 +7,6 @@ result in a loss of precision in certain uses. Using [`EXTRACT`](../extract) is 
 
 ## Signatures
 
-
-
 ```mzsql
 date_part ( '<time_period>', <val> )
 
@@ -18,7 +16,6 @@ date_part ( '<time_period>', <val> )
 | --- | --- |
 | `'<time_period>'` | The time period to extract. Valid values: `epoch`, `millennium`, `century`, `decade`, `year`, `quarter`, `month`, `week`, `day`, `hour`, `minute`, `second`, `microsecond`, `millisecond`, `dow`, `isodow`, `doy`. See the [Arguments](#arguments) section for synonyms.  |
 | `<val>` | A [`time`](/sql/types/time/), [`timestamp`](/sql/types/timestamp/), [`timestamp with time zone`](/sql/types/timestamp/), [`interval`](/sql/types/interval/), or [`date`](/sql/types/date/) value. Values of type [`date`](/sql/types/date/) are first cast to type [`timestamp`](/sql/types/timestamp/).  |
-
 
 Parameter | Type                                                                                                                                                          | Description
 ----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|------------
