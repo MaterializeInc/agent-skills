@@ -54,11 +54,3 @@ ALTER SYSTEM SET enable_mcp_developer = false;
 > **Note:** These parameters are only accessible to the `mz_system` and `mz_support`
 > roles. Regular database users cannot view or modify them.
 
-## Privileges
-
-The privileges required to use this endpoint are:
-
-  * `USAGE` on system catalog schemas and `SELECT` on system catalog objects. These privileges are granted by default.
-
-  * If agents also need access to replica-specific metrics from
-    `mz_introspection`, `USAGE` privileges on the corresponding cluster.

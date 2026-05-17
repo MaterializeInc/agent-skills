@@ -154,7 +154,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.23.0
+  --version v26.22.0
 ```
 
 ## Upgrading Materialize Instances
@@ -192,13 +192,13 @@ To stage the Materialize instances version upgrade, update the
 compatible version of your currently deployed Materialize Operator.
 
 To stage, but **not** rollout, the Materialize instance version upgrade, you can
-use the `kubectl patch` command; for example, if the **App Version** is v26.23.0:
+use the `kubectl patch` command; for example, if the **App Version** is v26.22.0:
 
 ```shell
 kubectl patch materialize <instance-name> \
   -n <materialize-instance-namespace> \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.23.0\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.22.0\"}}"
 ```
 
 > **Note:** Until you specify a new `requestRollout`, the Operator watches for updates but
@@ -226,7 +226,7 @@ can, if preferred, combine both operations in a single command
 kubectl patch materialize <instance-name> \
   -n materialize-environment \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.23.0\", \"requestRollout\": \"$(uuidgen)\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.22.0\", \"requestRollout\": \"$(uuidgen)\"}}"
 ```
 
 #### Using YAML Definition
@@ -240,7 +240,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.23.0 # Update version as needed
+  environmentdImageRef: materialize/environmentd:v26.22.0 # Update version as needed
   requestRollout: 22222222-2222-2222-2222-222222222222    # Use a new UUID
   forceRollout: 33333333-3333-3333-3333-333333333333      # Optional: for forced rollouts
   inPlaceRollout: false                                   # In Place rollout is deprecated and ignored. Please use rolloutStrategy
@@ -570,14 +570,14 @@ simple-demo  materialize  1         2025-12-08 11:39:50.185976 -0500 EST   deplo
 </span></span></code></pre></div></li>
 <li>
 <p>Upgrade your Operator. For example, the following upgrades the Operator
-to v26.23.0:</p>
+to v26.22.0:</p>
 > **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
 >    at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
 >    permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade -n materialize simple-demo materialize/materialize-operator  <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -f my-values.yaml <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.23.0
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.22.0
 </span></span></code></pre></div></li>
 <li>
 <p>Verify that the Operator is running:</p>
@@ -621,7 +621,7 @@ main
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main<span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.23.0\&#34;}}&#34;</span>
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.22.0\&#34;}}&#34;</span>
 </span></span></code></pre></div></li>
 <li>
 <p>Rollout the Materialize instance version change.</p>
@@ -763,14 +763,14 @@ simple-demo  materialize  1         2025-12-08 11:39:50.185976 -0500 EST   deplo
 </span></span></code></pre></div></li>
 <li>
 <p>Upgrade your Operator. For example, the following upgrades the Operator
-to v26.23.0:</p>
+to v26.22.0:</p>
 > **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
 >    at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
 >    permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade -n materialize simple-demo materialize/materialize-operator  <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -f my-values.yaml <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.23.0
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.22.0
 </span></span></code></pre></div></li>
 <li>
 <p>Verify that the Operator is running:</p>
@@ -814,7 +814,7 @@ main
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main<span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.23.0\&#34;}}&#34;</span>
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.22.0\&#34;}}&#34;</span>
 </span></span></code></pre></div></li>
 <li>
 <p>Rollout the Materialize instance version change.</p>
@@ -960,14 +960,14 @@ simple-demo  materialize  1         2025-12-08 11:39:50.185976 -0500 EST   deplo
 </span></span></code></pre></div></li>
 <li>
 <p>Upgrade your Operator. For example, the following upgrades the Operator
-to v26.23.0:</p>
+to v26.22.0:</p>
 > **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
 >    at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
 >    permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade -n materialize simple-demo materialize/materialize-operator  <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -f my-values.yaml <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.23.0
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.22.0
 </span></span></code></pre></div></li>
 <li>
 <p>Verify that the Operator is running:</p>
@@ -1011,7 +1011,7 @@ main
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main<span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.23.0\&#34;}}&#34;</span>
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.22.0\&#34;}}&#34;</span>
 </span></span></code></pre></div></li>
 <li>
 <p>Rollout the Materialize instance version change.</p>
@@ -1094,7 +1094,7 @@ deployment does not have a license key configured, contact <a href="https://mate
 1. Get the sample configuration files for the new version.
 
    ```shell
-   mz_version=v26.23.0
+   mz_version=v26.22.0
 
    curl -o upgrade-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
    ```
@@ -1109,7 +1109,7 @@ deployment does not have a license key configured, contact <a href="https://mate
    ```shell
    helm upgrade my-materialize-operator materialize/materialize-operator \
    --namespace=materialize \
-   --version v26.23.0 \
+   --version v26.22.0 \
    -f upgrade-values.yaml \
    --set observability.podMetrics.enabled=true
    ```
@@ -1141,7 +1141,7 @@ deployment has not been configured with a license key:
 
    | Field | Description |
    |-------|-------------|
-   | `environmentdImageRef` | Update the version to the new version. This should be the same as the operator version: `v26.23.0`. |
+   | `environmentdImageRef` | Update the version to the new version. This should be the same as the operator version: `v26.22.0`. |
    | `requestRollout` or `forceRollout`| Enter a new UUID. Can be generated with `uuidgen`. <br> <ul><li>`requestRollout` triggers a rollout only if changes exist. </li><li>`forceRollout` triggers a rollout even if no changes exist.</li></ul> |
 
    ```yaml
@@ -1151,7 +1151,7 @@ deployment has not been configured with a license key:
      name: 12345678-1234-1234-1234-123456789012
      namespace: materialize-environment
    spec:
-     environmentdImageRef: materialize/environmentd:v26.23.0 # Update version
+     environmentdImageRef: materialize/environmentd:v26.22.0 # Update version
      requestRollout: 22222222-2222-2222-2222-222222222222    # Enter a new UUID
    # forceRollout: 33333333-3333-3333-3333-333333333333    # For forced rollouts
      rolloutStrategy: WaitUntilReady                         # The mechanism to use when rolling out the new version.

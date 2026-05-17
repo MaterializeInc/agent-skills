@@ -158,7 +158,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.23.0
+  environmentdImageRef: materialize/environmentd:v26.22.0
 # ... additional fields omitted for brevity
 ```
 
@@ -2062,7 +2062,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.24.1&quot;</code>
+<code>&quot;v26.24.2&quot;</code>
 </td>
 </tr>
 
@@ -2543,7 +2543,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.24.1&quot;</code>
+**Default**: <code>&quot;v26.24.2&quot;</code>
 
 The tag/version of the operator image to be used
 
@@ -2984,7 +2984,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.23.0
+  --version v26.22.0
 ```
 
 ## Upgrading Materialize Instances
@@ -3022,13 +3022,13 @@ To stage the Materialize instances version upgrade, update the
 compatible version of your currently deployed Materialize Operator.
 
 To stage, but **not** rollout, the Materialize instance version upgrade, you can
-use the `kubectl patch` command; for example, if the **App Version** is v26.23.0:
+use the `kubectl patch` command; for example, if the **App Version** is v26.22.0:
 
 ```shell
 kubectl patch materialize <instance-name> \
   -n <materialize-instance-namespace> \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.23.0\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.22.0\"}}"
 ```
 
 > **Note:** Until you specify a new `requestRollout`, the Operator watches for updates but
@@ -3056,7 +3056,7 @@ can, if preferred, combine both operations in a single command
 kubectl patch materialize <instance-name> \
   -n materialize-environment \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.23.0\", \"requestRollout\": \"$(uuidgen)\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.22.0\", \"requestRollout\": \"$(uuidgen)\"}}"
 ```
 
 #### Using YAML Definition
@@ -3070,7 +3070,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.23.0 # Update version as needed
+  environmentdImageRef: materialize/environmentd:v26.22.0 # Update version as needed
   requestRollout: 22222222-2222-2222-2222-222222222222    # Use a new UUID
   forceRollout: 33333333-3333-3333-3333-333333333333      # Optional: for forced rollouts
   inPlaceRollout: false                                   # In Place rollout is deprecated and ignored. Please use rolloutStrategy

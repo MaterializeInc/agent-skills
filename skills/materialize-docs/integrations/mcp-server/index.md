@@ -190,15 +190,6 @@ ALTER SYSTEM SET enable_mcp_developer = false;
 > **Note:** These parameters are only accessible to the `mz_system` and `mz_support`
 > roles. Regular database users cannot view or modify them.
 
-## Privileges
-
-The privileges required to use this endpoint are:
-
-  * `USAGE` on system catalog schemas and `SELECT` on system catalog objects. These privileges are granted by default.
-
-  * If agents also need access to replica-specific metrics from
-    `mz_introspection`, `USAGE` privileges on the corresponding cluster.
-
 ---
 
 ## MCP Server for Developers
@@ -235,16 +226,16 @@ modal](/images/console/console-connect-mcp.png "Materialize Connect modal, MCP
 tab")
 
 1. To get your base64-encoded token:
-   - To use an existing personal app password, generate a base64-encoded token.
-   MCP clients send credentials as a Base64-encoded `user:password` string.
+   - To use an existing app password, generate a base64-encoded token. MCP
+   clients send credentials as a Base64-encoded `user:password` string.
 
      ```bash
      printf '<user>:<app_password>' | base64 -w0
      ```
 
-   - To create a new personal app password to use, click on the **Generate
-     personal MCP token** to generate a new token for MCP Server. **Copy the
-     token**.
+   - To create a new app password to use, click on the **Create app password**
+     to generate a new app password and token for MCP Server. **Copy the app
+     password and token**.
 
 **Self-Managed:**
 
@@ -317,107 +308,105 @@ http://localhost:6876/api/mcp/developer
 
 **Claude Code:**
 
-1. Add the `materialize-developer` MCP server as [local-scoped
-   server](https://code.claude.com/docs/en/mcp#local-scope) (i.e., the
-   configurations are stored in `~/.claude.json`):
+1. Create a `.mcp.json` file with the following content:
 
-   ```sh
-   claude mcp add --transport http materialize-developer \
-     <baseURL>/api/mcp/developer \
-     --header "Authorization: Basic <mcp-token>"
+   ```json
+   {
+     "mcpServers": {
+       "materialize-developer": {
+         "type": "http",
+         "url": "<baseURL>/api/mcp/developer",
+         "headers": {
+           "Authorization": "Basic <base64-token>"
+         }
+       }
+     }
+   }
    ```
 
-   Update the `<baseURL>` and `<mcp-token>` placeholders with your values:
+   Update the `<baseURL>` and `<base64-token>` placeholders with your values:
 
-   | Deployment   |  `<baseURL>`                                                     |  `<mcp-token>`              |
+   | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
    |--------------| ------------------------------------------------------------------| -------------------------------|
    | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
    | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
    | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
 
-   > **Tip:** For **Cloud**, you can get the MCP URL directly from the Console's **Connect**
-   > modal. The modal displays the correct `<baseURL>`.
+   > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
+   > the Console's **Connect** modal. The `.json` copied from the Console already
+   > includes the correct `<baseURL>`.
 
 1. Restart Claude Code to pick up the new setting.
 
 **Claude Desktop:**
 
-1. Add the `materialize-developer` MCP server entry to your Claude Desktop
-   configuration (`claude_desktop_config.json`).
-   - When merging into an existing `mcpServers` object, remember to add commas
-     between entries.
-   - If the `mcpServers` field does not already exist, add it as well.
-   - For older Claude Desktop versions, you may need to include the transport
-     `"type": "http",` as well as part of the `materialize-developer` entry.
+1. Add to your Claude Desktop MCP configuration (`claude_desktop_config.json`):
 
-   ```json {hl_lines="3-8"}
+   ```json
    {
      "mcpServers": {
        "materialize-developer": {
          "url": "<baseURL>/api/mcp/developer",
          "headers": {
-           "Authorization": "Basic <mcp-token>"
+           "Authorization": "Basic <base64-token>"
          }
        }
      }
    }
    ```
 
-   Update the `<baseURL>` and `<mcp-token>` placeholders with your values:
+   Update the `<baseURL>` and `<base64-token>` placeholders with your values:
 
-   | Deployment   |  `<baseURL>`                                                     |  `<mcp-token>`              |
+   | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
    |--------------| ------------------------------------------------------------------| -------------------------------|
    | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
    | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
    | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
 
-   > **Tip:** For **Cloud**, you can get the MCP URL directly from the Console's **Connect**
-   > modal. The modal displays the correct `<baseURL>`.
+   > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
+   > the Console's **Connect** modal. The `.json` copied from the Console already
+   > includes the correct `<baseURL>`.
 
 1. Restart Claude Desktop to pick up the new setting.
 
 **Cursor:**
 
-1. Add the `materialize-developer` MCP server entry to your local MCP settings
-   file (`~/.cursor/mcp.json`).
-   - When merging into an existing `mcpServers` object, remember to add commas
-     between entries.
-   - If the `mcpServers` field does not already exist, add it as well.
+1. In Cursor's MCP settings (`.cursor/mcp.json`):
 
-   ```json {hl_lines="3-8"}
-   {
-     "mcpServers": {
-       "materialize-developer": {
-         "url": "<baseURL>/api/mcp/developer",
-         "headers": {
-           "Authorization": "Basic <mcp-token>"
-         }
-       }
-     }
-   }
+   ```json
+
+    "mcpServers": {
+      "materialize-developer": {
+        "url": "<baseURL>/api/mcp/developer",
+        "headers": {
+          "Authorization": "Basic <base64-token>"
+        }
+      }
+    }
    ```
 
-   Update the `<baseURL>` and `<mcp-token>` placeholders with your values:
+   Update the `<baseURL>` and `<base64-token>` placeholders with your values:
 
-   | Deployment   |  `<baseURL>`                                                     |  `<mcp-token>`              |
+   | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
    |--------------| ------------------------------------------------------------------| -------------------------------|
    | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
    | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
    | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
 
-   > **Tip:** For **Cloud**, you can get the MCP URL directly from the Console's **Connect**
-   > modal. The modal displays the correct `<baseURL>`.
+   > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
+   > the Console's **Connect** modal. The `.json` copied from the Console already
+   > includes the correct `<baseURL>`.
 
 1. Restart Cursor to pick up the new setting.
 
 **Generic HTTP:**
 
-Any MCP-compatible client can connect by sending JSON-RPC 2.0 requests; update the `<baseURL>` and `<mcp-token>` placeholders with your values:
+Any MCP-compatible client can connect by sending JSON-RPC 2.0 requests; update the `<baseURL>` and `<base64-token>` placeholders with your values:
 
 ```bash
 curl -X POST <baseURL>/api/mcp/developer \
   -H "Content-Type: application/json" \
-  -H "Authorization: Basic <mcp-token>" \
+  -H "Authorization: Basic <base64-token>" \
   -d '{
     "jsonrpc": "2.0",
     "id": 1,
