@@ -6,10 +6,8 @@ schema.
 > **Warning:** The objects in the `mz_introspection` schema are not part of Materialize's stable interface.
 > Backwards-incompatible changes to these objects may be made at any time.
 
-
 > **Warning:** `SELECT` statements may reference these objects, but creating views that
 > reference these objects is not allowed.
-
 
 Introspection relations are maintained by independently collecting internal logging information within each of the replicas of a cluster.
 Thus, in a multi-replica cluster, queries to these relations need to be directed to a specific replica by issuing the command `SET cluster_replica = <replica_name>`.
@@ -96,7 +94,7 @@ The `mz_compute_exports` view describes the objects exported by [dataflows][data
 <!-- RELATION_SPEC mz_introspection.mz_compute_exports -->
 | Field          | Type      | Meaning                                                                                                                                                                                                                                                                                        |
 | -------------- |-----------| --------                                                                                                                                                                                                                                                                                       |
-| `export_id`    | [`text`]  | The ID of the index, materialized view, or subscription exported by the dataflow. Corresponds to [`mz_catalog.mz_indexes.id`](../mz_catalog#mz_indexes), [`mz_catalog.mz_materialized_views.id`](../mz_catalog#mz_materialized_views), or [`mz_internal.mz_subscriptions`](../mz_internal#mz_subscriptions). |
+| `export_id`    | [`text`]  | The ID of the index, materialized view, or subscription exported by the dataflow. Corresponds to [`mz_catalog.mz_indexes.id`](../mz_catalog#mz_indexes), [`mz_catalog.mz_materialized_views.id`](../mz_catalog#mz_materialized_views), or [`mz_internal.mz_subscriptions.id`](../mz_internal#mz_subscriptions). |
 | `dataflow_id`  | [`uint8`] | The ID of the dataflow. Corresponds to [`mz_dataflows.id`](#mz_dataflows).                                                                                                                                                                                                               |
 
 <!-- RELATION_SPEC_UNDOCUMENTED mz_introspection.mz_compute_exports_per_worker -->

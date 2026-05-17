@@ -2,8 +2,6 @@
 
 Monitor the performance of your Materialize region with Datadog and Grafana.
 
-
-
 ## Cloud
 
 ### Monitoring
@@ -35,7 +33,6 @@ To help you get started, the following guides are available:
 
 - [Datadog using Prometheus SQL Exporter](/manage/monitor/self-managed/datadog/)
 
-
 ### Alerting
 
 After setting up a monitoring tool, you can configure alert rules. Alert rules
@@ -43,12 +40,9 @@ send a notification when a metric surpasses a threshold. This will help you
 prevent operational incidents. For alert rules guidelines, see
 [Alerting](/manage/monitor/self-managed/alerting/).
 
-
-
 ---
 
 ## Cloud
-
 
 This section covers monitoring and alerting for Materialize Cloud.
 
@@ -68,11 +62,9 @@ send a notification when a metric surpasses a threshold. This will help you
 prevent operational incidents. For alert rules guidelines, see
 [Alerting](/manage/monitor/cloud/alerting/).
 
-
 ---
 
 ## Self-Managed
-
 
 This section covers monitoring and alerting for Self-Managed Materialize.
 
@@ -86,7 +78,6 @@ To help you get started, the following guides are available:
 - [Grafana using Prometheus](/manage/monitor/self-managed/prometheus/)
 
 - [Datadog using Prometheus SQL Exporter](/manage/monitor/self-managed/datadog/)
-
 
 ### Alerting
 

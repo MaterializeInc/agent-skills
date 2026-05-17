@@ -6,8 +6,6 @@ Converts timestamp to a different time zone.
 
 ## Signatures
 
-
-
 ```mzsql
 TIMEZONE ( <zone>::<type>, <timestamp> | <timestamptz> )
 
@@ -20,9 +18,6 @@ TIMEZONE ( <zone>::<type>, <timestamp> | <timestamptz> )
 | `<timestamp>` | A [`timestamp`](/sql/types/timestamp/) value (timestamp without time zone).  |
 | `<timestamptz>` | A [`timestamptz`](/sql/types/timestamp/) value (timestamp with time zone).  |
 
-
-
-
 ```mzsql
 <timestamp> | <timestamptz> AT TIME ZONE <zone>::<type>
 
@@ -33,7 +28,6 @@ TIMEZONE ( <zone>::<type>, <timestamp> | <timestamptz> )
 | `<timestamp>` | A [`timestamp`](/sql/types/timestamp/) value (timestamp without time zone).  |
 | `<timestamptz>` | A [`timestamptz`](/sql/types/timestamp/) value (timestamp with time zone).  |
 | **AT TIME ZONE** `<zone>::<type>` | The target time zone. `<zone>` is a [`text`](/sql/types/text/) value. `<type>` is a [`text`](/sql/types/text/) or [`numeric`](/sql/types/numeric/) type. **Known limitation:** You must explicitly cast the type for the time zone.  |
-
 
 Parameter | Type | Description
 ----------|------|------------

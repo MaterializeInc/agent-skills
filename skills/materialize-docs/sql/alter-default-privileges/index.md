@@ -13,7 +13,6 @@ default privilege.
 
 ## Syntax
 
-
 **GRANT:**
 ### GRANT
 
@@ -26,8 +25,6 @@ all objects of that type, all objects of that type created within a specific set
 of databases, or all objects of that type created within a specific set of
 schemas. Default privileges are also specified for objects created by a certain
 set of roles or by all roles.
-
-
 
 ```mzsql
 ALTER DEFAULT PRIVILEGES
@@ -50,8 +47,6 @@ ALTER DEFAULT PRIVILEGES
 | **ALL [PRIVILEGES]** | All applicable privileges for the provided object type.  |
 | **TO** `<target_role>` | The role who will be granted the default privilege. Use the `PUBLIC` pseudo-role to grant privileges to all roles.  |
 
-
-
 **REVOKE:**
 ### REVOKE
 
@@ -59,7 +54,6 @@ ALTER DEFAULT PRIVILEGES
 > on objects. Those privileges must be revoked manually after the object is
 > created. Though owners can always re-grant themselves any privilege on an object
 > that they own.
-
 
 The `REVOKE` variant of `ALTER DEFAULT PRIVILEGES` is used to revoke previously
 created default privileges on objects created in the future. It will not revoke
@@ -69,8 +63,6 @@ default privilege, all the fields in the revoke statement (`creator_role`,
 an existing default privilege. The existing default privileges can easily be
 viewed by the following query: `SELECT * FROM
 mz_internal.mz_show_default_privileges`.
-
-
 
 ```mzsql
 ALTER DEFAULT PRIVILEGES
@@ -93,14 +85,9 @@ ALTER DEFAULT PRIVILEGES
 | **ALL [PRIVILEGES]** | All applicable privileges for the provided object type.  |
 | **FROM** `<target_role>` | The role from whom to remove the default privilege. Use the `PUBLIC` pseudo-role to remove default privileges previously granted to `PUBLIC`.  |
 
-
-
-
-
 ## Details
 
 ### Available privileges
-
 
 **By Privilege:**
 
@@ -117,7 +104,6 @@ ALTER DEFAULT PRIVILEGES
 | <strong>CREATECLUSTER</strong> | Permission to create new clusters. | <code>N</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 | <strong>CREATENETWORKPOLICY</strong> | Permission to create network policies to control access at the network layer. | <code>P</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 
-
 **By Object:**
 
 | Object | Privileges |
@@ -133,10 +119,6 @@ ALTER DEFAULT PRIVILEGES
 | <code>TABLE</code> | <ul> <li><code>INSERT</code></li> <li><code>SELECT</code></li> <li><code>UPDATE</code></li> <li><code>DELETE</code></li> </ul>  |
 | <code>TYPE</code> | <ul> <li><code>USAGE</code></li> </ul>  |
 | <code>VIEW</code> | <ul> <li><code>SELECT</code></li> </ul>  |
-
-
-
-
 
 ### Compatibility
 

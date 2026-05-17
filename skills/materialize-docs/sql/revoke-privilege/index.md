@@ -10,10 +10,6 @@ be used to indicate that the privileges should be revoked from all roles
 > [*applicable* privileges](#applicable-privileges-to-revoke) for the
 > object type.
 
-
-
-
-
 <!-- ============ CLUSTER syntax ==============  -->
 
 **Cluster:**
@@ -36,7 +32,6 @@ FROM <role_name> [, ... ]
 ;
 ```
 
-
 <!-- ================== Connection syntax ======================  -->
 
 **Connection:**
@@ -58,8 +53,6 @@ ON ALL CONNECTIONS
 FROM <role_name> [, ... ];
 ```
 
-
-
 <!-- ================== Database syntax =====================  -->
 
 **Database:**
@@ -80,8 +73,6 @@ ON ALL DATABASES
 FROM <role_name> [, ... ];
 ```
 
-
-
 <!-- =============== Materialized view syntax ===================  -->
 
 **Materialized view/view/source:**
@@ -90,7 +81,6 @@ FROM <role_name> [, ... ];
 > on the view/materialized views. That is, having `SELECT` privileges on the
 > underlying objects defining the view/materialized view is insufficient.
 
-
 For specific materialized view(s)/view(s)/source(s):
 
 ```mzsql
@@ -98,8 +88,6 @@ REVOKE <SELECT | ALL [PRIVILEGES]>
 ON [TABLE] <name> [, <name> ...] -- For PostgreSQL compatibility, if specifying type, use TABLE
 FROM <role_name> [, ... ];
 ```
-
-
 
 <!-- ==================== Schema syntax =====================  -->
 
@@ -121,8 +109,6 @@ ON ALL SCHEMAS [IN DATABASE <name> [, <name> ...]]
 FROM <role_name> [, ... ];
 ```
 
-
-
 <!-- ==================== Secret syntax =====================  -->
 
 **Secret:**
@@ -143,8 +129,6 @@ ON ALL SECRET [IN DATABASE <name> [, <name> ...]]
 FROM <role_name> [, ... ];
 ```
 
-
-
 <!-- ==================== System syntax =====================  -->
 
 **System:**
@@ -154,8 +138,6 @@ REVOKE <CREATEROLE | CREATEDB | CREATECLUSTER | CREATENETWORKPOLICY | ALL [PRIVI
 ON SYSTEM
 FROM <role_name> [, ... ];
 ```
-
-
 
 <!-- ==================== Type syntax =======================  -->
 
@@ -178,8 +160,6 @@ ON ALL TYPES
 FROM <role_name> [, ... ];
 ```
 
-
-
 <!-- ======================= Table syntax =====================  -->
 
 **Table:**
@@ -197,7 +177,6 @@ For all tables or all tables in a specific schema(s) or in a specific database(s
 > **Note:** Granting privileges via `ALL TABLES [...]` also applies to sources, views, and
 > materialized views (for the applicable privileges).
 
-
 ```mzsql
 REVOKE <SELECT | INSERT | UPDATE | DELETE | ALL [PRIVILEGES]> [, ...]
 ON ALL TABLES
@@ -205,14 +184,9 @@ ON ALL TABLES
 FROM <role_name> [, ... ];
 ```
 
-
-
-
-
 ## Details
 
 ### Applicable privileges to revoke
-
 
 **By Privilege:**
 
@@ -228,7 +202,6 @@ FROM <role_name> [, ... ];
 | <strong>CREATEDB</strong> | Permission to create new databases. | <code>B</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 | <strong>CREATECLUSTER</strong> | Permission to create new clusters. | <code>N</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
 | <strong>CREATENETWORKPOLICY</strong> | Permission to create network policies to control access at the network layer. | <code>P</code> | <ul> <li><code>SYSTEM</code></li> </ul>  |
-
 
 **By Object:**
 
@@ -246,10 +219,6 @@ FROM <role_name> [, ... ];
 | <code>TYPE</code> | <ul> <li><code>USAGE</code></li> </ul>  |
 | <code>VIEW</code> | <ul> <li><code>SELECT</code></li> </ul>  |
 
-
-
-
-
 ### Privileges
 
 The privileges required to execute this statement are:
@@ -258,7 +227,6 @@ The privileges required to execute this statement are:
 - `USAGE` privileges on the containing database if the affected object is a schema.
 - `USAGE` privileges on the containing schema if the affected object is namespaced by a schema.
 - _superuser_ status if the privilege is a system privilege.
-
 
 ## Examples
 
@@ -277,7 +245,6 @@ REVOKE ALL ON CLUSTER dev FROM joe;
 ```mzsql
 REVOKE CREATEDB ON SYSTEM FROM joe;
 ```
-
 
 ## Useful views
 

@@ -87,7 +87,6 @@ ORDER BY age DESC;
 > **Warning:** This will cause Materialize to take a new snapshot, which may take
 > time and temporarily increase load on your PostgreSQL database.
 
-
 Once a slot has been overcompacted, the data is permanently lost from the WAL.
 You must **drop and recreate the source**. Dropping the source will also drop
 any dependent objects; be prepared to recreate them as part of the recovery process.

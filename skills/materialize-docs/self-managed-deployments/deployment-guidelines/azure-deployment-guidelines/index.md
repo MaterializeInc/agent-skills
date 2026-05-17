@@ -25,7 +25,6 @@ Azure VM Types with Local NVMe Disk:
 > **Warning:** These VM types provide <red>**ephemeral**</red> local NVMe SSD disks. Data is
 > <red>**lost**</red> when the VM is stopped or deleted.
 
-
 ## Locally-attached NVMe storage
 
 Configuring swap on nodes to use locally-attached NVMe storage allows
@@ -36,12 +35,10 @@ significantly degrade performance and is not supported.
 
 ### Swap support
 
-
 **New Terraform:**
 #### New Terraform
 
 The new Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure/examples/simple) supports configuring swap out of the box.
-
 
 **Legacy Terraform:**
 #### Legacy Terraform
@@ -55,10 +52,6 @@ With this change, the Terraform:
 See [Upgrade Notes](https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#v061).
 
 > **Note:** If deploying `v25.2`, Materialize clusters will not automatically use swap unless they are configured with a `memory_request` less than their `memory_limit`. In `v26`, this will be handled automatically.
-
-
-
-
 
 ## Recommended Azure Blob Storage
 

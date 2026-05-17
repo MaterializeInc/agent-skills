@@ -27,7 +27,6 @@ will be pre-installed. This policy has a wide open ingress rule `allow
 > Admin`) must run [`ALTER SYSTEM SET network_policy`](/sql/alter-system-set) to
 > change the default value.
 
-
 ## Examples
 
 ```mzsql

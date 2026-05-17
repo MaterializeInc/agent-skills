@@ -4,7 +4,6 @@
 
 Dropping a Kafka sink doesn't drop the corresponding topic. For more information, see the [Kafka documentation](https://kafka.apache.org/documentation/).
 
-
 ## Syntax
 
 ```mzsql

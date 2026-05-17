@@ -4,8 +4,6 @@ Returns separated values from a column containing a CSV file formatted as a stri
 
 ## Signatures
 
-
-
 ```mzsql
 csv_extract ( <num_csv_col>, <col_name> )
 
@@ -15,7 +13,6 @@ csv_extract ( <num_csv_col>, <col_name> )
 | --- | --- |
 | `<num_csv_col>` | An [`int`](/sql/types/integer/) value specifying the number of columns in the CSV string.  |
 | `<col_name>` | A [`string`](/sql/types/text/) value containing the name of the column containing the CSV string.  |
-
 
 Parameter | Type | Description
 ----------|------|------------

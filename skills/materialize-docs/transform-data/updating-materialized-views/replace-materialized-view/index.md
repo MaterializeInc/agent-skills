@@ -30,7 +30,6 @@ Before using this guide, you should be familiar with:
 This guide uses a [three-tier cluster architecture](/manage/operational-guidelines/#three-tier-architecture),
 with separate clusters for ingestion, computation, and serving.
 
-
 **cc clusters:**
 Create separate clusters for ingestion, computation, and serving.
 ```mzsql
@@ -56,7 +55,6 @@ CREATE CLUSTER compute_cluster SIZE = 'M.1-small';
 -- Create a serving cluster
 CREATE CLUSTER serving_cluster SIZE = 'M.1-small';
 ```
-
 
 ### Step 1. Set up a data source
 
@@ -267,12 +265,9 @@ view and drops the replacement view at the same time.</p>
 </li>
 </ul>
 
-
 > **Warning:** When applying the replacement, dependent objects must process the diff
 > emitted by the operation. Depending on the size of the changes, this may
 > cause temporary CPU and memory spikes.
-
-
 
 ```mzsql
 -- Apply the replacement
@@ -375,7 +370,6 @@ of your original and replacement materialized views.</p>
 original materialized view. If the rate of advancement suggests that catch
 up will take an extended period of time, it is recommended to drop the
 replacement view.</p>
-
 
 ## Related pages
 

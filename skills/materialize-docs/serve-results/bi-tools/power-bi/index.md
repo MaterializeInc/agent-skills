@@ -30,7 +30,6 @@ level</a> using the following SQL statement:</p>
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
 
-
 ## Troubleshooting
 
 Errors like the following indicate that there is a problem with the connection settings:

@@ -116,7 +116,6 @@ following default resource allocations:
 </tbody>
 </table>
 
-
 ## Custom Cluster Sizes
 
 When installing the Materialize Helm chart, you can override the [default
@@ -126,7 +125,6 @@ as well as user clusters.
 
 > **Tip:** In general, you should not have to override the defaults. At minimum, we
 > recommend that you keep the 25-200cc cluster sizes.
-
 
 ```yaml
 operator:
@@ -146,7 +144,6 @@ operator:
         # ex: kubernetes.io/arch: amd64
 ```
 
-
 | Field | Type | Description | Recommendation |
 | --- | --- | --- | --- |
 | <strong>workers</strong> | int | The number of timely workers in your cluster replica. | Use 1 worker per CPU core, with a minimum of 1 worker. |
@@ -159,7 +156,6 @@ operator:
 | <strong>credits_per_hour</strong> | string | This is a cloud attribute that should be set to &ldquo;0.00&rdquo; in self-managed. | Set to &ldquo;0.00&rdquo; for self-managed deployments. |
 | <strong>swap_enabled</strong> | bool | Enables swap as the spill-to-disk mechanism for this size. When enabled, the replica uses swap instead of a provisioned persistent volume for spilling data. This also causes <code>disk_limit</code> to be set to <code>&quot;0&quot;</code>. | This defaults to the global <code>swap_enabled</code> value if not specified per size. Swap generally performs better than spill-to-disk via persistent volumes. |
 | <strong>selectors</strong> | map | A map of Kubernetes label selector keys to values used to schedule pods for this cluster size on specific nodes. | It is generally not required to set this. |
-
 
 > **Note:** If you have modified the default cluster size configurations, you can query the
 > [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes)

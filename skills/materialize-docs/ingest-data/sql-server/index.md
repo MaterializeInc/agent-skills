@@ -2,8 +2,6 @@
 
 Connecting Materialize to a SQL Server database for Change Data Capture (CDC).
 
-
-
 ## Change Data Capture (CDC)
 
 Materialize supports SQL Server as a real-time data source. The [SQL Server source](/sql/create-source/sql-server/)
@@ -49,7 +47,6 @@ Materialize supports schema changes in the upstream database as follows:
 > [SQL Server: Source versioning
 > guide](/ingest-data/sql-server/source-versioning/).
 
-
 - Adding columns to tables. Materialize will **not ingest** new columns added
   upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to first
   drop the affected subsource, and then add the table back to the source using
@@ -61,7 +58,6 @@ Materialize supports schema changes in the upstream database as follows:
 - Adding or removing `NOT NULL` constraints to tables that were nullable when
   the source was created.
 
-
 #### Incompatible schema changes
 
 All other schema changes to upstream tables will set the corresponding subsource
@@ -72,7 +68,6 @@ and [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to first drop the
 affected subsource, and then add the table back to the source. When you add the
 subsource, it will have the updated schema from the corresponding upstream
 table.
-
 
 ### Supported types
 
@@ -142,7 +137,6 @@ value when said column is updated.</p>
 </li>
 </ul>
 
-
 ### Timestamp Rounding
 
 The `time`, `datetime2`, and `datetimeoffset` types in SQL Server have a default
@@ -197,16 +191,11 @@ the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
 
-
-
 ---
 
 ## Guide: Handle upstream schema changes with zero downtime
 
-
-
 > **Note:** Changing column types is currently unsupported.
-
 
 Materialize allows you to handle certain types of upstream
 table schema changes seamlessly, specifically:
@@ -274,7 +263,6 @@ snapshot](/ingest-data/#snapshotting) of table `v1.t1` will begin.
 > snapshot operation on the overview page for the source in the Materialize
 > console.
 
-
 ## Create a view on top of the table.
 
 For this guide, add a materialized view `matview` (also in schema `v1`) that
@@ -320,7 +308,6 @@ name](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-p
 > If you already have 2 capture instances, you will have to [disable one of
 > them](#disable-unused-capture-instance), possibly resulting in downtime for your
 > Materialize source.
-
 
 ```sql
 EXEC sys.sp_cdc_enable_table
@@ -368,8 +355,6 @@ The [snapshotting](/ingest-data/#snapshotting) of table `v2.t1` will begin.
 > snapshot operation on the overview page for the source in the Materialize
 > console.
 
-
-
 When the new `v2.t1` table has finished snapshotting, create a new materialized
 view `matview` in the new schema.  Since the new `v2.matview` is referencing the
 new `v2.t1`, it can reference column `b`:
@@ -400,7 +385,6 @@ CREATE TABLE v3.t1
 > snapshot operation on the overview page for the source in the Materialize
 > console.
 
-
 ### B. Drop a column in your upstream SQL Server database
 
 In your upstream SQL Server database, drop the column `b` from the table `t1`:
@@ -416,7 +400,6 @@ examples. When the user attempts to read from either, Materialize will report an
 error that the source table schema has been altered.
 
 ## Optional
-
 
 ### Disable unused capture instance
 
@@ -441,7 +424,6 @@ you may wish to disable the old capture instance if it is no longer in use.
 > **Warning:** Ensure that no other source tables or other applications are using the old
 > capture instance; otherwise, they will break.
 
-
 To disable a capture instance for a table:
 
 ```sql
@@ -451,18 +433,15 @@ EXEC sys.sp_cdc_disable_table
     @capture_instance = '<old_capture_instance_name>';
 ```
 
-
 ---
 
 ## Ingest data from self-hosted SQL Server
-
 
 This page shows you how to stream data from a self-hosted SQL Server database
 to Materialize using the [SQL Server Source](/sql/create-source/sql-server/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -485,13 +464,11 @@ which is not readily available on older versions of SQL Server.
   WHERE servicename LIKE 'SQL Server Agent%';
   ```
 
-
 ## A. Configure SQL Server
 
 > **Note:** To configure SQL Server for data ingestion into Materialize, you must be a user
 > with privileges to enable CDC and create/manage login, users, roles, and
 > privileges.
-
 
 ### 1. Create a Materialize user in SQL Server.
 
@@ -586,7 +563,6 @@ GO -- The GO terminator may be unsupported or unnecessary for your client.
 
 For guidance on enabling `SNAPSHOT` transaction isolation, see the [SQL Server documentation](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sys-sp-cdc-enable-table-transact-sql)
 
-
 ### 4. Enable Change-Data-Capture for the tables.
 
 Enable Change Data Capture for each table you wish to replicate (replace
@@ -604,13 +580,11 @@ EXEC sys.sp_cdc_enable_table
 GO -- The GO terminator may be unsupported or unnecessary for your client.
 ```
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your SQL Server instance is publicly accessible, **you can
 > skip this step**. For production scenarios, we recommend configuring one of the
 > network security options below.
-
 
 There are various ways to configure your database's network to allow Materialize
 to connect:
@@ -624,8 +598,6 @@ to connect:
 
 Select the option that works best for you.
 
-
-
 **Allow Materialize IPs:**
 
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -638,8 +610,6 @@ Select the option that works best for you.
 
 1. Update your database firewall rules to allow traffic from each IP address
    from the previous step.
-
-
 
 **Use AWS PrivateLink:**
 
@@ -750,8 +720,6 @@ option.
       show up, so you would need to wait for the endpoint service connection to
       be ready before you create a source.
 
-
-
 **Use an SSH tunnel:**
 
 To create an SSH tunnel from Materialize to your database, you launch an VM to
@@ -784,10 +752,6 @@ traffic from the bastion host.
 1. Update your database firewall rules to allow traffic from the SSH bastion
    host.
 
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -796,7 +760,6 @@ traffic from the bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 In Materialize, a [cluster](/concepts/clusters/) is an isolated
 environment, similar to a virtual warehouse in Snowflake. When you create a
@@ -824,14 +787,10 @@ your SQL Server database.
     Once the snapshot is finished, you can readjust the size of the cluster to fit
     the volume of changes being replicated from your upstream SQL Server database.
 
-
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
-
 
 **Allow Materialize IPs:**
 
@@ -860,8 +819,6 @@ your networking configuration.
     ```
 
     - Replace `<host>` with your SQL Server endpoint, and `<database>` with the database you'd like to connect to.
-
-
 
 **Use an AWS Privatelink (Cloud-only):**
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -977,8 +934,6 @@ details for Materialize to use:
 
     AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql) command for details.
 
-
-
 **Use an SSH tunnel:**
 
 1. In the [SQL Shell](/console/), or your preferred SQL
@@ -1038,16 +993,11 @@ details for Materialize to use:
 
     - Replace `<host>` with your SQL Server endpoint.
 
-
-
-
-
 ### 3. Start ingesting data
 
 > **Note:** For a new SQL Server source, if none of the replicating tables
 > are receiving write queries, snapshotting may take up to an additional 5 minutes
 > to complete. For details, see [snapshot latency for inactive databases](#snapshot-latency-for-inactive-databases)
-
 
 Use the [`CREATE SOURCE`](/sql/create-source/) command to connect
 Materialize to your SQL Server instance and start ingesting data:
@@ -1066,10 +1016,8 @@ CREATE SOURCE mz_source
   COLUMNS` options. Check out the [reference
   documentation](#supported-types) for guidance.
 
-
 After source creation, refer to [schema changes
 considerations](#schema-changes) for information on handling upstream schema changes.
-
 
 ### 4. Right-size the cluster
 
@@ -1103,7 +1051,6 @@ accordingly.
     (1 row)
     ```
 
-
 ## D. Explore your data
 
 With Materialize ingesting your SQL Server data into durable storage, you can
@@ -1123,7 +1070,6 @@ new data arrives, and serving results efficiently.
 - Check out the [tools and integrations](/integrations/) supported by
   Materialize.
 
-
 ## Considerations
 
 ### Schema changes
@@ -1139,7 +1085,6 @@ Materialize supports schema changes in the upstream database as follows:
 > [SQL Server: Source versioning
 > guide](/ingest-data/sql-server/source-versioning/).
 
-
 - Adding columns to tables. Materialize will **not ingest** new columns added
   upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to first
   drop the affected subsource, and then add the table back to the source using
@@ -1151,7 +1096,6 @@ Materialize supports schema changes in the upstream database as follows:
 - Adding or removing `NOT NULL` constraints to tables that were nullable when
   the source was created.
 
-
 #### Incompatible schema changes
 
 All other schema changes to upstream tables will set the corresponding subsource
@@ -1162,7 +1106,6 @@ and [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to first drop the
 affected subsource, and then add the table back to the source. When you add the
 subsource, it will have the updated schema from the corresponding upstream
 table.
-
 
 ### Supported types
 
@@ -1231,7 +1174,6 @@ value when said column is updated.</p>
 </ul>
 </li>
 </ul>
-
 
 ### Timestamp Rounding
 

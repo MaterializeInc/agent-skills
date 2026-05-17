@@ -11,8 +11,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 ROW ( <expr> [, ...] )
 
@@ -21,7 +19,6 @@ ROW ( <expr> [, ...] )
 | Syntax element | Description |
 | --- | --- |
 | **ROW** ( `<expr>` [, ...] ) | Construct a record (tuple) with an arbitrary number of elements of any type. The fields of a record are named `f1`, `f2`, and so on.  |
-
 
 ## Details
 

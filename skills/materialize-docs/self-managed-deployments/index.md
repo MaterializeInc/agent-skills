@@ -2,8 +2,6 @@
 
 Learn about the key components and architecture of self-managed Materialize deployments.
 
-
-
 ## Overview
 
 Whereas Materialize Cloud gives you a fully managed service for Materialize,
@@ -146,7 +144,6 @@ A Materialize instance manages:
 - **Catalog metadata**: System information about all objects and configuration
 - **Compute orchestration**: Coordination of work across clusters and replicas
 
-
 ### Deploying with the operator
 
 To deploy Materialize instances with the operator, create and apply Materialize
@@ -161,7 +158,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.20.2
+  environmentdImageRef: materialize/environmentd:v26.22.0
 # ... additional fields omitted for brevity
 ```
 
@@ -176,7 +173,6 @@ operator will roll out the changes.
 
 > **Note:** If you do not specify  a new `requestRollout` UUID, the operator
 > watches for updates but does not roll out the changes.
-
 
 For a full list of fields available for the Materialize CR, see [Materialize CRD
 Field
@@ -297,15 +293,10 @@ components work together:
 
 To help you get started, Materialize provides Terraform modules.
 
-> **Important:** These modules are intended for evaluation/demonstration purposes and for serving
-> as a template when building your own production deployment. The modules should
-> not be directly relied upon for production deployments: **future releases of the
-> modules will contain breaking changes.** Instead, to use as a starting point for
-> your own production deployment, either:
-> - Fork the repo and pin to a specific version; or
-> - Use the code as a reference when developing your own deployment.
-
-
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
 **Terraform Modules (New!):**
 ### Terraform Modules
@@ -314,18 +305,14 @@ Materialize provides [**Terraform
 modules**](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main?tab=readme-ov-file#materialize-self-managed-terraform-modules),
 which provides concrete examples and an opinionated model for deploying Materialize.
 
-
 | Module | Description |
 | --- | --- |
 | <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws" >Amazon Web Services (AWS)</a> | An example Terraform module for deploying Materialize on AWS. See <a href="/self-managed-deployments/installation/install-on-aws/" >Install on AWS</a> for detailed instructions usage. |
 | <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure" >Azure</a> | An example Terraform module for deploying Materialize on Azure. See <a href="/self-managed-deployments/installation/install-on-azure/" >Install on Azure</a> for detailed instructions usage. |
 | <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp" >Google Cloud Platform (GCP)</a> | An example Terraform module for deploying Materialize on GCP. See <a href="/self-managed-deployments/installation/install-on-gcp/" >Install on GCP</a> for detailed instructions usage. |
 
-
-
 **Legacy Terraform Modules:**
 ### Legacy Terraform Modules
-
 
 | Sample Module | Description |
 | --- | --- |
@@ -333,9 +320,6 @@ which provides concrete examples and an opinionated model for deploying Material
 | <a href="https://github.com/MaterializeInc/terraform-aws-materialize" >Materialize on AWS (Legacy)</a> | A sample Terraform module for deploying Materialize on AWS Cloud Platform with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-aws-legacy/" >Install on AWS (Legacy)</a> for an example usage. |
 | <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize" >Materialize on Azure (Legacy)</a> | A sample Terraform module for deploying Materialize on Azure with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-azure-legacy/" >Install on Azure</a> for an example usage. |
 | <a href="https://github.com/MaterializeInc/terraform-google-materialize" >Materialize on GCP (Legacy)</a> | A sample Terraform module for deploying Materialize on Google Cloud Platform (GCP) with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-gcp-legacy/" >Install on GCP</a> for an example usage. |
-
-
-
 
 ## Related pages
 
@@ -348,23 +332,18 @@ which provides concrete examples and an opinionated model for deploying Material
 - [Clusters concept page](/concepts/clusters/)
 - [Materialize architecture overview](/concepts/)
 
-
-
 ---
 
 ## Appendix
-
 
 ## Table of contents
 
 - [Appendix: Cluster sizes](./appendix-cluster-sizes/)
 - [Appendix: Prepare for swap and upgrade to v26.0](./upgrade-to-swap/)
 
-
 ---
 
 ## Configuring System Parameters
-
 
 This guide explains how to configure system parameters for your Materialize
 deployment using a Kubernetes ConfigMap.
@@ -389,7 +368,6 @@ There are two ways to configure system parameters:
 This guide focuses on the ConfigMap approach for self-managed deployments.
 
 > **Public Preview:** This feature is in public preview.
-
 
 ## Configure System Parameters via ConfigMap
 
@@ -497,7 +475,6 @@ spec:
 
 > **Note:** Even after the ConfigMap is synced, some parameters may require a restart to
 > take effect.
-
 
 ## Available System Parameters
 
@@ -618,15 +595,12 @@ kubectl logs -l app=environmentd -n materialize-environment | grep -i "system.*p
 - [Materialize CRD Field Descriptions](/installation/appendix-materialize-crd-field-descriptions/)
 - [Troubleshooting](/installation/troubleshooting/)
 
-
 ---
 
 ## Deployment guidelines
 
-
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; and a license key.
-
 
 ## Available deployment guidelines
 
@@ -639,11 +613,9 @@ The following guides outline recommended configurations for deploying Materializ
 - [GCP Deployment
   Guidelines](/self-managed-deployments/deployment-guidelines/gcp-deployment-guidelines/)
 
-
 ---
 
 ## FAQ
-
 
 ## How long do license keys last?
 
@@ -652,14 +624,12 @@ keys will vary based on the terms of your contract.
 
 ## How do I get a license key?
 
-
 | License key type | Deployment type | Action |
 | --- | --- | --- |
 | Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
 | Community | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
 | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
 | Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
-
 
 ## How do I add a license key to an existing installation?
 
@@ -675,11 +645,9 @@ kubectl -n materialize-environment patch secret materialize-backend -p '{"string
 
 Downgrading is not supported.
 
-
 ---
 
 ## Installation
-
 
 <p>You can install Self-Managed Materialize on a Kubernetes cluster running
 locally or on a cloud provider. Self-Managed Materialize requires:</p>
@@ -702,7 +670,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 <h2 id="installation-guides">Installation guides</h2>
 <p>The following installation guides are available to help you get started:</p>
 
-
 <h3 id="install-using-helm-commands">Install using Helm Commands</h3>
 <table>
   <thead>
@@ -718,7 +685,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
       </tr>
   </tbody>
 </table>
-
 
 <h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
@@ -747,7 +713,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
   </tbody>
 </table>
 
-
 <h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
 > installing Materialize.
@@ -775,41 +740,9 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
   </tbody>
 </table>
 
-
-
 ---
 
 ## Materialize CRD Field Descriptions
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #### MaterializeSpec
 <table>
@@ -827,7 +760,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 <td>
 <em><strong>String</strong></em>
 
-
 <p>The name of a secret containing <code>metadata_backend_url</code> and <code>persist_backend_url</code>.
 It may also contain <code>external_login_password_mz_system</code>, which will be used as
 the password for the <code>mz_system</code> user if <code>authenticatorKind</code> is <code>Password</code>,
@@ -841,7 +773,6 @@ the password for the <code>mz_system</code> user if <code>authenticatorKind</cod
 <td>
 <em><strong>String</strong></em>
 
-
 <p>The environmentd image to run.</p>
 
 </td>
@@ -851,7 +782,6 @@ the password for the <code>mz_system</code> user if <code>authenticatorKind</cod
 <td></td>
 <td>
 <em><strong>Enum</strong></em>
-
 
 <p><p>How to authenticate with Materialize.</p>
 <p>Valid values:</p>
@@ -873,7 +803,6 @@ The backend secret must contain external_login_password_mz_system.</li>
 <td>
 <em><strong><a href='#materializecertspec'>MaterializeCertSpec</a></strong></em>
 
-
 <p>The configuration for generating an x509 certificate using cert-manager for balancerd
 to present to incoming connections.
 The <code>dnsNames</code> and <code>issuerRef</code> fields are required.</p>
@@ -886,7 +815,6 @@ The <code>dnsNames</code> and <code>issuerRef</code> fields are required.</p>
 <td>
 <em><strong>Integer</strong></em>
 
-
 <p>Number of balancerd pods to create.</p>
 
 </td>
@@ -897,7 +825,6 @@ The <code>dnsNames</code> and <code>issuerRef</code> fields are required.</p>
 <td>
 <em><strong><a href='#iok8sapicorev1resourcerequirements'>io.k8s.api.core.v1.ResourceRequirements</a></strong></em>
 
-
 <p>Resource requirements for the balancerd pod.</p>
 
 </td>
@@ -907,7 +834,6 @@ The <code>dnsNames</code> and <code>issuerRef</code> fields are required.</p>
 <td></td>
 <td>
 <em><strong><a href='#materializecertspec'>MaterializeCertSpec</a></strong></em>
-
 
 <p>The configuration for generating an x509 certificate using cert-manager for the console
 to present to incoming connections.
@@ -922,7 +848,6 @@ Not yet implemented.</p>
 <td>
 <em><strong>Integer</strong></em>
 
-
 <p>Number of console pods to create.</p>
 
 </td>
@@ -932,7 +857,6 @@ Not yet implemented.</p>
 <td></td>
 <td>
 <em><strong><a href='#iok8sapicorev1resourcerequirements'>io.k8s.api.core.v1.ResourceRequirements</a></strong></em>
-
 
 <p>Resource requirements for the console pod.</p>
 
@@ -944,7 +868,6 @@ Not yet implemented.</p>
 <td>
 <em><strong>Bool</strong></em>
 
-
 <p>Whether to enable role based access control. Defaults to false.</p>
 
 </td>
@@ -954,7 +877,6 @@ Not yet implemented.</p>
 <td></td>
 <td>
 <em><strong>Uuid</strong></em>
-
 
 <p>The value used by environmentd (via the &ndash;environment-id flag) to
 uniquely identify this instance. Must be globally unique, and
@@ -971,7 +893,6 @@ backend.</p>
 <td>
 <em><strong>String</strong></em>
 
-
 <p>If running in AWS, override the IAM role to use to support
 the CREATE CONNECTION feature.</p>
 
@@ -983,7 +904,6 @@ the CREATE CONNECTION feature.</p>
 <td>
 <em><strong>Array&lt;String&gt;</strong></em>
 
-
 <p>Extra args to pass to the environmentd binary.</p>
 
 </td>
@@ -993,7 +913,6 @@ the CREATE CONNECTION feature.</p>
 <td></td>
 <td>
 <em><strong>Array&lt;<a href='#iok8sapicorev1envvar'>io.k8s.api.core.v1.EnvVar</a>&gt;</strong></em>
-
 
 <p>Extra environment variables to pass to the environmentd binary.</p>
 
@@ -1005,7 +924,6 @@ the CREATE CONNECTION feature.</p>
 <td>
 <em><strong><a href='#iok8sapicorev1resourcerequirements'>io.k8s.api.core.v1.ResourceRequirements</a></strong></em>
 
-
 <p>Resource requirements for the environmentd pod.</p>
 
 </td>
@@ -1016,7 +934,6 @@ the CREATE CONNECTION feature.</p>
 <td>
 <em><strong>io.k8s.apimachinery.pkg.api.resource.Quantity</strong></em>
 
-
 <p>Amount of disk to allocate, if a storage class is provided.</p>
 
 </td>
@@ -1026,7 +943,6 @@ the CREATE CONNECTION feature.</p>
 <td></td>
 <td>
 <em><strong>Uuid</strong></em>
-
 
 <p>If <code>forcePromote</code> is set to the same value as <code>requestRollout</code>, the
 current rollout will skip waiting for clusters in the new
@@ -1040,7 +956,6 @@ leader.</p>
 <td></td>
 <td>
 <em><strong>Uuid</strong></em>
-
 
 <p>This value will be written to an annotation in the generated
 environmentd statefulset, in order to force the controller to
@@ -1057,7 +972,6 @@ same value as <code>requestRollout</code>.</p>
 <td>
 <em><strong><a href='#materializecertspec'>MaterializeCertSpec</a></strong></em>
 
-
 <p>The cert-manager Issuer or ClusterIssuer to use for database internal communication.
 The <code>issuerRef</code> field is required.
 This currently is only used for environmentd, but will eventually support clusterd.
@@ -1071,7 +985,6 @@ Not yet implemented.</p>
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
 
-
 <p>Annotations to apply to the pods.</p>
 
 </td>
@@ -1082,7 +995,6 @@ Not yet implemented.</p>
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
 
-
 <p>Labels to apply to the pods.</p>
 
 </td>
@@ -1092,7 +1004,6 @@ Not yet implemented.</p>
 <td></td>
 <td>
 <em><strong>Uuid</strong></em>
-
 
 <p><p>When changes are made to the environmentd resources (either via
 modifying fields in the spec here or by deploying a new
@@ -1113,7 +1024,6 @@ generation rollout is automatically triggered.</p>
 <td></td>
 <td>
 <em><strong>Enum</strong></em>
-
 
 <p><p>Rollout strategy to use when upgrading this Materialize instance.</p>
 <p>Valid values:</p>
@@ -1161,7 +1071,6 @@ without waiting for the new generation of pods to be ready.</p>
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
 
-
 <p><p>Annotations to apply to the service account.</p>
 <p>Annotations on service accounts are commonly used by cloud providers for IAM.
 AWS uses &ldquo;eks.amazonaws.com/role-arn&rdquo;.
@@ -1177,7 +1086,6 @@ additionally requires &ldquo;azure.workload.identity/use&rdquo;: &ldquo;true&rdq
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
 
-
 <p>Labels to apply to the service account.</p>
 
 </td>
@@ -1187,7 +1095,6 @@ additionally requires &ldquo;azure.workload.identity/use&rdquo;: &ldquo;true&rdq
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Name of the kubernetes service account to use.
 If not set, we will create one with the same name as this Materialize object.</p>
@@ -1199,7 +1106,6 @@ If not set, we will create one with the same name as this Materialize object.</p
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p><p>The name of a ConfigMap containing system parameters in JSON format.
 The ConfigMap must contain a <code>system-params.json</code> key whose value
@@ -1234,7 +1140,6 @@ is a valid JSON object containing valid system parameters.</p>
 <td>
 <em><strong>Array&lt;String&gt;</strong></em>
 
-
 <p>Additional DNS names the certificate will be valid for.</p>
 
 </td>
@@ -1244,7 +1149,6 @@ is a valid JSON object containing valid system parameters.</p>
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Duration the certificate will be requested for.
 Value must be in units accepted by Go
@@ -1258,7 +1162,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong><a href='#certificateissuerref'>CertificateIssuerRef</a></strong></em>
 
-
 <p>Reference to an <code>Issuer</code> or <code>ClusterIssuer</code> that will generate the certificate.</p>
 
 </td>
@@ -1268,7 +1171,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>CertificatePrivateKeyAlgorithm</strong></em>
-
 
 <p>Optional algorithm to use for the private key. If not specified, a recommended default will be chosen.</p>
 
@@ -1280,7 +1182,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>Integer</strong></em>
 
-
 <p>Optional size for the private key.</p>
 
 </td>
@@ -1290,7 +1191,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Duration before expiration the certificate will be renewed.
 Value must be in units accepted by Go
@@ -1303,7 +1203,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong><a href='#certificatesecrettemplate'>CertificateSecretTemplate</a></strong></em>
-
 
 <p>Additional annotations and labels to include in the Certificate object.</p>
 
@@ -1328,7 +1227,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
 
-
 <p>Annotations is a key value map to be copied to the target Kubernetes Secret.</p>
 
 </td>
@@ -1338,7 +1236,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
-
 
 <p>Labels is a key value map to be copied to the target Kubernetes Secret.</p>
 
@@ -1363,7 +1260,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Name of the resource being referred to.</p>
 
 </td>
@@ -1374,7 +1270,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Group of the resource being referred to.</p>
 
 </td>
@@ -1384,7 +1279,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Kind of the resource being referred to.</p>
 
@@ -1409,7 +1303,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>Array&lt;<a href='#iok8sapicorev1resourceclaim'>io.k8s.api.core.v1.ResourceClaim</a>&gt;</strong></em>
 
-
 <p><p>Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.</p>
 <p>This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.</p>
 <p>This field is immutable. It can only be set for containers.</p>
@@ -1423,7 +1316,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>Map&lt;String, io.k8s.apimachinery.pkg.api.resource.Quantity&gt;</strong></em>
 
-
 <p>Limits describes the maximum amount of compute resources allowed. More info: <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/" >https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/</a></p>
 
 </td>
@@ -1433,7 +1325,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>Map&lt;String, io.k8s.apimachinery.pkg.api.resource.Quantity&gt;</strong></em>
-
 
 <p>Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/" >https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/</a></p>
 
@@ -1458,7 +1349,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.</p>
 
 </td>
@@ -1468,7 +1358,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Request is the name chosen for a request in the referenced claim. If empty, everything from the claim is made available, otherwise only the result of this request.</p>
 
@@ -1493,7 +1382,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Name of the environment variable. Must be a C_IDENTIFIER.</p>
 
 </td>
@@ -1504,7 +1392,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. &ldquo;$$(VAR_NAME)&rdquo; will produce the string literal &ldquo;$(VAR_NAME)&rdquo;. Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to &ldquo;&rdquo;.</p>
 
 </td>
@@ -1514,7 +1401,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong><a href='#iok8sapicorev1envvarsource'>io.k8s.api.core.v1.EnvVarSource</a></strong></em>
-
 
 <p>Source for the environment variable&rsquo;s value. Cannot be used if value is not empty.</p>
 
@@ -1539,7 +1425,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong><a href='#iok8sapicorev1configmapkeyselector'>io.k8s.api.core.v1.ConfigMapKeySelector</a></strong></em>
 
-
 <p>Selects a key of a ConfigMap.</p>
 
 </td>
@@ -1549,7 +1434,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong><a href='#iok8sapicorev1objectfieldselector'>io.k8s.api.core.v1.ObjectFieldSelector</a></strong></em>
-
 
 <p>Selects a field of the pod: supports metadata.name, metadata.namespace, <code>metadata.labels['&lt;KEY&gt;']</code>, <code>metadata.annotations['&lt;KEY&gt;']</code>, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.</p>
 
@@ -1561,7 +1445,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong><a href='#iok8sapicorev1resourcefieldselector'>io.k8s.api.core.v1.ResourceFieldSelector</a></strong></em>
 
-
 <p>Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.</p>
 
 </td>
@@ -1571,7 +1454,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong><a href='#iok8sapicorev1secretkeyselector'>io.k8s.api.core.v1.SecretKeySelector</a></strong></em>
-
 
 <p>Selects a key of a secret in the pod&rsquo;s namespace</p>
 
@@ -1596,7 +1478,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>The key of the secret to select from.  Must be a valid secret key.</p>
 
 </td>
@@ -1607,7 +1488,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Name of the referent. This field is effectively required, but due to backwards compatibility is allowed to be empty. Instances of this type with an empty value here are almost certainly wrong. More info: <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names" >https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names</a></p>
 
 </td>
@@ -1617,7 +1497,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>Bool</strong></em>
-
 
 <p>Specify whether the Secret or its key must be defined</p>
 
@@ -1642,7 +1521,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Required: resource to select</p>
 
 </td>
@@ -1653,7 +1531,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Container name: required for volumes, optional for env vars</p>
 
 </td>
@@ -1663,7 +1540,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>io.k8s.apimachinery.pkg.api.resource.Quantity</strong></em>
-
 
 <p>Specifies the output format of the exposed resources, defaults to &ldquo;1&rdquo;</p>
 
@@ -1688,7 +1564,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Path of the field to select in the specified API version.</p>
 
 </td>
@@ -1698,7 +1573,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Version of the schema the FieldPath is written in terms of, defaults to &ldquo;v1&rdquo;.</p>
 
@@ -1723,7 +1597,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>The key to select.</p>
 
 </td>
@@ -1733,7 +1606,6 @@ Value must be in units accepted by Go
 <td>✅</td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Name of the referent. This field is effectively required, but due to backwards compatibility is allowed to be empty. Instances of this type with an empty value here are almost certainly wrong. More info: <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names" >https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names</a></p>
 
@@ -1745,7 +1617,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>Bool</strong></em>
 
-
 <p>Specify whether the ConfigMap or its key must be defined</p>
 
 </td>
@@ -1753,13 +1624,9 @@ Value must be in units accepted by Go
 </tbody>
 </table>
 
-
-
-
 ---
 
 ## Materialize Operator Configuration
-
 
 ## Configure the Materialize operator
 
@@ -1782,7 +1649,6 @@ To configure the Materialize operator, you can:
   helm install my-materialize-operator materialize/materialize-operator  \
     --set observability.podMetrics.enabled=true
   ```
-
 
 <table>
 <thead>
@@ -2196,7 +2062,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.20.2&quot;</code>
+<code>&quot;v26.24.2&quot;</code>
 </td>
 </tr>
 
@@ -2343,18 +2209,9 @@ To configure the Materialize operator, you can:
 </tbody>
 </table>
 
-
 ## Parameters
 
-
-
-
-
-
-
 ### `balancerd` parameters
-
-
 
 #### balancerd.affinity
 
@@ -2362,27 +2219,11 @@ To configure the Materialize operator, you can:
 
 Affinity to use for balancerd pods spawned by the operator
 
-
-
-
-
-
-
-
-
 #### balancerd.defaultResources.limits
 
 **Default**: <code>{&quot;memory&quot;:&quot;256Mi&quot;}</code>
 
 Default resource limits for balancerd&rsquo;s CPU and memory if not set in the Materialize CR
-
-
-
-
-
-
-
-
 
 #### balancerd.defaultResources.requests
 
@@ -2390,27 +2231,11 @@ Default resource limits for balancerd&rsquo;s CPU and memory if not set in the M
 
 Default resources requested for balancerd&rsquo;s CPU and memory if not set in the Materialize CR
 
-
-
-
-
-
-
-
-
 #### balancerd.enabled
 
 **Default**: <code>true</code>
 
 Flag to indicate whether to create balancerd pods for the environments
-
-
-
-
-
-
-
-
 
 #### balancerd.nodeSelector
 
@@ -2418,29 +2243,13 @@ Flag to indicate whether to create balancerd pods for the environments
 
 Node selector to use for balancerd pods spawned by the operator
 
-
-
-
-
-
-
-
-
 #### balancerd.tolerations
 
 **Default**: 
 
 Tolerations to use for balancerd pods spawned by the operator
 
-
-
-
-
-
-
 ### `clusterd` parameters
-
-
 
 #### clusterd.affinity
 
@@ -2448,27 +2257,11 @@ Tolerations to use for balancerd pods spawned by the operator
 
 Affinity to use for clusterd pods spawned by the operator
 
-
-
-
-
-
-
-
-
 #### clusterd.nodeSelector
 
 **Default**: 
 
 Node selector to use for all clusterd pods spawned by the operator
-
-
-
-
-
-
-
-
 
 #### clusterd.scratchfsNodeSelector
 
@@ -2476,27 +2269,11 @@ Node selector to use for all clusterd pods spawned by the operator
 
 Additional node selector to use for clusterd pods when using an LVM scratch disk. This will be merged with the values in <code>nodeSelector</code>.
 
-
-
-
-
-
-
-
-
 #### clusterd.swapNodeSelector
 
 **Default**: 
 
 Additional node selector to use for clusterd pods when using swap. This will be merged with the values in <code>nodeSelector</code>.
-
-
-
-
-
-
-
-
 
 #### clusterd.tolerations
 
@@ -2504,15 +2281,7 @@ Additional node selector to use for clusterd pods when using swap. This will be 
 
 Tolerations to use for clusterd pods spawned by the operator
 
-
-
-
-
-
-
 ### `console` parameters
-
-
 
 #### console.affinity
 
@@ -2520,27 +2289,11 @@ Tolerations to use for clusterd pods spawned by the operator
 
 Affinity to use for console pods spawned by the operator
 
-
-
-
-
-
-
-
-
 #### console.defaultResources.limits
 
 **Default**: <code>{&quot;memory&quot;:&quot;256Mi&quot;}</code>
 
 Default resource limits for the console&rsquo;s CPU and memory if not set in the Materialize CR
-
-
-
-
-
-
-
-
 
 #### console.defaultResources.requests
 
@@ -2548,27 +2301,11 @@ Default resource limits for the console&rsquo;s CPU and memory if not set in the
 
 Default resources requested for the console&rsquo;s CPU and memory if not set in the Materialize CR
 
-
-
-
-
-
-
-
-
 #### console.enabled
 
 **Default**: <code>true</code>
 
 Flag to indicate whether to create console pods for the environments
-
-
-
-
-
-
-
-
 
 #### console.imageTagMapOverride
 
@@ -2576,27 +2313,11 @@ Flag to indicate whether to create console pods for the environments
 
 Override the mapping of environmentd versions to console versions
 
-
-
-
-
-
-
-
-
 #### console.nodeSelector
 
 **Default**: 
 
 Node selector to use for console pods spawned by the operator
-
-
-
-
-
-
-
-
 
 #### console.tolerations
 
@@ -2604,15 +2325,7 @@ Node selector to use for console pods spawned by the operator
 
 Tolerations to use for console pods spawned by the operator
 
-
-
-
-
-
-
 ### `environmentd` parameters
-
-
 
 #### environmentd.affinity
 
@@ -2620,27 +2333,11 @@ Tolerations to use for console pods spawned by the operator
 
 Affinity to use for environmentd pods spawned by the operator
 
-
-
-
-
-
-
-
-
 #### environmentd.defaultResources.limits
 
 **Default**: <code>{&quot;memory&quot;:&quot;4Gi&quot;}</code>
 
 Default resource limits for environmentd&rsquo;s CPU and memory if not set in the Materialize CR
-
-
-
-
-
-
-
-
 
 #### environmentd.defaultResources.requests
 
@@ -2648,27 +2345,11 @@ Default resource limits for environmentd&rsquo;s CPU and memory if not set in th
 
 Default resources requested for environmentd&rsquo;s CPU and memory if not set in the Materialize CR
 
-
-
-
-
-
-
-
-
 #### environmentd.nodeSelector
 
 **Default**: 
 
 Node selector to use for environmentd pods spawned by the operator
-
-
-
-
-
-
-
-
 
 #### environmentd.tolerations
 
@@ -2676,15 +2357,7 @@ Node selector to use for environmentd pods spawned by the operator
 
 Tolerations to use for environmentd pods spawned by the operator
 
-
-
-
-
-
-
 ### `networkPolicies` parameters
-
-
 
 #### networkPolicies.egress.cidrs
 
@@ -2692,27 +2365,11 @@ Tolerations to use for environmentd pods spawned by the operator
 
 CIDR blocks to allow egress to
 
-
-
-
-
-
-
-
-
 #### networkPolicies.egress.enabled
 
 **Default**: <code>false</code>
 
 Whether to enable egress network policies to sources and sinks
-
-
-
-
-
-
-
-
 
 #### networkPolicies.enabled
 
@@ -2720,27 +2377,11 @@ Whether to enable egress network policies to sources and sinks
 
 Whether to enable network policies for securing communication between pods
 
-
-
-
-
-
-
-
-
 #### networkPolicies.ingress.cidrs
 
 **Default**: <code>[&quot;0.0.0.0/0&quot;]</code>
 
 CIDR blocks to allow ingress from
-
-
-
-
-
-
-
-
 
 #### networkPolicies.ingress.enabled
 
@@ -2748,29 +2389,13 @@ CIDR blocks to allow ingress from
 
 Whether to enable ingress network policies to the SQL and HTTP interfaces on environmentd and balancerd
 
-
-
-
-
-
-
-
-
 #### networkPolicies.internal.enabled
 
 **Default**: <code>false</code>
 
 Whether to enable network policies for internal communication between Materialize pods
 
-
-
-
-
-
-
 ### `observability` parameters
-
-
 
 #### observability.enabled
 
@@ -2778,27 +2403,11 @@ Whether to enable network policies for internal communication between Materializ
 
 Whether to enable observability features
 
-
-
-
-
-
-
-
-
 #### observability.podMetrics.enabled
 
 **Default**: <code>false</code>
 
 Whether to enable the pod metrics scraper which populates the Environment Overview Monitoring tab in the web console (requires metrics-server to be installed)
-
-
-
-
-
-
-
-
 
 #### observability.prometheus.scrapeAnnotations.enabled
 
@@ -2806,15 +2415,7 @@ Whether to enable the pod metrics scraper which populates the Environment Overvi
 
 Whether to annotate pods with common keys used for prometheus scraping.
 
-
-
-
-
-
-
 ### `operator` parameters
-
-
 
 #### operator.additionalMaterializeCRDColumns
 
@@ -2822,55 +2423,19 @@ Whether to annotate pods with common keys used for prometheus scraping.
 
 Additional columns to display when printing the Materialize CRD in table format.
 
-
-
-
-
-
-
-
-
 #### operator.affinity
 
 **Default**: 
 
 Affinity to use for the operator pod
 
-
-
-
-
-
-
-
-
 #### operator.args.enableInternalStatementLogging
 
 **Default**: <code>true</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.args.enableLicenseKeyChecks
 
 **Default**: <code>false</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.args.startupLogFilter
 
@@ -2878,41 +2443,15 @@ Affinity to use for the operator pod
 
 Log filtering settings for startup logs
 
-
-
-
-
-
-
-
-
 #### operator.cloudProvider.providers.aws.accountID
 
 **Default**: <code>&quot;&quot;</code>
 
 When using AWS, accountID is required
 
-
-
-
-
-
-
-
-
 #### operator.cloudProvider.providers.aws.enabled
 
 **Default**: <code>false</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.cloudProvider.providers.aws.iam.roles.connection
 
@@ -2920,27 +2459,11 @@ When using AWS, accountID is required
 
 ARN for CREATE CONNECTION feature
 
-
-
-
-
-
-
-
-
 #### operator.cloudProvider.providers.aws.iam.roles.environment
 
 **Default**: <code>&quot;&quot;</code>
 
 ARN of the IAM role for environmentd
-
-
-
-
-
-
-
-
 
 #### operator.cloudProvider.providers.gcp
 
@@ -2948,27 +2471,11 @@ ARN of the IAM role for environmentd
 
 GCP Configuration (placeholder for future use)
 
-
-
-
-
-
-
-
-
 #### operator.cloudProvider.region
 
 **Default**: <code>&quot;kind&quot;</code>
 
 Common cloud provider settings
-
-
-
-
-
-
-
-
 
 #### operator.cloudProvider.type
 
@@ -2976,153 +2483,45 @@ Common cloud provider settings
 
 Specifies cloud provider. Valid values are &lsquo;aws&rsquo;, &lsquo;gcp&rsquo;, &lsquo;azure&rsquo; , &lsquo;generic&rsquo;, or &rsquo;local&rsquo;
 
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultReplicationFactor.analytics
 
 **Default**: <code>0</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.clusters.defaultReplicationFactor.probe
 
 **Default**: <code>0</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultReplicationFactor.support
 
 **Default**: <code>0</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.clusters.defaultReplicationFactor.system
 
 **Default**: <code>0</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultSizes.analytics
 
 **Default**: <code>&quot;25cc&quot;</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.clusters.defaultSizes.catalogServer
 
 **Default**: <code>&quot;25cc&quot;</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultSizes.default
 
 **Default**: <code>&quot;25cc&quot;</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.clusters.defaultSizes.probe
 
 **Default**: <code>&quot;mz_probe&quot;</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultSizes.support
 
 **Default**: <code>&quot;25cc&quot;</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultSizes.system
 
 **Default**: <code>&quot;25cc&quot;</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.clusters.swap_enabled
 
@@ -3130,27 +2529,11 @@ Specifies cloud provider. Valid values are &lsquo;aws&rsquo;, &lsquo;gcp&rsquo;,
 
 Configure sizes such that the pod QoS class is not Guaranteed, as is required for swap to be enabled. Disk doesn&rsquo;t make much sense with swap, as swap performs better than lgalloc, so it also gets disabled.
 
-
-
-
-
-
-
-
-
 #### operator.image.pullPolicy
 
 **Default**: <code>&quot;IfNotPresent&quot;</code>
 
 Policy for pulling the image: &ldquo;IfNotPresent&rdquo; avoids unnecessary re-pulling of images
-
-
-
-
-
-
-
-
 
 #### operator.image.repository
 
@@ -3158,27 +2541,11 @@ Policy for pulling the image: &ldquo;IfNotPresent&rdquo; avoids unnecessary re-p
 
 The Docker repository for the operator image
 
-
-
-
-
-
-
-
-
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.20.2&quot;</code>
+**Default**: <code>&quot;v26.24.2&quot;</code>
 
 The tag/version of the operator image to be used
-
-
-
-
-
-
-
-
 
 #### operator.nodeSelector
 
@@ -3186,27 +2553,11 @@ The tag/version of the operator image to be used
 
 Node selector to use for the operator pod
 
-
-
-
-
-
-
-
-
 #### operator.resources.limits
 
 **Default**: <code>{&quot;memory&quot;:&quot;512Mi&quot;}</code>
 
 Resource limits for the operator&rsquo;s CPU and memory
-
-
-
-
-
-
-
-
 
 #### operator.resources.requests
 
@@ -3214,27 +2565,11 @@ Resource limits for the operator&rsquo;s CPU and memory
 
 Resources requested by the operator for CPU and memory
 
-
-
-
-
-
-
-
-
 #### operator.secretsController
 
 **Default**: <code>&quot;kubernetes&quot;</code>
 
 Which secrets controller to use for storing secrets. Valid values are &lsquo;kubernetes&rsquo; and &lsquo;aws-secrets-manager&rsquo;. Setting &lsquo;aws-secrets-manager&rsquo; requires a configured AWS cloud provider and IAM role for the environment with Secrets Manager permissions.
-
-
-
-
-
-
-
-
 
 #### operator.tolerations
 
@@ -3242,15 +2577,7 @@ Which secrets controller to use for storing secrets. Valid values are &lsquo;kub
 
 Tolerations to use for the operator pod
 
-
-
-
-
-
-
 ### `rbac` parameters
-
-
 
 #### rbac.create
 
@@ -3258,15 +2585,7 @@ Tolerations to use for the operator pod
 
 Whether to create necessary RBAC roles and bindings
 
-
-
-
-
-
-
 ### `schedulerName` parameters
-
-
 
 #### schedulerName
 
@@ -3274,15 +2593,7 @@ Whether to create necessary RBAC roles and bindings
 
 Optionally use a non-default kubernetes scheduler.
 
-
-
-
-
-
-
 ### `serviceAccount` parameters
-
-
 
 #### serviceAccount.create
 
@@ -3290,43 +2601,17 @@ Optionally use a non-default kubernetes scheduler.
 
 Whether to create a new service account for the operator
 
-
-
-
-
-
-
-
-
 #### serviceAccount.name
 
 **Default**: <code>&quot;orchestratord&quot;</code>
 
 The name of the service account to be created
 
-
-
-
-
-
-
 ### `storage` parameters
-
-
 
 #### storage.storageClass.allowVolumeExpansion
 
 **Default**: <code>false</code>
-
-
-
-
-
-
-
-
-
-
 
 #### storage.storageClass.create
 
@@ -3334,27 +2619,11 @@ The name of the service account to be created
 
 Set to false to use an existing StorageClass instead. Refer to the <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/" >Kubernetes StorageClass documentation</a>
 
-
-
-
-
-
-
-
-
 #### storage.storageClass.name
 
 **Default**: <code>&quot;&quot;</code>
 
 Name of the StorageClass to create/use: eg &ldquo;openebs-lvm-instance-store-ext4&rdquo;
-
-
-
-
-
-
-
-
 
 #### storage.storageClass.parameters
 
@@ -3362,127 +2631,54 @@ Name of the StorageClass to create/use: eg &ldquo;openebs-lvm-instance-store-ext
 
 Parameters for the CSI driver
 
-
-
-
-
-
-
-
-
 #### storage.storageClass.provisioner
 
 **Default**: <code>&quot;&quot;</code>
 
 CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
-
-
-
-
-
-
-
-
 #### storage.storageClass.reclaimPolicy
 
 **Default**: <code>&quot;Delete&quot;</code>
-
-
-
-
-
-
-
-
-
-
 
 #### storage.storageClass.volumeBindingMode
 
 **Default**: <code>&quot;WaitForFirstConsumer&quot;</code>
 
-
-
-
-
-
-
-
-
 ### `telemetry` parameters
-
-
 
 #### telemetry.enabled
 
 **Default**: <code>true</code>
 
-
-
-
-
-
-
-
-
-
-
 #### telemetry.segmentApiKey
 
 **Default**: <code>&quot;hMWi3sZ17KFMjn2sPWo9UJGpOQqiba4A&quot;</code>
-
-
-
-
-
-
-
-
-
-
 
 #### telemetry.segmentClientSide
 
 **Default**: <code>true</code>
 
-
-
-
-
-
-
-
-
 ### `tls` parameters
-
-
 
 #### tls.defaultCertificateSpecs
 
 **Default**: <code>{}</code>
-
-
-
- 
-
 
 ## See also
 
 - [Installation](/installation/)
 - [Troubleshooting](/installation/troubleshooting/)
 
-
 ---
 
 ## Self-managed release versions
 
-
 ## V26 releases
-
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
+| v26.22.0 | v26.22.0 | v26.22.0 | 2026-05-01 | See <a href="/releases/#v26220" >v26.22.0 release notes</a> |
 | v26.20.2 | v26.20.2 | v26.20.2 | 2026-04-18 | See <a href="/releases/#v26202" >v26.20.2 release notes</a> |
 | v26.20.0 | v26.20.0 | v26.20.0 | 2026-04-17 |  |
 | v26.19.0 | v26.19.0 | v26.19.0 | 2026-04-10 | See <a href="/releases/#v26190" >v26.19.0 release notes</a> |
@@ -3512,11 +2708,9 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 | v26.1.0 | v26.1.0 | v26.1.0 | 2025-11-26 | See <a href="/releases/#v2610" >v26.1.0 release notes</a>. |
 | v26.0.0 | v26.0.0 | v26.0.0 | 2025-11-18 | See <a href="/releases/#self-managed-v2600" >v26.0.0 release notes</a> |
 
-
 ---
 
 ## Troubleshooting
-
 
 ## Troubleshooting Kubernetes
 
@@ -3634,11 +2828,9 @@ To increase the cluster's size, you can follow the following steps:
     (6 rows)
     ```
 
-
 ---
 
 ## Upgrading
-
 
 Materialize releases new Self-Managed versions per the schedule outlined in [Release schedule](/releases/schedule/#self-managed-release-schedule).
 
@@ -3656,12 +2848,9 @@ upgrading the Materialize instances.
 </li>
 </ul>
 
-
 > **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
 > at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
 > permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
-
-
 
 ## Upgrade guides
 
@@ -3682,7 +2871,6 @@ The following upgrade guides are available as examples:
       </tr>
   </tbody>
 </table>
-
 
 <h4 id="upgrade-using-the-new-terraform-modules">Upgrade using the new Terraform Modules</h4>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
@@ -3711,7 +2899,6 @@ The following upgrade guides are available as examples:
   </tbody>
 </table>
 
-
 <h4 id="upgrade-using-legacy-terraform-modules">Upgrade using Legacy Terraform Modules</h4>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
 > upgrading Materialize.
@@ -3739,12 +2926,10 @@ The following upgrade guides are available as examples:
   </tbody>
 </table>
 
-
 ## Upgrading the Helm Chart and Materialize Operator
 
 > **Important:** When upgrading Materialize, always upgrade the Helm Chart and Materialize
 > Operator first.
-
 
 ### Update the Helm Chart repository
 
@@ -3765,8 +2950,6 @@ helm search repo materialize/materialize-operator --versions
 The Materialize Kubernetes Operator is deployed via Helm and can be updated
 through standard `helm upgrade` command:
 
-
-
 ```mzsql
 helm upgrade -n <namespace> <release-name> materialize/materialize-operator \
   --version <new_version> \
@@ -3780,7 +2963,6 @@ helm upgrade -n <namespace> <release-name> materialize/materialize-operator \
 | `<release-name>` | The release name. You can use `helm list -n <namespace>` to find your release name.  |
 | `<new_version>` | The upgrade version.  |
 | `<your-custom-values.yml>` | The name of your customization file, if using. If you are configuring using `\-\-set key=value` options, include them as well.  |
-
 
 You can use `helm list` to find your release name. For example, if your Operator
 is running in the namespace `materialize`, run `helm list`:
@@ -3802,7 +2984,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.20.2
+  --version v26.22.0
 ```
 
 ## Upgrading Materialize Instances
@@ -3840,19 +3022,17 @@ To stage the Materialize instances version upgrade, update the
 compatible version of your currently deployed Materialize Operator.
 
 To stage, but **not** rollout, the Materialize instance version upgrade, you can
-use the `kubectl patch` command; for example, if the **App Version** is v26.20.2:
+use the `kubectl patch` command; for example, if the **App Version** is v26.22.0:
 
 ```shell
 kubectl patch materialize <instance-name> \
   -n <materialize-instance-namespace> \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.20.2\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.22.0\"}}"
 ```
 
 > **Note:** Until you specify a new `requestRollout`, the Operator watches for updates but
 > does not roll out the changes.
-
-
 
 ### Applying the changes via `requestRollout`
 
@@ -3876,7 +3056,7 @@ can, if preferred, combine both operations in a single command
 kubectl patch materialize <instance-name> \
   -n materialize-environment \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.20.2\", \"requestRollout\": \"$(uuidgen)\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.22.0\", \"requestRollout\": \"$(uuidgen)\"}}"
 ```
 
 #### Using YAML Definition
@@ -3890,7 +3070,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.20.2 # Update version as needed
+  environmentdImageRef: materialize/environmentd:v26.22.0 # Update version as needed
   requestRollout: 22222222-2222-2222-2222-222222222222    # Use a new UUID
   forceRollout: 33333333-3333-3333-3333-333333333333      # Optional: for forced rollouts
   inPlaceRollout: false                                   # In Place rollout is deprecated and ignored. Please use rolloutStrategy
@@ -3914,7 +3094,6 @@ the Materialize instance.
 > **Note:** `requestRollout` without the `forcedRollout` field only rolls out if changes
 > exist to the Materialize instance. To roll out even if there are no changes to
 > the instance, use with `forcedRollouts`.
-
 
 ```shell
 # Only rolls out if there are changes
@@ -3946,10 +3125,8 @@ The behavior of the new version rollout follows your `rolloutStrategy` setting.
 `WaitUntilReady` creates a new generation of pods and automatically cuts over to them as soon as they catch up to the old generation and become `ReadyToPromote`. This strategy temporarily doubles the required resources to run Materialize.
 > **Warning:** `WaitUntilReady` waits up to 72 hours (configurable by the `with_0dt_deployment_max_wait` flag) for the new pods to become ready. If the promotion has not occurred by then, the new pods are automatically promoted.
 
-
 #### *ImmediatelyPromoteCausingDowntime*
 > **Warning:** Using the `ImmediatelyPromoteCausingDowntime` rollout flag will cause downtime.
-
 
 `ImmediatelyPromoteCausingDowntime` tears down the prior generation, and immediately promotes the new generation without waiting for it to hydrate. This causes downtime until the new generation has hydrated. However, it does not require additional resources.
 
@@ -3962,7 +3139,6 @@ To minimize downtime, wait until the new generation has fully hydrated and caugh
 To promote, update the `forcePromote` field to match the `requestRollout` field in the Materialize spec. If you need to promote before hydration completes, you can set `forcePromote` immediately, but clients may experience downtime.
 
 > **Warning:** Leaving a new generation unpromoted for over 6 hours may cause downtime.
-
 
 **Do not leave new generations unpromoted indefinitely**. They should either be promoted or canceled. New generations open a read hold on the metadata database that prevents compaction. This hold is only released when the generation is promoted or canceled. If left open too long, promoting or canceling can trigger a spike in deletion load on the metadata database, potentially causing downtime. It is not recommended to leave generations unpromoted for over 6 hours.
 
@@ -4009,7 +3185,6 @@ kubectl patch materialize <instance-name> \
 <li>To upgrade to <code>v26.1</code> or future versions, you must first upgrade to <code>v26.0</code></li>
 </ul>
 
-
 ### Upgrading to `v26.0`
 
 <ul>
@@ -4052,7 +3227,6 @@ to <a href="/self-managed-deployments/appendix/upgrade-to-swap/" >Prepare for sw
 </ul>
 </li>
 </ul>
-
 
 ### Upgrading between minor versions less than `v26`
  - Prior to `v26`, you must upgrade at most one minor version at a time. For

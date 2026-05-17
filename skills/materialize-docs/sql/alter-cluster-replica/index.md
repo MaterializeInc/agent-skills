@@ -6,14 +6,11 @@ Use `ALTER CLUSTER REPLICA` to:
 
 ## Syntax
 
-
 **Rename:**
 
 ### Rename
 
 To rename a cluster replica:
-
-
 
 ```mzsql
 ALTER CLUSTER REPLICA <name> RENAME TO <new_name>;
@@ -25,18 +22,13 @@ ALTER CLUSTER REPLICA <name> RENAME TO <new_name>;
 | `<name>` | The current name of the cluster replica.  |
 | `<new_name>` | The new name of the cluster replica.  |
 
-
 > **Note:** You cannot rename replicas in system clusters.
-
-
 
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a cluster replica:
-
-
 
 ```mzsql
 ALTER CLUSTER REPLICA <name> OWNER TO <new_owner_role>;
@@ -49,11 +41,6 @@ ALTER CLUSTER REPLICA <name> OWNER TO <new_owner_role>;
 | `<new_owner_role>` | The new owner of the cluster replica.  |
 To change the owner of a cluster replica, you must be the current owner and have
 membership in the `<new_owner_role>`.
-
-
-
-
-
 
 ## Privileges
 

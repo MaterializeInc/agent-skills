@@ -11,7 +11,6 @@ guarantees](/get-started/isolation-level/).
 > pre-installed to improve the user experience as well as support system
 > administration tasks.
 
-
 You must provision at least one cluster to power your workloads. You can then
 use the cluster to create the objects ([indexes](/concepts/indexes/) and
 [materialized views](/concepts/views/#materialized-views)) that provide

@@ -8,11 +8,9 @@
 SHOW [REDACTED] CREATE SINK <sink_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available sink names, see [`SHOW SINKS`](/sql/show-sinks).
 

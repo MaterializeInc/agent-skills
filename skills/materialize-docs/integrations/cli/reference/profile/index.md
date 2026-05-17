@@ -20,7 +20,6 @@ Argument                    | Environment variables | Description
 `--region=<REGION>`         |                       | Set the default region for the profile.
 `--profile=<PROFILE>`       | `MZ_PROFILE`          | Use the specified [authentication profile].
 
-
 ### Examples
 
 ```shell
@@ -176,6 +175,5 @@ Argument           | Environment variables     | Description
 `‑‑no‑color`       | `NO_COLOR`, `MZ_NO_COLOR` | Disable color output.
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
-
 
 [authentication profiles]: ../../configuration/#authentication-profiles

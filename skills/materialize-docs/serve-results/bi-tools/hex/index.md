@@ -36,7 +36,6 @@ level</a> using the following SQL statement:</p>
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
 
-
 ## Execute and visualize a query
 
 1. Create a new SQL cell.
@@ -68,7 +67,6 @@ connection.</p>
    2. In the **Y Axis** options, select the **number** column.
 
    <img width="1091" alt="Hex" src="https://github.com/MaterializeInc/materialize/assets/11491779/2da93aad-9332-4d7c-a407-c068a856b9ed">
-
 
 ### Related pages
 

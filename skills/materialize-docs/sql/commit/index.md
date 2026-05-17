@@ -33,15 +33,14 @@ is issued, all changes are discarded.</li>
 
 Transactions in Materialize are **read-only** transactions, **write-only**
 (more specifically, **insert-only**) transactions, or **DDL-only**
-transactions (***Private Preview***).
+transactions.
 
 For a [write-only (i.e., insert-only)
 transaction](/sql/begin/#write-only-transactions), all statements in the
 transaction are committed at the same timestamp.
 
-For a [DDL-only transaction](/sql/begin/#ddl-only-transactions) (***Private
-Preview***), all statements in the transaction are committed at the same
-timestamp.
+For a [DDL-only transaction](/sql/begin/#ddl-only-transactions), all
+statements in the transaction are committed at the same timestamp.
 
 ## Examples
 
@@ -97,7 +96,6 @@ queries in the transaction.
 
 > **Note:** The transaction will additionally hold back normal compaction of the objects,
 > potentially increasing memory usage for very long running transactions.
-
 
 ## See also
 

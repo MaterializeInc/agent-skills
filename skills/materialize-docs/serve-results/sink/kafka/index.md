@@ -15,7 +15,6 @@ refer to [`CREATE SINK`](/sql/create-sink/kafka).
 
 > **Tip:** Redpanda uses the same syntax as Kafka [`CREATE SINK`](/sql/create-sink/kafka).
 
-
 ## Features
 
 ### Memory use during creation
@@ -59,7 +58,6 @@ running `CREATE SINK`, observe the following guidance:
 | Progress topic | Tiered storage      | We recommend disabling tiered storage to allow for more aggressive data compaction. Fully compacted data requires minimal storage, typically only tens of bytes per sink, making it cost-effective to maintain directly on local disk.
 | Progress topic | Segment bytes       | Defaults to 128 MiB. We recommend going no higher than 256 MiB to avoid slow startups when creating new sinks, as they must process the entire progress topic on startup.
 > **Warning:** Dropping a Kafka sink doesn't drop the corresponding topic. For more information, see the [Kafka documentation](https://kafka.apache.org/documentation/).
-
 
 ### Exactly-once processing
 

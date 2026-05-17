@@ -2,7 +2,6 @@
 Query Materialize system catalog tables for troubleshooting and observability via the built-in MCP developer endpoint.
 > **Public Preview:** This feature is in public preview.
 
-
 Materialize provides a built-in Model Context Protocol (MCP) endpoint
 `/api/mcp/developer` (port 6876) for troubleshooting and observability. The MCP
 interface is served directly by the database; no sidecar process or external
@@ -21,8 +20,6 @@ ask natural language questions like:
 ## Connect to the MCP server
 
 ### Step 1. Get connection details
-
-
 
 **Cloud:**
 
@@ -45,7 +42,6 @@ tab")
    - To create a new app password to use, click on the **Create app password**
      to generate a new app password and token for MCP Server. **Copy the app
      password and token**.
-
 
 **Self-Managed:**
 
@@ -102,9 +98,6 @@ tab")
      kubectl port-forward svc/<instance-name>-balancerd 6876:6876 -n materialize-environment
      ```
 
-
-
-
 **Emulator:**
 
 To connect to the MCP server for your Emulator, use the following endpoint
@@ -114,19 +107,10 @@ To connect to the MCP server for your Emulator, use the following endpoint
 http://localhost:6876/api/mcp/developer
 ```
 
-
-
-
-
-
-
 ### Step 2. Configure your MCP client
 
 > **Warning:** When saving your credentials or other sensitive information in a config file, do
 > **not** commit these files to version control or share them publicly.
-
-
-
 
 **Claude Code:**
 
@@ -147,20 +131,18 @@ http://localhost:6876/api/mcp/developer
    ```
 
    Update the `<baseURL>` and `<base64-token>` placeholders with your values:
-   
+
    | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
    |--------------| ------------------------------------------------------------------| -------------------------------|
    | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
    | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
    | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
-   
+
    > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
    > the Console's **Connect** modal. The `.json` copied from the Console already
    > includes the correct `<baseURL>`.
 
 1. Restart Claude Code to pick up the new setting.
-
-
 
 **Claude Desktop:**
 
@@ -180,20 +162,18 @@ http://localhost:6876/api/mcp/developer
    ```
 
    Update the `<baseURL>` and `<base64-token>` placeholders with your values:
-   
+
    | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
    |--------------| ------------------------------------------------------------------| -------------------------------|
    | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
    | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
    | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
-   
+
    > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
    > the Console's **Connect** modal. The `.json` copied from the Console already
    > includes the correct `<baseURL>`.
 
 1. Restart Claude Desktop to pick up the new setting.
-
-
 
 **Cursor:**
 
@@ -212,20 +192,18 @@ http://localhost:6876/api/mcp/developer
    ```
 
    Update the `<baseURL>` and `<base64-token>` placeholders with your values:
-   
+
    | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
    |--------------| ------------------------------------------------------------------| -------------------------------|
    | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
    | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
    | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
-   
+
    > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
    > the Console's **Connect** modal. The `.json` copied from the Console already
    > includes the correct `<baseURL>`.
 
 1. Restart Cursor to pick up the new setting.
-
-
 
 **Generic HTTP:**
 
@@ -241,10 +219,6 @@ curl -X POST <baseURL>/api/mcp/developer \
     "method": "tools/list"
   }'
 ```
-
-
-
-
 
 ## Start asking questions
 

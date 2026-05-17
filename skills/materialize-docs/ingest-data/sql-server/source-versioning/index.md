@@ -3,7 +3,6 @@ How to add a column, or drop a column, from your source SQL Server database, wit
 
 > **Note:** Changing column types is currently unsupported.
 
-
 Materialize allows you to handle certain types of upstream
 table schema changes seamlessly, specifically:
 
@@ -70,7 +69,6 @@ snapshot](/ingest-data/#snapshotting) of table `v1.t1` will begin.
 > snapshot operation on the overview page for the source in the Materialize
 > console.
 
-
 ## Create a view on top of the table.
 
 For this guide, add a materialized view `matview` (also in schema `v1`) that
@@ -116,7 +114,6 @@ name](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-p
 > If you already have 2 capture instances, you will have to [disable one of
 > them](#disable-unused-capture-instance), possibly resulting in downtime for your
 > Materialize source.
-
 
 ```sql
 EXEC sys.sp_cdc_enable_table
@@ -164,8 +161,6 @@ The [snapshotting](/ingest-data/#snapshotting) of table `v2.t1` will begin.
 > snapshot operation on the overview page for the source in the Materialize
 > console.
 
-
-
 When the new `v2.t1` table has finished snapshotting, create a new materialized
 view `matview` in the new schema.  Since the new `v2.matview` is referencing the
 new `v2.t1`, it can reference column `b`:
@@ -196,7 +191,6 @@ CREATE TABLE v3.t1
 > snapshot operation on the overview page for the source in the Materialize
 > console.
 
-
 ### B. Drop a column in your upstream SQL Server database
 
 In your upstream SQL Server database, drop the column `b` from the table `t1`:
@@ -212,7 +206,6 @@ examples. When the user attempts to read from either, Materialize will report an
 error that the source table schema has been altered.
 
 ## Optional
-
 
 ### Disable unused capture instance
 
@@ -236,7 +229,6 @@ you may wish to disable the old capture instance if it is no longer in use.
 
 > **Warning:** Ensure that no other source tables or other applications are using the old
 > capture instance; otherwise, they will break.
-
 
 To disable a capture instance for a table:
 

@@ -26,9 +26,6 @@ can provide better performance.
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
 
-
-
-
 <table>
 <thead>
 <tr>
@@ -122,7 +119,6 @@ ORDER BY fieldA;
 
 **Last value within groups.** For more information and examples, see [Idiomatic Materialize SQL: Last value in
 group](/transform-data/idiomatic-materialize-sql/last-value/).
-
 
 </td>
 </tr>

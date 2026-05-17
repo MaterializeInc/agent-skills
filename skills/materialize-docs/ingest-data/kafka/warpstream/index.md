@@ -15,7 +15,6 @@ Materialize using [Fly.io](https://fly.io/).
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 #### Before you begin
 
 Ensure you have the following:

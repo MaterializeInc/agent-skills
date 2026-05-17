@@ -11,7 +11,6 @@ components are deployed with high available configurations or with automated
 recovery mechanisms. However, they can still experience outages due to failures
 in underlying providers.
 
-
 | Failure Type | Impact |
 | --- | --- |
 | <strong>Single Availability Zone (AZ)</strong> | <ul> <li> <p>Connection issues using single-AZ Privatelink and sources/sinks.</p> </li> <li> <p>Brief <code>pgwire</code> and <code>https</code> connection drops as network rebalances.</p> </li> </ul>  |
@@ -19,9 +18,7 @@ in underlying providers.
 | <strong>Three or More Availability Zones</strong> | <ul> <li> <p>Partial to no access to the database.</p> </li> <li> <p>May require point-in-time recovery (PITR) of environments.</p> </li> </ul>  |
 | <strong>Single Region System Resources</strong> | There are metadata resources running in HA in <strong>us-east-1</strong>. An outage in <strong>us-east-1</strong> may result in issues viewing the console for other regions. This does <strong>not</strong> affect database access, up-time, or performance. |
 
-
 > **Recommendation(s):** - Use privatelink when possible and configure to use multiple AZs. - If you are concerned about multi-AZ outages, consider [duplicate Materialize environment in second region strategy](/manage/disaster-recovery/#level-3-a-duplicate-materialize-environment-inter-region-resilience) 
-
 
 ## Database environment
 
@@ -31,7 +28,6 @@ The `environmentd` runs on a single node in a single AZ. `environmentd`
 has no data; as such, the RPO is `N/A`.
 
 The component has the following failure characteristics:
-
 
 | Failure Type | RPO | RTO (RF1 - single AZ) | RTO (RF2 - multiple AZs) |
 | --- | --- | --- | --- |
@@ -45,9 +41,7 @@ Factor)
 
 > **Key point(s):** - If `environmentd` becomes unavailable, RTO is non-zero. - If `environmentd` becomes unavailable, its RTO affects the RTO of the clusters as you cannot access data while `environmentd` is unavailable. 
 
-
 ### Clusters
-
 
 | Failure Type | RPO | RTO (RF1 - single AZ) | RTO (RF2 - multiple AZs) |
 | --- | --- | --- | --- |
@@ -62,9 +56,7 @@ Factor)
 
 > **Key point(s):** - Cluster RTO can be affected if the environmentd is down (seconds to minutes). - For regional failover strategy, you can use a [duplicate Materialize environment strategy](/manage/disaster-recovery/#level-3-a-duplicate-materialize-environment-inter-region-resilience). 
 
-
 ## Materialize data corruption/operations error
-
 
 | Failure Type | RPO | RTO (RF1/RF2) |
 | --- | --- | --- |
@@ -78,7 +70,6 @@ Factor)
 
 ## End-user error
 
-
 | Failure Type | RPO | RTO (RF1/RF2) |
 | --- | --- | --- |
 | <strong>Accidental source drop (and dependent objects)</strong> | <p>Same as upstream source system. Source will need to be recreated in Materialize.</p> <p>Consider using <a href="/security/access-control/" >RBAC</a> to reduce the risk of accidentally dropping sources.</p>  | <p>Time to recreate the source and snapshot + time to recreate the dependent objects and rehydrate.</p> <p>Consider using <a href="/security/access-control/" >RBAC</a> to reduce the risk of accidentally dropping sources.</p>  |
@@ -90,7 +81,6 @@ Factor)
 </span>
 
 > **Key point(s):** - You can use [RBAC](/security/access-control/) to reduce the risk of accidentally dropping sources (and other objects) in Materialize. 
-
 
 ## See also
 

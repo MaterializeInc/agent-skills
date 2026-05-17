@@ -31,7 +31,6 @@ connections"
 
 ### Setup
 
-
 **macOS:**
 
 To set up a connection from Tableau Desktop to Materialize, you must:
@@ -40,8 +39,6 @@ To set up a connection from Tableau Desktop to Materialize, you must:
 1. Copy the `.jar` file to the following directory (which may have to be created manually):
 
    `~/Library/Tableau/Drivers`
-
-
 
 **Linux:**
 
@@ -52,8 +49,6 @@ To set up a connection from Tableau Desktop to Materialize, you must:
 
    `/opt/tableau/tableau_driver/jdbc`
 
-
-
 **Windows:**
 
 To set up a connection from Tableau Desktop to Materialize, you must:
@@ -62,9 +57,6 @@ To set up a connection from Tableau Desktop to Materialize, you must:
 1. Copy the `.jar` file to the following directory (which may have to be created manually):
 
    `C:\Program Files\Tableau\Drivers`
-
-
-
 
 ### Database connection details
 
@@ -102,7 +94,6 @@ level</a> using the following SQL statement:</p>
 <p>Once set, all new sessions for that user will automatically run in the specified
 cluster, eliminating the need to manually specify it in each query or
 connection.</p>
-
 
 ### Troubleshooting
 

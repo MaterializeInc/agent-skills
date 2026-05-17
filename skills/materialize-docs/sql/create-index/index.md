@@ -9,16 +9,12 @@ By maintaining fresh, up-to-date results in memory, indexes can significantly [o
 
 Because indexes are scoped to a single cluster, they are most useful for accelerating queries within that cluster. For results that must be shared across clusters or persisted to durable storage, consider using a [materialized view](/sql/create-materialized-view), which also maintains fresh results but is accessible system-wide.
 
-
 ## Syntax
-
 
 **CREATE INDEX:**
 ### Create index
 
 Create an index using the specified columns as the index key.
-
-
 
 ```mzsql
 CREATE INDEX [<index_name>]
@@ -37,15 +33,11 @@ ON <obj_name> [USING <method>] (<col_expr>, ...)
 | `(<col_expr>, ...)` | The expressions to use as the key for the index.  |
 | `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
-
-
 **CREATE DEFAULT INDEX:**
 ### Create default index
 
 Create a default index using a set of columns that uniquely identify each row.
 If this set of columns cannot be inferred, all columns are used.
-
-
 
 ```mzsql
 CREATE DEFAULT INDEX
@@ -61,10 +53,6 @@ ON <obj_name> [USING <method>]
 | `<obj_name>` | The name of the source, view, or materialized view on which you want to create an index.  |
 | `USING <method>` | The name of the index method to use. The only supported method is [`arrangement`](/overview/arrangements).  |
 | `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
-
-
-
-
 
 ## Details
 
@@ -143,7 +131,6 @@ expected data access patterns to determine if you need to index or not.</p>
 </li>
 </ul>
 
-
 ### Usage patterns
 
 #### Indexes on views vs. materialized views
@@ -207,8 +194,6 @@ joins</a>.</p>
 </li>
 </ul>
 <p>For more information, see <a href="/transform-data/optimization" >Optimization</a>.</p>
-
-
 
 ## Examples
 

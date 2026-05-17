@@ -12,7 +12,6 @@ all systems in your organization.
 > console. Permissions within the database are handled separately using
 > [role-based access control](/security/cloud/access-control/).
 
-
 ## Before you begin
 
 To make Materialize metadata available to Datadog, you must configure and run the following additional services:
@@ -26,22 +25,17 @@ To make Materialize metadata available to Datadog, you must configure and run th
 
 * Navigate to **Account** > **Account Settings** > **SSO**.
 
-
 **OpenID Connect:**
 
 * Click **Add New** and choose the `OpenID Connect` connection type.
 
 * Add the issuer URL, client ID, and secret key provided by your identity provider.
 
-
 **SAML:**
 
 * Click **Add New** and choose the `SAML` connection type.
 
 * Add the SSO endpoint and public certificate provided by your identity provider.
-
-
-
 
 * Optionally, add the SSO domain provided by your identity provider. Click **Proceed**.
 
@@ -51,8 +45,7 @@ To make Materialize metadata available to Datadog, you must configure and run th
   | --- | --- |
   | <strong>Organization Admin</strong> | <ul> <li> <p><strong>Console access</strong>: Has access to all Materialize console features, including administrative features (e.g., invite users, create service accounts, manage billing, and organization settings).</p> </li> <li> <p><strong>Database access</strong>: Has <red><strong>superuser</strong></red> privileges in the database.</p> </li> </ul>  |
   | <strong>Organization Member</strong> | <ul> <li> <p><strong>Console access</strong>: Has no access to Materialize console administrative features.</p> </li> <li> <p><strong>Database access</strong>: Inherits role-level privileges defined by the <code>PUBLIC</code> role; may also have additional privileges via grants or default privileges. See <a href="/security/cloud/access-control/#roles-and-privileges" >Access control control</a>.</p> </li> </ul>  |
-  
-  
+
   > **Note:** - The first user for an organization is automatically assigned the
   >   **Organization Admin** role.
   > - An [Organization
@@ -62,7 +55,6 @@ To make Materialize metadata available to Datadog, you must configure and run th
   > require superuser privileges.
   > - Users/service accounts can be granted additional database roles and privileges
   >   as needed.
-
 
 ## Next steps
 

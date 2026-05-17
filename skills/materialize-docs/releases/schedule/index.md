@@ -14,7 +14,6 @@ aws/eu-west-1 | Wednesday   | 2100-2300 [Europe/Dublin]
 aws/us-east-1 | Thursday    | 0500-0700 [America/New_York]
 aws/us-west-2 | Thursday    | 0500-0700 [America/New_York]
 
-
 During an upgrade, clients may experience brief connection interruptions, but
 the service otherwise remains fully available. Upgrade windows were chosen to be
 outside of business hours in the most representative time zone for the region.
@@ -24,7 +23,6 @@ outside of business hours in the most representative time zone for the region.
 > - Releases may skip some weeks.
 > - Upgrade windows follow any daylight saving time or summer time rules
 > for their indicated time zone.
-
 
 [America/New_York]: https://time.is/New_York
 [Europe/Dublin]: https://time.is/Dublin

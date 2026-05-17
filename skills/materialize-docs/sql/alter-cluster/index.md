@@ -14,14 +14,11 @@ general, you will not need to manually perform this operation.
 
 `ALTER CLUSTER` has the following syntax variations:
 
-
 **Set a configuration:**
 
 ### Set a configuration
 
 To set a cluster configuration:
-
-
 
 ```mzsql
 ALTER CLUSTER <cluster_name>
@@ -45,15 +42,11 @@ SET (
 | `SCHEDULE` | Optional. The [scheduling type](/sql/create-cluster/#scheduling) for the cluster. Valid values are `MANUAL` and `ON REFRESH`.  Default: `MANUAL`  |
 | `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under activedevelopment.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* A fixed duration to wait for the new replicas to be ready. This option can lead to downtime. As such, we recommend using the `WAIT UNTIL READY` option instead.\|  |
 
-
-
 **Reset to default:**
 
 ### Reset to default
 
 To reset a cluster configuration back to its default value:
-
-
 
 ```mzsql
 ALTER CLUSTER <cluster_name>
@@ -72,15 +65,11 @@ RESET (
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  Default: `TRUE`  |
 | `SCHEDULE` | Optional. The [scheduling type](/sql/create-cluster/#scheduling) for the cluster.  Default: `MANUAL`  |
 
-
-
 **Rename:**
 
 ### Rename
 
 To rename a cluster:
-
-
 
 ```mzsql
 ALTER CLUSTER <cluster_name> RENAME TO <new_cluster_name>;
@@ -92,18 +81,13 @@ ALTER CLUSTER <cluster_name> RENAME TO <new_cluster_name>;
 | `<cluster_name>` | The current name of the cluster.  |
 | `<new_cluster_name>` | The new name of the cluster.  |
 
-
 > **Note:** You cannot rename system clusters, such as `mz_system` and `mz_catalog_server`.
-
-
 
 **Change owner:**
 
 ### Change owner
 
 To change the owner of a cluster:
-
-
 
 ```mzsql
 ALTER CLUSTER <cluster_name> OWNER TO <new_owner_role>;
@@ -117,8 +101,6 @@ ALTER CLUSTER <cluster_name> OWNER TO <new_owner_role>;
 To change the owner, you must have ownership of the cluster and membership in
 the `<new_owner_role>`. See also [Required privileges](#required-privileges).
 
-
-
 **Swap with:**
 
 ### Swap with
@@ -127,10 +109,7 @@ the `<new_owner_role>`. See also [Required privileges](#required-privileges).
 > `SWAP WITH` operation is used for blue/green deployments. In general, you will
 > not need to manually perform this operation.
 
-
 To swap the name of this cluster with another cluster:
-
-
 
 ```mzsql
 ALTER CLUSTER <cluster1> SWAP WITH <cluster2>;
@@ -142,10 +121,6 @@ ALTER CLUSTER <cluster1> SWAP WITH <cluster2>;
 | `<cluster1>` | The name of the first cluster.  |
 | `<cluster2>` | The name of the second cluster.  |
 
-
-
-
-
 ## Considerations
 
 ### Resizing
@@ -154,9 +129,7 @@ ALTER CLUSTER <cluster1> SWAP WITH <cluster2>;
 > [**Monitoring**](/console/monitoring/)>**Environment Overview**. This page
 > displays cluster resource utilization and sizing advice.
 
-
 #### Available sizes
-
 
 **cc Clusters:**
 
@@ -193,14 +166,10 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 > most workloads. We recommend using cc sizes unless your workload specifically
 > requires the additional disk capacity that M.1 sizes provide.
 
-
 > **Note:** The values set forth in the table are solely for illustrative purposes.
 > Materialize reserves the right to change the capacity at any time. As such, you
 > acknowledge and agree that those values in this table may change at any time,
 > and you should not rely on these values for any capacity planning.
-
-
-
 
 | Cluster size | Compute Credits/Hour | Total Capacity | Notes |
 | --- | --- | --- | --- |
@@ -219,10 +188,6 @@ Clusters of larger sizes can process data faster and handle larger data volumes.
 | <strong>M.1-32xlarge</strong> | 384 | 13160 GiB | Available upon request |
 | <strong>M.1-64xlarge</strong> | 768 | 26320 GiB | Available upon request |
 | <strong>M.1-128xlarge</strong> | 1536 | 52640 GiB | Available upon request |
-
-
-
-
 
 See also:
 
@@ -243,7 +208,6 @@ system catalog table.
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
 > time. You should not rely on them for any kind of capacity planning.
 
-
 #### Downtime
 
 Resizing operation can incur downtime unless used with WAIT UNTIL READY option.
@@ -251,8 +215,6 @@ See [zero-downtime cluster resizing](#zero-downtime-cluster-resizing) for
 details.
 
 #### Zero-downtime cluster resizing
-
-
 
 You can use the `WAIT UNTIL READY` option to perform a zero-downtime resizing,
 which incurs **no downtime**. Instead of restarting the cluster, this approach
@@ -302,7 +264,6 @@ available, the cluster can continue to maintain dataflows and serve queries.
 >   To increase the capacity of a cluster, you must increase its
 >   [size](#resizing).
 
-
 Materialize automatically assigns names to replicas (e.g., `r1`, `r2`). You can
 view information about individual replicas in the Materialize console and the system
 catalog.
@@ -317,7 +278,6 @@ When provisioning replicas,
 
 - For clusters sized at **`3200cc` and above**, even distribution of replicas
   across availability zones **cannot** be guaranteed.
-
 
 ## Required privileges
 
@@ -340,7 +300,6 @@ See also:
 
 You cannot rename system clusters, such as `mz_system` and `mz_catalog_server`.
 
-
 ## Examples
 
 ### Replication factor
@@ -354,7 +313,6 @@ ALTER CLUSTER c1 SET (REPLICATION FACTOR 2);
 
 Increasing the `REPLICATION FACTOR` increases the cluster's [fault
 tolerance](#replication-factor-and-fault-tolerance), not its work capacity.
-
 
 ### Resizing
 
@@ -386,8 +344,6 @@ and some types of sources.
 
 ### Schedule
 
-
-
 For use cases that require using [scheduled clusters](/sql/create-cluster/#scheduling),
 you can set or change the originally configured schedule and related options
 using the `ALTER CLUSTER` command.
@@ -405,7 +361,6 @@ scheduled clusters.
 > **Note:** When getting started with Materialize, we recommend using managed clusters. You
 > can convert any unmanaged clusters to managed clusters by following the
 > instructions below.
-
 
 Alter the `managed` status of a cluster to managed:
 

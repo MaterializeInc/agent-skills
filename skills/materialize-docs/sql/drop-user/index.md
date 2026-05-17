@@ -2,7 +2,6 @@
 `DROP USER` removes a role from Materialize.
 `DROP USER` removes a role from Materialize. `DROP USER` is an alias for [`DROP ROLE`](../drop-role).
 
-
 ## Syntax
 
 ```mzsql

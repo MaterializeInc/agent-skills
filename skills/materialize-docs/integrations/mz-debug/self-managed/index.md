@@ -26,7 +26,6 @@ mz-debug self-managed [OPTIONS]
 
 ## `mz-debug self-managed` options
 
-
 | Option | Description |
 | --- | --- |
 | <code>--k8s-namespace &lt;NAMESPACE&gt;</code> | <a name="k8s-namespace"></a> <strong>Required</strong>. The Kubernetes namespace of the Materialize instance. |
@@ -36,9 +35,7 @@ mz-debug self-managed [OPTIONS]
 | <code>--k8s-context &lt;CONTEXT&gt;</code> | <p><a name="k8s-context"></a> The Kubernetes context to use.</p> <p>Defaults to the <code>KUBERNETES_CONTEXT</code> environment variable.</p>  |
 | <code>-h</code>, <code>--help</code> | <a name="help"></a> Print help information. |
 
-
 ## `mz-debug` global options
-
 
 | Option | Description |
 | --- | --- |
@@ -48,7 +45,6 @@ mz-debug self-managed [OPTIONS]
 | <code>--mz-username &lt;USERNAME&gt;</code> | <p><a name="mz-username"></a> The username to use to connect to Materialize.</p> <p>Can also be set via the <code>MZ_USERNAME</code> environment variable.</p>  |
 | <code>--mz-password &lt;PASSWORD&gt;</code> | <p><a name="mz-password"></a> The password to use to connect to Materialize if password authentication is enabled.</p> <p>Can also be set via the <code>MZ_PASSWORD</code> environment variable.</p>  |
 | <code>--mz-connection-url &lt;URL&gt;</code> | <p><a name="mz-connection-url"></a>The Materialize instance&rsquo;s <a href="https://www.postgresql.org/docs/14/libpq-connect.html#LIBPQ-CONNSTRING" >PostgreSQL connection URL</a>.</p> <p>Defaults to <code>postgres://127.0.0.1:6875/materialize?sslmode=prefer</code>.</p>  |
-
 
 ## Output
 
@@ -65,7 +61,6 @@ files](#system-catalog-files).
 Under `mz_debug_YYYY-MM-DD-HH-TMM-SSZ/`, the following Kubernetes resource debug
 files are generated:
 
-
 | Resource Type | Files |
 | --- | --- |
 | Workloads | <ul> <li><code>pods/{namespace}/*.yaml</code></li> <li><code>logs/{namespace}/{pod}.current.log</code></li> <li><code>logs/{namespace}/{pod}.previous.log</code></li> <li><code>deployments/{namespace}/*.yaml</code></li> <li><code>statefulsets/{namespace}/*.yaml</code></li> <li><code>replicasets/{namespace}/*.yaml</code></li> <li><code>events/{namespace}/*.yaml</code></li> <li><code>materializes/{namespace}/*.yaml</code></li> </ul>  |
@@ -73,7 +68,6 @@ files are generated:
 | Storage | <ul> <li><code>persistentvolumes/*.yaml</code></li> <li><code>persistentvolumeclaims/{namespace}/*.yaml</code></li> <li><code>storageclasses/*.yaml</code></li> </ul>  |
 | Configuration | <ul> <li><code>roles/{namespace}/*.yaml</code></li> <li><code>rolebinding/{namespace}/*.yaml</code></li> <li><code>configmaps/{namespace}/*.yaml</code></li> <li><code>serviceaccounts/{namespace}/*.yaml</code></li> </ul>  |
 | Cluster-level | <ul> <li><code>nodes/*.yaml</code></li> <li><code>daemonsets/*.yaml</code></li> <li><code>mutatingwebhookconfigurations/{namespace}/*.yaml</code></li> <li><code>validatingwebhookconfigurations/{namespace}/*.yaml</code></li> <li><code>customresourcedefinitions/*.yaml</code></li> </ul>  |
-
 
 Each resource type directory also contains a `describe.txt` file with the output of `kubectl describe` for that resource type.
 
@@ -94,20 +88,15 @@ contains:
 For more information about each relation, view the [system
 catalog](/reference/system-catalog/).
 
-
 ### Prometheus metrics
 
 `mz-debug` outputs snapshots of prometheus metrics per service (i.e. environmentd) if
 [`--dump-prometheus-metrics`](#dump-prometheus-metrics) is `true` (the default).
 Each file is stored under `prom_metrics/{service}.txt`.
 
-
 ### Memory profiles
 
 By default, `mz-debug` outputs heap profiles for each service in `profiles/{service}.memprof.pprof.gz`. To turn off this behavior, you can set [`--dump-heap-profiles`](#dump-heap-profiles) to false.
-
-
-
 
 ## Prerequisite: Get the Materialize instance name
 

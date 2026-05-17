@@ -13,7 +13,6 @@ Syntax element       | Description
 `<role_to_remove>`   | The name of the role to remove from the `<target_role>`.
 `<target_role>`      | The name of the role from which the to remove the `<role_to_remove>`.
 
-
 ## Examples
 
 ```mzsql

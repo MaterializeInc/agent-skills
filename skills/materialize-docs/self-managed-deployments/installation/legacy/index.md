@@ -2,9 +2,6 @@
 
 Install Self-Managed Materialize using legacy Terraform modules
 
-
-
-
 <h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
 > installing Materialize.
@@ -32,18 +29,12 @@ Install Self-Managed Materialize using legacy Terraform modules
   </tbody>
 </table>
 
-
-
-
 ---
 
 ## Install on AWS(Legacy Terraform)
 
-
-
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; and a license key.
-
 
 The tutorial deploys Materialize to AWS Elastic Kubernetes Service (EKS) with a
 PostgreSQL RDS database as the metadata database and AWS S3 for blob storage.
@@ -65,7 +56,6 @@ module](https://github.com/MaterializeInc/terraform-aws-materialize) to:
 > - Fork the repo and pin to a specific version; or
 > - Use the code as a reference when developing your own deployment.
 
-
 When operating in AWS, we recommend the following instances:
 
 | EC2 Instances  |
@@ -78,7 +68,6 @@ the default [`node_group_instance_types`].
 
 [`node_group_instance_types`]:
     https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#input_node_group_instance_types
-
 
 See [AWS Deployment guidelines](/self-managed-deployments/deployment-guidelines/aws-deployment-guidelines/) for
 more information.
@@ -108,8 +97,6 @@ documentation](https://helm.sh/docs/intro/install/).
 
 ### License key
 
-
-
 ## Set up AWS Kubernetes environment and install Materialize
 
 > **Warning:** The Terraform modules used in this tutorial are intended for
@@ -124,16 +111,12 @@ documentation](https://helm.sh/docs/intro/install/).
 > them to the terminal. In practice, refer to your organization's official
 > security and Terraform/infrastructure practices.
 
-
-
-
 **Deployed components:**
 
 [Materialize on AWS Terraform
 module](https://github.com/MaterializeInc/terraform-aws-materialize/blob/main/README.md)
 deploys a sample infrastructure on AWS (region `us-east-1`) with the following
 components:
-
 
 | Component | Version |
 | --- | --- |
@@ -147,7 +130,6 @@ components:
 | OpenEBS and NVMe instance storage to enable spill-to-disk | <a href="/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-aws-terraform-module" >v0.3.1+</a> |
 | <code>cert-manager</code> and a self-signed <code>ClusterIssuer</code>. <code>ClusterIssuer</code> is deployed on subsequent runs after the <code>cert-manager</code> is running. | <a href="/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-aws-terraform-module" >v0.4.0+</a> |
 
-
 > **Tip:** The tutorial uses the `main.tf` found in the `examples/simple/` directory, which
 > requires minimal user input. For details on the `examples/simple/`
 > infrastructure configuration (such as the node instance type, etc.), see the
@@ -157,25 +139,16 @@ components:
 > instead. When running with the root `main.tf`, see [AWS required
 > configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-aws/).
 
-
-
 **Releases:**
-
 
 | Terraform version | Notable changes |
 | --- | --- |
 | <a href="https://github.com/MaterializeInc/terraform-aws-materialize/releases/tag/v0.6.4" >v0.6.4</a> | <ul> <li>Released as part of v26.0.0.</li> <li>Uses <code>terraform-helm-materialize</code> version <code>v0.1.35</code>.</li> </ul>  |
 
-
-
-
-
 1. Open a Terminal window.
 
 1. Configure AWS CLI with your AWS credentials. For details, see the [AWS
    documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
-
-
 
 1. Fork the [Materialize's sample Terraform
    repo](https://github.com/MaterializeInc/terraform-aws-materialize).
@@ -187,22 +160,21 @@ components:
    MY_ORGANIZATION=<enter-your-organization>
    ```
 
-1. Clone your forked repo and checkout the `v0.8.26` tag. For example,
+1. Clone your forked repo and checkout the `v0.8.27` tag. For example,
 
    - If cloning via SSH (replace `YOUR_ORGANIZATION` with your organization's
      name):
 
      ```bash
-     git clone --depth 1 -b v0.8.26 git@github.com:${MY_ORGANIZATION}/terraform-aws-materialize.git
+     git clone --depth 1 -b v0.8.27 git@github.com:${MY_ORGANIZATION}/terraform-aws-materialize.git
      ```
 
    - If cloning via HTTPS (replace `YOUR_ORGANIZATION` with your
      organization's name):
 
      ```bash
-     git clone --depth 1 -b v0.8.26 https://github.com/${MY_ORGANIZATION}/terraform-aws-materialize.git
+     git clone --depth 1 -b v0.8.27 https://github.com/${MY_ORGANIZATION}/terraform-aws-materialize.git
      ```
-
 
 1. Go to the `examples/simple` folder in the Materialize Terraform repo
    directory.
@@ -220,7 +192,6 @@ components:
 >    instead. When running with the root `main.tf`, see [AWS required
 >    configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-aws/).
 
-
 1. Create a `terraform.tfvars` file (you can copy from the
    `terraform.tfvars.example` file) and specify the following variables:
 
@@ -228,7 +199,6 @@ components:
    |--------------------|-------------|
    | `namespace`       | A namespace (e.g., `my-demo`) that will be used to form part of the prefix for your AWS resources. <br> **Requirements:** <br> - Maximum of 12 characters <br> - Must start with a lowercase letter <br> - Must be lowercase alphanumeric and hyphens only |
    | `environment`     | An environment name (e.g., `dev`, `test`) that will be used to form part of the prefix for your AWS resources. <br> **Requirements:** <br> - Maximum of 8 characters <br> - Must be lowercase alphanumeric only |
-
 
    ```bash
    # The namespace and environment variables are used to construct the names of   the resources
@@ -246,7 +216,6 @@ components:
 >    the repository](https://github.com/MaterializeInc/terraform-aws-materialize/)
 >    instead. When running with the root `main.tf`, see [AWS required
 >    configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-aws/).
-
 
 1. Initialize the terraform directory.
 
@@ -320,7 +289,6 @@ components:
    starting in v0.4.0, a `cert-manager`. Verify the installation and check the
    status:
 
-   
    **Materialize Operator:**
 
    Verify the installation and check the status:
@@ -342,7 +310,6 @@ components:
    replicaset.apps/my-demo-dev-materialize-operator-84ff4b4648   1        1         1       12s
    ```
 
-   
    **cert-manager (Starting in version 0.4.0):**
 
    Verify the installation and check the status:
@@ -370,9 +337,6 @@ components:
    replicaset.apps/cert-manager-webhook-5f79cd6f4b      1         1         1
    4m20s
    ```
-
-   
-   
 
    If you run into an error during deployment, refer to the
    [Troubleshooting](/installation/troubleshooting) guide.
@@ -422,7 +386,6 @@ components:
    > **Tip:** If upgrading from a deployment that was set up using an earlier version of the
 >    Terraform modules, additional considerations may apply when using an updated Terraform modules to your existing deployments.
 >    See [Materialize on AWS releases](/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-aws-terraform-module) for notable changes.
-
 
 1. Run `terraform plan` with both `.tfvars` files and review the changes to be
    made.
@@ -526,8 +489,6 @@ components:
 
 1. Open the Materialize Console in your browser:
 
-   
-
    **Via Network Load Balancer:**
 
    Starting in v0.3.0, for each Materialize instance, Materialize on AWS
@@ -549,20 +510,18 @@ components:
    from an official Certificate Authority (CA) rather than self-signed
    certificates.
 
-   
-
    **Via port forwarding:**
 
    1. Find your console service name.
-   
+
       ```shell
       MZ_SVC_CONSOLE=$(kubectl -n materialize-environment get svc \
         -o custom-columns="NAME:.metadata.name" --no-headers | grep console)
       echo $MZ_SVC_CONSOLE
       ```
-   
+
    1. Port forward the Materialize Console service to your local machine:[^1]
-   
+
       ```shell
       (
         while true; do
@@ -571,21 +530,21 @@ components:
         done;
       ) &
       ```
-   
+
       The command is run in background.
       <br>- To list the background jobs, use `jobs`.
       <br>- To bring back to foreground, use `fg %<job-number>`.
       <br>- To kill the background job, use `kill %<job-number>`.
-   
+
    1. Open a browser and navigate to
       [https://localhost:8080](https://localhost:8080) (or, if you have not enabled
       TLS, [http://localhost:8080](http://localhost:8080)).
-   
+
       The example uses a self-signed ClusterIssuer. As such, you may encounter a
       warning with regards to the certificate. In production, run with certificates
       from an official Certificate Authority (CA) rather than self-signed
       certificates.
-   
+
    [^1]: The port forwarding command uses a while loop to handle a [known
    Kubernetes issue 78446](https://github.com/kubernetes/kubernetes/issues/78446),
    where interrupted long-running requests through a standard port-forward cause
@@ -593,19 +552,13 @@ components:
    if an error occurs, ensuring a more stable connection. It detects failures by
    monitoring for "portforward.go" error messages.
 
-
-   
-   
-
    > **Tip:** If you experience long loading screens or unresponsiveness in the Materialize
 >    Console, we recommend increasing the size of the `mz_catalog_server` cluster.
 >    Refer to the [Troubleshooting Console
 >    Unresponsiveness](/self-managed-deployments/troubleshooting/#troubleshooting-console-unresponsiveness)
 >    guide.
 
-
 ## Next steps
-
 
 - From the Console, you can get started with the
 [Quickstart](/get-started/quickstart/).
@@ -613,9 +566,7 @@ components:
 - To start ingesting your own data from an external system like Kafka, MySQL or
   PostgreSQL, see [Ingest data](/ingest-data/).
 
-
 ## Cleanup
-
 
 To delete the whole sample infrastructure and deployment (including the
 Materialize operator and Materialize instances and data), run from the Terraform
@@ -627,7 +578,6 @@ terraform destroy
 
 When prompted to proceed, type `yes` to confirm the deletion.
 
-
   > **Tip:** - To delete your S3 bucket, you may need to empty the S3 bucket first. If the
 >     `terraform destroy` command is unable to delete the S3 bucket and does not
 >     progress beyond "Still destroying...", empty the S3 bucket first and rerun
@@ -636,23 +586,18 @@ When prompted to proceed, type `yes` to confirm the deletion.
 >     regards to CustomResourceDefinition(CRD). You may safely ignore these
 >     messages as your whole deployment has been destroyed, including the CRDs.
 
-
 ## See also
 
 - [Materialize Operator
   Configuration](/self-managed-deployments/operator-configuration/)
 - [Troubleshooting](/self-managed-deployments/troubleshooting/)
 
-
 ---
 
 ## Install on Azure (Legacy Terraform)
 
-
-
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; specifically **block** blob storage on Azure; and a license key.
-
 
 The tutorial deploys Materialize to Azure Kubernetes Service (AKS) with a
 PostgreSQL database as the metadata database and Azure premium block blob
@@ -676,7 +621,6 @@ modules](https://github.com/MaterializeInc/terraform-azurerm-materialize) to:
 > For simplicity, this tutorial stores various secrets in a file as well as prints
 > them to the terminal. In practice, refer to your organization's official
 > security and Terraform/infrastructure practices.
-
 
 ## Prerequisites
 
@@ -714,8 +658,6 @@ Terraform outputs. Alternatively, you can manually specify the name and region.
 If you want to use `jq` and do not have `jq` installed, install.
 
 ### License key
-
-
 
 ## A. Authenticate with Azure
 
@@ -764,15 +706,11 @@ If you want to use `jq` and do not have `jq` installed, install.
 > - Fork the repo and pin to a specific version; or
 > - Use the code as a reference when developing your own deployment.
 
-
-
-
 **Deployed components:**
 
 [Materialize on Azure Terraform
 module](https://github.com/MaterializeInc/terraform-azurerm-materialize) for
 deploys a sample infrastructure on Azure with the following components:
-
 
 | Component | Version |
 | --- | --- |
@@ -787,7 +725,6 @@ deploys a sample infrastructure on Azure with the following components:
 | Load balancers for each Materialize instance | <a href="/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-azure-terraform-module" >v0.3.1+</a> |
 | OpenEBS and NVMe instance storage to enable spill-to-disk | <a href="/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-azure-terraform-module" >v0.4.0+</a> |
 
-
 > **Tip:** The tutorial uses the `main.tf` found in the `examples/simple/` directory,
 > which requires minimal user input. For details on the `examples/simple/`
 > infrastructure configuration (such as the node instance type, etc.), see the
@@ -798,22 +735,13 @@ deploys a sample infrastructure on Azure with the following components:
 > instead. When running with the root `main.tf`, see [Azure required
 > configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-azure/).
 
-
-
 **Releases:**
-
 
 | Terraform version | Notable changes |
 | --- | --- |
 | <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize/releases/tag/v0.6.4" >v0.6.4</a> | <ul> <li>Released as part of v26.0.0.</li> <li>Uses <code>terraform-helm-materialize</code> version <code>v0.1.35</code>.</li> </ul>  |
 
-
-
-
-
 1. Open a Terminal window.
-
-
 
 1. Fork the [Materialize's sample Terraform
    repo](https://github.com/MaterializeInc/terraform-azurerm-materialize).
@@ -825,23 +753,21 @@ deploys a sample infrastructure on Azure with the following components:
    MY_ORGANIZATION=<enter-your-organization>
    ```
 
-
-1. Clone your forked repo and checkout the `v0.8.26` tag. For example,
+1. Clone your forked repo and checkout the `v0.8.27` tag. For example,
 
    - If cloning via SSH (substitute `YOUR_ORGANIZATION` with your organization's
      name):
 
      ```bash
-     git clone --depth 1 -b v0.8.26 git@github.com:${MY_ORGANIZATION}/terraform-azurerm-materialize.git
+     git clone --depth 1 -b v0.8.27 git@github.com:${MY_ORGANIZATION}/terraform-azurerm-materialize.git
      ```
 
    - If cloning via HTTPS (substitute `YOUR_ORGANIZATION` with your
      organization's name):
 
      ```bash
-     git clone --depth 1 -b v0.8.26 https://github.com/${MY_ORGANIZATION}/terraform-azurerm-materialize.git
+     git clone --depth 1 -b v0.8.27 https://github.com/${MY_ORGANIZATION}/terraform-azurerm-materialize.git
      ```
-
 
 1. Go to the `examples/simple` folder in the Materialize Terraform repo
    directory.
@@ -859,8 +785,6 @@ deploys a sample infrastructure on Azure with the following components:
 >    repository](https://github.com/MaterializeInc/terraform-azurerm-materialize/)
 >    instead. When running with the root `main.tf`, see [Azure required
 >    configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-azure/).
-
-
 
 1. Optional. Create a virtual environment, specifying a path for the new virtual
    environment:
@@ -903,7 +827,6 @@ deploys a sample infrastructure on Azure with the following components:
 >    repository](https://github.com/MaterializeInc/terraform-azurerm-materialize/)
 >    instead. When running with the root `main.tf`, see [Azure required
 >    configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-azure/).
-
 
 1. Initialize the terraform directory.
 
@@ -970,7 +893,6 @@ deploys a sample infrastructure on Azure with the following components:
    starting in v0.3.0, a `cert-manager`. Verify the
    installation and check the status:
 
-   
    **Materialize Operator:**
 
    Verify the installation and check the status:
@@ -991,8 +913,6 @@ deploys a sample infrastructure on Azure with the following components:
    NAME                                                                        DESIRED   CURRENT   READY   AGE
    replicaset.apps/materialize-mydemo-materialize-operator-74d8f549d6          1         1         1       36m
    ```
-
-   
 
    **cert-manager (Starting in version 0.3.0):**
 
@@ -1023,9 +943,6 @@ deploys a sample infrastructure on Azure with the following components:
    replicaset.apps/cert-manager-cainjector-664b5878d6   1         1         1       4m23s
    replicaset.apps/cert-manager-webhook-6ddb7bd6c5      1         1         1       4m23s
    ```
-
-   
-   
 
    If you run into an error during deployment, refer to the
    [Troubleshooting](/installation/troubleshooting/).
@@ -1074,7 +991,6 @@ deploys a sample infrastructure on Azure with the following components:
 >    Terraform modules, additional considerations may apply when using an updated
 >    Terraform modules to your existing deployments.
 >    See [Materialize on Azure releases](/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-azure-terraform-module) for notable changes.
-
 
 1. Run `terraform plan` with both `.tfvars` files and review the changes to be
    made.
@@ -1171,9 +1087,6 @@ deploys a sample infrastructure on Azure with the following components:
 
 1. Open the Materialize Console in your browser:
 
-
-   
-
    **Via Network Load Balancer:**
 
    Starting in v0.3.1, for each Materialize instance, Materialize on Azure
@@ -1195,20 +1108,18 @@ deploys a sample infrastructure on Azure with the following components:
    from an official Certificate Authority (CA) rather than self-signed
    certificates.
 
-   
-
    **Via port forwarding:**
 
    1. Find your console service name.
-   
+
       ```shell
       MZ_SVC_CONSOLE=$(kubectl -n materialize-environment get svc \
         -o custom-columns="NAME:.metadata.name" --no-headers | grep console)
       echo $MZ_SVC_CONSOLE
       ```
-   
+
    1. Port forward the Materialize Console service to your local machine:[^1]
-   
+
       ```shell
       (
         while true; do
@@ -1217,21 +1128,21 @@ deploys a sample infrastructure on Azure with the following components:
         done;
       ) &
       ```
-   
+
       The command is run in background.
       <br>- To list the background jobs, use `jobs`.
       <br>- To bring back to foreground, use `fg %<job-number>`.
       <br>- To kill the background job, use `kill %<job-number>`.
-   
+
    1. Open a browser and navigate to
       [https://localhost:8080](https://localhost:8080) (or, if you have not enabled
       TLS, [http://localhost:8080](http://localhost:8080)).
-   
+
       The example uses a self-signed ClusterIssuer. As such, you may encounter a
       warning with regards to the certificate. In production, run with certificates
       from an official Certificate Authority (CA) rather than self-signed
       certificates.
-   
+
    [^1]: The port forwarding command uses a while loop to handle a [known
    Kubernetes issue 78446](https://github.com/kubernetes/kubernetes/issues/78446),
    where interrupted long-running requests through a standard port-forward cause
@@ -1239,19 +1150,13 @@ deploys a sample infrastructure on Azure with the following components:
    if an error occurs, ensuring a more stable connection. It detects failures by
    monitoring for "portforward.go" error messages.
 
-
-   
-   
-
    > **Tip:** If you experience long loading screens or unresponsiveness in the Materialize
 >    Console, we recommend increasing the size of the `mz_catalog_server` cluster.
 >    Refer to the [Troubleshooting Console
 >    Unresponsiveness](/self-managed-deployments/troubleshooting/#troubleshooting-console-unresponsiveness)
 >    guide.
 
-
 ## Next steps
-
 
 - From the Console, you can get started with the
 [Quickstart](/get-started/quickstart/).
@@ -1259,9 +1164,7 @@ deploys a sample infrastructure on Azure with the following components:
 - To start ingesting your own data from an external system like Kafka, MySQL or
   PostgreSQL, see [Ingest data](/ingest-data/).
 
-
 ## Cleanup
-
 
 To delete the whole sample infrastructure and deployment (including the
 Materialize operator and Materialize instances and data), run from the Terraform
@@ -1273,10 +1176,8 @@ terraform destroy
 
 When prompted to proceed, type `yes` to confirm the deletion.
 
-
   > **Tip:** If the `terraform destroy` command is unable to delete the subnet because it
 >   is in use, you can rerun the `terraform destroy` command.
-
 
 ## See also
 
@@ -1286,15 +1187,12 @@ When prompted to proceed, type `yes` to confirm the deletion.
   appendix-deployment-guidelines)
 - [Installation](/installation/)
 
-
 ---
 
 ## Install on GCP (Legacy Terraform)
 
-
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; and a license key.
-
 
 This tutorial deploys Materialize to GCP Google Kubernetes Engine (GKE) cluster
 with a Cloud SQL PostgreSQL database as the metadata database and Cloud Storage
@@ -1320,7 +1218,6 @@ module](https://github.com/MaterializeInc/terraform-google-materialize) to:
 > For simplicity, this tutorial stores various secrets in a file as well as prints
 > them to the terminal. In practice, refer to your organization's official
 > security and Terraform/infrastructure practices.
-
 
 ## Prerequisites
 
@@ -1354,7 +1251,6 @@ Terraform](https://developer.hashicorp.com/terraform/install?product_intent=terr
 > Otherwise, you will need to manually install the `gke-gcloud-auth-plugin` for
 > `kubectl`.
 
-
 - If you do not have `kubectl`, install `kubectl`.  To install, see [Install
   kubectl and configure cluster
   access](https://cloud.google.com/kubernetes-engine/docs/how-to/cluster-access-for-kubectl)
@@ -1378,8 +1274,6 @@ If you want to use `jq` and do not have `jq` installed, install.
 
 ### License key
 
-
-
 ## A. Configure GCP project and service account
 
 1. Open a Terminal window.
@@ -1390,7 +1284,6 @@ If you want to use `jq` and do not have `jq` installed, install.
 
    > **Tip:** You do not need to configure a default Compute Region and Zone as you will
 >    specify the region.
-
 
 1. Enable the following services for your GCP project, if not already enabled:
 
@@ -1468,7 +1361,6 @@ If you want to use `jq` and do not have `jq` installed, install.
 
    > **Tip:** If using `GOOGLE_APPLICATION_CREDENTIALS`, use absolute path to your key file.
 
-
 ## B. Set up GCP Kubernetes environment and install Materialize
 
 > **Warning:** The Terraform modules used in this tutorial are intended for
@@ -1480,15 +1372,11 @@ If you want to use `jq` and do not have `jq` installed, install.
 > - Fork the repo and pin to a specific version; or
 > - Use the code as a reference when developing your own deployment.
 
-
-
-
 **Deployed components:**
 [Materialize on GCP Terraform
 module](https://github.com/MaterializeInc/terraform-google-materialize) deploys
 a sample infrastructure on GCP (region `us-central1`) with the following
 components:
-
 
 | Component | Version |
 | --- | --- |
@@ -1503,7 +1391,6 @@ components:
 | <code>cert-manager</code> and a self-signed <code>ClusterIssuer</code>. <code>ClusterIssuer</code> is deployed on subsequent runs after the <code>cert-manager</code> is running. | <a href="/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-gcp-terraform-module" >v0.3.0+</a> |
 | OpenEBS and NVMe instance storage to enable spill-to-disk | <a href="/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-gcp-terraform-module" >v0.4.0+</a> |
 
-
 > **Tip:** The tutorial uses the `main.tf` found in the `examples/simple/` directory, which
 > requires minimal user input. For details on the  `examples/simple/`
 > infrastructure configuration (such as the node instance type, etc.), see the
@@ -1513,19 +1400,11 @@ components:
 > instead. When running with the root `main.tf`, see [GCP required
 > configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-gcp/).
 
-
 **Releases:**
-
 
 | Terraform version | Notable changes |
 | --- | --- |
 | <a href="https://github.com/MaterializeInc/terraform-google-materialize/releases/tag/v0.6.4" >v0.6.4</a> | <ul> <li>Released as part of v26.0.0.</li> <li>Uses <code>terraform-helm-materialize</code> version <code>v0.1.35</code>.</li> </ul>  |
-
-
-
-
-
-
 
 1. Fork the [Materialize's sample Terraform
    repo](https://github.com/MaterializeInc/terraform-google-materialize).
@@ -1537,20 +1416,19 @@ components:
    MY_ORGANIZATION=<enter-your-organization>
    ```
 
-1. Clone your forked repo and checkout the `v0.8.27` tag. For example,
+1. Clone your forked repo and checkout the `v0.8.28` tag. For example,
 
    - If cloning via SSH:
 
      ```bash
-     git clone --depth 1 -b v0.8.27 git@github.com:${MY_ORGANIZATION}/terraform-google-materialize.git
+     git clone --depth 1 -b v0.8.28 git@github.com:${MY_ORGANIZATION}/terraform-google-materialize.git
      ```
 
    - If cloning via HTTPS:
 
      ```bash
-     git clone --depth 1 -b v0.8.27 https://github.com/${MY_ORGANIZATION}/terraform-google-materialize.git
+     git clone --depth 1 -b v0.8.28 https://github.com/${MY_ORGANIZATION}/terraform-google-materialize.git
      ```
-
 
 1. Go to the `examples/simple` folder in the Materialize Terraform repo
    directory.
@@ -1567,7 +1445,6 @@ components:
 >    the repository](https://github.com/MaterializeInc/terraform-google-materialize/)
 >    instead. When running with the root `main.tf`, see [GCP required
 >    configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-gcp/).
-
 
 1. Create a `terraform.tfvars` file (you can copy from the
    `terraform.tfvars.example` file) and specify the following variables:
@@ -1592,7 +1469,6 @@ components:
 >    the repository](https://github.com/MaterializeInc/terraform-google-materialize/)
 >    instead. When running with the root `main.tf`, see [GCP required
 >    configuration](/self-managed-deployments/appendix/legacy/appendix-configuration-legacy-gcp/).
-
 
 1. Initialize the terraform directory.
 
@@ -1673,7 +1549,6 @@ components:
    starting in v0.3.0, a `cert-manager`. Verify the
    installation and check the status:
 
-   
    **Materialize Operator:**
 
    Verify the installation and check the status:
@@ -1695,7 +1570,6 @@ components:
    replicaset.apps/materialize-mz-simple-materialize-operator-74d8f549d6       1         1         1       36m
    ```
 
-   
    **cert-manager (Starting in version 0.3.0):**
 
    Verify the installation and check the status:
@@ -1725,9 +1599,6 @@ components:
    replicaset.apps/cert-manager-cainjector-7f69cd69f7   1         1         1       22m
    replicaset.apps/cert-manager-webhook-6cc5dccc4b      1         1         1       22m
    ```
-
-   
-   
 
    If you run into an error during deployment, refer to the
    [Troubleshooting](/installation/troubleshooting/).
@@ -1770,7 +1641,6 @@ components:
 >    Terraform modules, additional considerations may apply when using an updated
 >    Terraform modules to your existing deployments.
 >    See [Materialize on GCP releases](/self-managed-deployments/appendix/legacy/appendix-legacy-terraform-releases/#materialize-on-gcp-terraform-module) for notable changes.
-
 
 1. Run `terraform plan` with both `.tfvars` files and review the changes to be
    made.
@@ -1873,8 +1743,6 @@ components:
 
 1. Open the Materialize Console in your browser:
 
-   
-
    **Via Network Load Balancer:**
 
    Starting in v0.3.0, for each Materialize instance, Materialize on GCP
@@ -1896,20 +1764,18 @@ components:
    from an official Certificate Authority (CA) rather than self-signed
    certificates.
 
-   
-
    **Via port forwarding:**
 
    1. Find your console service name.
-   
+
       ```shell
       MZ_SVC_CONSOLE=$(kubectl -n materialize-environment get svc \
         -o custom-columns="NAME:.metadata.name" --no-headers | grep console-lb)
       echo $MZ_SVC_CONSOLE
       ```
-   
+
    1. Port forward the Materialize Console service to your local machine:[^1]
-   
+
       ```shell
       (
         while true; do
@@ -1918,21 +1784,21 @@ components:
         done;
       ) &
       ```
-   
+
       The command is run in background.
       <br>- To list the background jobs, use `jobs`.
       <br>- To bring back to foreground, use `fg %<job-number>`.
       <br>- To kill the background job, use `kill %<job-number>`.
-   
+
    1. Open a browser and navigate to
       [https://localhost:8080](https://localhost:8080) (or, if you have not enabled
       TLS, [http://localhost:8080](http://localhost:8080)).
-   
+
       The example uses a self-signed ClusterIssuer. As such, you may encounter a
       warning with regards to the certificate. In production, run with certificates
       from an official Certificate Authority (CA) rather than self-signed
       certificates.
-   
+
    [^1]: The port forwarding command uses a while loop to handle a [known
    Kubernetes issue 78446](https://github.com/kubernetes/kubernetes/issues/78446),
    where interrupted long-running requests through a standard port-forward cause
@@ -1940,20 +1806,13 @@ components:
    if an error occurs, ensuring a more stable connection. It detects failures by
    monitoring for "portforward.go" error messages.
 
-
-   
-   
-
-
    > **Tip:** If you experience long loading screens or unresponsiveness in the Materialize
 >    Console, we recommend increasing the size of the `mz_catalog_server` cluster.
 >    Refer to the [Troubleshooting Console
 >    Unresponsiveness](/self-managed-deployments/troubleshooting/#troubleshooting-console-unresponsiveness)
 >    guide.
 
-
 ## Next steps
-
 
 - From the Console, you can get started with the
 [Quickstart](/get-started/quickstart/).
@@ -1961,9 +1820,7 @@ components:
 - To start ingesting your own data from an external system like Kafka, MySQL or
   PostgreSQL, see [Ingest data](/ingest-data/).
 
-
 ## Cleanup
-
 
 To delete the whole sample infrastructure and deployment (including the
 Materialize operator and Materialize instances and data), run from the Terraform
@@ -1974,7 +1831,6 @@ terraform destroy
 ```
 
 When prompted to proceed, type `yes` to confirm the deletion.
-
 
 ## See also
 

@@ -5,8 +5,6 @@ converted to months.
 
 ## Signatures
 
-
-
 ```mzsql
 justify_days ( <interval> )
 
@@ -16,11 +14,9 @@ justify_days ( <interval> )
 | --- | --- |
 | `<interval>` | An [`interval`](/sql/types/interval/) value to justify. Returns a new interval such that 30-day time periods are converted to months.  |
 
-
 Parameter | Type                                                                                                                                                                                            | Description
 ----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------
 _interval_ | [`interval`](../../types/interval) | The interval value to justify.
-
 
 ### Return value
 

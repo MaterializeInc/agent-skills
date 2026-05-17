@@ -1,34 +1,6 @@
 # Materialize CRD Field Descriptions
 Reference page on Materialize CRD Fields
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #### MaterializeSpec
 <table>
 <thead>
@@ -45,7 +17,6 @@ Reference page on Materialize CRD Fields
 <td>
 <em><strong>String</strong></em>
 
-
 <p>The name of a secret containing <code>metadata_backend_url</code> and <code>persist_backend_url</code>.
 It may also contain <code>external_login_password_mz_system</code>, which will be used as
 the password for the <code>mz_system</code> user if <code>authenticatorKind</code> is <code>Password</code>,
@@ -59,7 +30,6 @@ the password for the <code>mz_system</code> user if <code>authenticatorKind</cod
 <td>
 <em><strong>String</strong></em>
 
-
 <p>The environmentd image to run.</p>
 
 </td>
@@ -69,7 +39,6 @@ the password for the <code>mz_system</code> user if <code>authenticatorKind</cod
 <td></td>
 <td>
 <em><strong>Enum</strong></em>
-
 
 <p><p>How to authenticate with Materialize.</p>
 <p>Valid values:</p>
@@ -91,7 +60,6 @@ The backend secret must contain external_login_password_mz_system.</li>
 <td>
 <em><strong><a href='#materializecertspec'>MaterializeCertSpec</a></strong></em>
 
-
 <p>The configuration for generating an x509 certificate using cert-manager for balancerd
 to present to incoming connections.
 The <code>dnsNames</code> and <code>issuerRef</code> fields are required.</p>
@@ -104,7 +72,6 @@ The <code>dnsNames</code> and <code>issuerRef</code> fields are required.</p>
 <td>
 <em><strong>Integer</strong></em>
 
-
 <p>Number of balancerd pods to create.</p>
 
 </td>
@@ -115,7 +82,6 @@ The <code>dnsNames</code> and <code>issuerRef</code> fields are required.</p>
 <td>
 <em><strong><a href='#iok8sapicorev1resourcerequirements'>io.k8s.api.core.v1.ResourceRequirements</a></strong></em>
 
-
 <p>Resource requirements for the balancerd pod.</p>
 
 </td>
@@ -125,7 +91,6 @@ The <code>dnsNames</code> and <code>issuerRef</code> fields are required.</p>
 <td></td>
 <td>
 <em><strong><a href='#materializecertspec'>MaterializeCertSpec</a></strong></em>
-
 
 <p>The configuration for generating an x509 certificate using cert-manager for the console
 to present to incoming connections.
@@ -140,7 +105,6 @@ Not yet implemented.</p>
 <td>
 <em><strong>Integer</strong></em>
 
-
 <p>Number of console pods to create.</p>
 
 </td>
@@ -150,7 +114,6 @@ Not yet implemented.</p>
 <td></td>
 <td>
 <em><strong><a href='#iok8sapicorev1resourcerequirements'>io.k8s.api.core.v1.ResourceRequirements</a></strong></em>
-
 
 <p>Resource requirements for the console pod.</p>
 
@@ -162,7 +125,6 @@ Not yet implemented.</p>
 <td>
 <em><strong>Bool</strong></em>
 
-
 <p>Whether to enable role based access control. Defaults to false.</p>
 
 </td>
@@ -172,7 +134,6 @@ Not yet implemented.</p>
 <td></td>
 <td>
 <em><strong>Uuid</strong></em>
-
 
 <p>The value used by environmentd (via the &ndash;environment-id flag) to
 uniquely identify this instance. Must be globally unique, and
@@ -189,7 +150,6 @@ backend.</p>
 <td>
 <em><strong>String</strong></em>
 
-
 <p>If running in AWS, override the IAM role to use to support
 the CREATE CONNECTION feature.</p>
 
@@ -201,7 +161,6 @@ the CREATE CONNECTION feature.</p>
 <td>
 <em><strong>Array&lt;String&gt;</strong></em>
 
-
 <p>Extra args to pass to the environmentd binary.</p>
 
 </td>
@@ -211,7 +170,6 @@ the CREATE CONNECTION feature.</p>
 <td></td>
 <td>
 <em><strong>Array&lt;<a href='#iok8sapicorev1envvar'>io.k8s.api.core.v1.EnvVar</a>&gt;</strong></em>
-
 
 <p>Extra environment variables to pass to the environmentd binary.</p>
 
@@ -223,7 +181,6 @@ the CREATE CONNECTION feature.</p>
 <td>
 <em><strong><a href='#iok8sapicorev1resourcerequirements'>io.k8s.api.core.v1.ResourceRequirements</a></strong></em>
 
-
 <p>Resource requirements for the environmentd pod.</p>
 
 </td>
@@ -234,7 +191,6 @@ the CREATE CONNECTION feature.</p>
 <td>
 <em><strong>io.k8s.apimachinery.pkg.api.resource.Quantity</strong></em>
 
-
 <p>Amount of disk to allocate, if a storage class is provided.</p>
 
 </td>
@@ -244,7 +200,6 @@ the CREATE CONNECTION feature.</p>
 <td></td>
 <td>
 <em><strong>Uuid</strong></em>
-
 
 <p>If <code>forcePromote</code> is set to the same value as <code>requestRollout</code>, the
 current rollout will skip waiting for clusters in the new
@@ -258,7 +213,6 @@ leader.</p>
 <td></td>
 <td>
 <em><strong>Uuid</strong></em>
-
 
 <p>This value will be written to an annotation in the generated
 environmentd statefulset, in order to force the controller to
@@ -275,7 +229,6 @@ same value as <code>requestRollout</code>.</p>
 <td>
 <em><strong><a href='#materializecertspec'>MaterializeCertSpec</a></strong></em>
 
-
 <p>The cert-manager Issuer or ClusterIssuer to use for database internal communication.
 The <code>issuerRef</code> field is required.
 This currently is only used for environmentd, but will eventually support clusterd.
@@ -289,7 +242,6 @@ Not yet implemented.</p>
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
 
-
 <p>Annotations to apply to the pods.</p>
 
 </td>
@@ -300,7 +252,6 @@ Not yet implemented.</p>
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
 
-
 <p>Labels to apply to the pods.</p>
 
 </td>
@@ -310,7 +261,6 @@ Not yet implemented.</p>
 <td></td>
 <td>
 <em><strong>Uuid</strong></em>
-
 
 <p><p>When changes are made to the environmentd resources (either via
 modifying fields in the spec here or by deploying a new
@@ -331,7 +281,6 @@ generation rollout is automatically triggered.</p>
 <td></td>
 <td>
 <em><strong>Enum</strong></em>
-
 
 <p><p>Rollout strategy to use when upgrading this Materialize instance.</p>
 <p>Valid values:</p>
@@ -379,7 +328,6 @@ without waiting for the new generation of pods to be ready.</p>
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
 
-
 <p><p>Annotations to apply to the service account.</p>
 <p>Annotations on service accounts are commonly used by cloud providers for IAM.
 AWS uses &ldquo;eks.amazonaws.com/role-arn&rdquo;.
@@ -395,7 +343,6 @@ additionally requires &ldquo;azure.workload.identity/use&rdquo;: &ldquo;true&rdq
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
 
-
 <p>Labels to apply to the service account.</p>
 
 </td>
@@ -405,7 +352,6 @@ additionally requires &ldquo;azure.workload.identity/use&rdquo;: &ldquo;true&rdq
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Name of the kubernetes service account to use.
 If not set, we will create one with the same name as this Materialize object.</p>
@@ -417,7 +363,6 @@ If not set, we will create one with the same name as this Materialize object.</p
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p><p>The name of a ConfigMap containing system parameters in JSON format.
 The ConfigMap must contain a <code>system-params.json</code> key whose value
@@ -452,7 +397,6 @@ is a valid JSON object containing valid system parameters.</p>
 <td>
 <em><strong>Array&lt;String&gt;</strong></em>
 
-
 <p>Additional DNS names the certificate will be valid for.</p>
 
 </td>
@@ -462,7 +406,6 @@ is a valid JSON object containing valid system parameters.</p>
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Duration the certificate will be requested for.
 Value must be in units accepted by Go
@@ -476,7 +419,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong><a href='#certificateissuerref'>CertificateIssuerRef</a></strong></em>
 
-
 <p>Reference to an <code>Issuer</code> or <code>ClusterIssuer</code> that will generate the certificate.</p>
 
 </td>
@@ -486,7 +428,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>CertificatePrivateKeyAlgorithm</strong></em>
-
 
 <p>Optional algorithm to use for the private key. If not specified, a recommended default will be chosen.</p>
 
@@ -498,7 +439,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>Integer</strong></em>
 
-
 <p>Optional size for the private key.</p>
 
 </td>
@@ -508,7 +448,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Duration before expiration the certificate will be renewed.
 Value must be in units accepted by Go
@@ -521,7 +460,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong><a href='#certificatesecrettemplate'>CertificateSecretTemplate</a></strong></em>
-
 
 <p>Additional annotations and labels to include in the Certificate object.</p>
 
@@ -546,7 +484,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
 
-
 <p>Annotations is a key value map to be copied to the target Kubernetes Secret.</p>
 
 </td>
@@ -556,7 +493,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>Map&lt;String, String&gt;</strong></em>
-
 
 <p>Labels is a key value map to be copied to the target Kubernetes Secret.</p>
 
@@ -581,7 +517,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Name of the resource being referred to.</p>
 
 </td>
@@ -592,7 +527,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Group of the resource being referred to.</p>
 
 </td>
@@ -602,7 +536,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Kind of the resource being referred to.</p>
 
@@ -627,7 +560,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>Array&lt;<a href='#iok8sapicorev1resourceclaim'>io.k8s.api.core.v1.ResourceClaim</a>&gt;</strong></em>
 
-
 <p><p>Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.</p>
 <p>This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.</p>
 <p>This field is immutable. It can only be set for containers.</p>
@@ -641,7 +573,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>Map&lt;String, io.k8s.apimachinery.pkg.api.resource.Quantity&gt;</strong></em>
 
-
 <p>Limits describes the maximum amount of compute resources allowed. More info: <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/" >https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/</a></p>
 
 </td>
@@ -651,7 +582,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>Map&lt;String, io.k8s.apimachinery.pkg.api.resource.Quantity&gt;</strong></em>
-
 
 <p>Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. Requests cannot exceed Limits. More info: <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/" >https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/</a></p>
 
@@ -676,7 +606,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Name must match the name of one entry in pod.spec.resourceClaims of the Pod where this field is used. It makes that resource available inside a container.</p>
 
 </td>
@@ -686,7 +615,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Request is the name chosen for a request in the referenced claim. If empty, everything from the claim is made available, otherwise only the result of this request.</p>
 
@@ -711,7 +639,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Name of the environment variable. Must be a C_IDENTIFIER.</p>
 
 </td>
@@ -722,7 +649,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Variable references $(VAR_NAME) are expanded using the previously defined environment variables in the container and any service environment variables. If a variable cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. &ldquo;$$(VAR_NAME)&rdquo; will produce the string literal &ldquo;$(VAR_NAME)&rdquo;. Escaped references will never be expanded, regardless of whether the variable exists or not. Defaults to &ldquo;&rdquo;.</p>
 
 </td>
@@ -732,7 +658,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong><a href='#iok8sapicorev1envvarsource'>io.k8s.api.core.v1.EnvVarSource</a></strong></em>
-
 
 <p>Source for the environment variable&rsquo;s value. Cannot be used if value is not empty.</p>
 
@@ -757,7 +682,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong><a href='#iok8sapicorev1configmapkeyselector'>io.k8s.api.core.v1.ConfigMapKeySelector</a></strong></em>
 
-
 <p>Selects a key of a ConfigMap.</p>
 
 </td>
@@ -767,7 +691,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong><a href='#iok8sapicorev1objectfieldselector'>io.k8s.api.core.v1.ObjectFieldSelector</a></strong></em>
-
 
 <p>Selects a field of the pod: supports metadata.name, metadata.namespace, <code>metadata.labels['&lt;KEY&gt;']</code>, <code>metadata.annotations['&lt;KEY&gt;']</code>, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.</p>
 
@@ -779,7 +702,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong><a href='#iok8sapicorev1resourcefieldselector'>io.k8s.api.core.v1.ResourceFieldSelector</a></strong></em>
 
-
 <p>Selects a resource of the container: only resources limits and requests (limits.cpu, limits.memory, limits.ephemeral-storage, requests.cpu, requests.memory and requests.ephemeral-storage) are currently supported.</p>
 
 </td>
@@ -789,7 +711,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong><a href='#iok8sapicorev1secretkeyselector'>io.k8s.api.core.v1.SecretKeySelector</a></strong></em>
-
 
 <p>Selects a key of a secret in the pod&rsquo;s namespace</p>
 
@@ -814,7 +735,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>The key of the secret to select from.  Must be a valid secret key.</p>
 
 </td>
@@ -825,7 +745,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Name of the referent. This field is effectively required, but due to backwards compatibility is allowed to be empty. Instances of this type with an empty value here are almost certainly wrong. More info: <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names" >https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names</a></p>
 
 </td>
@@ -835,7 +754,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>Bool</strong></em>
-
 
 <p>Specify whether the Secret or its key must be defined</p>
 
@@ -860,7 +778,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Required: resource to select</p>
 
 </td>
@@ -871,7 +788,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Container name: required for volumes, optional for env vars</p>
 
 </td>
@@ -881,7 +797,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>io.k8s.apimachinery.pkg.api.resource.Quantity</strong></em>
-
 
 <p>Specifies the output format of the exposed resources, defaults to &ldquo;1&rdquo;</p>
 
@@ -906,7 +821,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>Path of the field to select in the specified API version.</p>
 
 </td>
@@ -916,7 +830,6 @@ Value must be in units accepted by Go
 <td></td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Version of the schema the FieldPath is written in terms of, defaults to &ldquo;v1&rdquo;.</p>
 
@@ -941,7 +854,6 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-
 <p>The key to select.</p>
 
 </td>
@@ -951,7 +863,6 @@ Value must be in units accepted by Go
 <td>✅</td>
 <td>
 <em><strong>String</strong></em>
-
 
 <p>Name of the referent. This field is effectively required, but due to backwards compatibility is allowed to be empty. Instances of this type with an empty value here are almost certainly wrong. More info: <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names" >https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names</a></p>
 
@@ -963,12 +874,10 @@ Value must be in units accepted by Go
 <td>
 <em><strong>Bool</strong></em>
 
-
 <p>Specify whether the ConfigMap or its key must be defined</p>
 
 </td>
 </tr>
 </tbody>
 </table>
-
 

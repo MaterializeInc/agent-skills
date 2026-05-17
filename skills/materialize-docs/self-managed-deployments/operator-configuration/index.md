@@ -22,7 +22,6 @@ To configure the Materialize operator, you can:
     --set observability.podMetrics.enabled=true
   ```
 
-
 <table>
 <thead>
 <tr>
@@ -435,7 +434,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.20.2&quot;</code>
+<code>&quot;v26.24.2&quot;</code>
 </td>
 </tr>
 
@@ -582,18 +581,9 @@ To configure the Materialize operator, you can:
 </tbody>
 </table>
 
-
 ## Parameters
 
-
-
-
-
-
-
 ### `balancerd` parameters
-
-
 
 #### balancerd.affinity
 
@@ -601,27 +591,11 @@ To configure the Materialize operator, you can:
 
 Affinity to use for balancerd pods spawned by the operator
 
-
-
-
-
-
-
-
-
 #### balancerd.defaultResources.limits
 
 **Default**: <code>{&quot;memory&quot;:&quot;256Mi&quot;}</code>
 
 Default resource limits for balancerd&rsquo;s CPU and memory if not set in the Materialize CR
-
-
-
-
-
-
-
-
 
 #### balancerd.defaultResources.requests
 
@@ -629,27 +603,11 @@ Default resource limits for balancerd&rsquo;s CPU and memory if not set in the M
 
 Default resources requested for balancerd&rsquo;s CPU and memory if not set in the Materialize CR
 
-
-
-
-
-
-
-
-
 #### balancerd.enabled
 
 **Default**: <code>true</code>
 
 Flag to indicate whether to create balancerd pods for the environments
-
-
-
-
-
-
-
-
 
 #### balancerd.nodeSelector
 
@@ -657,29 +615,13 @@ Flag to indicate whether to create balancerd pods for the environments
 
 Node selector to use for balancerd pods spawned by the operator
 
-
-
-
-
-
-
-
-
 #### balancerd.tolerations
 
 **Default**: 
 
 Tolerations to use for balancerd pods spawned by the operator
 
-
-
-
-
-
-
 ### `clusterd` parameters
-
-
 
 #### clusterd.affinity
 
@@ -687,27 +629,11 @@ Tolerations to use for balancerd pods spawned by the operator
 
 Affinity to use for clusterd pods spawned by the operator
 
-
-
-
-
-
-
-
-
 #### clusterd.nodeSelector
 
 **Default**: 
 
 Node selector to use for all clusterd pods spawned by the operator
-
-
-
-
-
-
-
-
 
 #### clusterd.scratchfsNodeSelector
 
@@ -715,27 +641,11 @@ Node selector to use for all clusterd pods spawned by the operator
 
 Additional node selector to use for clusterd pods when using an LVM scratch disk. This will be merged with the values in <code>nodeSelector</code>.
 
-
-
-
-
-
-
-
-
 #### clusterd.swapNodeSelector
 
 **Default**: 
 
 Additional node selector to use for clusterd pods when using swap. This will be merged with the values in <code>nodeSelector</code>.
-
-
-
-
-
-
-
-
 
 #### clusterd.tolerations
 
@@ -743,15 +653,7 @@ Additional node selector to use for clusterd pods when using swap. This will be 
 
 Tolerations to use for clusterd pods spawned by the operator
 
-
-
-
-
-
-
 ### `console` parameters
-
-
 
 #### console.affinity
 
@@ -759,27 +661,11 @@ Tolerations to use for clusterd pods spawned by the operator
 
 Affinity to use for console pods spawned by the operator
 
-
-
-
-
-
-
-
-
 #### console.defaultResources.limits
 
 **Default**: <code>{&quot;memory&quot;:&quot;256Mi&quot;}</code>
 
 Default resource limits for the console&rsquo;s CPU and memory if not set in the Materialize CR
-
-
-
-
-
-
-
-
 
 #### console.defaultResources.requests
 
@@ -787,27 +673,11 @@ Default resource limits for the console&rsquo;s CPU and memory if not set in the
 
 Default resources requested for the console&rsquo;s CPU and memory if not set in the Materialize CR
 
-
-
-
-
-
-
-
-
 #### console.enabled
 
 **Default**: <code>true</code>
 
 Flag to indicate whether to create console pods for the environments
-
-
-
-
-
-
-
-
 
 #### console.imageTagMapOverride
 
@@ -815,27 +685,11 @@ Flag to indicate whether to create console pods for the environments
 
 Override the mapping of environmentd versions to console versions
 
-
-
-
-
-
-
-
-
 #### console.nodeSelector
 
 **Default**: 
 
 Node selector to use for console pods spawned by the operator
-
-
-
-
-
-
-
-
 
 #### console.tolerations
 
@@ -843,15 +697,7 @@ Node selector to use for console pods spawned by the operator
 
 Tolerations to use for console pods spawned by the operator
 
-
-
-
-
-
-
 ### `environmentd` parameters
-
-
 
 #### environmentd.affinity
 
@@ -859,27 +705,11 @@ Tolerations to use for console pods spawned by the operator
 
 Affinity to use for environmentd pods spawned by the operator
 
-
-
-
-
-
-
-
-
 #### environmentd.defaultResources.limits
 
 **Default**: <code>{&quot;memory&quot;:&quot;4Gi&quot;}</code>
 
 Default resource limits for environmentd&rsquo;s CPU and memory if not set in the Materialize CR
-
-
-
-
-
-
-
-
 
 #### environmentd.defaultResources.requests
 
@@ -887,27 +717,11 @@ Default resource limits for environmentd&rsquo;s CPU and memory if not set in th
 
 Default resources requested for environmentd&rsquo;s CPU and memory if not set in the Materialize CR
 
-
-
-
-
-
-
-
-
 #### environmentd.nodeSelector
 
 **Default**: 
 
 Node selector to use for environmentd pods spawned by the operator
-
-
-
-
-
-
-
-
 
 #### environmentd.tolerations
 
@@ -915,15 +729,7 @@ Node selector to use for environmentd pods spawned by the operator
 
 Tolerations to use for environmentd pods spawned by the operator
 
-
-
-
-
-
-
 ### `networkPolicies` parameters
-
-
 
 #### networkPolicies.egress.cidrs
 
@@ -931,27 +737,11 @@ Tolerations to use for environmentd pods spawned by the operator
 
 CIDR blocks to allow egress to
 
-
-
-
-
-
-
-
-
 #### networkPolicies.egress.enabled
 
 **Default**: <code>false</code>
 
 Whether to enable egress network policies to sources and sinks
-
-
-
-
-
-
-
-
 
 #### networkPolicies.enabled
 
@@ -959,27 +749,11 @@ Whether to enable egress network policies to sources and sinks
 
 Whether to enable network policies for securing communication between pods
 
-
-
-
-
-
-
-
-
 #### networkPolicies.ingress.cidrs
 
 **Default**: <code>[&quot;0.0.0.0/0&quot;]</code>
 
 CIDR blocks to allow ingress from
-
-
-
-
-
-
-
-
 
 #### networkPolicies.ingress.enabled
 
@@ -987,29 +761,13 @@ CIDR blocks to allow ingress from
 
 Whether to enable ingress network policies to the SQL and HTTP interfaces on environmentd and balancerd
 
-
-
-
-
-
-
-
-
 #### networkPolicies.internal.enabled
 
 **Default**: <code>false</code>
 
 Whether to enable network policies for internal communication between Materialize pods
 
-
-
-
-
-
-
 ### `observability` parameters
-
-
 
 #### observability.enabled
 
@@ -1017,27 +775,11 @@ Whether to enable network policies for internal communication between Materializ
 
 Whether to enable observability features
 
-
-
-
-
-
-
-
-
 #### observability.podMetrics.enabled
 
 **Default**: <code>false</code>
 
 Whether to enable the pod metrics scraper which populates the Environment Overview Monitoring tab in the web console (requires metrics-server to be installed)
-
-
-
-
-
-
-
-
 
 #### observability.prometheus.scrapeAnnotations.enabled
 
@@ -1045,15 +787,7 @@ Whether to enable the pod metrics scraper which populates the Environment Overvi
 
 Whether to annotate pods with common keys used for prometheus scraping.
 
-
-
-
-
-
-
 ### `operator` parameters
-
-
 
 #### operator.additionalMaterializeCRDColumns
 
@@ -1061,55 +795,19 @@ Whether to annotate pods with common keys used for prometheus scraping.
 
 Additional columns to display when printing the Materialize CRD in table format.
 
-
-
-
-
-
-
-
-
 #### operator.affinity
 
 **Default**: 
 
 Affinity to use for the operator pod
 
-
-
-
-
-
-
-
-
 #### operator.args.enableInternalStatementLogging
 
 **Default**: <code>true</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.args.enableLicenseKeyChecks
 
 **Default**: <code>false</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.args.startupLogFilter
 
@@ -1117,41 +815,15 @@ Affinity to use for the operator pod
 
 Log filtering settings for startup logs
 
-
-
-
-
-
-
-
-
 #### operator.cloudProvider.providers.aws.accountID
 
 **Default**: <code>&quot;&quot;</code>
 
 When using AWS, accountID is required
 
-
-
-
-
-
-
-
-
 #### operator.cloudProvider.providers.aws.enabled
 
 **Default**: <code>false</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.cloudProvider.providers.aws.iam.roles.connection
 
@@ -1159,27 +831,11 @@ When using AWS, accountID is required
 
 ARN for CREATE CONNECTION feature
 
-
-
-
-
-
-
-
-
 #### operator.cloudProvider.providers.aws.iam.roles.environment
 
 **Default**: <code>&quot;&quot;</code>
 
 ARN of the IAM role for environmentd
-
-
-
-
-
-
-
-
 
 #### operator.cloudProvider.providers.gcp
 
@@ -1187,27 +843,11 @@ ARN of the IAM role for environmentd
 
 GCP Configuration (placeholder for future use)
 
-
-
-
-
-
-
-
-
 #### operator.cloudProvider.region
 
 **Default**: <code>&quot;kind&quot;</code>
 
 Common cloud provider settings
-
-
-
-
-
-
-
-
 
 #### operator.cloudProvider.type
 
@@ -1215,153 +855,45 @@ Common cloud provider settings
 
 Specifies cloud provider. Valid values are &lsquo;aws&rsquo;, &lsquo;gcp&rsquo;, &lsquo;azure&rsquo; , &lsquo;generic&rsquo;, or &rsquo;local&rsquo;
 
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultReplicationFactor.analytics
 
 **Default**: <code>0</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.clusters.defaultReplicationFactor.probe
 
 **Default**: <code>0</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultReplicationFactor.support
 
 **Default**: <code>0</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.clusters.defaultReplicationFactor.system
 
 **Default**: <code>0</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultSizes.analytics
 
 **Default**: <code>&quot;25cc&quot;</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.clusters.defaultSizes.catalogServer
 
 **Default**: <code>&quot;25cc&quot;</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultSizes.default
 
 **Default**: <code>&quot;25cc&quot;</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.clusters.defaultSizes.probe
 
 **Default**: <code>&quot;mz_probe&quot;</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultSizes.support
 
 **Default**: <code>&quot;25cc&quot;</code>
 
-
-
-
-
-
-
-
-
-
-
 #### operator.clusters.defaultSizes.system
 
 **Default**: <code>&quot;25cc&quot;</code>
-
-
-
-
-
-
-
-
-
-
 
 #### operator.clusters.swap_enabled
 
@@ -1369,27 +901,11 @@ Specifies cloud provider. Valid values are &lsquo;aws&rsquo;, &lsquo;gcp&rsquo;,
 
 Configure sizes such that the pod QoS class is not Guaranteed, as is required for swap to be enabled. Disk doesn&rsquo;t make much sense with swap, as swap performs better than lgalloc, so it also gets disabled.
 
-
-
-
-
-
-
-
-
 #### operator.image.pullPolicy
 
 **Default**: <code>&quot;IfNotPresent&quot;</code>
 
 Policy for pulling the image: &ldquo;IfNotPresent&rdquo; avoids unnecessary re-pulling of images
-
-
-
-
-
-
-
-
 
 #### operator.image.repository
 
@@ -1397,27 +913,11 @@ Policy for pulling the image: &ldquo;IfNotPresent&rdquo; avoids unnecessary re-p
 
 The Docker repository for the operator image
 
-
-
-
-
-
-
-
-
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.20.2&quot;</code>
+**Default**: <code>&quot;v26.24.2&quot;</code>
 
 The tag/version of the operator image to be used
-
-
-
-
-
-
-
-
 
 #### operator.nodeSelector
 
@@ -1425,27 +925,11 @@ The tag/version of the operator image to be used
 
 Node selector to use for the operator pod
 
-
-
-
-
-
-
-
-
 #### operator.resources.limits
 
 **Default**: <code>{&quot;memory&quot;:&quot;512Mi&quot;}</code>
 
 Resource limits for the operator&rsquo;s CPU and memory
-
-
-
-
-
-
-
-
 
 #### operator.resources.requests
 
@@ -1453,27 +937,11 @@ Resource limits for the operator&rsquo;s CPU and memory
 
 Resources requested by the operator for CPU and memory
 
-
-
-
-
-
-
-
-
 #### operator.secretsController
 
 **Default**: <code>&quot;kubernetes&quot;</code>
 
 Which secrets controller to use for storing secrets. Valid values are &lsquo;kubernetes&rsquo; and &lsquo;aws-secrets-manager&rsquo;. Setting &lsquo;aws-secrets-manager&rsquo; requires a configured AWS cloud provider and IAM role for the environment with Secrets Manager permissions.
-
-
-
-
-
-
-
-
 
 #### operator.tolerations
 
@@ -1481,15 +949,7 @@ Which secrets controller to use for storing secrets. Valid values are &lsquo;kub
 
 Tolerations to use for the operator pod
 
-
-
-
-
-
-
 ### `rbac` parameters
-
-
 
 #### rbac.create
 
@@ -1497,15 +957,7 @@ Tolerations to use for the operator pod
 
 Whether to create necessary RBAC roles and bindings
 
-
-
-
-
-
-
 ### `schedulerName` parameters
-
-
 
 #### schedulerName
 
@@ -1513,15 +965,7 @@ Whether to create necessary RBAC roles and bindings
 
 Optionally use a non-default kubernetes scheduler.
 
-
-
-
-
-
-
 ### `serviceAccount` parameters
-
-
 
 #### serviceAccount.create
 
@@ -1529,43 +973,17 @@ Optionally use a non-default kubernetes scheduler.
 
 Whether to create a new service account for the operator
 
-
-
-
-
-
-
-
-
 #### serviceAccount.name
 
 **Default**: <code>&quot;orchestratord&quot;</code>
 
 The name of the service account to be created
 
-
-
-
-
-
-
 ### `storage` parameters
-
-
 
 #### storage.storageClass.allowVolumeExpansion
 
 **Default**: <code>false</code>
-
-
-
-
-
-
-
-
-
-
 
 #### storage.storageClass.create
 
@@ -1573,27 +991,11 @@ The name of the service account to be created
 
 Set to false to use an existing StorageClass instead. Refer to the <a href="https://kubernetes.io/docs/concepts/storage/storage-classes/" >Kubernetes StorageClass documentation</a>
 
-
-
-
-
-
-
-
-
 #### storage.storageClass.name
 
 **Default**: <code>&quot;&quot;</code>
 
 Name of the StorageClass to create/use: eg &ldquo;openebs-lvm-instance-store-ext4&rdquo;
-
-
-
-
-
-
-
-
 
 #### storage.storageClass.parameters
 
@@ -1601,110 +1003,39 @@ Name of the StorageClass to create/use: eg &ldquo;openebs-lvm-instance-store-ext
 
 Parameters for the CSI driver
 
-
-
-
-
-
-
-
-
 #### storage.storageClass.provisioner
 
 **Default**: <code>&quot;&quot;</code>
 
 CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
-
-
-
-
-
-
-
-
 #### storage.storageClass.reclaimPolicy
 
 **Default**: <code>&quot;Delete&quot;</code>
-
-
-
-
-
-
-
-
-
-
 
 #### storage.storageClass.volumeBindingMode
 
 **Default**: <code>&quot;WaitForFirstConsumer&quot;</code>
 
-
-
-
-
-
-
-
-
 ### `telemetry` parameters
-
-
 
 #### telemetry.enabled
 
 **Default**: <code>true</code>
 
-
-
-
-
-
-
-
-
-
-
 #### telemetry.segmentApiKey
 
 **Default**: <code>&quot;hMWi3sZ17KFMjn2sPWo9UJGpOQqiba4A&quot;</code>
-
-
-
-
-
-
-
-
-
-
 
 #### telemetry.segmentClientSide
 
 **Default**: <code>true</code>
 
-
-
-
-
-
-
-
-
 ### `tls` parameters
-
-
 
 #### tls.defaultCertificateSpecs
 
 **Default**: <code>{}</code>
-
-
-
- 
-
 
 ## See also
 

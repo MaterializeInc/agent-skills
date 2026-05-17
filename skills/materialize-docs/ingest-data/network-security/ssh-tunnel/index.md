@@ -46,7 +46,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
 
-
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
     more information on how to rotate your keys.
@@ -132,7 +131,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
    If no validation errors are returned, the connection can be used to create a
    source connection.
 
-
 **Self-Managed:**
 Materialize can connect to a Kafka broker, a Confluent Schema Registry server, a
 PostgreSQL database, or a MySQL database through an SSH tunnel connection. In
@@ -177,7 +175,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     |-------|---------------------------------------|---------------------------------------|
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
-
 
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
@@ -254,14 +251,9 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
     If no validation errors are returned, the connection can be used to create a source connection.
 
-
-
-
-
 ## Create a source connection
 
 In Materialize, create a source connection that uses the SSH tunnel connection you configured in the previous section:
-
 
 **Kafka:**
 ```mzsql
@@ -273,7 +265,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 
 You can reuse this Kafka connection across multiple [`CREATE
 SOURCE`](/sql/create-source/kafka/) statements.
-
 
 **PostgreSQL:**
 ```mzsql
@@ -299,7 +290,6 @@ CREATE SOURCE mz_source
   FOR ALL TABLES;
 ```
 
-
 **MySQL:**
 ```mzsql
 CREATE SECRET mysqlpass AS '<POSTGRES_PASSWORD>';
@@ -312,10 +302,6 @@ CREATE CONNECTION mysql_connection TO MYSQL (
 
 You can reuse this MySQL connection across multiple [`CREATE SOURCE`](/sql/create-source/postgres/)
 statements.
-
-
-
-
 
 ## Related pages
 

@@ -11,14 +11,11 @@ the system.
 
 ## Syntax
 
-
-
 **Cloud:**
 
 ### Cloud
 
 The following syntax is used to create a role in Materialize Cloud.
-
 
 ```mzsql
 CREATE ROLE <role_name> [[WITH] INHERIT];
@@ -28,7 +25,6 @@ CREATE ROLE <role_name> [[WITH] INHERIT];
 | Syntax element | Description |
 | --- | --- |
 | `INHERIT` | *Optional.* If specified, grants the role the ability to inherit privileges of other roles. *Default.*  |
-
 
 **Note:**
 - Materialize Cloud does not support the `NOINHERIT` option for `CREATE
@@ -42,12 +38,10 @@ ability to create top level objects such as databases and other roles.
 Instead, Materialize uses system level privileges. See [GRANT
 PRIVILEGE](../grant-privilege) for more details.
 
-
 **Self-Managed:**
 ### Self-Managed
 
 The following syntax is used to create a role in Materialize Self-Managed.
-
 
 ```mzsql
 CREATE ROLE <role_name>
@@ -69,7 +63,6 @@ CREATE ROLE <role_name>
 | `NOSUPERUSER` | *Optional.* If specified, prevents the role from having superuser privileges. This is the default behavior if `SUPERUSER` is not specified.  |
 | `PASSWORD` | ***Public Preview***  *Optional.* This feature may have minor stability issues. If specified, allows you to set a password for the role.  |
 
-
 **Note:**
 - Self-Managed Materialize does not support the `NOINHERIT` option for
 `CREATE ROLE`.
@@ -77,9 +70,6 @@ CREATE ROLE <role_name>
 does not use role attributes to determine a role's ability to create top
 level objects such as databases and other roles. Instead, Self-Managed
 Materialize uses system level privileges. See [GRANT PRIVILEGE](../grant-privilege) for more details.
-
-
-
 
 ## Restrictions
 
@@ -150,8 +140,6 @@ SELECT rolsuper FROM pg_authid WHERE rolname = 'super_user';
 ```nofmt
  true
 ```
-
-
 
 ## Related pages
 

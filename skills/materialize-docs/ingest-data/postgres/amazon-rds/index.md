@@ -6,7 +6,6 @@ to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 ## Before you begin
 
 <ul>
@@ -18,7 +17,6 @@ to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 or your preferred SQL client.</p>
 </li>
 </ul>
-
 
 ## A. Configure Amazon RDS
 
@@ -149,15 +147,11 @@ all tables in the schema instead of naming the specific tables:</p>
 </span></span></code></pre></div></li>
 </ol>
 
-
 ## B. (Optional) Configure network security
 
 > **Note:** If you are prototyping and your RDS instance is publicly accessible, **you can
 > skip this step**. For production scenarios, we recommend configuring one of the
 > network security options below.
-
-
-
 
 **Cloud:**
 
@@ -174,8 +168,6 @@ to connect:
 
 - **Use an SSH tunnel:** If your database is running in a private network, you
     can use an SSH tunnel to connect Materialize to the database.
-
-
 
 **Allow Materialize IPs:**
 
@@ -195,8 +187,6 @@ to connect:
     - Set **Type** to **PostgreSQL**.
     - Set **Source** to the IP address in CIDR notation.
 
-
-
 **Use AWS PrivateLink:**
 
 [AWS PrivateLink](https://aws.amazon.com/privatelink/) lets you connect
@@ -209,7 +199,6 @@ RDS via the network load balancer.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
-
 
 1. Get the IP address of your RDS instance. You'll need this address to register
    your RDS instance as the target for the network load balancer in the next
@@ -290,8 +279,6 @@ RDS via the network load balancer.
    make sure that the [health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html)
    are reporting the targets as healthy.
 
-
-
 **Use an SSH tunnel:**
 
 To create an SSH tunnel from Materialize to your database, you launch an
@@ -302,7 +289,6 @@ network to allow traffic from the bastion host.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of resources for an SSH tunnel. For more details, see the
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
-
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
    to serve as your SSH bastion host.
@@ -342,12 +328,6 @@ network to allow traffic from the bastion host.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
 
-
-
-
-
-
-
 **Self-Managed:**
 
 <p>Configure your network to allow Materialize to connect to your database. For
@@ -369,9 +349,6 @@ database.</p>
   procedures.</p>
 </div>
 
-
-
-
 **Allow Materialize IPs:**
 
 1. In the AWS Management Console, [add an inbound rule to your RDS security group](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/changing-security-group.html#add-remove-instance-security-groups)
@@ -381,8 +358,6 @@ database.</p>
 
     - Set **Type** to **PostgreSQL**.
     - Set **Source** to the IP address in CIDR notation.
-
-
 
 **Use an SSH tunnel:**
 
@@ -394,7 +369,6 @@ network to allow traffic from the bastion host.
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of resources for an SSH tunnel. For more details, see the
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
-
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
     to serve as your SSH bastion host.
@@ -418,14 +392,6 @@ network to allow traffic from the bastion host.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
 
-
-
-
-
-
-
-
-
 ## C. Ingest data in Materialize
 
 ### 1. (Optional) Create a cluster
@@ -434,7 +400,6 @@ network to allow traffic from the bastion host.
 > source (e.g. `quickstart`), **you can skip this step**. For production
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
-
 
 <p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
@@ -462,12 +427,10 @@ size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>AL
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### 2. Create a connection
 
 Once you have configured your network, create a connection in Materialize per
 your networking configuration.
-
 
 **Allow Materialize IPs:**
 
@@ -497,12 +460,9 @@ use:
 
    - Replace `<host>` with your RDS endpoint. To find your RDS endpoint, select
    your database in the RDS Console, and look under **Connect & security**
-   
+
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
-
-
-
 
 **Use AWS PrivateLink (Cloud-only):**
 
@@ -512,42 +472,41 @@ CONNECTION`](/sql/create-connection/#aws-privatelink) command to create an
 **in-region** or **cross-region** AWS PrivateLink connection.
 
    ↕️ **In-region connections**
-   
+
    To connect to an AWS PrivateLink endpoint service in the **same region** as
    your Materialize environment:   ```mzsql
       CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK ( SERVICE
             NAME 'com.amazonaws.vpce.<region_id>.vpce-svc-<endpoint_service_id>',
             AVAILABILITY ZONES ('use1-az1', 'use1-az2', 'use1-az4') );
-   
+
       ```
 
    - Replace the `SERVICE NAME` value with the service name you noted
    [earlier](#b-optional-configure-network-security).
-   
+
    - Replace the `AVAILABILITY ZONES` list with the IDs of the availability
    zones in your AWS account. For in-region connections the availability zones
    of the NLB and the consumer VPC **must match**.
-   
+
      To find your availability zone IDs, select your database in the RDS
      Console and click the subnets under **Connectivity & security**. For each
      subnet, look for **Availability Zone ID** (e.g., `use1-az6`), not
      **Availability Zone** (e.g., `us-east-1d`).
 
-
    ↔️ **Cross-region connections**
-   
+
    To connect to an AWS PrivateLink endpoint service in a **different region**
    to the one where your Materialize environment is deployed:   ```mzsql
       CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK ( SERVICE
       NAME 'com.amazonaws.vpce.us-west-1.vpce-svc-<endpoint_service_id>', -- For
       now, the AVAILABILITY ZONES clause **is** required, but will be -- made
       optional in a future release. AVAILABILITY ZONES () );
-   
+
       ```
 
    - Replace the `SERVICE NAME` value with the service name you noted
    [earlier](#b-optional-configure-network-security).
-   
+
    - The service name region refers to where the endpoint service was created.
    You **do not need** to specify `AVAILABILITY ZONES` manually — these will be
    optimally auto-assigned when none are provided.
@@ -568,9 +527,7 @@ CONNECTION`](/sql/create-connection/#aws-privatelink) command to create an
     arn:aws:iam::664411391173:role/mz_20273b7c-2bbe-42b8-8c36-8cc179e9bbc3_u1
    ```
 
-
 1. Update your VPC endpoint service to [accept connections from the AWS principal](https://docs.aws.amazon.com/vpc/latest/privatelink/add-endpoint-service-permissions.html).
-
 
 1. If your AWS PrivateLink service is configured to require acceptance of
 connection requests, [manually approve the connection request from
@@ -578,14 +535,12 @@ Materialize](https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoi
    **Note:** It can take some time for the connection request to show up. Do
 not move on to the next step until you've approved the connection.
 
-
 1. Validate the AWS PrivateLink connection you created using the [`VALIDATE
 CONNECTION`](/sql/validate-connection) command:
    ```mzsql
    VALIDATE CONNECTION privatelink_svc;
 
    ```   If no validation error is returned, move to the next step.
-
 
 1. Use the [`CREATE SECRET`](/sql/create-secret/) command to securely store the
 password for the `materialize` PostgreSQL user you created
@@ -611,11 +566,9 @@ details for Materialize to use:
    - Replace `<host>` with your RDS endpoint. To find your RDS endpoint, select
    your database in the RDS Console, and look under **Connectivity &
    security**.
-   
+
    - Replace `<database>` with the name of the database containing the tables
      you want to replicate to Materialize.
-
-
 
 **Use an SSH tunnel:**
 
@@ -634,7 +587,7 @@ tunnel connection:   ```mzsql
    - Replace `<SSH_BASTION_HOST>` and `<SSH_BASTION_PORT>` with the public IP
    address and port of the SSH bastion host you created
    [earlier](#b-optional-configure-network-security).
-   
+
    - Replace `<SSH_BASTION_USER>` with the username for the key pair you
    created for your SSH bastion host.
 
@@ -668,7 +621,6 @@ CONNECTION`](/sql/validate-connection) command:
 
    ```   If no validation error is returned, move to the next step.
 
-
 1. Use the [`CREATE SECRET`](/sql/create-secret/) command to securely store the
 password for the `materialize` PostgreSQL user you created
 [earlier](#2-create-a-publication-and-a-replication-user):
@@ -694,14 +646,9 @@ Use the [`CREATE CONNECTION`](/sql/create-connection/) command to create another
    - Replace `<host>` with your RDS endpoint. To find your RDS endpoint,
    select your database in the RDS Console, and look under
    **Connectivity & security**.
-   
+
    - Replace `<database>` with the name of the database containing the tables
    you want to replicate to Materialize.
-
-
-
-
-
 
 ### 3. Start ingesting data
 
@@ -727,7 +674,6 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 {{< /tabs >}}
-
 
 ### 4. Monitor the ingestion status
 
@@ -794,7 +740,6 @@ dataset and the size of the cluster the source is running in.</p>
 </li>
 </ol>
 
-
 ### 5. Right-size the cluster
 
 <p>After the snapshotting phase, Materialize starts ingesting change events from
@@ -857,7 +802,6 @@ your ingestion cluster.</p>
 </li>
 </ol>
 
-
 ## D. Explore your data
 
 <p>With Materialize ingesting your PostgreSQL data into durable storage, you can
@@ -882,7 +826,6 @@ or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external messa
 Materialize.</p>
 </li>
 </ul>
-
 
 ## Considerations
 

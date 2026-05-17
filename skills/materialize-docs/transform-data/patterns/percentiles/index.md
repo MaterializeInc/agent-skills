@@ -31,7 +31,6 @@ computationally expensive if there are large number of distinct values.
 Alternatively, you can get an approximate percentiles by using [HDR
 histograms](#using-hdr-histograms-to-compute-approximate-percentiles).
 
-
 To use histograms to compute exact percentiles:
 
 - First, create a histogram view that groups each distinct value into its own
@@ -45,7 +44,6 @@ To use histograms to compute exact percentiles:
   > **Note:** The use of the cross join produces a number of outputs that is quadratic in
 >   the input. And, while the results will only be linear in size, it may take a
 >   disproportionate amount of time to produce and maintain.
-
 
 ### Example
 
@@ -96,7 +94,6 @@ To use histograms to compute exact percentiles:
 >    the input. And, while the results will only be linear in size, it may take a
 >    disproportionate amount of time to produce and maintain.
 
-
 1. You can then query `distribution` by the `cumulative_density` field to
    return specific percentiles. For example, the following query returns the
    90-th percentile.
@@ -108,7 +105,6 @@ To use histograms to compute exact percentiles:
    ORDER BY cumulative_density
    LIMIT 1;
    ```
-
 
 ## Using HDR histograms to compute approximate percentiles
 
@@ -143,7 +139,6 @@ same for HDR histograms.
 > example](#example). If you have created and populated the table, skip the
 > corresponding steps.
 
-
 1. Create a table `input`:
 
    ```mzsql
@@ -162,8 +157,6 @@ same for HDR histograms.
    are first decomposed into `significand * 2^exponent`. Then by reducing the
    precision of the significand to 1/16 (4 bits), the value is reconstructed to
    an approximated value.
-
-   
 
    **Materialize Console:**
 
@@ -194,8 +187,6 @@ SELECT
 FROM buckets
 GROUP BY bucket;
 ```
-
-   
 
    **psql:**
 
@@ -229,8 +220,6 @@ SELECT
 FROM buckets
 GROUP BY bucket;
 ```
-   
-   
 
 1. Create a view `hdr_distribution` to calculate the cumulative count and the
    cumulative density for each bucket. The cumulative density is calculated by

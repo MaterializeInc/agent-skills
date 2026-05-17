@@ -5,8 +5,6 @@ other roles, as well as inherit all the privileges of those roles.
 
 ## Syntax
 
-
-
 ```mzsql
 GRANT <role_name> [, ...] TO <grantee> [, ...]
 
@@ -16,7 +14,6 @@ GRANT <role_name> [, ...] TO <grantee> [, ...]
 | --- | --- |
 | `<role_name>` | The name of the role being granted.  |
 | `<grantee>` | The name of the receiving role; i.e., the grantee.  |
-
 
 ## Examples
 

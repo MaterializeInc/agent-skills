@@ -2,7 +2,6 @@
 Connecting Materialize to a SQL Server database for Change Data Capture (CDC).
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
 
-
 Materialize supports SQL Server (2016+) as a real-time data source. To connect to a
 SQL Server database, you first need to tweak its configuration to enable [Change Data
 Capture](https://learn.microsoft.com/en-us/sql/relational-databases/track-changes/enable-and-disable-change-data-capture-sql-server)
@@ -10,11 +9,7 @@ and [`SNAPSHOT` transaction isolation](https://learn.microsoft.com/en-us/dotnet/
 for the database that you would like to replicate. Then [create a connection](#creating-a-connection)
 in Materialize that specifies access and authentication parameters.
 
-
-
 ## Syntax
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -37,7 +32,6 @@ FROM SQL SERVER CONNECTION <connection_name>
 | **TEXT COLUMNS** ( `<col1>` [, ...] ) | Optional. If specified, decode data from the specified columns in the subsource(s) as `text` for the listed column(s), such as for unsupported data types.  |
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables with CDC enabled in all schemas upstream. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables upstream. Requires fully-qualified table names (`<schema1>.<table1>`). \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
-
 
 ## Creating a source
 
@@ -104,7 +98,6 @@ Field     | Type                          | Details
 ----------|-------------------------------|--------------
 `lsn`     | [`bytea`](/sql/types/bytea/)  | The upper-bound [Log Sequence Number](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-log-architecture-and-management-guide) replicated thus far into Materialize.
 
-
 And can be queried using:
 
 ```mzsql
@@ -131,7 +124,6 @@ Materialize supports schema changes in the upstream database as follows:
 > [SQL Server: Source versioning
 > guide](/ingest-data/sql-server/source-versioning/).
 
-
 - Adding columns to tables. Materialize will **not ingest** new columns added
   upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to first
   drop the affected subsource, and then add the table back to the source using
@@ -143,7 +135,6 @@ Materialize supports schema changes in the upstream database as follows:
 - Adding or removing `NOT NULL` constraints to tables that were nullable when
   the source was created.
 
-
 #### Incompatible schema changes
 
 All other schema changes to upstream tables will set the corresponding subsource
@@ -154,7 +145,6 @@ and [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to first drop the
 affected subsource, and then add the table back to the source. When you add the
 subsource, it will have the updated schema from the corresponding upstream
 table.
-
 
 ### Supported types
 
@@ -224,7 +214,6 @@ value when said column is updated.</p>
 </li>
 </ul>
 
-
 ### Timestamp Rounding
 
 The `time`, `datetime2`, and `datetimeoffset` types in SQL Server have a default
@@ -284,7 +273,6 @@ once the process finishes, resize the cluster for steady-state.
 > **Important:** Before creating a SQL Server source, you must enable Change Data Capture and
 > `SNAPSHOT` transaction isolation in the upstream database.
 
-
 ### Creating a connection
 
 A connection describes how to connect and authenticate to an external system you
@@ -310,7 +298,6 @@ If your SQL Server instance is not exposed to the public internet, you can
 [tunnel the connection](/sql/create-connection/#network-security-connections)
 through and SSH bastion host.
 
-
 **SSH tunnel:**
 ```mzsql
 CREATE CONNECTION ssh_connection TO SSH TUNNEL (
@@ -332,9 +319,6 @@ CREATE CONNECTION sqlserver_connection TO SQL SERVER (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check
 [this guide](/ops/network-security/ssh-tunnel/).
-
-
-
 
 ### Creating a source {#create-source-example}
 

@@ -1,7 +1,6 @@
 # Fivetran
 How to use Fivetran to sync data into Materialize
 
-
 [Fivetran](https://www.fivetran.com/) is a cloud-based automated data movement platform for
 extracting, loading and transforming data from a wide variety of connectors.
 

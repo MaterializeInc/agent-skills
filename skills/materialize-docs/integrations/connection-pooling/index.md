@@ -44,7 +44,6 @@ SELECT rolname, rolpassword FROM pg_authid WHERE rolname = 'your_role_name';
 
 > **Note:** You must be a superuser to access the `pg_authid` table.
 
-
 Once you have the SCRAM secret, add it to the userlist file in the following format:
 ```
 "your_role_name" "the-hash-you-got-from-pg_authid"

@@ -1,10 +1,7 @@
 # Deployment guidelines
 
-
-
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; and a license key.
-
 
 ## Available deployment guidelines
 
@@ -17,16 +14,12 @@ The following guides outline recommended configurations for deploying Materializ
 - [GCP Deployment
   Guidelines](/self-managed-deployments/deployment-guidelines/gcp-deployment-guidelines/)
 
-
-
 ---
 
 ## AWS deployment guidelines
 
-
 Self-managed Materialize requires: a Kubernetes (v1.31+) cluster; PostgreSQL as
 a metadata database; blob storage; and a license key.
-
 
 ## Recommended instance types
 
@@ -49,7 +42,6 @@ the default [`node_group_instance_types`].
 [`node_group_instance_types`]:
     https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#input_node_group_instance_types
 
-
 ## Locally-attached NVMe storage
 
 Configuring swap on nodes to use locally-attached NVMe storage allows
@@ -60,13 +52,11 @@ significantly degrade performance and is not supported.
 
 ### Swap support
 
-
 **New Terraform:**
 
 #### New Terraform
 
 The new Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws/examples/simple) supports configuring swap out of the box.
-
 
 **Legacy Terraform:**
 #### Legacy Terraform
@@ -80,10 +70,6 @@ With this change, the Terraform:
 See [Upgrade Notes](https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#v061).
 
 > **Note:** If deploying `v25.2`, Materialize clusters will not automatically use swap unless they are configured with a `memory_request` less than their `memory_limit`. In `v26`, this will be handled automatically.
-
-
-
-
 
 ## TLS
 
@@ -108,12 +94,9 @@ to ensure compatibility.</p>
 </li>
 </ul>
 
-
-
 ---
 
 ## Azure deployment guidelines
-
 
 ## Recommended instance types
 
@@ -140,7 +123,6 @@ Azure VM Types with Local NVMe Disk:
 > **Warning:** These VM types provide <red>**ephemeral**</red> local NVMe SSD disks. Data is
 > <red>**lost**</red> when the VM is stopped or deleted.
 
-
 ## Locally-attached NVMe storage
 
 Configuring swap on nodes to use locally-attached NVMe storage allows
@@ -151,12 +133,10 @@ significantly degrade performance and is not supported.
 
 ### Swap support
 
-
 **New Terraform:**
 #### New Terraform
 
 The new Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure/examples/simple) supports configuring swap out of the box.
-
 
 **Legacy Terraform:**
 #### Legacy Terraform
@@ -170,10 +150,6 @@ With this change, the Terraform:
 See [Upgrade Notes](https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#v061).
 
 > **Note:** If deploying `v25.2`, Materialize clusters will not automatically use swap unless they are configured with a `memory_request` less than their `memory_limit`. In `v26`, this will be handled automatically.
-
-
-
-
 
 ## Recommended Azure Blob Storage
 
@@ -203,12 +179,9 @@ to ensure compatibility.</p>
 </li>
 </ul>
 
-
-
 ---
 
 ## GCP deployment guidelines
-
 
 ## Recommended instance types
 
@@ -242,7 +215,6 @@ machine type for optimal Materialize performance.
 > SSDs: `4`,`8`,`16`, or `24`. To determine the valid number of Local SSDs to attach for your machine type, see the [GCP
 > documentation](https://cloud.google.com/compute/docs/disks/local-ssd#lssd_disk_options).
 
-
 For example, the following table provides a minimum local SSD count to ensure
 the 2:1 disk-to-RAM ratio. Your actual
 count will depend on the [your machine
@@ -260,7 +232,6 @@ type](https://cloud.google.com/compute/docs/disks/local-ssd#lssd_disk_options).
 
 [N2D high-memory series]: https://cloud.google.com/compute/docs/general-purpose-machines#n2d_machine_types
 
-
 ## Locally-attached NVMe storage
 
 Configuring swap on nodes to use locally-attached NVMe storage allows
@@ -271,13 +242,11 @@ significantly degrade performance and is not supported.
 
 ### Swap support
 
-
 **New Terraform:**
 
 #### New Terraform
 
 The Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp/examples/simple) supports configuring swap out of the box.
-
 
 **Legacy Terraform:**
 #### Legacy Terraform
@@ -291,9 +260,6 @@ With this change, the Terraform:
 See [Upgrade Notes](https://github.com/MaterializeInc/terraform-google-materialize?tab=readme-ov-file#v061).
 
 > **Note:** If deploying `v25.2`, Materialize clusters will not automatically use swap unless they are configured with a `memory_request` less than their `memory_limit`. In `v26`, this will be handled automatically.
-
-
-
 
 ## CPU affinity
 
@@ -323,5 +289,4 @@ between the operator and the Materialize instance you are upgrading to.</p>
 to ensure compatibility.</p>
 </li>
 </ul>
-
 

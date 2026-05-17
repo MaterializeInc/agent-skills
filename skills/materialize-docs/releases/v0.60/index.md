@@ -48,7 +48,6 @@ flag. The flag was raised in v0.60 -— so mentioning it here."
   FROM (SELECT CONVERT_FROM(data, 'utf8')::jsonb AS data FROM json_source);
   ```
 
-
 #### SQL
 
 * Improve and extend the base implementation of **Role-based

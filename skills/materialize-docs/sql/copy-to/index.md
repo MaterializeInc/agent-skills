@@ -12,8 +12,6 @@ This command is useful to output [`SUBSCRIBE`](/sql/subscribe/) results
 Copying results to `stdout` is useful to output the stream of updates from a
 [`SUBSCRIBE`](/sql/subscribe/) command in interactive SQL clients like `psql`.
 
-
-
 ```mzsql
 COPY ( <query> ) TO STDOUT [WITH ( <option> = <val> )];
 
@@ -23,8 +21,6 @@ COPY ( <query> ) TO STDOUT [WITH ( <option> = <val> )];
 | --- | --- |
 | `<query>` | The [`SELECT`](/sql/select) or [`SUBSCRIBE`](/sql/subscribe) query whose results are copied.  |
 | `WITH ( <option> = <val> )` | Optional. The following `<option>` are supported: \| Name \|  Description \| \|------\|---------------\| `FORMAT` \| Sets the output format. Valid output formats are: `TEXT`,`BINARY`, `CSV`.<br><br> Default: `TEXT`.  |
-
-
 
 **Copy to Amazon S3 and S3 compatible services:**
 ### Copy to Amazon S3 and S3 compatible services {#copy-to-s3}
@@ -38,8 +34,6 @@ The `COPY TO` command is _one-shot_: every time you want to export results, you
 must run the command. To automate exporting results on a regular basis, you can
 set up scheduling, for example using a simple `cron`-like service or an
 orchestration platform like Airflow or Dagster.
-
-
 
 ```mzsql
 COPY <query> TO '<s3_uri>'
@@ -58,11 +52,6 @@ WITH (
 | `AWS CONNECTION = <connection_name>` | The name of the AWS connection to use in the `COPY TO` command. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#aws) documentation page.  |
 | `FORMAT = '<format>'` | The file format to write. Valid formats are `'csv'` and `'parquet'`.  - {{< include-from-yaml data="examples/copy_to" name="csv-writer-settings" >}}  - {{< include-from-yaml data="examples/copy_to" name="parquet-writer-settings" >}}  |
 | [`MAX FILE SIZE = <size>`] | Optional. Sets the approximate maximum file size (in bytes) of each file uploaded to the S3 bucket.  |
-
-
-
-
-
 
 ## Details
 
@@ -143,7 +132,6 @@ writer settings are used:</p>
 <p>If you encounter issues trying to ingest Parquet files produced by
 Materialize into your downstream systems, please <a href="/support/" >contact our
 team</a>.</p>
-
 
 #### Parquet data types
 
@@ -340,7 +328,6 @@ to indicate the Materialize native type the field originated from.</p>
   </tbody>
 </table>
 
-
 ## Privileges
 
 The privileges required to execute this statement are:
@@ -414,7 +401,6 @@ writer settings are used:</p>
 Materialize into your downstream systems, please <a href="/support/" >contact our
 team</a>.</p>
 
-
 See also [Copy to S3: Parquet Data Types](#parquet-data-types).
 
 #### File format CSV
@@ -455,7 +441,6 @@ writer settings:</p>
       </tr>
   </tbody>
 </table>
-
 
 ## Related pages
 

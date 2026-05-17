@@ -8,8 +8,6 @@ Use `COMMENT ON` to:
 
 ## Syntax
 
-
-
 ```mzsql
 COMMENT ON <object_type> <name> IS <comment | NULL>;
 
@@ -20,7 +18,6 @@ COMMENT ON <object_type> <name> IS <comment | NULL>;
 | `<object_type>` | The type of the object. Supported object types:  - `CLUSTER` - `CLUSTER REPLICA` - `COLUMN` - `CONNECTION` - `DATABASE` - `FUNCTION` - `INDEX` - `MATERIALIZED VIEW` - `NETWORK POLICY` - `ROLE` - `SCHEMA` - `SECRET` - `SINK` - `SOURCE` - `TABLE` - `TYPE` - `VIEW`  |
 | `<name>` | The fully qualified name of the object.  |
 | `<comment \| NULL>` | - The comment string for the object. - Use `NULL` to remove an existing comment.  |
-
 
 ## Details
 

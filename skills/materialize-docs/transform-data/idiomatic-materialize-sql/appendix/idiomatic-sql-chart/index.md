@@ -9,9 +9,6 @@ performance.
 
 ### Query Patterns
 
-
-
-
 <table>
 <thead>
 <tr>
@@ -75,11 +72,7 @@ retained.</li>
 </tbody>
 </table>
 
-
 ### Examples
-
-
-
 
 <table>
 <thead>
@@ -182,9 +175,6 @@ WHERE order_date + interval '30' minutes >= mz_now()
 </tbody>
 </table>
 
-
-
-
 ## Window Functions
 > ### Materialize and window functions
 > For [window functions](/sql/functions/#window-functions), when an input record
@@ -203,13 +193,7 @@ WHERE order_date + interval '30' minutes >= mz_now()
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
 
-
-
-
 ### Query Patterns
-
-
-
 
 <table>
 <thead>
@@ -348,11 +332,7 @@ ORDER BY fieldA;
 </tbody>
 </table>
 
-
 ### Examples
-
-
-
 
 <table>
 <thead>
@@ -504,9 +484,6 @@ condition.
 
 </tbody>
 </table>
-
-
-
 
 ## See also
 

@@ -14,7 +14,6 @@ to be associated with a cluster:
 - Executing [`SELECT`](/sql/select/) and [`SUBSCRIBE`](/sql/subscribe/)
   statements.
 
-
 ## Resource isolation
 
 Clusters provide **resource isolation.** Each cluster provisions dedicated
@@ -52,7 +51,6 @@ and serve queries.
 > </li>
 > </ul>
 
-
 Materialize automatically assigns names to replicas (e.g., `r1`, `r2`). You can
 view information about individual replicas in the Materialize console and the
 system catalog.
@@ -73,7 +71,6 @@ across availability zones <strong>cannot</strong> be guaranteed.</p>
 </li>
 </ul>
 
-
 <a name="sizing-your-clusters"></a>
 
 ## Cluster sizing
@@ -90,7 +87,6 @@ As your workload changes, you can [resize a cluster](/sql/alter-cluster/).
 
 > **Tip:** To gauge the performance and utilization of your clusters, use the
 > [**Environment Overview** page in the Materialize Console](/console/monitoring/).
-
 
 ## Best practices
 
@@ -121,7 +117,6 @@ deployments</a></p>
 <p>Independent scaling of each tier.</p>
 </li>
 </ul>
-
 
 See also [Operational guidelines](/manage/operational-guidelines/).
 

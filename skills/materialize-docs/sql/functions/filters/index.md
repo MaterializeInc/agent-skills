@@ -6,8 +6,6 @@ Temporal filters cannot be used in aggregate function filters.
 
 ## Syntax
 
-
-
 ```mzsql
 <aggregate_name> ( <expression> )
 FILTER (WHERE <filter_clause>)
@@ -19,7 +17,6 @@ FILTER (WHERE <filter_clause>)
 | `<aggregate_name>` | The name of the aggregate function.  |
 | `<expression>` | The expression to aggregate.  |
 | **FILTER** (WHERE `<filter_clause>`) | Specifies which rows are sent to the aggregate function. Rows for which the `<filter_clause>` evaluates to true contribute to the aggregation. Temporal filters cannot be used in aggregate function filters.  |
-
 
 ## Examples
 

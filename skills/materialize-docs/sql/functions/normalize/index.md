@@ -46,7 +46,6 @@ SELECT normalize('é') AS normalized;
  é
 ```
 
-
 <hr/>
 
 NFC combines base character with combining marks:
@@ -58,7 +57,6 @@ SELECT normalize('é', NFC) AS nfc;
 -----
  é
 ```
-
 
 <hr/>
 
@@ -72,7 +70,6 @@ SELECT normalize('é', NFD) = E'e\u0301' AS is_decomposed;
  true
 ```
 
-
 <hr/>
 
 NFKC decomposes compatibility characters like ligatures:
@@ -84,7 +81,6 @@ SELECT normalize('ﬁ', NFKC) AS decomposed;
 ------------
  fi
 ```
-
 
 <hr/>
 

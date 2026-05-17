@@ -171,7 +171,6 @@ Next, you must attach the policy you just created to a Materialize-specific
 >    will allow other Materialize customers to assume your role and use AWS
 >    privileges you have granted the role!
 
-
 1. Back in Materialize, validate the AWS connection you created using the
    [`VALIDATE CONNECTION`](/sql/validate-connection) command.
 
@@ -187,7 +186,6 @@ Next, you must attach the policy you just created to a Materialize-specific
 To export data to your target S3 bucket, use the [`COPY TO`](/sql/copy-to/#copy-to-s3)
 command, and the AWS connection you created in the previous step.
 
-
 **Parquet:**
 
 ```mzsql
@@ -201,8 +199,6 @@ WITH (
 For details on the Parquet writer settings Materialize uses, as well as data
 type support and conversion, check the [reference documentation](/sql/copy-to/#copy-to-s3-parquet).
 
-
-
 **CSV:**
 
 ```mzsql
@@ -212,10 +208,6 @@ WITH (
     FORMAT = 'csv'
   );
 ```
-
-
-
-
 
 You might notice that Materialize first writes a sentinel file to the target S3
 bucket. When the copy operation is complete, this file is deleted. This allows

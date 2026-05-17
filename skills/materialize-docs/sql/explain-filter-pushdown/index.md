@@ -3,13 +3,10 @@
 
 > **Public Preview:** This feature is in public preview.
 
-
 `EXPLAIN FILTER PUSHDOWN` reports filter pushdown statistics for `SELECT`
 statements and materialized views.
 
 ## Syntax
-
-
 
 ```mzsql
 EXPLAIN FILTER PUSHDOWN
@@ -21,7 +18,6 @@ FOR <select_stmt | MATERIALIZED VIEW <name>>
 | --- | --- |
 | **FOR** `<select_stmt>` | Display statistics for an ad-hoc [`SELECT`](/sql/select) statement.  |
 | **FOR MATERIALIZED VIEW** `<name>` | Display statistics for an existing materialized view.  |
-
 
 ## Details
 

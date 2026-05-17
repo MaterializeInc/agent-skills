@@ -27,14 +27,10 @@ function.
 > the performance of window functions is insufficient for your use case, please
 > [contact our team](/support/).
 
-
-
-
 ## Idiomatic Materialize SQL
 
 > **Important:** Do not use if the "lead over (order by)" ordering cannot be represented by an
 > equality match.
-
 
 ### Exclude the last row in results
 
@@ -65,7 +61,6 @@ does not have a next row.
 
 > **Important:** The idiomatic Materialize SQL applies only to those "lead over" queries whose
 > ordering can be represented by some **equality condition**.
-
 
 <br>
 
@@ -142,8 +137,6 @@ last row, returning `null` as its lead value.
 > **Important:** The idiomatic Materialize SQL applies only to those "lead over" queries whose
 > ordering can be represented by some **equality condition**.
 
-
-
 ```mzsql
 -- Includes the last row in the response --
 SELECT t1.fieldA, t2.fieldB as next_row_value
@@ -190,7 +183,6 @@ FROM tableA;
 > **Note:** The example data can be found in the
 > [Appendix](/transform-data/idiomatic-materialize-sql/appendix/example-orders).
 
-
 ### Find next row's value (exclude the last row in results)
 
 Using idiomatic Materialize SQL, the following example finds the next day's
@@ -225,8 +217,6 @@ ORDER BY order_date;
 
 > **Important:** The idiomatic Materialize SQL applies only to those "lead over" queries whose
 > ordering can be represented by some **equality condition**.
-
-
 
 </td>
 </tr>
@@ -290,8 +280,6 @@ ORDER BY order_date;
 
 > **Important:** The idiomatic Materialize SQL applies only to those "lead over" queries whose
 > ordering can be represented by some **equality condition**.
-
-
 
 </td>
 </tr>

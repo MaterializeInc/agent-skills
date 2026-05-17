@@ -5,13 +5,11 @@ Required configuration for Materialize on AWS Terraform.
 The following variables are required when using the [Materialize on AWS
 Terraform modules](https://github.com/MaterializeInc/terraform-aws-materialize):
 
-
 | Variable |
 | --- |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-hcl" data-lang="hcl"><span class="line"><span class="cl"><span class="n">namespace</span> <span class="o">=</span> <span class="err">&lt;</span><span class="k">string</span><span class="err">&gt;</span> </span></span></code></pre></div> |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-hcl" data-lang="hcl"><span class="line"><span class="cl"><span class="n">environment</span> <span class="o">=</span> <span class="err">&lt;</span><span class="k">string</span><span class="err">&gt;</span> </span></span></code></pre></div> |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-hcl" data-lang="hcl"><span class="line"><span class="cl"><span class="n">database_password</span> <span class="o">=</span>  <span class="err">&lt;</span><span class="k">string</span><span class="err">&gt;</span> </span></span></code></pre></div> |
-
 
 For a list of all variables, see the
 [README.md](https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#inputs)

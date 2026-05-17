@@ -5,8 +5,6 @@ an encoded string.
 
 ## Signatures
 
-
-
 ```mzsql
 length ( <str> [, <encoding_name>] )
 
@@ -16,7 +14,6 @@ length ( <str> [, <encoding_name>] )
 | --- | --- |
 | `<str>` | A [`string`](/sql/types/text/) or `bytea` value whose length you want.  |
 | `<encoding_name>` | Optional. A [`string`](/sql/types/text/) value specifying the [encoding](#encoding-details) to use for calculating the string's length. Defaults to UTF-8.  |
-
 
 Parameter | Type | Description
 ----------|------|------------

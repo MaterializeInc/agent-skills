@@ -2,8 +2,6 @@
 
 Learn how to integrate with Materialize's built-in MCP endpoints.
 
-
-
 Materialize provides built-in Model Context Protocol (MCP) endpoints that AI
 agents can use. The MCP interface is served directly by the database; no sidecar
 process or external server is required. These endpoints use [JSON-RPC
@@ -23,15 +21,11 @@ and support the MCP `initialize`, `tools/list`, and `tools/call` methods.
 - [Appendix: MCP Server (Python)](/integrations/mcp-server/llm) for locally-run,
   separate MCP Server.
 
-
-
 ---
 
 ## Appendix: MCP Server (Python)
 
-
 > **Disambiguation:** This page provides information on the locally-run, separate MCP Server. For documentation on using the new built-in MCP Server endpoints, see: - [MCP Server for Developer](/integrations/mcp-server/mcp-developer/) 
-
 
 The [Model Context Protocol (MCP) Server for Materialize](https://materialize.com/blog/materialize-turns-views-into-tools-for-agents/) lets large language models (LLMs) call your indexed views as real-time tools.
 The MCP Server automatically turns any indexed view with a comment into a callable, typed interface that LLMs can use to fetch structured, up-to-date answers—directly from the database.
@@ -69,7 +63,6 @@ You can configure it using CLI flags or environment variables:
 | `--pool-min-size` | `MCP_POOL_MIN_SIZE` | `1`                                                   | Minimum DB pool size                          |
 | `--pool-max-size` | `MCP_POOL_MAX_SIZE` | `10`                                                  | Maximum DB pool size                          |
 | `--log-level`     | `MCP_LOG_LEVEL`     | `INFO`                                                | Logging verbosity                             |
-
 
 ## Define Tools
 
@@ -139,11 +132,9 @@ GRANT USAGE ON CLUSTER mcp_cluster TO mcp_server_role;
 * [CREATE ROLE](/sql/create-role)
 * [GRANT PRIVILEGE](/sql/grant-privilege)
 
-
 ---
 
 ## Developer endpoint configuration
-
 
 ## Available configuration parameters
 
@@ -159,14 +150,10 @@ endpoint:
 
 The developer endpoint is enabled by default. To disable it:
 
-
-
 **Cloud:**
 
 Contact [Materialize support](https://materialize.com/docs/support/) to
 disable the MCP developer endpoint for your environment.
-
-
 
 **Self-Managed:**
 
@@ -203,19 +190,11 @@ ALTER SYSTEM SET enable_mcp_developer = false;
 > **Note:** These parameters are only accessible to the `mz_system` and `mz_support`
 > roles. Regular database users cannot view or modify them.
 
-
-
-
-
-
-
 ---
 
 ## MCP Server for Developers
 
-
 > **Public Preview:** This feature is in public preview.
-
 
 Materialize provides a built-in Model Context Protocol (MCP) endpoint
 `/api/mcp/developer` (port 6876) for troubleshooting and observability. The MCP
@@ -235,8 +214,6 @@ ask natural language questions like:
 ## Connect to the MCP server
 
 ### Step 1. Get connection details
-
-
 
 **Cloud:**
 
@@ -259,7 +236,6 @@ tab")
    - To create a new app password to use, click on the **Create app password**
      to generate a new app password and token for MCP Server. **Copy the app
      password and token**.
-
 
 **Self-Managed:**
 
@@ -316,9 +292,6 @@ tab")
      kubectl port-forward svc/<instance-name>-balancerd 6876:6876 -n materialize-environment
      ```
 
-
-
-
 **Emulator:**
 
 To connect to the MCP server for your Emulator, use the following endpoint
@@ -328,19 +301,10 @@ To connect to the MCP server for your Emulator, use the following endpoint
 http://localhost:6876/api/mcp/developer
 ```
 
-
-
-
-
-
-
 ### Step 2. Configure your MCP client
 
 > **Warning:** When saving your credentials or other sensitive information in a config file, do
 > **not** commit these files to version control or share them publicly.
-
-
-
 
 **Claude Code:**
 
@@ -361,20 +325,18 @@ http://localhost:6876/api/mcp/developer
    ```
 
    Update the `<baseURL>` and `<base64-token>` placeholders with your values:
-   
+
    | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
    |--------------| ------------------------------------------------------------------| -------------------------------|
    | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
    | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
    | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
-   
+
    > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
    > the Console's **Connect** modal. The `.json` copied from the Console already
    > includes the correct `<baseURL>`.
 
 1. Restart Claude Code to pick up the new setting.
-
-
 
 **Claude Desktop:**
 
@@ -394,20 +356,18 @@ http://localhost:6876/api/mcp/developer
    ```
 
    Update the `<baseURL>` and `<base64-token>` placeholders with your values:
-   
+
    | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
    |--------------| ------------------------------------------------------------------| -------------------------------|
    | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
    | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
    | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
-   
+
    > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
    > the Console's **Connect** modal. The `.json` copied from the Console already
    > includes the correct `<baseURL>`.
 
 1. Restart Claude Desktop to pick up the new setting.
-
-
 
 **Cursor:**
 
@@ -426,20 +386,18 @@ http://localhost:6876/api/mcp/developer
    ```
 
    Update the `<baseURL>` and `<base64-token>` placeholders with your values:
-   
+
    | Deployment   |  `<baseURL>`                                                     |  `<base64-token>`              |
    |--------------| ------------------------------------------------------------------| -------------------------------|
    | **Cloud**        | Replace with your value (format: `https://<region-id>.materialize.cloud`)  | Replace with your value       |
    | **Self-Managed** | Replace with your value (format: `http://<host>:6876`) | Replace with your value       |
    | **Emulator**     | `http://localhost:6876` | Leave the placeholder as-is |
-   
+
    > **Tip:** For **Cloud**, you can copy the `.json` content from the **MCP Server** tab in
    > the Console's **Connect** modal. The `.json` copied from the Console already
    > includes the correct `<baseURL>`.
 
 1. Restart Cursor to pick up the new setting.
-
-
 
 **Generic HTTP:**
 
@@ -455,10 +413,6 @@ curl -X POST <baseURL>/api/mcp/developer \
     "method": "tools/list"
   }'
 ```
-
-
-
-
 
 ## Start asking questions
 
@@ -531,11 +485,9 @@ discover more tables.
 - [Coding Agent Skills](/integrations/coding-agent-skills/)
 - [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
-
 ---
 
 ## MCP Server Troubleshooting
-
 
 ## `unable to verify the first certificate`
 

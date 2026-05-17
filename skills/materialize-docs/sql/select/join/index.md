@@ -15,8 +15,6 @@ expect.
 
 ## Syntax
 
-
-
 ```mzsql
 <select_pred>
 [NATURAL] <join_type> JOIN
@@ -36,7 +34,6 @@ expect.
 | **USING** ( `<col_ref>` [, ...] ) [**AS** `<join_using_alias>`] | Optional. If the join condition does not require table-level qualification (i.e. joining tables on columns with the same name), the columns to join the tables on. For example, `USING (customer_id)`. The optional `AS` clause provides a table alias for the join columns. The columns will remain referenceable by their original names. For example, given `lhs JOIN rhs USING (c) AS joint`, the column `c` will be referenceable as `lhs.c`, `rhs.c`, and `joint.c`.  |
 | **ON** `<expression>` | Optional. The condition on which to join the tables. For example `ON purchase.customer_id = customer.id`.  |
 | `<select_post>` | The remaining [`SELECT`](/sql/select) clauses you want to use, e.g. `...WHERE expr GROUP BY col_ref HAVING expr`.  |
-
 
 **Note**: It's possible to join together table expressions as inner joins without using this clause whatsoever, e.g. `SELECT cols... FROM t1, t2 WHERE t1.x = t2.x GROUP BY cols...`
 
@@ -71,7 +68,6 @@ left-hand row according to the usual rules of the selected join type.
 > plan via the [`EXPLAIN PLAN`](/sql/explain-plan/) statement. In many common patterns
 > involving `LATERAL` joins, Materialize can optimize away the join entirely.
 
-
 As a simple example, the following query uses `LATERAL` to count from 1 to `x`
 for all the values of `x` in `xs`.
 
@@ -91,7 +87,6 @@ SELECT * FROM
 
 For a real-world example of a `LATERAL` subquery, see the [Top-K by group
 idiom](/transform-data/idiomatic-materialize-sql/top-k/).
-
 
 ## Examples
 

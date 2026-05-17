@@ -11,8 +11,6 @@ Detail | Info
 
 ## Syntax
 
-
-
 ```mzsql
 '<map_string>'::MAP[TEXT => <value_type>]
 
@@ -22,7 +20,6 @@ Detail | Info
 | --- | --- |
 | `'<map_string>'` | A well-formed map object string.  |
 | `::MAP[TEXT => <value_type>]` | The type annotation specifying that this is a map with [`text`](/sql/types/text/) keys and values of `<value_type>`.  |
-
 
 ## Map functions + operators
 
@@ -36,7 +33,6 @@ Operator | RHS Type | Description
 `?` | `string` | Is RHS a top-level key? ([docs](/sql/types/map/#search-top-level-keys-))
 `?&` | `string[]` | Does LHS contain all RHS top-level keys? ([docs](/sql/types/map/#search-for-all-top-level-keys-))
 <code>?&#124;</code> | `string[]` | Does LHS contain any RHS top-level keys? ([docs](/sql/types/map/#search-for-any-top-level-keys-))
-
 
 ### Functions
 

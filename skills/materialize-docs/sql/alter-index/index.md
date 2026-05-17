@@ -5,14 +5,11 @@ Use `ALTER INDEX` to:
 
 ## Syntax
 
-
 **Rename:**
 
 ### Rename
 
 To rename an index:
-
-
 
 ```mzsql
 ALTER INDEX <name> RENAME TO <new_name>;
@@ -24,12 +21,6 @@ ALTER INDEX <name> RENAME TO <new_name>;
 | `<name>` | The current name of the index you want to alter.  |
 | `<new_name>` | The new name of the index.  |
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
-
-
-
-
-
-
 
 ## Privileges
 

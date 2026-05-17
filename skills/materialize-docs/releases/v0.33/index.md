@@ -4,7 +4,6 @@
 * Add support for connecting to Kafka brokers using an [SSH tunnel connection](/sql/create-connection/#ssh-tunnel)
 to an SSH bastion server.
 
-
   ```mzsql
   CREATE CONNECTION kafka_connection TO KAFKA (
     BROKERS (

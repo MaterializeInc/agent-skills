@@ -8,11 +8,9 @@
 SHOW [REDACTED] CREATE TABLE <table_name>;
 ```
 
-
 | Syntax element | Description |
 | --- | --- |
 | <strong>REDACTED</strong> | If specified, literals will be redacted. |
-
 
 For available table names, see [`SHOW TABLES`](/sql/show-tables).
 

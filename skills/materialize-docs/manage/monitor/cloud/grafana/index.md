@@ -16,7 +16,6 @@ the following additional services:
 > **Note:** As a best practice, we strongly recommend using [service accounts](/security/users-service-accounts/create-service-accounts)
 > to connect external applications, like Grafana, to Materialize.
 
-
 To export metrics from Materialize and expose them in a format that Grafana can
 consume, you need to configure and run a Prometheus SQL Exporter. This service
 will run SQL queries against Materialize at specified intervals, and export the
@@ -33,13 +32,11 @@ which has been tried and tested in production environments.
 >    as guidance to bootstrap your monitoring with some key Materialize metrics
 >    and indicators.
 
-
 2. In the configuration file, define the connection to your Materialize region
    under `connections` using the credentials provided in the [Materialize Console](/console/).
 
    > **Note:** You must escape the special `@` character in `USER` for a successful
 >    connection. Example: instead of `name@email.com`, use `name%40email.com`.
-
 
    **Filename:** config.yml
    ```yaml
@@ -104,7 +101,6 @@ which has been tried and tested in production environments.
 To scrape the metrics available in the Prometheus SQL Exporter endpoint, you
 must then set up a [Grafana Agent](https://grafana.com/docs/agent/latest/?pg=oss-agent) for Grafana cloud, or [Prometheus](https://prometheus.io/download/) for the self-hosted version:
 
-
 **Grafana Cloud:**
 
 1. Follow the [instructions to install and run a Grafana Agent](https://grafana.com/docs/agent/latest/static/set-up/install/)
@@ -139,7 +135,6 @@ must then set up a [Grafana Agent](https://grafana.com/docs/agent/latest/?pg=oss
 
    </details>
 
-
 **Self-hosted Grafana:**
 1. Follow the [instructions to install and run Prometheus](https://prometheus.io/docs/prometheus/latest/installation/)
    in your host.
@@ -164,10 +159,7 @@ must then set up a [Grafana Agent](https://grafana.com/docs/agent/latest/?pg=oss
 
    **Tip:** see [this sample](https://github.com/MaterializeInc/demos/blob/main/integrations/grafana/local/misc/datasources/prometheus.yml) for a Prometheus data source configuration.
 
-
 For more details on how to configure, run and troubleshoot Prometheus, see the [Prometheus documentation](https://prometheus.io/docs/introduction/overview/).
-
-
 
 ## Step 3. Build a monitoring dashboard
 

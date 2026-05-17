@@ -1,14 +1,11 @@
 # CREATE SOURCE: SQL Server
 Connecting Materialize to a SQL Server database for Change Data Capture (CDC).
 
-
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/sql-server/).
-
 
 ## Prerequisites
 
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
-
 
 Materialize supports SQL Server (2016+) as a real-time data source. To connect to a
 SQL Server database, you first need to tweak its configuration to enable [Change Data
@@ -17,11 +14,7 @@ and [`SNAPSHOT` transaction isolation](https://learn.microsoft.com/en-us/dotnet/
 for the database that you would like to replicate. Then [create a connection](#prerequisite-creating-a-connection-to-sql-server)
 in Materialize that specifies access and authentication parameters.
 
-
-
 ## Syntax
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -36,7 +29,6 @@ FROM SQL SERVER CONNECTION <connection_name>
 | **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
 | **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
 | **CONNECTION** `<connection_name>` | The name of the SQL Server connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#sql-server) documentation page.  |
-
 
 ## Ingesting data
 
@@ -113,7 +105,6 @@ Field     | Type                          | Details
 ----------|-------------------------------|--------------
 `lsn`     | [`bytea`](/sql/types/bytea/)  | The upper-bound [Log Sequence Number](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-log-architecture-and-management-guide) replicated thus far into Materialize.
 
-
 And can be queried using:
 
 ```mzsql
@@ -129,7 +120,6 @@ ingestion progress and debugging related issues, see [Troubleshooting](/ops/trou
 
 > **Important:** Before creating a SQL Server source, you must enable Change Data Capture and
 > `SNAPSHOT` transaction isolation in the upstream database.
-
 
 ### Creating a source {#create-source-example}
 
@@ -158,7 +148,6 @@ If your SQL Server instance is not exposed to the public internet, you can
 [tunnel the connection](/sql/create-connection/#network-security-connections)
 through and SSH bastion host.
 
-
 **SSH tunnel:**
 ```mzsql
 CREATE CONNECTION ssh_connection TO SSH TUNNEL (
@@ -180,9 +169,6 @@ CREATE CONNECTION sqlserver_connection TO SQL SERVER (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check
 [this guide](/ops/network-security/ssh-tunnel/).
-
-
-
 
 #### Creating the source in Materialize
 

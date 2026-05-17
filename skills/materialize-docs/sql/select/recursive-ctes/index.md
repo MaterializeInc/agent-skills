@@ -4,8 +4,6 @@ Recursive CTEs operate on the recursively-defined structures like trees or graph
 
 ## Syntax
 
-
-
 ```mzsql
 WITH MUTUALLY RECURSIVE
   [((RETURN AT | ERROR AT) RECURSION LIMIT <limit>)]
@@ -20,7 +18,6 @@ WITH MUTUALLY RECURSIVE
 | **(RETURN AT \| ERROR AT) RECURSION LIMIT** `<limit>` | Optional. Control the recursion behavior:  \| Option \| Description \| \|--------\|-------------\| \| `RETURN AT RECURSION LIMIT <limit>` \| Stop the fixpoint computation after `<limit>` iterations and use the current values computed for each recursive CTE binding in the `select_stmt`. Useful when debugging and validating the correctness of recursive queries. \| \| `ERROR AT RECURSION LIMIT <limit>` \| Stop the fixpoint computation after `<limit>` iterations and fail the query with an error. A good safeguard against accidentally running a non-terminating dataflow in production clusters. \|  |
 | `<cte_ident>` ( `<col_ident>` `<col_type>` [, ...] ) | A binding that gives the SQL fragment defined under `select_stmt` a `cte_ident` alias. Unlike regular CTEs, a recursive CTE binding must explicitly state its type as a comma-separated list of (`col_ident` `col_type`) pairs. This alias can be used in the same binding or in all other (preceding and subsequent) bindings in the enclosing recursive CTE block.  |
 | **AS** ( `<select_stmt>` ) | The `SELECT` statement that defines the recursive CTE. Any `cte_ident` alias can be referenced in all `recursive_cte_binding` definitions that live under the same block, as well as in the final `select_stmt` for that block.  |
-
 
 ## Details
 
@@ -62,14 +59,12 @@ When the set of changes for all bindings becomes empty, the recursive computatio
 >    This most likely will manifest in spikes of the cluster resources allocated to your recursive dataflows.
 >    See [an example](#queries-with-update-locality) below.
 
-
 ## Examples
 
 Let's consider a very simple schema consisting of `users` that belong to a
 hierarchy of geographical `areas` and exchange `transfers` between each other.
 Use the [SQL Shell](/console/) to run the sequence of
 commands below.
-
 
 ### Example schema
 
@@ -140,7 +135,6 @@ of the `SUBSCRIBE` using **Stop streaming**.
 
 > **Note:** Depending on your base data, the number of records in the `connected` result might get close to the square of the number of `users`.
 
-
 ### Strongly connected components
 
 Another thing that you might be interested in is identifying maximal sub-graphs where every pair of `users` are `connected` (the so-called [_strongly connected components (SCCs)_](https://en.wikipedia.org/wiki/Strongly_connected_component)) of the graph defined above.
@@ -178,7 +172,6 @@ When you’re done, cancel out of the `SUBSCRIBE` using **Stop streaming**.
 
 > **Note:** The `strongly_connected_components` definition given above is not recursive, but relies on the recursive CTEs from the `connected` definition.
 > If you don't need to keep track of the `connected` contents for other reasons, you can use [this alternative SCC definition](https://twitter.com/frankmcsherry/status/1628519795971727366) which computes SCCs directly using repeated forward and backward label propagation.
-
 
 ### Aggregations over a hierarchy
 
@@ -294,7 +287,6 @@ RETURN AT RECURSION LIMIT $n -- where $n = 1, 2, 3, ...
 
 and observe how the result changes after `$n` iterations.
 
-
 **After 1 iteration:**
 ```text
  src_id | dst_id
@@ -322,8 +314,6 @@ and observe how the result changes after `$n` iterations.
  ...
 ```
 
-
-
 Changing the `UNION` to `UNION ALL` in the `connected` definition caused a full copy of `transfer` to be added to the current value of `connected` in each iteration!
 Consequently, `connected` never stops growing and the recursive CTE computation never reaches a fixpoint.
 
@@ -332,7 +322,6 @@ Consequently, `connected` never stops growing and the recursive CTE computation 
 The examples presented so far have the following "update locality" property:
 
 > **Note:** A change in a source collection will usually cause a _bounded amount_ of changes to the contents of the recursive CTE bindings derived after each iteration.
-
 
 For example:
 

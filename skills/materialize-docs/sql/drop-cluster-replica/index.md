@@ -7,7 +7,6 @@ the cluster itself, use the [`DROP CLUSTER`](/sql/drop-cluster) command.
 > **Tip:** When getting started with Materialize, we recommend starting with managed
 > clusters.
 
-
 ## Syntax
 
 ```mzsql
@@ -42,7 +41,6 @@ The privileges required to execute this statement are:
 
 - Ownership of the dropped cluster replica.
 - `USAGE` privileges on the containing cluster.
-
 
 ## Related pages
 

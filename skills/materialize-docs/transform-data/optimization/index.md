@@ -259,7 +259,6 @@ In many relational databases, indexes don't replicate the entire collection of d
     CREATE INDEX pk_courses ON courses (id);
     ```
 
-
 2. For each foreign key in the join, create a "narrow" view with just two columns: foreign key and primary key. Then create two indexes: one for the foreign key and one for the primary key. In our example, the two foreign keys are `sections.teacher_id` and `sections.course_id`, so we do the following:
     ```mzsql
     -- Create a "narrow" view containing primary key sections.id
@@ -278,7 +277,6 @@ In many relational databases, indexes don't replicate the entire collection of d
     CREATE INDEX sections_narrow_courses_1 ON sections_narrow_courses (course_id);
     ```
     > **Note:** In this case, because both foreign keys are in `sections`, we could have gotten away with one narrow collection `sections_narrow_teachers_and_courses` with indexes on `id`, `teacher_id`, and `course_id`. In general, we won't be so lucky to have all the foreign keys in the same collection, so we've shown the more general pattern of creating a narrow view and two indexes for each foreign key.
-
 
 3. Rewrite your query to use your narrow collections in the join conditions. Example:
 

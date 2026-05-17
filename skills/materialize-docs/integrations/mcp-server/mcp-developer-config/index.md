@@ -14,14 +14,10 @@ endpoint:
 
 The developer endpoint is enabled by default. To disable it:
 
-
-
 **Cloud:**
 
 Contact [Materialize support](https://materialize.com/docs/support/) to
 disable the MCP developer endpoint for your environment.
-
-
 
 **Self-Managed:**
 
@@ -57,8 +53,4 @@ ALTER SYSTEM SET enable_mcp_developer = false;
 
 > **Note:** These parameters are only accessible to the `mz_system` and `mz_support`
 > roles. Regular database users cannot view or modify them.
-
-
-
-
 

@@ -11,8 +11,6 @@ closer to LIR than SQL. The raw plans from `EXPLAIN RAW PLAN FOR ...`
 are closer to SQL (and therefore less indicative of how the query will
 actually run).
 
-
-
 **In fully optimized physical (LIR) plans (Default):**
 The following table lists the operators that are available in the LIR plan.
 
@@ -35,7 +33,6 @@ The following table lists the operators that are available in the LIR plan.
 **Notes:**
 - **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
 - **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
-
 
 **In decorrelated and optimized plans:**
 The following table lists the operators that are available in the optimized plan.
@@ -63,7 +60,6 @@ The following table lists the operators that are available in the optimized plan
 - **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
 - **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
 
-
 **In raw plans:**
 The following table lists the operators that are available in the raw plan.
 
@@ -87,9 +83,6 @@ The following table lists the operators that are available in the raw plan.
 **Notes:**
 - **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
 - **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
-
-
-
 
 Operators are sometimes marked as `Fused ...`. This indicates that the operator is fused with its input, i.e., the operator below it. That is, if you see a `Fused X` operator above a `Y` operator:
 

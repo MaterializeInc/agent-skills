@@ -20,8 +20,7 @@ Materialize supports multi-statement[^ddltxn] transaction blocks for:
 - [**read-only** statements](#read-only-transactions);
 - [**write-only** (specifically, insert-only)
   statements](#write-only-transactions);
-- [**DDL-only** (specifically, `CREATE TABLE FROM SOURCE` (and optionally,
-  `CREATE SOURCE`) statements)](#ddl-only-transactions). (***Private Preview***)
+- [**DDL-only** statements](#ddl-only-transactions).
 
 See [Details](#details) for more information.
 
@@ -47,8 +46,7 @@ Option | Description
 Multi-statement transactions in Materialize are [**read-only**
 transactions](#read-only-transactions), [**write-only**
 transactions](#write-only-transactions), or [**DDL-only**
-transactions](#ddl-only-transactions) (*Private Preview*) as determined by
-either:
+transactions](#ddl-only-transactions) as determined by either:
 
 - The first statement after the `BEGIN`, or
 - The [`READ ONLY`](#begin-option-read-only) option is specified.
@@ -69,7 +67,6 @@ In Materialize, read-only transactions can be either:
 >   queries in the transaction.
 > - The transaction will additionally hold back normal compaction of the objects,
 >   potentially increasing memory usage for very long running transactions.
-
 
 #### SELECT-only transactions
 
@@ -184,11 +181,14 @@ encounters an <strong>internal ERROR</strong> and rolls back:</p>
 
 ### DDL-only transactions
 
-
-
 In Materialize, a DDL-only transaction block is a transaction that can contain
-multiple [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/) (and optionally,
-[`CREATE SOURCE`](/sql/create-source/)) statements.[^ddltxn]
+multiple DDL statements. The following DDL statements are allowed in DDL-only
+transactions:
+
+- [`ALTER ... RENAME`](/sql/alter-schema/#rename-schema) (e.g., `ALTER TABLE ... RENAME`, `ALTER SCHEMA ... RENAME`)
+- [`ALTER ... SWAP`](/sql/alter-schema/#swap-with) (e.g., `ALTER SCHEMA ... SWAP`)
+- [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/)
+- [`CREATE SOURCE`](/sql/create-source/)
 
 In practice, use DDL transaction blocks to create multiple tables from a source
 in a single transaction. On a successful [`COMMIT`](/sql/commit/), all objects

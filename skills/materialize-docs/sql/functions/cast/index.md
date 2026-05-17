@@ -4,8 +4,6 @@ The `cast` function and operator return a value converted to the specified [type
 
 ## Signatures
 
-
-
 ```mzsql
 CAST ( <val> AS <type> )
 
@@ -15,9 +13,6 @@ CAST ( <val> AS <type> )
 | --- | --- |
 | `<val>` | Any value you want to convert.  |
 | **AS** `<type>` | The return value's [type](/sql/types/).  |
-
-
-
 
 ```mzsql
 <val>::<type>
@@ -29,10 +24,7 @@ CAST ( <val> AS <type> )
 | `<val>` | Any value you want to convert.  |
 | `::<type>` | The return value's [type](/sql/types/).  |
 
-
 The following special syntax is permitted if _val_ is a string literal:
-
-
 
 ```mzsql
 <type> '<val>'
@@ -43,7 +35,6 @@ The following special syntax is permitted if _val_ is a string literal:
 | --- | --- |
 | `<type>` | The return value's [type](/sql/types/).  |
 | `'<val>'` | A string literal value. This special syntax is permitted if `<val>` is a string literal.  |
-
 
 ### Return value
 

@@ -6,10 +6,7 @@
 > our backwards compatibility guarantee. The syntax and output of `EXPLAIN` may
 > change arbitrarily in future versions of Materialize.
 
-
 ## Syntax
-
-
 
 ```mzsql
 EXPLAIN (KEY | VALUE) SCHEMA [AS JSON]
@@ -56,7 +53,6 @@ INTO KAFKA CONNECTION <connection_name> (
 | **KEY FORMAT** `<sink_format_spec>` **VALUE FORMAT** `<sink_format_spec>` | Optional. Specifies the key format and value formats separately. See [Formats](/sql/create-sink/kafka/#formats) for details.  |
 | **ENVELOPE** (`DEBEZIUM` \| `UPSERT`) | Optional. Specifies how changes to the sink's upstream relation are mapped to Kafka messages. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `DEBEZIUM` \| The generated schemas have a [Debezium-style diff envelope](/sql/create-sink/kafka/#debezium) to capture changes in the input view or source. \| \| `UPSERT` \| The sink emits data with [upsert semantics](/sql/create-sink/kafka/#upsert). Requires a unique key specified using the `KEY` option. \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `SNAPSHOT = <snapshot>` \| Default: `true`. Whether to emit the consolidated results of the query before the sink was created at the start of the sink. To see only results after the sink is created, specify `WITH (SNAPSHOT = false)`. \|  |
-
 
 ## Details
 When creating a an Avro-formatted Kafka sink, Materialize automatically generates Avro schemas for the message key and value and publishes them to a schema registry.

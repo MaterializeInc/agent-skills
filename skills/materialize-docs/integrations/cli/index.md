@@ -2,8 +2,6 @@
 
 The Materialize command-line interface (CLI).
 
-
-
 The Materialize command-line interface (CLI), lets you interact with
 Materialize from your terminal.
 
@@ -94,7 +92,6 @@ Argument           | Environment variables     | Description
 `‑‑help`           |                           | Display help and exit.
 `‑‑version`        |                           | Display version and exit.
 
-
 [Homebrew]: https://brew.sh
 [homebrew-tap]: https://github.com/MaterializeInc/homebrew-materialize
 [`app-password`]: reference/app-password
@@ -105,12 +102,9 @@ Argument           | Environment variables     | Description
 [`sql`]: reference/sql
 [`user`]: reference/user
 
-
-
 ---
 
 ## Materialize CLI Configuration
-
 
 `mz` is configured via a single TOML file stored at
 `$HOME/.config/materialize/mz.toml`.
@@ -133,7 +127,6 @@ Name      | Type   | Description
 ----------|--------|------------
 `profile` | string | The name of the authentication profile to use by default.<br>Default: `default`.
 `vault`   | string | The default vault to use to store secret configuration parameters: `inline` or `keychain`. When set to `inline`, secrets are stored directly in the configuration file. When set to `keychain`, secrets are stored in the system keychain (macOS only).<br>Default (Linux): `inline`<br>Default (macOS): `keychain`
-
 
 Use [`mz config set`](../reference/config#set) to set these parameters.
 
@@ -169,7 +162,6 @@ Field             | Type   | Description
 `cloud-endpoint`  | string | *Internal use only.* The Materialize API endpoint to use.
 `admin-endpoint`  | string | *Internal use only.* The Materialize administration endpoint to use.
 
-
 ## Example
 
 The following is an example `mz.toml` configuration file with two authentication
@@ -195,11 +187,9 @@ app-password = "mzp_a48df1039ecb2d94c..."
 region = "aws/eu-west-1"
 ```
 
-
 ---
 
 ## Materialize CLI Installation
-
 
 We offer several installation methods for `mz` on macOS and Linux.
 
@@ -256,9 +246,7 @@ docker run -v $HOME/.mz:/root/.mz materialize/mz [args...]
 [Homebrew]: https://brew.sh
 [homebrew-tap]: https://github.com/MaterializeInc/homebrew-materialize
 
-
 ---
 
 ## mz Reference
-
 

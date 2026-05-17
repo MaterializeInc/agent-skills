@@ -19,14 +19,11 @@ upgrading the Materialize instances.
 </li>
 </ul>
 
-
 > **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
 > at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
 > permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
 
-
 > **Note:** Downgrading is not supported.
-
 
 ## Prerequisites
 
@@ -40,7 +37,6 @@ upgrading the Materialize instances.
 ## Upgrade process
 
 > **Important:** The following procedure performs a rolling upgrade, where both the old and new Materialize instances are running before the old instances are removed. When performing a rolling upgrade, ensure you have enough resources to support having both the old and new Materialize instances running.
-
 
 ### Step 1: Set up
 
@@ -84,7 +80,6 @@ upgrading the Materialize instances.
 > **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
 > upgrading the Materialize instances.
 
-
 <p>To update your Materialize Helm Chart repository:</p>
 <ol>
 <li>
@@ -97,12 +92,10 @@ upgrading the Materialize instances.
 </span></span></code></pre></div></li>
 </ol>
 
-
 ### Step 3: Upgrade the Materialize Operator
 
 > **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
 > upgrading the Materialize instances.
-
 
 <ol>
 <li>
@@ -122,14 +115,14 @@ simple-demo  materialize  1         2025-12-08 11:39:50.185976 -0500 EST   deplo
 </span></span></code></pre></div></li>
 <li>
 <p>Upgrade your Operator. For example, the following upgrades the Operator
-to v26.20.2:</p>
+to v26.22.0:</p>
 > **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
 >    at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
 >    permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade -n materialize simple-demo materialize/materialize-operator  <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -f my-values.yaml <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.20.2
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.22.0
 </span></span></code></pre></div></li>
 <li>
 <p>Verify that the Operator is running:</p>
@@ -143,12 +136,10 @@ Materialize instances.</p>
 </li>
 </ol>
 
-
 ### Step 4: Upgrading Materialize Instances
 
 > **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
 > upgrading the Materialize instances.
-
 
 <p><strong>After</strong> you have upgraded your Materialize Operator, upgrade your
 Materialize instance(s) to the <strong>APP Version</strong> of the Operator. When
@@ -175,7 +166,7 @@ main
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main<span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.20.2\&#34;}}&#34;</span>
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.22.0\&#34;}}&#34;</span>
 </span></span></code></pre></div></li>
 <li>
 <p>Rollout the Materialize instance version change.</p>
@@ -189,7 +180,6 @@ main
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment describe pod -l <span class="nv">app</span><span class="o">=</span>environmentd
 </span></span></code></pre></div></li>
 </ol>
-
 
 ## See also
 

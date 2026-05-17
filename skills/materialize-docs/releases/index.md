@@ -2,11 +2,74 @@
 
 Materialize release notes
 
-
-
 > **Note:** Starting with the v26.1.0 release, Materialize releases on a weekly schedule for
 > both Cloud and Self-Managed. See [Release schedule](/releases/schedule) for details.
 
+## v26.22.0
+*Released to Materialize Cloud: 2026-04-30* <br>
+*Released to Materialize Self-Managed: 2026-05-01* <br>
+
+This release includes various improvements, including faster sink performance
+with up to 50% lower memory usage, and bug fixes.
+
+### Improvements {#v26.22-improvements}
+
+#### Sink improvements {#v26.22-improvements-sink}
+
+- **Faster sink performance with up to 50% lower memory usage**: Sink operations
+  now process data more efficiently by walking arrangements directly via
+  cursors, reducing memory overhead and improving throughput. For large sinks,
+  we have seen memory usage reduced by up to 50%.
+- **Iceberg sink support for interval and range types**: Iceberg sinks now
+  support `interval` and `range` data types, expanding compatibility with
+  complex data schemas.
+
+#### MCP security improvements {#v26.22-improvements-mcp-security}
+
+- **Enhanced MCP server security**: MCP server origin validation now uses CORS
+  allowlists instead of self-comparison checks, preventing DNS rebinding
+  attacks.
+- **Stricter MCP search path security**: MCP developer endpoint now sets a tight
+  `search_path` to prevent bypass attacks.
+
+#### General improvements {#v26.22-improvements-general}
+
+- Catalog synchronization now uses more efficient consolidation algorithms,
+  reducing overhead for environments with many objects.
+
+- Improved query optimization by pushing `COALESCE` operations into `CASE WHEN`
+  expressions where beneficial.
+
+### Bug Fixes {#v26.22-bug-fixes}
+
+- Fixed Iceberg upsert sinks dropping delete operations when handling more than
+  100,000 distinct keys.
+- Fixed `EXPLAIN OPTIMIZED PLAN` failure after renaming materialized views,
+  indexes, or continual tasks.
+- Fixed Parquet map key handling to properly deduplicate keys and use the final
+  value when duplicates exist.
+- Fixed subquery handling to properly account for negative diffs in accumulation
+  logic.
+- Fixed PostgreSQL source compatibility by using only `pg_catalog.server_version_num` for version detection.
+- Fixed PostgreSQL `format_type` output to properly quote the `"char"` type (OID
+  18).
+- Fixed an issue in the Console where the cursor would not appear in the SQL
+  editor.
+- Fixed incorrect results from `mz_dataflow_global_ids` view when multiple
+  objects shared the same dataflow.
+- Fixed interval conversion overflow in Arrow utilities when converting
+  microseconds to nanoseconds.
+- Fixed OpenTelemetry rate limiting filter that was incorrectly suppressing all
+  events instead of just rate-limited ones.
+- Fixed catalog leak when dropping replacement collections without applying
+  them.
+- Enhanced security by ensuring sensitive authentication data is properly
+  cleared from memory after use.
+- Enhanced security by ensuring TLS certificate data is properly zeroized when
+  dropped.
+- Improved SQL name escaping in catalog operations for better reliability.
+- Removed unused `memory_request` field from replica allocation configuration.
+- Added regression test for Kafka sink handling of negative accumulations.
 
 ## v26.20.2
 *Released to Materialize Cloud: 2026-04-16* <br>
@@ -18,7 +81,6 @@ improvements, and bug fixes.
 ### Developer MCP server
 
 > **Public Preview:** This feature is in public preview.
-
 
 Materialize environments now include a built-in Model Context Protocol (MCP)
 [Developer endpoint
@@ -297,15 +359,12 @@ For more information, refer to:
 
 ### SQL Server: Source versioning
 
-
-
 For SQL Server sources, we've introduced new syntax
 for [`CREATE SOURCE`](/sql/create-source/sql-server-v2/) and [`CREATE
 TABLE`](/sql/create-table/). This allows you to better handle schema changes
 in your source SQL Server tables.
 
 > **Note:** - Changing column types is currently unsupported.
-
 
 For more information, refer to:
 - [Guide: Handling upstream schema changes with zero
@@ -616,7 +675,6 @@ This release focuses primarily on bug fixes.
 
 - **Dependency drop handling**: Fixed panics that could occur when dependencies are dropped during a SELECT or COPY TO. These operations now gracefully return a `ConcurrentDependencyDrop` error.
 
-
 ## v26.1.0
 *Released Self-Managed: 2025-11-26*
 
@@ -654,7 +712,6 @@ Materialize v26.1.0 includes improved support for SQLServer, including the abili
 <li>To upgrade to <code>v26.1</code> or future versions, you must first upgrade to <code>v26.0</code></li>
 </ul>
 
-
 ## Self-Managed v26.0.0
 
 *Released: 2025-11-18*
@@ -683,7 +740,6 @@ must prepare your nodes by adding the required labels. For detailed
 instructions, see [Prepare for swap and upgrade to
 v26.0](/self-managed-deployments/appendix/upgrade-to-swap/).
 
-
 ### SASL/SCRAM-SHA-256 support
 
 Starting in v26.0.0, Self-Managed Materialize supports SASL/SCRAM-SHA-256
@@ -703,14 +759,12 @@ compatibility with web-based tools.
 
 Starting in v26.0.0, Self-Managed Materialize requires a license key.
 
-
 | License key type | Deployment type | Action |
 | --- | --- | --- |
 | Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
 | Community | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
 | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
 | Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
-
 
 For new deployments, you configure your license key in the Kubernetes Secret
 resource during the installation process. For details, see the [installation
@@ -723,8 +777,6 @@ kubectl -n materialize-environment patch secret materialize-backend -p '{"string
 
 ### PostgreSQL: Source versioning
 
-
-
 For PostgreSQL sources, starting in v26.0.0, Materialize introduces new syntax
 for [`CREATE SOURCE`](/sql/create-source/postgres-v2/) and [`CREATE
 TABLE`](/sql/create-table/) to allow better handle DDL changes to the upstream
@@ -733,11 +785,6 @@ PostgreSQL tables.
 > **Note:** - This feature is currently supported for PostgreSQL sources, with
 > additional source types coming soon.
 > - Changing column types is currently unsupported.
-
-
-
-
-
 
 For more information, see:
 - [Guide: Handling upstream schema changes with zero
@@ -760,73 +807,52 @@ For more information, see [`rolloutStrategy`](/self-managed-deployments/upgradin
 Corresponding to the v26.0.0 release, the following versions of the sample
 Terraform modules have been released:
 
-
 | Module | Description |
 | --- | --- |
 | <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws" >Amazon Web Services (AWS)</a> | An example Terraform module for deploying Materialize on AWS. See <a href="/self-managed-deployments/installation/install-on-aws/" >Install on AWS</a> for detailed instructions usage. |
 | <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure" >Azure</a> | An example Terraform module for deploying Materialize on Azure. See <a href="/self-managed-deployments/installation/install-on-azure/" >Install on Azure</a> for detailed instructions usage. |
 | <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp" >Google Cloud Platform (GCP)</a> | An example Terraform module for deploying Materialize on GCP. See <a href="/self-managed-deployments/installation/install-on-gcp/" >Install on GCP</a> for detailed instructions usage. |
 
-
  **Materialize on AWS:**
-
 
 | Terraform version | Notable changes |
 | --- | --- |
 | <a href="https://github.com/MaterializeInc/terraform-aws-materialize/releases/tag/v0.6.4" >v0.6.4</a> | <ul> <li>Released as part of v26.0.0.</li> <li>Uses <code>terraform-helm-materialize</code> version <code>v0.1.35</code>.</li> </ul>  |
 
-
 If upgrading from a deployment that was set up using an earlier version of the
 Terraform modules, additional considerations may apply when using an updated Terraform modules to your existing deployments.
 
-
 Click on the Terraform version link to go to the release-specific Upgrade Notes.
 
-
-
 **Materialize on Azure:**
-
 
 | Terraform version | Notable changes |
 | --- | --- |
 | <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize/releases/tag/v0.6.4" >v0.6.4</a> | <ul> <li>Released as part of v26.0.0.</li> <li>Uses <code>terraform-helm-materialize</code> version <code>v0.1.35</code>.</li> </ul>  |
 
-
 If upgrading from a deployment that was set up using an earlier version of the
 Terraform modules, additional considerations may apply when using an updated
 Terraform modules to your existing deployments.
 
-
 See also Upgrade Notes for release specific notes.
 
-
-
 **Materialize on GCP:**
-
 
 | Terraform version | Notable changes |
 | --- | --- |
 | <a href="https://github.com/MaterializeInc/terraform-google-materialize/releases/tag/v0.6.4" >v0.6.4</a> | <ul> <li>Released as part of v26.0.0.</li> <li>Uses <code>terraform-helm-materialize</code> version <code>v0.1.35</code>.</li> </ul>  |
 
-
 If upgrading from a deployment that was set up using an earlier version of the
 Terraform modules, additional considerations may apply when using an updated
 Terraform modules to your existing deployments.
 
-
 See also Upgrade Notes for release specific notes.
 
-
-
 **terraform-helm-materialize:**
-
 
 | terraform-helm-materialize | Notes | Release date |
 | --- | --- | --- |
 | v0.1.35 | <ul> <li>Released as part of v26.0.0.</li> <li>Uses as default Materialize Operator version: <code>v26.0.0</code></li> </ul>  | 2025-11-18 |
-
-
- 
 
 #### Upgrade notes for v26.0.0
 
@@ -871,497 +897,338 @@ to <a href="/self-managed-deployments/appendix/upgrade-to-swap/" >Prepare for sw
 </li>
 </ul>
 
-
 See also [Version specific upgrade
 notes](/self-managed-deployments/upgrading/#version-specific-upgrade-notes).
-
 
 ## See also
 
 - [Release Schedule](/releases/schedule/)
 
+---
 
+## Materialize v26.24
 
 ---
 
 ## Materialize v26.23
 
-
-
 ---
 
 ## Materialize v26.22
-
-
 
 ---
 
 ## Materialize v26.21
 
-
-
 ---
 
 ## Materialize v26.20
-
-
 
 ---
 
 ## Materialize v26.19
 
-
-
 ---
 
 ## Materialize v26.18
-
-
 
 ---
 
 ## Materialize v26.17
 
-
-
 ---
 
 ## Materialize v26.16
-
-
 
 ---
 
 ## Materialize v26.15
 
-
-
 ---
 
 ## Materialize v26.14
-
-
 
 ---
 
 ## Materialize v26.13
 
-
-
 ---
 
 ## Materialize v26.12
-
-
 
 ---
 
 ## Materialize v26.11
 
-
-
 ---
 
 ## Materialize v26.10
-
-
 
 ---
 
 ## Materialize v26.9
 
-
-
 ---
 
 ## Materialize v26.8
-
-
 
 ---
 
 ## Materialize v26.7
 
-
-
 ---
 
 ## Materialize v26.6
-
-
 
 ---
 
 ## Materialize v26.5
 
-
-
 ---
 
 ## Materialize v26.4
-
-
 
 ---
 
 ## Materialize v26.3
 
-
-
 ---
 
 ## Materialize v26.2
-
-
 
 ---
 
 ## Materialize v26.1
 
-
-
 ---
 
 ## Materialize v26.0
-
-
 
 ---
 
 ## Materialize v0.164
 
-
-
 ---
 
 ## Materialize v0.163
-
-
 
 ---
 
 ## Materialize v0.162
 
-
-
 ---
 
 ## Materialize v0.161
-
-
 
 ---
 
 ## Materialize v0.160
 
-
-
 ---
 
 ## Materialize v0.159
-
-
 
 ---
 
 ## Materialize v0.158
 
-
-
 ---
 
 ## Materialize v0.157
-
-
 
 ---
 
 ## Materialize v0.156
 
-
-
 ---
 
 ## Materialize v0.155
-
-
 
 ---
 
 ## Materialize v0.154
 
-
-
 ---
 
 ## Materialize v0.153
-
-
 
 ---
 
 ## Materialize v0.152
 
-
-
 ---
 
 ## Materialize v0.151
-
-
 
 ---
 
 ## Materialize v0.150
 
-
-
 ---
 
 ## Materialize v0.149
-
-
 
 ---
 
 ## Materialize v0.148
 
-
-
 ---
 
 ## Materialize v0.147
-
-
 
 ---
 
 ## Materialize v0.146
 
-
-
 ---
 
 ## Materialize v0.145
-
-
 
 ---
 
 ## Materialize v0.144
 
-
-
 ---
 
 ## Materialize v0.143
-
-
 
 ---
 
 ## Materialize v0.142
 
-
-
 ---
 
 ## Materialize v0.141
-
-
 
 ---
 
 ## Materialize v0.140
 
-
-
 ---
 
 ## Materialize v0.139
-
-
 
 ---
 
 ## Materialize v0.138
 
-
-
 ---
 
 ## Materialize v0.137
-
-
 
 ---
 
 ## Materialize v0.136
 
-
-
 ---
 
 ## Materialize v0.135
-
-
 
 ---
 
 ## Materialize v0.134
 
-
-
 ---
 
 ## Materialize v0.133
-
-
 
 ---
 
 ## Materialize v0.132
 
-
-
 ---
 
 ## Materialize v0.131
-
-
 
 ---
 
 ## Materialize v0.130
 
-
-
 ---
 
 ## Materialize v0.129
-
-
 
 ---
 
 ## Materialize v0.128
 
-
-
 ---
 
 ## Materialize v0.127
-
-
 
 ---
 
 ## Materialize v0.126
 
-
-
 ---
 
 ## Materialize v0.125
-
-
 
 ---
 
 ## Materialize v0.124
 
-
-
 ---
 
 ## Materialize v0.123
-
-
 
 ---
 
 ## Materialize v0.122
 
-
-
 ---
 
 ## Materialize v0.121
-
-
 
 ---
 
 ## Materialize v0.120
 
-
-
 ---
 
 ## Materialize v0.118
-
-
 
 ---
 
 ## Materialize v0.117
 
-
-
 ---
 
 ## Materialize v0.116
-
-
 
 ---
 
 ## Materialize v0.115
 
-
-
 ---
 
 ## Materialize v0.114
-
-
 
 ---
 
 ## Materialize v0.113
 
-
-
 ---
 
 ## Materialize v0.112
-
-
 
 ---
 
 ## Materialize v0.111
 
-
-
 ---
 
 ## Materialize v0.110
 
-
 ## v0.110
-
 
 ---
 
 ## Materialize v0.109
 
-
-
 ---
 
 ## Materialize v0.108
-
 
 ## v0.108
 
@@ -1393,11 +1260,9 @@ notes](/self-managed-deployments/upgrading/#version-specific-upgrade-notes).
 
 * Disallow creating sinks that directly depend on system catalog objects ([#28122](https://github.com/MaterializeInc/materialize/issues/28122)).
 
-
 ---
 
 ## Materialize v0.107
-
 
 ## v0.107
 
@@ -1442,11 +1307,9 @@ notes](/self-managed-deployments/upgrading/#version-specific-upgrade-notes).
   ([#27931](https://github.com/MaterializeInc/materialize/issues/27931)). The progress topic is a property of the connection, not the
   source or sink.
 
-
 ---
 
 ## Materialize v0.106
-
 
 [//]: # "NOTE(morsapaes) v0.106 shipped support for the new `VALUE DECODING
 ERRORS` clause behind a feature flag, which allows Kafka upsert sources to
@@ -1485,35 +1348,25 @@ continue ingesting data in the presence of decoding errors."
   configuration parameter is only required when connecting to a MySQL
   read-replica.
 
-
 ---
 
 ## Materialize v0.105
-
-
 
 ---
 
 ## Materialize v0.104
 
-
-
 ---
 
 ## Materialize v0.103
-
-
 
 ---
 
 ## Materialize v0.102
 
-
-
 ---
 
 ## Materialize v0.101
-
 
 ## v0.101
 
@@ -1543,11 +1396,9 @@ continue ingesting data in the presence of decoding errors."
   command for [load generator sources](/sql/create-source/load-generator/) to
   always include the `FOR ALL TABLES` clause, which is required ([#27250](https://github.com/MaterializeInc/materialize/issues/27250)).
 
-
 ---
 
 ## Materialize v0.100
-
 
 ## v0.100
 
@@ -1569,11 +1420,9 @@ continue ingesting data in the presence of decoding errors."
 * Support the [`COPY TO`](/sql/copy-to/) command in the WebSocket API, so it's
   possible to run it from the SQL Shell.
 
-
 ---
 
 ## Materialize v0.99
-
 
 ## v0.99
 
@@ -1640,11 +1489,9 @@ continue ingesting data in the presence of decoding errors."
   referencing the `mz_internal.mz_cluster_replica_sizes` catalog table must be
   adjusted to use `mz_catalog.mz_cluster_replica_sizes` instead.
 
-
 ---
 
 ## Materialize v0.98
-
 
 ## v0.98
 
@@ -1668,11 +1515,9 @@ continue ingesting data in the presence of decoding errors."
 * Add [`mz_internal.mz_postgres_source_tables`](/reference/system-catalog/mz_internal/#mz_postgres_source_tables) and [`mz_internal.mz_mysql_source_tables`](/reference/system-catalog/mz_internal/#mz_mysql_source_tables)
 to the system catalog. These tables .
 
-
 ---
 
 ## Materialize v0.97
-
 
 ## v0.97
 
@@ -1701,11 +1546,9 @@ to the system catalog. These tables .
   to the system catalog. These tables were added in support of ongoing feature
   development.
 
-
 ---
 
 ## Materialize v0.96
-
 
 ## v0.96
 
@@ -1731,11 +1574,9 @@ value has been altered for a given role using [ALTER ROLE ... SET](/sql/alter-ro
   `mz_internal.mz_compute_delays_histogram_per_worker`, and
   `mz_internal.mz_compute_delays_histogram_raw`.
 
-
 ---
 
 ## Materialize v0.95
-
 
 ## v0.95
 
@@ -1763,11 +1604,9 @@ value has been altered for a given role using [ALTER ROLE ... SET](/sql/alter-ro
   to support internal monitoring tasks. Users are **not billed** for these
   clusters.
 
-
 ---
 
 ## Materialize v0.94
-
 
 ## v0.94
 
@@ -1780,11 +1619,9 @@ value has been altered for a given role using [ALTER ROLE ... SET](/sql/alter-ro
   which produces keyed data that can be passed through to [`ENVELOPE UPSERT`](/sql/create-source/kafka/).
   This is useful for internal testing.
 
-
 ---
 
 ## Materialize v0.93
-
 
 ## v0.93
 
@@ -1801,11 +1638,9 @@ value has been altered for a given role using [ALTER ROLE ... SET](/sql/alter-ro
 * Extend `pg_catalog` coverage with support for the [`obj_description()`](/sql/functions/#obj_description)
   and [`col_description`](https://materialize.com/docs/sql/functions/#col_description) functions.
 
-
 ---
 
 ## Materialize v0.92
-
 
 ## v0.92
 
@@ -1824,11 +1659,9 @@ value has been altered for a given role using [ALTER ROLE ... SET](/sql/alter-ro
 * Fix a panic when calling the [`to_jsonb`](https://materialize.com/docs/sql/functions/#to_jsonb)
   on a list containing `NULL` array values.
 
-
 ---
 
 ## Materialize v0.91
-
 
 ## v0.91
 
@@ -1888,11 +1721,9 @@ behind a feature flag."
   when subsources are dropped and recreated using the `ALTER SOURCE...{ ADD |
   DROP } SUBSOURCE` command.
 
-
 ---
 
 ## Materialize v0.90
-
 
 ## v0.90
 
@@ -1917,11 +1748,9 @@ behind a feature flag."
   JSON string literal containing the textual representation of the list or
   array.
 
-
 ---
 
 ## Materialize v0.89
-
 
 ## v0.89
 
@@ -1957,11 +1786,9 @@ status of compute objects (indexes or materialized views).
 * Temporarily disallow `ALTER CONNECTION` commands on sources using the `UPSERT`
   envelope ([#25418](https://github.com/MaterializeInc/materialize/issues/25418)).
 
-
 ---
 
 ## Materialize v0.88
-
 
 ## v0.88
 
@@ -1993,11 +1820,9 @@ status of compute objects (indexes or materialized views).
 
 * Fix multiple bugs related to interval rounding ([#25202](https://github.com/MaterializeInc/materialize/issues/25202)).
 
-
 ---
 
 ## Materialize v0.87
-
 
 ## v0.87
 
@@ -2054,11 +1879,9 @@ status of compute objects (indexes or materialized views).
 for `EXPLAIN PHYSICAL PLAN` statements, to show the unique ID of each subplan in
 the plan ([#24944](https://github.com/MaterializeInc/materialize/issues/24944)).
 
-
 ---
 
 ## Materialize v0.86
-
 
 ## v0.86
 
@@ -2127,11 +1950,9 @@ the plan ([#24944](https://github.com/MaterializeInc/materialize/issues/24944)).
 
 * Prevent `INSERT`s with table references in `VALUES` in transactions ([#24697](https://github.com/MaterializeInc/materialize/issues/24697)).
 
-
 ---
 
 ## Materialize v0.85
-
 
 ## v0.85
 
@@ -2151,11 +1972,9 @@ the plan ([#24944](https://github.com/MaterializeInc/materialize/issues/24944)).
 * Fix a bug causing the `mz_monitor` and `mz_monitor_redacted` system roles to
   not show up in the `mz_roles` system catalog table ([#24617](https://github.com/MaterializeInc/materialize/issues/24617)).
 
-
 ---
 
 ## Materialize v0.84
-
 
 ## v0.84
 
@@ -2199,11 +2018,9 @@ the plan ([#24944](https://github.com/MaterializeInc/materialize/issues/24944)).
 
 * Fix query results that rely on static views with temporal filters ([#24408](https://github.com/MaterializeInc/materialize/issues/24408)).
 
-
 ---
 
 ## Materialize v0.83
-
 
 ## v0.83
 
@@ -2232,11 +2049,9 @@ the plan ([#24944](https://github.com/MaterializeInc/materialize/issues/24944)).
   (i.e., sources, sinks) with more than one replica. This is an unsupported
   state, since such clusters can, at most, have `REPLICATION FACTOR = 1`.
 
-
 ---
 
 ## Materialize v0.82
-
 
 ## v0.82.0
 
@@ -2250,11 +2065,9 @@ materialized views and statement lifecycle logging behind a feature flag."
   regions where the pre-installed cluster has not been renamed or dropped, this
   cluster retains the `default` name.
 
-
 ---
 
 ## Materialize v0.81
-
 
 ## v0.81.0
 
@@ -2286,11 +2099,9 @@ behind a feature flag."
   `timestamp-millis`, `timestamp-micros`, or `date` with a default value
   ([#24094](https://github.com/MaterializeInc/materialize/issues/24094)).
 
-
 ---
 
 ## Materialize v0.80
-
 
 ## v0.80.0
 
@@ -2321,11 +2132,9 @@ This column provides the type of the logged statement, e.g. `select` for a
 * Allow bare references to tables, views, and sources whose name matches the
   name of a type.
 
-
 ---
 
 ## Materialize v0.79
-
 
 ## v0.79.0
 
@@ -2369,11 +2178,9 @@ This column provides the type of the logged statement, e.g. `select` for a
   connection's progress topic with compaction disabled to use sinks with these
   versions of Redpanda.
 
-
 ---
 
 ## Materialize v0.78
-
 
 ## v0.78.0
 
@@ -2423,11 +2230,9 @@ and [`mz_timezone_abbreviations`](/reference/system-catalog/mz_catalog/#mz_timez
 to the system catalog. These views contains a row for each supported timezone
 and each supported timezone abbreviation, respectively.
 
-
 ---
 
 ## Materialize v0.77
-
 
 ## v0.77.0
 
@@ -2485,11 +2290,9 @@ and each supported timezone abbreviation, respectively.
   [output modifier](/sql/explain-plan/#output-modifiers) to avoid ambiguities when
   multiple columns have the same name.
 
-
 ---
 
 ## Materialize v0.76
-
 
 ## v0.76.0
 
@@ -2517,11 +2320,9 @@ and each supported timezone abbreviation, respectively.
   connect to the identified service, rather than only building the client during
   validation.
 
-
 ---
 
 ## Materialize v0.75
-
 
 ## v0.75.0
 
@@ -2541,11 +2342,9 @@ and each supported timezone abbreviation, respectively.
 * Remove the requirement of `USAGE` privileges on types for `SELECT` and
   `EXPLAIN` statements.
 
-
 ---
 
 ## Materialize v0.74
-
 
 ## v0.74.0
 
@@ -2608,14 +2407,11 @@ deployments."
 * Fix a bug where `ASSERT NOT NULL` options on materialized views were not
   persisted across restarts of the environment.
 
-
 ---
 
 ## Materialize v0.73
 
-
 ## v0.73.0
-
 
 [//]: # "NOTE(morsapaes) v0.73 shipped the ASSERT NOT NULL option for sinks
 behind a feature flag."
@@ -2709,11 +2505,9 @@ behind a feature flag."
 to be specified in any case style. Previously, Materialize only accepted
 uppercase case style (as required by `librdkafka`).
 
-
 ---
 
 ## Materialize v0.72
-
 
 ## v0.72.0
 
@@ -2724,11 +2518,9 @@ to include **all active dataflows**, not just the ones referenced from the
 system catalog. This makes debugging issues like high memory usage caused by
 arrangements more intuitive for users.
 
-
 ---
 
 ## Materialize v0.71
-
 
 ## v0.71.0
 
@@ -2747,11 +2539,9 @@ field has a default of `NULL`.
 syntax options, which allow exploring what plan Materialize would create if one
 were to re-create the object with the current catalog state.
 
-
 ---
 
 ## Materialize v0.70
-
 
 ## v0.70.0
 
@@ -2767,11 +2557,9 @@ were to re-create the object with the current catalog state.
 
 * Restrict transactions to execute on a single cluster, in order to improve use case isolation. The first query in a transaction now determines the time domain of the entire transaction ([#21854](https://github.com/MaterializeInc/materialize/issues/21854)).
 
-
 ---
 
 ## Materialize v0.69
-
 
 ## v0.69.0
 
@@ -2845,11 +2633,9 @@ flag. The flag was raised in v0.69 — so mentioning it here."
 
 * Support SQL parameters in `SUBSCRIBE` and `DECLARE` statements.
 
-
 ---
 
 ## Materialize v0.68
-
 
 ## v0.68.0
 
@@ -2870,11 +2656,9 @@ released behind a feature flag."
 * Extend `pg_catalog` and `information_schema` system catalog coverage for
   compatibility with Power BI.
 
-
 ---
 
 ## Materialize v0.67
-
 
 ## v0.67.0
 
@@ -2919,11 +2703,9 @@ here."
 
 * Increase in precision for the `AVG`, `VAR_*`, and `STDDEV*` functions.
 
-
 ---
 
 ## Materialize v0.66
-
 
 ## v0.66.0
 
@@ -2937,11 +2719,9 @@ not introduce any new user-facing features. 👷
   publication in a different order than that observed when Materialize first
   processed them.
 
-
 ---
 
 ## Materialize v0.65
-
 
 ## v0.65.0
 
@@ -2978,11 +2758,9 @@ not introduce any new user-facing features. 👷
     please [let us know](https://materialize.com/s/chat) if you run into any
     issues.
 
-
 ---
 
 ## Materialize v0.64
-
 
 ## v0.64.0
 
@@ -3012,11 +2790,9 @@ not introduce any new user-facing features. 👷
   `ALTER` and `DROP` commands. This improves the integration experience with
   external tools like [Deepnote](https://deepnote.com/) and [Hex](https://hex.tech/).
 
-
 ---
 
 ## Materialize v0.63
-
 
 ## v0.63.0
 
@@ -3059,11 +2835,9 @@ which allows limiting the size in bytes of a single query’s result.
   integration experience with external tools like [Deepnote](https://deepnote.com/)
   and [Hex](https://hex.tech/).
 
-
 ---
 
 ## Materialize v0.62
-
 
 ## v0.62.0
 
@@ -3118,11 +2892,9 @@ which allows limiting the size in bytes of a single query’s result.
   * [`role_table_grants`](https://www.postgresql.org/docs/15/infoschema-role-table-grants.html)
   * [`table_privileges`](https://www.postgresql.org/docs/15/infoschema-table-privileges.html)
 
-
 ---
 
 ## Materialize v0.61
-
 
 ## v0.61.0
 
@@ -3160,11 +2932,9 @@ released behind a feature flag."
 * Avoid panicking in the presence of concurrent DDL and `UPDATE`, `DELETE`, or
   `INSERT INTO` statements ([#20420](https://github.com/MaterializeInc/materialize/issues/20420)).
 
-
 ---
 
 ## Materialize v0.60
-
 
 ## v0.60.0
 
@@ -3215,7 +2985,6 @@ flag. The flag was raised in v0.60 -— so mentioning it here."
   FROM (SELECT CONVERT_FROM(data, 'utf8')::jsonb AS data FROM json_source);
   ```
 
-
 #### SQL
 
 * Improve and extend the base implementation of **Role-based
@@ -3233,11 +3002,9 @@ flag. The flag was raised in v0.60 -— so mentioning it here."
 * Fix timestamp generation for transactions with multiple statements that could
   lead to crashes ([#20267](https://github.com/MaterializeInc/materialize/issues/20267)).
 
-
 ---
 
 ## Materialize v0.59
-
 
 ## v0.59.0
 
@@ -3286,11 +3053,9 @@ supported in the next release.
     impact, but please [let us know](https://materialize.com/s/chat) if you run
     into any issues.
 
-
 ---
 
 ## Materialize v0.58
-
 
 ## v0.58.0
 
@@ -3331,11 +3096,9 @@ supported in the next release.
   default**. You must [contact us](https://materialize.com/contact/) to enable
   this feature in your Materialize region.
 
-
 ---
 
 ## Materialize v0.57
-
 
 ## v0.57.0
 
@@ -3350,7 +3113,6 @@ supported in the next release.
   It's important to note that role-based access control (RBAC) is **disabled by
   default**. You must [contact us](https://materialize.com/contact/) to enable
   this feature in your Materialize region.
-
 
 * Add `RESET schema` as an alias to `RESET search_path`. From this release, the
   following sequence of commands provide the same functionality:
@@ -3411,11 +3173,9 @@ supported in the next release.
 
 * Avoid panicking in the absence of the default `materialize` database ([#19874](https://github.com/MaterializeInc/materialize/issues/19874)).
 
-
 ---
 
 ## Materialize v0.56
-
 
 ## v0.56.0
 
@@ -3445,11 +3205,9 @@ supported in the next release.
   default**. You must [contact us](https://materialize.com/contact/) to enable
   this feature in your Materialize region.
 
-
 ---
 
 ## Materialize v0.55
-
 
 ## v0.55.0
 
@@ -3490,11 +3248,9 @@ supported in the next release.
   default**. You must [contact us](https://materialize.com/contact/) to enable
   this feature in your Materialize region.
 
-
 ---
 
 ## Materialize v0.54
-
 
 ## v0.54.0
 
@@ -3538,11 +3294,9 @@ supported in the next release.
   default**. You must [contact us](https://materialize.com/contact/) to enable
   this feature in your Materialize region.
 
-
 ---
 
 ## Materialize v0.53
-
 
 ## v0.53.0
 
@@ -3574,11 +3328,9 @@ supported in the next release.
   broke in the previous release due to the changes in introspection routing
   (see [Materialize v0.52](../v0.52)).
 
-
 ---
 
 ## Materialize v0.52
-
 
 ## v0.52.0
 
@@ -3656,11 +3408,9 @@ mentioning it here."
   The upcoming v0.53 release of Materialize will restore compatibility with
   `dbt-materialize` <= v1.4.0.
 
-
 ---
 
 ## Materialize v0.51
-
 
 ## v0.51.0
 
@@ -3712,11 +3462,9 @@ mentioning it here."
 * Improve the reliability of SSH tunnel connections in the presence of short
   idle TCP connection timeouts.
 
-
 ---
 
 ## Materialize v0.50
-
 
 ## v0.50.0
 
@@ -3741,11 +3489,9 @@ mentioning it here."
 * Mitigate connection interruptions and ingestion hiccups for all connection
   types. If you observe ingestion lag in your sources or sinks, please [get in touch](https://materialize.com/s/chat)!
 
-
 ---
 
 ## Materialize v0.49
-
 
 ## v0.49.0
 
@@ -3792,11 +3538,9 @@ mentioning it here."
 
 - Fix a bug that would cause PostgreSQL sources to error when columns are added to upstream tables. Note that dropping columns from upstream tables that Materialize ingests still results in error.
 
-
 ---
 
 ## Materialize v0.48
-
 
 ## v0.48.0
 
@@ -3872,11 +3616,9 @@ shipping in v0.48 -— so mentioning it here."
   errors ([#18317](https://github.com/MaterializeInc/materialize/issues/18317)). Previously, such errors led to these settings being
   ignored.
 
-
 ---
 
 ## Materialize v0.47
-
 
 ## v0.47.0
 
@@ -3900,11 +3642,9 @@ shipping in v0.48 -— so mentioning it here."
   introspection source. This introspection source describes the dataflows
   created by indexes, materialized views, and subscriptions in the system.
 
-
 ---
 
 ## Materialize v0.46
-
 
 ## v0.46.0
 
@@ -3945,11 +3685,9 @@ shipping in v0.48 -— so mentioning it here."
 * Stabilizate resource utilization in the [`mz_introspection`](/sql/show-clusters/#mz_catalog_server-system-cluster)
   system cluster.
 
-
 ---
 
 ## Materialize v0.45
-
 
 ## v0.45.0
 
@@ -4043,11 +3781,9 @@ now specify the cluster to connect to in the `psql` connection string:
 * Avoid panicking when attempting to parse a range from strings containing
   multibyte characters ([#17803](https://github.com/MaterializeInc/materialize/issues/17803)).
 
-
 ---
 
 ## Materialize v0.44
-
 
 ## v0.44.0
 
@@ -4064,11 +3800,9 @@ now specify the cluster to connect to in the `psql` connection string:
   emitted value for each new value it emits, once it has crossed the max
   cardinality threshold. This is useful for internal load testing.
 
-
 ---
 
 ## Materialize v0.43
-
 
 ## v0.43.0
 
@@ -4100,22 +3834,18 @@ now specify the cluster to connect to in the `psql` connection string:
 * Fix a bug where active [subscriptions](/sql/subscribe/) were not terminated when
   their underlying relations were dropped ([#17476](https://github.com/MaterializeInc/materialize/issues/17476)).
 
-
 ---
 
 ## Materialize v0.42
-
 
 ## v0.42.0
 
 This release focuses on stabilization work and performance improvements. It does
 not introduce any new user-facing features or bug fixes. 👷
 
-
 ---
 
 ## Materialize v0.41
-
 
 ## v0.41.0
 
@@ -4160,11 +3890,9 @@ not introduce any new user-facing features or bug fixes. 👷
 * Support using [`SUBSCRIBE`](/sql/subscribe) with queries over introspection
   sources for [troubleshooting](/ops/troubleshooting/).
 
-
 ---
 
 ## Materialize v0.40
-
 
 ## v0.40.0
 
@@ -4196,11 +3924,9 @@ not introduce any new user-facing features or bug fixes. 👷
   ZONE` option, Materialize can connect immediately to the correct availability
   zone.
 
-
 ---
 
 ## Materialize v0.39
-
 
 ## v0.39.0
 
@@ -4264,11 +3990,9 @@ not introduce any new user-facing features or bug fixes. 👷
 * **Private preview.** Support [bearer token authentication](/integrations/websocket-api/#endpoint)
   in the WebSocket API endpoint, which supports interactive SQL queries over WebSockets.
 
-
 ---
 
 ## Materialize v0.38
-
 
 ## v0.38.0
 
@@ -4291,11 +4015,9 @@ not introduce any new user-facing features or bug fixes. 👷
   `mz_sources`, `mz_sinks`, `mz_internal.mz_cluster_replica_metrics`, and
   `mz_internal.mz_cluster_replica_sizes`).
 
-
 ---
 
 ## Materialize v0.37
-
 
 ## v0.37.0
 
@@ -4359,11 +4081,9 @@ not introduce any new user-facing features or bug fixes. 👷
   Previously, the HTTP SQL endpoint serialized datums using slightly different
   rules.
 
-
 ---
 
 ## Materialize v0.36
-
 
 ## v0.36.0
 
@@ -4415,17 +4135,14 @@ not introduce any new user-facing features or bug fixes. 👷
 * Fix incorrect decoding of negative timestamps (i.e. prior to the Unix epoch:
   January 1st, 1970 at 00:00:00 UTC) in Avro records ([#16609](https://github.com/MaterializeInc/materialize/issues/16609)).
 
-
 ---
 
 ## Materialize v0.33
-
 
 ## v0.33.0
 
 * Add support for connecting to Kafka brokers using an [SSH tunnel connection](/sql/create-connection/#ssh-tunnel)
 to an SSH bastion server.
-
 
   ```mzsql
   CREATE CONNECTION kafka_connection TO KAFKA (
@@ -4446,11 +4163,9 @@ to an SSH bastion server.
   catalog. This table records the last known CPU and RAM utilization statistics
   for all processes of all extant cluster replicas.
 
-
 ---
 
 ## Materialize v0.32
-
 
 ## v0.32.0
 
@@ -4506,11 +4221,9 @@ to an SSH bastion server.
 
 * Fix a bug in predicate pushdown that could result in incorrect query plans ([#16147](https://github.com/MaterializeInc/materialize/issues/16147)).
 
-
 ---
 
 ## Materialize v0.31
-
 
 ## v0.31.0
 
@@ -4535,11 +4248,9 @@ to an SSH bastion server.
   source if the number of replicated tables exceeded the default value for
   `max_sources` (25).
 
-
 ---
 
 ## Materialize v0.30
-
 
 ## v0.30.0
 
@@ -4581,11 +4292,9 @@ to an SSH bastion server.
 
 * Add an `xlarge` size for sources and sinks.
 
-
 ---
 
 ## Materialize v0.29
-
 
 ## v0.29.0
 
@@ -4621,11 +4330,9 @@ to an SSH bastion server.
 * Add a `TPCH` [load generator source](/sql/create-source/load-generator/#tpch),
   which implements the TPC-H benchmark specification.
 
-
 ---
 
 ## Materialize v0.28
-
 
 ## v0.28.0
 
@@ -4698,11 +4405,9 @@ to an SSH bastion server.
   consistency with how multi-word types are represented elsewhere in the
   catalog.
 
-
 ---
 
 ## Materialize v0.27
-
 
 v0.27.0 is the first cloud-native release of Materialize. It contains
 substantial breaking changes from [v0.26 LTS].
@@ -4793,7 +4498,6 @@ substantial breaking changes from [v0.26 LTS].
   * PubNub
   * Kinesis
   * S3
-
 
 * **Breaking change.** Remove the `reuse_topic` option from
   [Kafka sinks](/sql/create-sink).
@@ -4924,11 +4628,9 @@ COPY (SUBSCRIBE t) TO STDOUT
 
 [v0.26 LTS]: https://materialize.com/docs/lts/release-notes/#v0.26.4
 
-
 ---
 
 ## Release Schedule
-
 
 Starting with the v26.1.0 release, Materialize releases on a weekly schedule for
 both Cloud and Self-Managed.
@@ -4944,7 +4646,6 @@ aws/eu-west-1 | Wednesday   | 2100-2300 [Europe/Dublin]
 aws/us-east-1 | Thursday    | 0500-0700 [America/New_York]
 aws/us-west-2 | Thursday    | 0500-0700 [America/New_York]
 
-
 During an upgrade, clients may experience brief connection interruptions, but
 the service otherwise remains fully available. Upgrade windows were chosen to be
 outside of business hours in the most representative time zone for the region.
@@ -4955,7 +4656,6 @@ outside of business hours in the most representative time zone for the region.
 > - Upgrade windows follow any daylight saving time or summer time rules
 > for their indicated time zone.
 
-
 [America/New_York]: https://time.is/New_York
 [Europe/Dublin]: https://time.is/Dublin
 
@@ -4965,5 +4665,4 @@ In general, Materialize releases new Self-Managed versions on Friday.
 
 > **Note:** - Materialize may occasionally have unscheduled releases to fix urgent bugs.
 > - Releases may skip some weeks.
-
 

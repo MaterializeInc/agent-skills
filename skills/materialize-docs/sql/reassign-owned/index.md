@@ -5,7 +5,6 @@
 > **Note:** Unlike [PostgreSQL](https://www.postgresql.org/docs/current/sql-drop-owned.html), Materialize reassigns
 > all objects across all databases, including the databases themselves.
 
-
 ## Syntax
 
 ```mzsql

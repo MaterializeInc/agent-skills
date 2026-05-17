@@ -2,8 +2,6 @@
 
 Sinking results from Materialize to external systems.
 
-
-
 A [sink](/concepts/sinks/) describes the external system you want Materialize to
 write data to and details the encoding of that data. You can sink data from a
 **materialized** view, a source, or a table.
@@ -11,7 +9,6 @@ write data to and details the encoding of that data. You can sink data from a
 ## Sink methods
 
 To create a sink, you can:
-
 
 | Method | External system | Guide(s) or Example(s) |
 | --- | --- | --- |
@@ -21,7 +18,6 @@ To create a sink, you can:
 | Use a native connector | Kafka/Redpanda | <ul> <li><a href="/serve-results/sink/kafka/" >Sink to Kafka/Redpanda</a></li> </ul>  |
 | Use a native connector | Apache Iceberg hosted on AWS S3 Tables | <ul> <li><a href="/serve-results/sink/iceberg/" >Sink to Iceberg</a></li> </ul>  |
 | Use <code>SUBSCRIBE</code> | Various | <ul> <li><a href="https://github.com/MaterializeInc/mz-catalog-sync" >Sink to Postgres</a></li> <li><a href="https://github.com/MaterializeIncLabs/mz-redis-sync" >Sink to Redis</a></li> </ul>  |
-
 
 ### Operational guideline
 
@@ -33,12 +29,9 @@ To create a sink, you can:
 For help, see [Troubleshooting
 sinks](/serve-results/sink/sink-troubleshooting/).
 
-
-
 ---
 
 ## Amazon S3
-
 
 This guide walks you through the steps required to export results from
 Materialize to Amazon S3. Copying results to S3 is
@@ -211,7 +204,6 @@ Next, you must attach the policy you just created to a Materialize-specific
 >    will allow other Materialize customers to assume your role and use AWS
 >    privileges you have granted the role!
 
-
 1. Back in Materialize, validate the AWS connection you created using the
    [`VALIDATE CONNECTION`](/sql/validate-connection) command.
 
@@ -227,7 +219,6 @@ Next, you must attach the policy you just created to a Materialize-specific
 To export data to your target S3 bucket, use the [`COPY TO`](/sql/copy-to/#copy-to-s3)
 command, and the AWS connection you created in the previous step.
 
-
 **Parquet:**
 
 ```mzsql
@@ -241,8 +232,6 @@ WITH (
 For details on the Parquet writer settings Materialize uses, as well as data
 type support and conversion, check the [reference documentation](/sql/copy-to/#copy-to-s3-parquet).
 
-
-
 **CSV:**
 
 ```mzsql
@@ -252,10 +241,6 @@ WITH (
     FORMAT = 'csv'
   );
 ```
-
-
-
-
 
 You might notice that Materialize first writes a sentinel file to the target S3
 bucket. When the copy operation is complete, this file is deleted. This allows
@@ -270,14 +255,11 @@ exports on a regular basis, you can set up scheduling, for example using a
 simple `cron`-like service or an orchestration platform like Airflow or
 Dagster.
 
-
 ---
 
 ## Apache Iceberg
 
-
 > **Public Preview:** This feature is in public preview.
-
 
 Iceberg sinks provide exactly once delivery of updates from Materialize into [Apache
 Iceberg](https://iceberg.apache.org/)[^1] tables hosted on [Amazon S3
@@ -537,7 +519,6 @@ engines. This setting involves tradeoffs:
 > the Iceberg metadata, which can result in a degraded catalog, and non-responsive
 > queries.
 
-
 ### Exactly-once delivery
 
 <p>Iceberg sinks provide <strong>exactly-once delivery</strong>. After a restart,
@@ -545,7 +526,6 @@ Materialize resumes from the last committed snapshot without duplicating
 data.</p>
 <p>Materialize stores progress information in Iceberg snapshot metadata
 properties (<code>mz-frontier</code> and <code>mz-sink-version</code>).</p>
-
 
 ### Type mapping
 
@@ -606,11 +586,9 @@ if conflicts persist, ensure no other writers are modifying the same table.
 - [`CREATE CONNECTION`](/sql/create-connection)
 - [Apache Iceberg documentation](https://iceberg.apache.org/docs/latest/)
 
-
 ---
 
 ## Census
-
 
 This guide walks you through the steps required to create a [Census](https://www.getcensus.com/) sync using Materialize.
 
@@ -636,7 +614,6 @@ To begin you will need to add your Materialize database as a source in Census.
 
 Next you will add a destination where data will be sent.
 
-
 **Braze:**
 
 1. In Census, navigate to **Destinations** and then click **New Destination**.
@@ -647,13 +624,9 @@ Next you will add a destination where data will be sent.
    The [Census guide for Braze](https://docs.getcensus.com/destinations/braze) will explain how to create an API key with the
    correct permissions. Then click the **Connect**.
 
-
-
-
 ## Step 3. Create a Sync
 
 After successfully adding the Materialize source, you can create a sync to send data from Materialize to your downstream destination.
-
 
 **Braze:**
 
@@ -673,9 +646,6 @@ After successfully adding the Materialize source, you can create a sync to send 
 
 1. Click **Next** to see an overview of your sync and click **Create** to create the sync.
 
-
-
-
 ## Step 4. Add a Schedule (Optional)
 
 Your Census sync is created and ready to run. It can be invoked manually but a schedule will ensure all new data
@@ -687,11 +657,9 @@ is sent to the destination.
    difference schedules. If you are using a source or materialized view as your source object, you can choose "Continuous"
    and Census will retrieve new data as soon as it exists within Materialize.
 
-
 ---
 
 ## Kafka and Redpanda
-
 
 <!-- Ported over content from sink-kafka.md. -->
 
@@ -707,7 +675,6 @@ For details on the connector, including syntax, supported formats and examples,
 refer to [`CREATE SINK`](/sql/create-sink/kafka).
 
 > **Tip:** Redpanda uses the same syntax as Kafka [`CREATE SINK`](/sql/create-sink/kafka).
-
 
 ## Features
 
@@ -752,7 +719,6 @@ running `CREATE SINK`, observe the following guidance:
 | Progress topic | Tiered storage      | We recommend disabling tiered storage to allow for more aggressive data compaction. Fully compacted data requires minimal storage, typically only tens of bytes per sink, making it cost-effective to maintain directly on local disk.
 | Progress topic | Segment bytes       | Defaults to 128 MiB. We recommend going no higher than 256 MiB to avoid slow startups when creating new sinks, as they must process the entire progress topic on startup.
 > **Warning:** Dropping a Kafka sink doesn't drop the corresponding topic. For more information, see the [Kafka documentation](https://kafka.apache.org/documentation/).
-
 
 ### Exactly-once processing
 
@@ -846,11 +812,9 @@ and clients about the status of a transaction. When a topic is read using a
 standard Kafka consumer, these markers are not exposed to the application, which
 can give the impression that some offsets are being skipped.
 
-
 ---
 
 ## S3 Compatible Object Storage
-
 
 This guide walks you through the steps required to export results from
 Materialize to an S3 compatible object storage service, such as Google
@@ -884,13 +848,11 @@ Cloud Storage, or Cloudflare R2.
 
 > **Warning:** `VALIDATE CONNECTION` only works for AWS S3 connections. Using `VALIDATE CONNECTION` to test a connection to S3 compatible object storage service will result in an error. However, you can still use the connection to copy data.
 
-
 ## Step 2. Run a bulk export
 
 To export data to your target bucket, use the [`COPY TO`](/sql/copy-to/#copy-to-s3)
 command and the AWS connection you created in the previous step. Replace the `<S3_BUCKET_URI>`
 with the S3 compatible URI for your target bucket.
-
 
 **Parquet:**
 
@@ -905,8 +867,6 @@ WITH (
 For details on the Parquet writer settings Materialize uses, as well as data
 type support and conversion, check the [reference documentation](/sql/copy-to/#copy-to-s3-parquet).
 
-
-
 **CSV:**
 
 ```mzsql
@@ -917,10 +877,6 @@ WITH (
   );
 ```
 
-
-
-
-
 ## Step 3. (Optional) Add scheduling
 
 Bulk exports to object storage using the `COPY TO` command are _one-shot_: every time
@@ -929,18 +885,15 @@ exports on a regular basis, you can set up scheduling, for example using a
 simple `cron`-like service or an orchestration platform like Airflow or
 Dagster.
 
-
 ---
 
 ## Snowflake
-
 
 [//]: # "TODO(morsapaes) For Kafka users, it's possible to sink data to
 Snowflake continuously using the Snowflake connector for Kafka. We should also
 document that approach."
 
 > **Public Preview:** This feature is in public preview.
-
 
 This guide walks you through the steps required to bulk-export results from
 Materialize to Snowflake using Amazon S3 as the intermediate object store.
@@ -1063,7 +1016,6 @@ Next, you must attach the policy you just created to a Snowflake-specific
 > or a role with the [global `CREATE INTEGRATION` privilege](https://docs.snowflake.com/en/user-guide/security-access-control-privileges#global-privileges-account-level-privileges)
 > can execute this step.
 
-
 1. In [Snowsight](https://app.snowflake.com/), or your preferred SQL client
 connected to Snowflake, create a [storage integration](https://docs.snowflake.com/en/sql-reference/sql/create-storage-integration),
 replacing `<role>` with the name of the role you created in the previous step:
@@ -1112,13 +1064,11 @@ CREATE STAGE s3_stage
 > for the active schema, as well as the [`USAGE` privilege](https://docs.snowflake.com/en/sql-reference/sql/grant-privilege#syntax)
 > on the relevant storage integration.
 
-
 ## Step 4. Import data into Snowflake
 
 To import the data stored in S3 into Snowflake, you can then create a table and
 use the [`COPY INTO`](https://docs.snowflake.com/en/sql-reference/sql/copy-into-table)
 command to load it from the external stage.
-
 
 **Parquet:**
 
@@ -1140,8 +1090,6 @@ COPY INTO s3_table_parquet
 
 For more details on importing Parquet files staged in S3 into Snowflake, check the
 [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#type-parquet).
-
-
 
 **CSV:**
 
@@ -1167,11 +1115,6 @@ COPY INTO s3_table_csv
 For more details on importing CSV files staged in S3 into Snowflake, check the
 [Snowflake documentation](https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#type-csv).
 
-
-
-
-
-
 ## Step 5. (Optional) Add scheduling
 
 Bulk exports to Amazon S3 using the `COPY TO` command are _one-shot_: every time
@@ -1180,11 +1123,9 @@ exports from Materialize to Snowflake on a regular basis, you can set up
 scheduling, for example using a simple `cron`-like service or an orchestration
 platform like Airflow or Dagster.
 
-
 ---
 
 ## Troubleshooting sinks
-
 
 <!-- Copied over from the old manage/troubleshooting guide -->
 ## Why isn't my sink exporting data?

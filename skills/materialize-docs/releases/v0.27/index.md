@@ -89,7 +89,6 @@ substantial breaking changes from [v0.26 LTS].
   * Kinesis
   * S3
 
-
 * **Breaking change.** Remove the `reuse_topic` option from
   [Kafka sinks](/sql/create-sink).
 

@@ -2,8 +2,6 @@
 
 Create and manage Materialize resources with Terraform
 
-
-
 [Terraform](https://www.terraform.io/) is an infrastructure-as-code tool that
 allows you to manage your resources in a declarative configuration language.
 Materialize maintains a [Terraform provider](https://registry.terraform.io/providers/MaterializeInc/materialize/latest/docs)
@@ -26,7 +24,6 @@ infrastructure with a single `terraform apply` command.
   <a href="./get-started/" >Get started with Terraform and Materialize</a>
 </div>
 
-
 <div class="linkbox ">
   <div class="title">
     Manage resources
@@ -48,18 +45,13 @@ infrastructure with a single `terraform apply` command.
 
 </div>
 
-
-
 ## Contributing
 
 If you want to help develop the Materialize provider, check out the [contribution guidelines](https://github.com/MaterializeInc/terraform-provider-materialize/blob/main/CONTRIBUTING.md).
 
-
-
 ---
 
 ## Appendix: External secret stores
-
 
 Materialize does not directly integrate with external secret stores, but it's possible to manage this integration via Terraform.
 
@@ -102,11 +94,9 @@ You can find examples of using other popular secret stores providers in the
 [secret stores
 demo](https://github.com/MaterializeInc/demos/tree/main/integrations/terraform/secret-stores).
 
-
 ---
 
 ## Get started with the Materialize provider
-
 
 The following guide provides an introduction to the Materialize Terraform
 provider and setup.
@@ -139,8 +129,6 @@ provide:
 > Terraform state file**. Ensure that your initial configuration
 > matches your intended deployment type, and do not switch to a
 > different deployment type afterward.
-
-
 
 **Materialize Cloud:**
 ### Materialize Cloud
@@ -230,8 +218,6 @@ output "production_dashboard_password" {
 }
 ```
 
-
-
 **Self-managed Materialize:**
 ### Self-managed Materialize
 
@@ -293,14 +279,9 @@ provider "materialize" {
 | `password` | Database password | `MZ_PASSWORD` | - |
 | `sslmode` | SSL mode (`disable`, `require`, `verify-ca`, `verify-full`) | `MZ_SSLMODE` | `require` |
 
-
-
-
-
 ---
 
 ## Manage cloud resources
-
 
 The Terraform modules below provide the cloud infrastructure foundation
 Materialize needs to communicate with components outside of Materialize itself.
@@ -314,9 +295,7 @@ objects. A few use cases are captured in the sections below.
 > **Note:** While Materialize offers support for its Terraform provider, Materialize does
 > not offer support for these cloud resources modules.
 
-
 ### AWS PrivateLink
-
 
 To get data into Materialize, you need a connection to allow your data source to
 communicate with Materialize. One option to connect securely to Materialize is
@@ -331,7 +310,6 @@ Materialize to communicate with the PrivateLink endpoint. After you deploy the
 module, you can create a new Materialize connection with the AWS resource
 information. The configuration below is an example of the Materialize provider,
 performing the same necessary steps as the [`CREATE CONNECTION`](/sql/create-connection/#aws-privatelink) statement in SQL:
-
 
 ```hcl
 resource "materialize_connection_aws_privatelink" "example_privatelink_connection" {
@@ -357,7 +335,6 @@ resource "materialize_connection_kafka" "example_kafka_connection_multiple_broke
 For a complete example of the Amazon MSK module with the Materialize provider,
 check out this [demo](https://github.com/MaterializeInc/demos/tree/main/integrations/terraform/msk-privatelink). The demo adds the Materialize provider configuration to the modules and bundles the entire deployment into one Terraform configuration file.
 
-
 ### EC2 SSH bastion host
 
 Another method for source connection is to use a bastion host to allow SSH
@@ -374,7 +351,6 @@ to your source. The provider will configure the same Materialize objects as the
 [`CREATE
 CONNECTION`](/sql/create-connection/#ssh-tunnel)
 statement.
-
 
 ### Amazon RDS for PostgreSQL
 
@@ -434,11 +410,9 @@ resource "materialize_source_postgres" "example_source_postgres" {
 }
 ```
 
-
 ---
 
 ## Manage Materialize resources with the Materialize provider
-
 
 The Materialize provider allows you to create several resource types in your
 region. Resources correspond to Materialize objects and are configured
@@ -504,11 +478,9 @@ terraform import materialize_cluster.<cluster_name> <CLUSTER_ID>
 Terraform will then manage the cluster and you can use Terraform as the source of
 truth for your Materialize object.
 
-
 ---
 
 ## Manage privileges
-
 
 This tutorial walks you through managing roles in Materialize with [Terraform](https://www.terraform.io/). By the end of this tutorial you will:
 
@@ -545,7 +517,6 @@ In this scenario, you are a DevOps engineer responsible for managing your Materi
     ```
 
     > **Note:** All of the resources in this tutorial can be run with a single terraform apply but we will add and apply resources incrementally to better illustrate grants.
-
 
 3. Each role you create has default role attributes that determine how they can interact with Materialize objects. Let’s look at the role attributes of the role you created:
 
@@ -657,7 +628,6 @@ In this example, let's say your `dev_role` needs the following permissions:
 
     > **Note:** All of the grant resources are a 1:1 between a specific role, object and privilege. So adding three privileges to the `dev_role` will require three Terraform resources which can can be accomplished with the `for_each` meta-argument.
 
-
 2. We will run Terraform to grant these privileges on the `dev_table` table.
 
     ```shell
@@ -737,7 +707,6 @@ The dev_role now has the acceptable privileges it needs. Let’s apply this role
     ```
 
     The output should return the object ID, the level of permission, and the assigning role ID.
-
 
     ```nofmt
     name|privileges
@@ -821,7 +790,6 @@ Your `dev_role` also needs access to `qa_db`. You can apply these privileges ind
    ```
 
    Both `dev_role` and `qa_role` have usage and create access to the `qa_db`. In the next section, you will edit role attributes for these roles and drop privileges.
-
 
 ## Step 7. Revoke privileges
 

@@ -2,8 +2,6 @@
 
 Connecting Materialize to a Kafka source.
 
-
-
 Materialize provides native connector for Kafka message broker. To ingest data
 from Kafka, you need to
 
@@ -36,7 +34,6 @@ Envelope | Action
 **Debezium** | Treats data as wrapped in a "diff envelope" that indicates whether the record is an insertion, deletion, or update. The Debezium envelope is only supported by sources published to Kafka by Debezium.<br/><br/>For more information, see [`CREATE SOURCE`: Kafka - Debezium envelope](/sql/create-source/kafka/#debezium-envelope).
 **Upsert** | Treats data as having a key and a value. New records with non-null value that have the same key as a preexisting record in the dataflow will replace the preexisting record. New records with null value that have the same key as preexisting record will cause the preexisting record to be deleted. <br/><br/>For more information, see [`CREATE SOURCE`: Kafka - Upsert envelope](/sql/create-source/kafka/#upsert-envelope).
 
-
 ## Integration guides
 
 - [Amazon MSK](/ingest-data/kafka/amazon-msk/)
@@ -49,12 +46,9 @@ Envelope | Action
 - [Redpanda Cloud](/ingest-data/redpanda/redpanda-cloud/)
 - [Redpanda Self-hosted](/ingest-data/redpanda/)
 
-
-
 ---
 
 ## Amazon Managed Streaming for Apache Kafka (Amazon MSK)
-
 
 [//]: # "TODO(morsapaes) The Kafka guides need to be rewritten for consistency
 with the PostgreSQL ones. We should add information about using AWS IAM
@@ -66,7 +60,6 @@ MSK cluster.
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
-
 ## Before you begin
 
 Before you begin, you must have:
@@ -75,8 +68,6 @@ Before you begin, you must have:
 - A client machine that can interact with your cluster.
 
 ## Creating a connection
-
-
 
 **Cloud:**
 
@@ -94,15 +85,12 @@ connect:
 - **Use an SSH tunnel:** If your Kafka cluster is running in a private network,
     you can use an SSH tunnel to connect Materialize to the cluster.
 
-
-
 **PrivateLink:**
 
 > **Note:** Materialize provides a Terraform module that automates the creation and
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the Terraform module repositories for [Amazon MSK](https://github.com/MaterializeInc/terraform-aws-msk-privatelink)
 > and [self-managed Kafka clusters](https://github.com/MaterializeInc/terraform-aws-kafka-privatelink).
-
 
 This section covers how to create AWS PrivateLink connections
 and retrieve the AWS principal needed to configure the AWS PrivateLink service.
@@ -272,9 +260,6 @@ connection you just configured:
    * For **in-region connections**, the correct availability zone is specified
       for each broker.
 
-
-
-
 **SSH Tunnel:**
 
 Materialize can connect to a Kafka broker, a Confluent Schema Registry server, a
@@ -320,7 +305,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     |-------|---------------------------------------|---------------------------------------|
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
-
 
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
@@ -407,7 +391,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
    If no validation errors are returned, the connection can be used to create a
    source connection.
 
-
 1. In Materialize, create a source connection that uses the SSH tunnel
    connection you configured in the previous section:
 
@@ -417,8 +400,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
      SSH TUNNEL ssh_connection
    );
    ```
-
-
 
 **Public cluster:**
 
@@ -527,17 +508,12 @@ or your preferred SQL client.</p>
 </span></span></code></pre></div></li>
 </ol>
 
-
-
-
-
 **Self-Managed:**
 Configure your Kafka network to allow Materialize to connect:
 
 - **Use an SSH tunnel**: If your Kafka cluster is running in a private network, you can use an SSH tunnel to connect Materialize to the cluster.
 
 - **Allow Materialize IPs**: If your Kafka cluster is publicly accessible, you can configure your firewall to allow connections from a set of static Materialize IP addresses.
-
 
 **SSH Tunnel:**
 
@@ -584,7 +560,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     |-------|---------------------------------------|---------------------------------------|
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
-
 
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
@@ -661,7 +636,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
     If no validation errors are returned, the connection can be used to create a source connection.
 
-
 1. In Materialize, create a source connection that uses the SSH tunnel
    connection you configured in the previous section:
 
@@ -671,8 +645,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
      SSH TUNNEL ssh_connection
    );
    ```
-
-
 
 **Public cluster:**
 
@@ -781,13 +753,6 @@ or your preferred SQL client.</p>
 </span></span></code></pre></div></li>
 </ol>
 
-
-
-
-
-
-
-
 ## Creating a source
 
 The Kafka connection created in the previous section can then be reused across
@@ -810,11 +775,9 @@ that you have successfully connected Materialize to your cluster.
 - [`CREATE CONNECTION`](/sql/create-connection)
 - [`CREATE SOURCE`: Kafka](/sql/create-source/kafka)
 
-
 ---
 
 ## Confluent Cloud
-
 
 [//]: # "TODO(morsapaes) The Kafka guides need to be rewritten for consistency
 with the Postgres ones. We should include spill to disk in the guidance then."
@@ -824,7 +787,6 @@ Cloud Kafka cluster.
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 If you already have a Confluent Cloud Kafka cluster, you can skip step 1 and
 directly move on to [Create an API Key](#create-an-api-key). You can also skip
@@ -929,11 +891,9 @@ of the following steps:
     You can find more details about the various different supported formats and
     possible configurations in the [reference documentation](/sql/create-source/kafka/).
 
-
 ---
 
 ## Ingest data from Self-hosted Kafka
-
 
 [//]: # "TODO(morsapaes) The Kafka guides need to be rewritten for consistency
 with the Postgres ones. We should include spill to disk in the guidance then."
@@ -943,7 +903,6 @@ self-hosted Kafka cluster.
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 ## Before you begin
 
@@ -969,10 +928,7 @@ connect:
 
 Select the option that works best for you.
 
-
-
 **Cloud:**
-
 
 **Privatelink:**
 
@@ -981,7 +937,6 @@ Select the option that works best for you.
 > which can be used to create the target groups for each Kafka broker (step 1),
 > the network load balancer (step 2), the TCP listeners (step 3) and the VPC
 > endpoint service (step 5).
-
 
 This section covers how to create AWS PrivateLink connections
 and retrieve the AWS principal needed to configure the AWS PrivateLink service.
@@ -1151,9 +1106,6 @@ connection you just configured:
    * For **in-region connections**, the correct availability zone is specified
       for each broker.
 
-
-
-
 **SSH Tunnel:**
 
 Materialize can connect to a Kafka broker, a Confluent Schema Registry server, a
@@ -1199,7 +1151,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     |-------|---------------------------------------|---------------------------------------|
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
-
 
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
@@ -1286,7 +1237,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
    If no validation errors are returned, the connection can be used to create a
    source connection.
 
-
 1. In Materialize, create a source connection that uses the SSH tunnel
 connection you configured in the previous section:
 
@@ -1296,8 +1246,6 @@ connection you configured in the previous section:
     SSH TUNNEL ssh_connection
   );
 ```
-
-
 
 **Allow Materialize IPs:**
 
@@ -1326,10 +1274,6 @@ connection you configured in the previous section:
     );
     ```
 
-
-
-
-
 **Self-Managed:**
 
 There are various ways to configure your Kafka network to allow Materialize to
@@ -1343,8 +1287,6 @@ connect:
     Materialize IP addresses.
 
 Select the option that works best for you.
-
-
 
 **SSH Tunnel:**
 
@@ -1391,7 +1333,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
     |-------|---------------------------------------|---------------------------------------|
     | u75   | ssh-ed25519 AAAA...76RH materialize   | ssh-ed25519 AAAA...hLYV materialize   |
     ```
-
 
     > Materialize provides two public keys to allow you to rotate keys without
     connection downtime. Review the [`ALTER CONNECTION`](/sql/alter-connection) documentation for
@@ -1468,8 +1409,6 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
     If no validation errors are returned, the connection can be used to create a source connection.
 
-
-
 1. In Materialize, create a source connection that uses the SSH tunnel
 connection you configured in the previous section:
 
@@ -1479,8 +1418,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
   SSH TUNNEL ssh_connection
 );
 ```
-
-
 
 **Allow Materialize IPs:**
 
@@ -1499,12 +1436,6 @@ CREATE CONNECTION kafka_connection TO KAFKA (
         SASL PASSWORD = SECRET kafka_password
     );
     ```
-
-
-
-
-
-
 
 ## Creating a source
 
@@ -1526,11 +1457,9 @@ cluster, use the `IN CLUSTER` clause.
 - [`CREATE CONNECTION`](/sql/create-connection)
 - [`CREATE SOURCE`: Kafka](/sql/create-source/kafka)
 
-
 ---
 
 ## WarpStream
-
 
 [//]: # "TODO(morsapaes) The Kafka guides need to be rewritten for consistency
 with the Postgres ones. We should include spill to disk in the guidance then."
@@ -1546,7 +1475,6 @@ Materialize using [Fly.io](https://fly.io/).
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-
 
 #### Before you begin
 

@@ -1,20 +1,12 @@
 # CREATE SOURCE: PostgreSQL (New Syntax)
 Creates a new source from PostgreSQL 11+.
 
-
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/postgres/).
-
-
-
-
-
-
 
 Creates a new source from PostgreSQL.  Materialize
 supports creating sources from PostgreSQL version 11&#43;.  Once a new source is created, you can <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> from the source
 to create the corresponding tables in Materialize and start the data ingestion
 process.
-
 
 ## Prerequisites
 
@@ -41,11 +33,9 @@ process.
 <p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
 guides</a>.</p>
 
-
 ## Syntax
 
 To create a source from an external PostgreSQL:
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <source_name>
@@ -62,7 +52,6 @@ FROM POSTGRES CONNECTION <connection_name> (PUBLICATION '<publication_name>')
 | **IN CLUSTER** `<cluster_name>` | *Optional.* The [cluster](/sql/create-cluster) to maintain this source. Otherwise, the source will be created in the active cluster.  {{< tip >}} If possible, use a cluster dedicated just for sources. See also [Operational guidelines](/manage/operational-guidelines/#sources). {{< /tip >}}  |
 | `<connection_name>` | The name of the PostgreSQL connection to use for the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#postgresql) documentation page.  A connection is **reusable** across multiple `CREATE SOURCE` statements.  |
 | `<publication_name>` | The name of the PostgreSQL publication to associate with the source. For details on creating a publication in your PostgreSQL database, see the [integration guides for your PostgreSQL](/ingest-data/postgres/#integration-guides).  |
-
 
 ## Details
 
@@ -151,7 +140,6 @@ Materialize can no longer provide any consistency guarantees about the data
 we present from the table and, unfortunately, is wholly unaware that this
 occurred.</p>
 
-
 To mitigate this issue, if you need to drop and re-add a table to a
 publication, ensure that you remove the table/subsource from the source
 <em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.
@@ -180,7 +168,6 @@ SELECT id, replication_slot FROM mz_internal.mz_postgres_sources;
   u8     | materialize_7f8a72d0bf2a4b6e9ebc4e61ba769b71
 ```
 
-
 > **Tip:** <ul>
 > <li>
 > <p>For PostgreSQL 13+, set a reasonable value
@@ -200,7 +187,6 @@ SELECT id, replication_slot FROM mz_internal.mz_postgres_sources;
 > unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
 > </li>
 > </ul>
-
 
 ## Examples
 
@@ -229,11 +215,7 @@ SELECT id, replication_slot FROM mz_internal.mz_postgres_sources;
 <p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
 guides</a>.</p>
 
-
-
 ### Create a source {#create-source-example}
-
-
 
 Once you have configured the upstream PostgreSQL, network security, and
 created the connection, you can create the source. In this example, the
@@ -287,7 +269,6 @@ COMMIT;
 {{< /note >}}
 
 For more information, see [`CREATE TABLE`](/sql/create-table/).
-
 
 ## Related pages
 

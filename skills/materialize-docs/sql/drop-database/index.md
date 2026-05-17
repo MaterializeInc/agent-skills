@@ -5,7 +5,6 @@
 > **Warning:** `DROP DATABASE` immediately removes all objects within the
 > database without confirmation. Use with care!
 
-
 ## Syntax
 
 ```mzsql

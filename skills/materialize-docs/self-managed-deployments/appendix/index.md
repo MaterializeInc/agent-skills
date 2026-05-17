@@ -1,18 +1,13 @@
 # Appendix
 
-
-
 ## Table of contents
 
 - [Appendix: Cluster sizes](./appendix-cluster-sizes/)
 - [Appendix: Prepare for swap and upgrade to v26.0](./upgrade-to-swap/)
 
-
-
 ---
 
 ## Cluster sizes
-
 
 ## Default Cluster Sizes
 
@@ -130,7 +125,6 @@ following default resource allocations:
 </tbody>
 </table>
 
-
 ## Custom Cluster Sizes
 
 When installing the Materialize Helm chart, you can override the [default
@@ -140,7 +134,6 @@ as well as user clusters.
 
 > **Tip:** In general, you should not have to override the defaults. At minimum, we
 > recommend that you keep the 25-200cc cluster sizes.
-
 
 ```yaml
 operator:
@@ -160,7 +153,6 @@ operator:
         # ex: kubernetes.io/arch: amd64
 ```
 
-
 | Field | Type | Description | Recommendation |
 | --- | --- | --- | --- |
 | <strong>workers</strong> | int | The number of timely workers in your cluster replica. | Use 1 worker per CPU core, with a minimum of 1 worker. |
@@ -174,28 +166,21 @@ operator:
 | <strong>swap_enabled</strong> | bool | Enables swap as the spill-to-disk mechanism for this size. When enabled, the replica uses swap instead of a provisioned persistent volume for spilling data. This also causes <code>disk_limit</code> to be set to <code>&quot;0&quot;</code>. | This defaults to the global <code>swap_enabled</code> value if not specified per size. Swap generally performs better than spill-to-disk via persistent volumes. |
 | <strong>selectors</strong> | map | A map of Kubernetes label selector keys to values used to schedule pods for this cluster size on specific nodes. | It is generally not required to set this. |
 
-
 > **Note:** If you have modified the default cluster size configurations, you can query the
 > [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes)
 > system catalog table for the specific resource allocations.
-
-
 
 ---
 
 ## Legacy Terraform: Releases and configurations
 
-
 ## Table of contents
-
 
 ---
 
 ## Prepare for swap and upgrade to v26.0
 
-
 > **Disambiguation:** This page outlines the general steps for upgrading from v25.2 to v26.0 if you are <red>**not**</red> using Materialize provided Terraforms. If you are using Materialize-provided Terraforms, `v0.6.1` and higher of the Terraforms handle the preparation for you.  If using Materialize-provided Terraforms, upgrade your Terraform version to `v0.6.1` or higher and follow the Upgrade notes: - <a href="https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#v061" >AWS Terraform v0.6.1 Upgrade Notes</a>. - <a href="https://github.com/MaterializeInc/terraform-google-materialize?tab=readme-ov-file#v061" >GCP Terraform v0.6.1 Upgrade Notes</a>. - <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#v061" >Azure Terraform v0.6.1 Upgrade Notes</a>. See also [Upgrade Overview](/self-managed-deployments/upgrading/). 
-
 
 <p>Starting in v26.0.0, Self-Managed Materialize enables swap by default. Swap
 allows for infrequently accessed data to be moved from memory to disk. Enabling
@@ -317,5 +302,4 @@ and nodes running Materialize workloads.</p>
 </ol>
 <h2 id="how-to-disable-swap">How to disable swap</h2>
 <p>If you wish to opt out of swap and retain the old behavior, you may set <code>operator.clusters.swap_enabled: false</code> in your Helm values.</p>
-
 

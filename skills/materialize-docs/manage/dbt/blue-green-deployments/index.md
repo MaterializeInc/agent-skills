@@ -5,7 +5,6 @@ How to use dbt for blue-green deployments.
 > checking the code in to **version control** and setting up an **automated
 > workflow** to control the deployment of changes.
 
-
 The `dbt-materialize` adapter ships with helper macros to automate blue/green
 deployments. We recommend using the blue/green pattern any time you need to
 deploy changes to the definition of objects in Materialize in production
@@ -31,7 +30,6 @@ These permissions are required because the blue/green deployment process needs t
 > Unlike other objects, sinks must not be recreated in the process of a blue/green
 > deployment, and must instead cut over to the new definition of their upstream
 > dependencies after the environment swap.
-
 
 In a blue/green deployment, you first deploy your code changes to a deployment
 environment ("green") that is a clone of your production environment
@@ -90,9 +88,6 @@ These environments are later swapped transparently.
 >   This alternative syntax is compatible with Windows terminals, PowerShell, or
 >   PyCharm Terminal.
 
-
-
-
 ## Validation
 
 [//]: # "TODO(morsapaes) Expand after we make dbt test more pliable to
@@ -132,7 +127,6 @@ deployment environment to ensure it's safe to [cutover](#cutover-and-cleanup).
 > [validating](#validation)** the results of the deployed changes in the deployment
 > environment before cutting over.
 
-
 1. Once `deploy_await` returns successfully and you have [validated the results](#validation)
    of the deployed changes on the deployment environment, it is safe to push the
    changes to your production environment.
@@ -168,7 +162,6 @@ deployment environment to ensure it's safe to [cutover](#cutover-and-cleanup).
     > **Note:** The `deploy_promote` operation might fail if objects are
 >     concurrently modified by a different session. If this occurs, re-run the
 >     operation.
-
 
     This macro ensures all deployment targets, including schemas and clusters,
     are deployed together as a **single atomic operation**, and that any sinks

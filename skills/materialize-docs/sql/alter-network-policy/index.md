@@ -10,8 +10,6 @@ and **will not** terminate active connections.
 
 ## Syntax
 
-
-
 ```mzsql
 ALTER NETWORK POLICY <name> SET (
   RULES (
@@ -29,7 +27,6 @@ ALTER NETWORK POLICY <name> SET (
 | `<rule_name>` | The name for the network policy rule. Must be unique within the network policy.  |
 | `<address>` | The Classless Inter-Domain Routing (CIDR) block to which the rule applies.  |
 
-
 ## Details
 
 ### Pre-installed network policy
@@ -42,7 +39,6 @@ will be pre-installed. This policy has a wide open ingress rule `allow
 > Before dropping the `default` network policy, a _superuser_ (i.e. `Organization
 > Admin`) must run [`ALTER SYSTEM SET network_policy`](/sql/alter-system-set) to
 > change the default value.
-
 
 ### Lockout prevention
 

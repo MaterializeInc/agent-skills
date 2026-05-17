@@ -2,17 +2,13 @@
 Connecting Materialize to a PostgreSQL database for Change Data Capture (CDC).
 > **Disambiguation:** This page reflects the legacy syntax, which requires downtime to handle upstream DDL changes. For the new syntax which can handle adding or dropping columns to the upstream tables without downtime, see the [new reference page](/sql/create-source/postgres-v2).
 
-
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
-
 
 Materialize supports PostgreSQL (11+) as a data source. To connect to a
 PostgreSQL instance, you first need to [create a connection](#creating-a-connection)
 that specifies access and authentication parameters.
 Once created, a connection is **reusable** across multiple `CREATE SOURCE`
 statements.
-
-
 
 > **Warning:** Before creating a PostgreSQL source, you must set up logical replication in the
 > upstream database. For step-by-step instructions, see the integration guide for
@@ -23,14 +19,9 @@ statements.
 > [Google Cloud SQL](/ingest-data/postgres-google-cloud-sql/),
 > [Self-hosted](/ingest-data/postgres-self-hosted/).
 
-
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
 
-
-
 ## Syntax
-
-
 
 ```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -58,7 +49,6 @@ FROM POSTGRES CONNECTION <connection_name> (
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables in the publication. \| \| `SCHEMAS ( <schema1> [, ...] )` \| Create subsources for specific schemas in the publication. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables in the publication. \|  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
-
 
 ## Features
 
@@ -157,7 +147,6 @@ same source across multiple materializations.
 > </li>
 > </ul>
 
-
 ##### PostgreSQL schemas
 
 `CREATE SOURCE` will attempt to create each upstream table in the same schema as
@@ -228,7 +217,6 @@ when the source was created.</p>
 </li>
 </ul>
 
-
 #### Incompatible schema changes
 
 <p>All other schema changes to upstream tables will set the corresponding
@@ -237,7 +225,6 @@ source.</p>
 <p>To handle incompatible <a href="#schema-changes" >schema changes</a>, use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> and <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to first drop the affected subsource, and
 then add the table back to the source. When you add the subsource, it will
 have the updated schema from the corresponding upstream table.</p>
-
 
 ### Publication membership
 
@@ -251,7 +238,6 @@ it before Materialize notices that the table was removed. In this case,
 Materialize can no longer provide any consistency guarantees about the data
 we present from the table and, unfortunately, is wholly unaware that this
 occurred.</p>
-
 
 To mitigate this issue, if you need to drop and re-add a table to a
 publication, ensure that you remove the table/subsource from the source
@@ -309,7 +295,6 @@ output.</p>
 </li>
 </ul>
 
-
 ### Truncation
 
 <p>Avoid truncating upstream tables that are being replicated into Materialize.
@@ -333,7 +318,6 @@ so inheriting tables&rsquo; data will only be ingested as part of the inheriting
 table, i.e. in Materialize, the data will not be returned when serving
 <code>SELECT</code>s from the inherited table.</p>
 
-
 You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
@@ -351,7 +335,6 @@ create a new view (materialized or non-) that unions the new table.
 > [Azure DB](/ingest-data/postgres-azure-db/),
 > [Google Cloud SQL](/ingest-data/postgres-google-cloud-sql/),
 > [Self-hosted](/ingest-data/postgres-self-hosted/).
-
 
 ### Creating a connection
 
@@ -379,12 +362,9 @@ If your PostgreSQL server is not exposed to the public internet, you can
 [tunnel the connection](/sql/create-connection/#network-security-connections)
 through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host.
 
-
 **AWS PrivateLink:**
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
-
-
 
 ```mzsql
 CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
@@ -410,7 +390,6 @@ For step-by-step instructions on creating AWS PrivateLink connections and
 configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
 
-
 **SSH tunnel:**
 ```mzsql
 CREATE CONNECTION ssh_connection TO SSH TUNNEL (
@@ -432,9 +411,6 @@ CREATE CONNECTION pg_connection TO POSTGRES (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check
 [this guide](/ops/network-security/ssh-tunnel/).
-
-
-
 
 ### Creating a source {#create-source-example}
 
