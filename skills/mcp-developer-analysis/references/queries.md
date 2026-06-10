@@ -1,13 +1,22 @@
 # Diagnostic Queries Reference
 
-All queries are run via the MCP `query_system_catalog` tool. Each call accepts a
-single read-only SQL statement.
+All queries in this file target system catalog tables and run through the MCP
+`query_system_catalog` tool. The developer endpoint also exposes a `query`
+tool (when `enable_mcp_developer_query_tool` is on) that takes a `cluster`
+argument and can additionally reach user objects — use it for `EXPLAIN ANALYZE`
+on a materialized view or index, and for inspecting user data while debugging.
 
-**Constraints:**
+**Shared constraints (both tools):**
 - One statement per call (no semicolons, no multi-statement batches)
 - SELECT, SHOW, or EXPLAIN only
+
+**`query_system_catalog` only:**
 - System catalog tables only (`mz_*`, `pg_catalog`, `information_schema`)
-- No SET statements (affects cluster-scoped queries — see Memory section)
+- No cluster argument; cluster-scoped queries are not supported
+
+**`query` only:**
+- `cluster` argument required
+- May read user objects in addition to the system catalog
 
 **Important column name notes:**
 - `mz_source_statuses` and `mz_sink_statuses` use `last_status_change_at` (NOT `updated_at`)
@@ -394,9 +403,12 @@ ORDER BY c.name, r.name
 ```
 
 > **Note**: `mz_introspection.mz_dataflow_arrangement_sizes` is cluster-scoped
-> and requires `SET cluster = ...` which is not supported via the MCP
-> `query_system_catalog` tool. Use `mz_cluster_replica_utilization` for memory
-> visibility instead.
+> and `query_system_catalog` does not accept a cluster argument, so it cannot
+> reach it. For per-cluster memory visibility, prefer
+> `mz_internal.mz_cluster_replica_utilization`, or — when the `query` tool is
+> available — run `EXPLAIN ANALYZE MEMORY FOR MATERIALIZED VIEW <schema>.<mv>`
+> (or `FOR INDEX <name>`) on the relevant cluster to get per-operator memory
+> attributed to a specific object.
 
 ---
 
