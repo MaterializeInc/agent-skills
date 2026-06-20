@@ -11,21 +11,19 @@ interval), Materialize provides an idiomatic SQL as an alternative to the window
 function.
 
 > ### Materialize and window functions
-> For [window functions](/sql/functions/#window-functions), when an input record
-> in a partition (as determined by the `PARTITION BY` clause of your window
-> function) is added/removed/changed, Materialize recomputes the results for the
-> entire window partition. This means that when a new batch of input data arrives
-> (that is, every second), **the amount of computation performed is proportional
-> to the total size of the touched partitions**.
-> For example, assume that in a given second, 20 input records change, and these
-> records belong to **10** different partitions, where the average size of each
-> partition is **100**. Then, amount of work to perform is proportional to
-> computing the window function results for **10\*100=1000** rows.
+> For indexed views and materialized views that contain [window
+> functions](/sql/functions/#window-functions) (including aggregate functions used
+> with an `OVER` clause), when an input record in a partition is
+> added/removed/changed, Materialize **recomputes the results from scratch** for
+> that partition (instead of using incremental computation).
+> The `PARTITION BY` clause of your window function determines your partitions. If
+> `PARTITION BY` is omitted, all records belong to a single partition (i.e., any
+> record change results in a recomputation from scratch over the whole input).
 > To avoid performance issues that may arise as the number of records grows,
-> consider rewriting your query to use idiomatic Materialize SQL instead of window
-> functions. If your query cannot be rewritten without the window functions and
-> the performance of window functions is insufficient for your use case, please
-> [contact our team](/support/).
+> consider rewriting your indexed views and materialized views to use idiomatic
+> Materialize SQL instead of window functions. If your view definitions cannot be
+> rewritten without the window functions and the performance of window functions
+> is insufficient for your use case, please [contact our team](/support/).
 
 ## Idiomatic Materialize SQL
 
@@ -53,25 +51,20 @@ row.
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-Use a self join that specifies an **equality match** on the lag's order by field
-(e.g., `fieldA`). The order by field must increment in a regular pattern in
-order to be represented by an equality condition (e.g., `WHERE t1.fieldA =
-t2.fieldA + ...`). The
-query *excludes* the first row in the results since it does not have a previous
-row.
-
+<p>Use a self join that specifies an <strong>equality match</strong> on the lag&rsquo;s order by field
+(e.g., <code>fieldA</code>). The order by field must increment in a regular pattern in
+order to be represented by an equality condition (e.g., <code>WHERE t1.fieldA = t2.fieldA + ...</code>). The
+query <em>excludes</em> the first row in the results since it does not have a previous
+row.</p>
 > **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
 
-<br>
-
-```mzsql
--- Excludes the first row in the results --
-SELECT t1.fieldA, t2.fieldB as previous_row_value
-FROM tableA t1, tableA t2
-WHERE t1.fieldA = t2.fieldA + ... -- or some other operand
-ORDER BY fieldA;
-```
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- Excludes the first row in the results --
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldB</span> <span class="k">as</span> <span class="n">previous_row_value</span>
+</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">t1</span><span class="p">,</span> <span class="n">tableA</span> <span class="n">t2</span>
+</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">+</span> <span class="mf">...</span> <span class="c1">-- or some other operand
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">;</span>
+</span></span></code></pre></div>
 
 </td>
 </tr>
@@ -80,25 +73,13 @@ ORDER BY fieldA;
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<red>
-
-Avoid the use of [`LAG(fieldZ) OVER (ORDER BY ...)`](/sql/functions/#lag) window
-function when the order by field increases in a regular pattern.
-
-</red>
-
-<br>
-
-<div style="background-color: var(--code-block)">
-
-```nofmt
--- Anti-pattern. Avoid. --
+<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG(fieldZ) OVER (ORDER BY ...)</code></a>
+window function when the order by field increases in a regular pattern.</red></p>
+<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
 SELECT fieldA, ...
     LAG(fieldZ) OVER (ORDER BY fieldA) as previous_row_value
 FROM tableA;
-```
-
-</div>
+</code></pre>
 
 </td>
 </tr>
@@ -128,26 +109,22 @@ lag value.
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-Use a self [`LEFT JOIN/LEFT OUTER JOIN`](/sql/select/join/#left-outer-join)
-(e.g., `FROM tableA t1 LEFT JOIN tableA t2`) that specifies an **equality
-match** on the lag's order by field (e.g., `fieldA`). The order by field must
+<p>Use a self <a href="/sql/select/join/#left-outer-join" ><code>LEFT JOIN/LEFT OUTER JOIN</code></a>
+(e.g., <code>FROM tableA t1 LEFT JOIN tableA t2</code>) that specifies an <strong>equality
+match</strong> on the lag&rsquo;s order by field (e.g., <code>fieldA</code>). The order by field must
 increment in a regular pattern in order to be represented by an equality
-condition (e.g., `ON t1.fieldA = t2.fieldA + ...`). The
-query *includes* the first row, returning `null` as its lag value.
-
+condition (e.g., <code>ON t1.fieldA = t2.fieldA + ...</code>). The
+query <em>includes</em> the first row, returning <code>null</code> as its lag value.</p>
 > **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
 
-<br>
-
-```mzsql
--- Includes the first row in the results --
-SELECT t1.fieldA, t2.fieldB as previous_row_value
-FROM tableA t1
-LEFT JOIN tableA t2
-ON t1.fieldA = t2.fieldA + ... -- or some other operand
-ORDER BY fieldA;
-```
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- Includes the first row in the results --
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldB</span> <span class="k">as</span> <span class="n">previous_row_value</span>
+</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">t1</span>
+</span></span><span class="line"><span class="cl"><span class="k">LEFT</span> <span class="k">JOIN</span> <span class="n">tableA</span> <span class="n">t2</span>
+</span></span><span class="line"><span class="cl"><span class="k">ON</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">+</span> <span class="mf">...</span> <span class="c1">-- or some other operand
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">;</span>
+</span></span></code></pre></div>
 
 </td>
 </tr>
@@ -156,25 +133,14 @@ ORDER BY fieldA;
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<red>
-
-Avoid the use of [`LAG(fieldZ) OVER (ORDER BY ...) window
-function`](/sql/functions/#lag) when the order by field increases in a regular
-pattern.
-
-</red>
-
-<br>
-
-<div style="background-color: var(--code-block)">
-
-```nofmt
+<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG(fieldZ) OVER (ORDER BY ...)</code></a>
+window function when the order by field increases in a regular pattern.</red></p>
+<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
 SELECT fieldA, ...
     LAG(fieldZ) OVER (ORDER BY fieldA) as previous_row_value
 FROM tableA;
-```
+</code></pre>
 
-</div>
 </td>
 </tr>
 
@@ -209,16 +175,13 @@ previous row.
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-```mzsql
--- Excludes the first row in results --
-SELECT o1.order_date, o1.daily_total,
-    o2.daily_total as previous_daily_total
-FROM orders_daily_totals o1, orders_daily_totals o2
-WHERE o1.order_date = o2.order_date + INTERVAL '1' DAY
-ORDER BY order_date;
-```
-
-> **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- Excludes the first row in results --
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">SELECT</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span><span class="p">,</span> <span class="n">o1</span><span class="mf">.</span><span class="n">daily_total</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="n">o2</span><span class="mf">.</span><span class="n">daily_total</span> <span class="k">as</span> <span class="n">previous_daily_total</span>
+</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_daily_totals</span> <span class="n">o1</span><span class="p">,</span> <span class="n">orders_daily_totals</span> <span class="n">o2</span>
+</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">=</span> <span class="n">o2</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">+</span> <span class="nb">INTERVAL</span> <span class="s1">&#39;1&#39;</span> <span class="k">DAY</span>
+</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_date</span><span class="p">;</span>
+</span></span></code></pre></div>> **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
 
 </td>
@@ -228,19 +191,14 @@ ORDER BY order_date;
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<red>Avoid the use of [`LAG() OVER (ORDER BY ...)` window
-function](/sql/functions/#lag) to access previous row's value if the order by
-field increases in a regular pattern.</red>
-
-<br>
-<div style="background-color: var(--code-block)">
-
-```nofmt
--- Anti-pattern. Includes the first row's value. --
+<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG() OVER (ORDER BY ...)</code> window
+function</a> to access previous row&rsquo;s value if the order by
+field increases in a regular pattern.</red></p>
+<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Includes the first row&#39;s value. --
 SELECT order_date, daily_total,
     LAG(daily_total) OVER (ORDER BY order_date) as previous_daily_total
 FROM orders_daily_totals;
-```
+</code></pre>
 
 </td>
 </tr>
@@ -270,17 +228,14 @@ query includes the first row in the results, using `null` as the previous value.
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-```mzsql
--- Include the first row in results --
-SELECT o1.order_date, o1.daily_total,
-    o2.daily_total as previous_daily_total
-FROM orders_daily_totals o1
-LEFT JOIN orders_daily_totals o2
-ON o1.order_date = o2.order_date + INTERVAL '1' DAY
-ORDER BY order_date;
-```
-
-> **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- Include the first row in results --
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">SELECT</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span><span class="p">,</span> <span class="n">o1</span><span class="mf">.</span><span class="n">daily_total</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="n">o2</span><span class="mf">.</span><span class="n">daily_total</span> <span class="k">as</span> <span class="n">previous_daily_total</span>
+</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_daily_totals</span> <span class="n">o1</span>
+</span></span><span class="line"><span class="cl"><span class="k">LEFT</span> <span class="k">JOIN</span> <span class="n">orders_daily_totals</span> <span class="n">o2</span>
+</span></span><span class="line"><span class="cl"><span class="k">ON</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">=</span> <span class="n">o2</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">+</span> <span class="nb">INTERVAL</span> <span class="s1">&#39;1&#39;</span> <span class="k">DAY</span>
+</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_date</span><span class="p">;</span>
+</span></span></code></pre></div>> **Important:** The idiomatic Materialize SQL applies only to those "lag over" queries whose
 > ordering can be represented by some **equality condition**.
 
 </td>
@@ -290,19 +245,14 @@ ORDER BY order_date;
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<red>Avoid the use of [`LAG() OVER (ORDER BY ...)`
-window function](/sql/functions/#lag) to access previous row's value if the
-order by field increases in a regular pattern.</red>
-
-<br>
-<div style="background-color: var(--code-block)">
-
-```nofmt
--- Anti-pattern. Includes the first row's value. --
+<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG() OVER (ORDER BY ...)</code> window
+function</a> to access previous row&rsquo;s value if the order by
+field increases in a regular pattern.</red></p>
+<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Includes the first row&#39;s value. --
 SELECT order_date, daily_total,
     LAG(daily_total) OVER (ORDER BY order_date) as previous_daily_total
 FROM orders_daily_totals;
-```
+</code></pre>
 
 </td>
 </tr>

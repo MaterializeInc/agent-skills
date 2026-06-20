@@ -2,17 +2,35 @@
 
 Get details about third-party tools and integrations supported by Materialize
 
+## Agent skills and MCP servers
+
+### Agent skills
+
+Materialize provides the following open-source [agent
+skills](https://github.com/MaterializeInc/agent-skills) to help developers build
+with Materialize.
+
+| Skill | What it provides | When to use |
+|-------|------------------|-------------|
+| `mcp-developer-analysis` | Exact catalog schemas, diagnostic workflows, remediation runbooks, and guardrails for known pitfalls (cluster-scoped queries, uint8 ID mismatches, etc.). | Operational introspection and troubleshooting via the `materialize-developer` server. Examples: *"why is my materialized view stale?"*, *"what can I optimize to save costs?"*, *"is my source healthy?"* |
+| `materialize-docs` | Comprehensive Materialize documentation, including SQL syntax, idiomatic patterns, data ingestion, concepts, and best practices (400+ reference files). | Authoring view definitions, learning concepts, looking up patterns. Useful with either MCP server. Examples: *"show me how to deduplicate a stream"*, *"what's the idiomatic top-K pattern?"*, *"how do I create a Kafka source?"* |
+
+### MCP servers
+
+Materialize providesthe following built-in Model Context Protocol (MCP) servers
+that AI agents can use.
+
+| Endpoint | Path | Description |
+|----------|------|-------------|
+| **Agent** | `/api/mcp/agent` | Discover and query your real-time data products over HTTP. <br>For details, see [MCP Server for agents](/integrations/mcp-server/mcp-agent/).<br>*Available starting in v26.24*|
+| **Developer** | `/api/mcp/developer` | Read `mz_*` system catalog tables for troubleshooting and observability. <br>For details, see [MCP Server for developer](/integrations/mcp-server/mcp-developer/).|
+
+## SQL clients/client libraries
+
 Materialize is **wire-compatible** with PostgreSQL and can integrate with many
 SQL clients and other tools that support PostgreSQL. To help you connect to
 Materialize using various clients and tools, the following references are
 available:
-
-## Materialize Tools
-
-- [mz - Materialize CLI](/integrations/cli/)
-- [mz-debug (Debug tool)](/integrations/mz-debug/)
-
-## SQL clients/client libraries
 
 - [SQL clients](/integrations/sql-clients/)
 - [Client Libraries](/integrations/client-libraries/)
@@ -32,14 +50,73 @@ See also the following integration guides for BI tools:
 - [Connect to Materialize via HTTP](/integrations/http-api/)
 - [Connect to Materialize via WebSocket](/integrations/websocket-api/)
 
-## AI agents
-
-- [MCP Server for Developers](/integrations/mcp-server/mcp-developer/) — built-in endpoint for AI-powered troubleshooting via system catalog
-- [Coding Agent Skills](/integrations/coding-agent-skills/)
-
 ## Foreign data wrapper
 
 - [Foreign data wrapper](/integrations/fdw/)
+
+## Materialize Tools
+
+- [mz - Materialize CLI](/integrations/cli/)
+- [mz-debug (Debug tool)](/integrations/mz-debug/)
+
+---
+
+## Agent Skills
+
+Coding agents like [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://openai.com/index/codex/), [Cursor](https://www.cursor.com/), and others can work with Materialize using our open-source [agent skills](https://github.com/MaterializeInc/agent-skills). Once installed, these skills give your coding agent access to Materialize documentation and reference material so it can provide more accurate assistance when writing queries, setting up sources, creating materialized views, and more.
+
+## Skills
+
+| Skill | What it provides | When to use |
+|-------|------------------|-------------|
+| `mcp-developer-analysis` | Exact catalog schemas, diagnostic workflows, remediation runbooks, and guardrails for known pitfalls (cluster-scoped queries, uint8 ID mismatches, etc.). | Operational introspection and troubleshooting via the `materialize-developer` server. Examples: *"why is my materialized view stale?"*, *"what can I optimize to save costs?"*, *"is my source healthy?"* |
+| `materialize-docs` | Comprehensive Materialize documentation, including SQL syntax, idiomatic patterns, data ingestion, concepts, and best practices (400+ reference files). | Authoring view definitions, learning concepts, looking up patterns. Useful with either MCP server. Examples: *"show me how to deduplicate a stream"*, *"what's the idiomatic top-K pattern?"*, *"how do I create a Kafka source?"* |
+
+## Prerequisites
+
+[Node.js](https://nodejs.org/) (v16 or later) must be installed.
+
+## Installation
+
+Install the Materialize agent skills with a single command:
+
+```bash
+npx skills add MaterializeInc/agent-skills
+```
+
+Once installed, you can update installed skills by running `npx skills update`.
+
+The skills follow the [Agent Skills Open Standard](https://agentskills.io/home) and work with any coding agent that supports the standard.
+
+## Reduce permission prompts (Claude Code)
+
+Claude Code prompts before reading files outside your project. Since globally
+installed skills live under `~/.claude/skills/`, if you installed the
+`materialize-docs` skill globally, Claude Code may ask to approve reads each
+time the skill opens a new documentation subdirectory.
+
+To stop these prompts, grant read access to the `materialize-docs` skill in
+`~/.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "additionalDirectories": ["~/.claude/skills/materialize-docs"]
+  }
+}
+```
+
+This grants access to just that one skill's directory. If you have multiple skills installed
+and want to cover them all at once, you can broaden the path to
+`~/.claude/skills`, though scoping to a single skill is the safer default.
+
+Claude Code's `auto` permission mode also removes the prompts, but applies to
+all tools rather than just this directory.
+
+## Related Pages
+
+- [MCP Server](/integrations/llm/)
+- [GitHub: Materialize Agent Skills](https://github.com/MaterializeInc/agent-skills)
 
 ---
 
@@ -64,50 +141,6 @@ queries** and **stream out results**.
 👋 _Is there another client library you'd like to use with Materialize? Submit a
 [feature
 request](https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests&labels=A-integration)._
-
----
-
-## Coding Agent Skills
-
-Coding agents like [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://openai.com/index/codex/), [Cursor](https://www.cursor.com/), and others can work with Materialize using our open-source [agent skills](https://github.com/MaterializeInc/agent-skills). Once installed, these skills give your coding agent access to Materialize documentation and reference material so it can provide more accurate assistance when writing queries, setting up sources, creating materialized views, and more.
-
-## Prerequisites
-
-[Node.js](https://nodejs.org/) (v16 or later) must be installed.
-
-## Installation
-
-Install the Materialize agent skills with a single command:
-
-```bash
-npx skills add MaterializeInc/agent-skills
-```
-
-Once installed, the skills activate automatically when your prompts match
-their intended use cases — no additional configuration required.
-
-The skills follow the [Agent Skills Open Standard](https://agentskills.io/home) and work with any coding agent that supports the standard.
-
-To verify the installation succeeded, ask your coding agent a
-Materialize-specific question such as "How do I create a source from Kafka in
-Materialize?" and confirm it references Materialize documentation in its
-response.
-
-## What's included
-
-The **materialize-docs** skill bundles reference files across categories including:
-
-- SQL command references
-- Core concepts (clusters, sources, sinks, views, indexes)
-- Data ingestion (Kafka, PostgreSQL, MySQL, MongoDB, webhooks)
-- Data transformation patterns
-- Integration methods and APIs
-- Security and deployment guidance
-
-## Related Pages
-
-- [MCP Server](/integrations/llm/)
-- [GitHub: Materialize Agent Skills](https://github.com/MaterializeInc/agent-skills)
 
 ---
 
@@ -965,19 +998,31 @@ requiring changes to application logic or tooling.
 
 ---
 
-## MCP Server
+## MCP Servers and agent skills
 
-Materialize provides built-in Model Context Protocol (MCP) endpoints that AI
+## Agent skills
+
+Materialize provides the following open-source [agent
+skills](https://github.com/MaterializeInc/agent-skills) to help developers build
+with Materialize.
+
+| Skill | What it provides | When to use |
+|-------|------------------|-------------|
+| `mcp-developer-analysis` | Exact catalog schemas, diagnostic workflows, remediation runbooks, and guardrails for known pitfalls (cluster-scoped queries, uint8 ID mismatches, etc.). | Operational introspection and troubleshooting via the `materialize-developer` server. Examples: *"why is my materialized view stale?"*, *"what can I optimize to save costs?"*, *"is my source healthy?"* |
+| `materialize-docs` | Comprehensive Materialize documentation, including SQL syntax, idiomatic patterns, data ingestion, concepts, and best practices (400+ reference files). | Authoring view definitions, learning concepts, looking up patterns. Useful with either MCP server. Examples: *"show me how to deduplicate a stream"*, *"what's the idiomatic top-K pattern?"*, *"how do I create a Kafka source?"* |
+
+## MCP servers
+
+Materialize provides built-in Model Context Protocol (MCP) servers that AI
 agents can use. The MCP interface is served directly by the database; no sidecar
 process or external server is required. These endpoints use [JSON-RPC
  2.0](https://www.jsonrpc.org/specification) over HTTP POST (default port 6876)
 and support the MCP `initialize`, `tools/list`, and `tools/call` methods.
 
-## MCP endpoints overview
-
 | Endpoint | Path | Description |
 |----------|------|-------------|
-| [**Developer**](/integrations/mcp-server/mcp-developer/) | `/api/mcp/developer` | Read `mz_*` system catalog tables for troubleshooting and observability. <br>For details, see [MCP Server for developer](/integrations/mcp-server/mcp-developer/).|
+| **Agent** | `/api/mcp/agent` | Discover and query your real-time data products over HTTP. <br>For details, see [MCP Server for agents](/integrations/mcp-server/mcp-agent/).<br>*Available starting in v26.24*|
+| **Developer** | `/api/mcp/developer` | Read `mz_*` system catalog tables for troubleshooting and observability. <br>For details, see [MCP Server for developer](/integrations/mcp-server/mcp-developer/).|
 
 ## See also
 

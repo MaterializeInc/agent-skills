@@ -3,16 +3,24 @@ Connecting Materialize to a SQL Server database for Change Data Capture (CDC).
 
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/sql-server/).
 
+Creates a new source from SQL Server.  Materialize
+supports creating sources from SQL Server version 2016&#43;.  Once a new source is created, you can <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a>
+to create the corresponding tables in Materialize and start the data ingestion
+process.
+
 ## Prerequisites
 
-[`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
+To create a source from SQL Server (2016+), you must first:
 
-Materialize supports SQL Server (2016+) as a real-time data source. To connect to a
-SQL Server database, you first need to tweak its configuration to enable [Change Data
+- Configure your SQL Server.
+  - Enable [Change Data
 Capture](https://learn.microsoft.com/en-us/sql/relational-databases/track-changes/enable-and-disable-change-data-capture-sql-server)
-and [`SNAPSHOT` transaction isolation](https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/snapshot-isolation-in-sql-server)
-for the database that you would like to replicate. Then [create a connection](#prerequisite-creating-a-connection-to-sql-server)
-in Materialize that specifies access and authentication parameters.
+and [`SNAPSHOT` transaction
+isolation](https://learn.microsoft.com/en-us/dotnet/framework/data/adonet/sql/snapshot-isolation-in-sql-server)
+for the database that you would like to replicate.
+- [Create a connection to SQL
+  Server](#prerequisite-creating-a-connection-to-sql-server) in Materialize.
+  - The connection setup depends on your network security configuration.
 
 ## Syntax
 
@@ -20,6 +28,7 @@ in Materialize that specifies access and authentication parameters.
 CREATE SOURCE [IF NOT EXISTS] <src_name>
 [IN CLUSTER <cluster_name>]
 FROM SQL SERVER CONNECTION <connection_name>
+[WITH ( <with_option> [, ...] )]
 
 ```
 
@@ -29,6 +38,7 @@ FROM SQL SERVER CONNECTION <connection_name>
 | **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
 | **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
 | **CONNECTION** `<connection_name>` | The name of the SQL Server connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#sql-server) documentation page.  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 ## Ingesting data
 

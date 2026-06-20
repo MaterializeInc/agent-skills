@@ -60,11 +60,11 @@ granted the [`mz_monitor` role](/security/appendix/appendix-built-in-roles/#syst
 | `mz_version`               | [`text`]                     | The version of Materialize that was running when the statement was executed.                                                                                                                                                                                                  |
 | `began_at`                 | [`timestamp with time zone`] | The wall-clock time at which the statement began executing.                                                                                                                                                                                                                   |
 | `finished_at`              | [`timestamp with time zone`] | The wall-clock time at which the statement finished executing.                                                                                                                                                                                                                |
-| `finished_status`          | [`text`]                     | The final status of the statement (e.g., `success`, `canceled`, `error`, or `aborted`). `aborted` means that Materialize exited before the statement finished executing.                                                                                                   |
+| `finished_status`          | [`text`]                     | The final status of the statement (e.g., `success`, `canceled`, `error`, or `aborted`). `aborted` means that the client disconnected before the statement finished executing.                                                                                              |
 | `error_message`            | [`text`]                     | The error message, if the statement failed.                                                                                                                                                                                                                                   |
 | `result_size`              | [`bigint`]                   | The size in bytes of the result, for statements that return rows.                                                                                                                                                                                                                 |
 | `rows_returned`            | [`bigint`]                   | The number of rows returned, for statements that return rows.                                                                                                                                                                                                                 |
-| `execution_strategy`       | [`text`]                     | For `SELECT` queries, the strategy for executing the query. `constant` means computed in the control plane without the involvement of a cluster, `fast-path` means read by a cluster directly from an in-memory index, and `standard` means computed by a temporary dataflow. |
+| `execution_strategy`       | [`text`]                     | For `SELECT` statements (and similar statement types), the strategy for executing the query. `standard` means computed by a temporary dataflow, `fast-path` means read by a cluster directly from an in-memory index, `persist-fast-path` means read a source, table, or materialized view from blob storage (without an index or dataflow), and `constant` means computed in the control plane without the involvement of a cluster. (It's `NULL` for statements that errored/canceled/aborted and for non-query-like statement types.) |
 | `transaction_id`           | [`uint8`]                    | The ID of the transaction that the statement was part of. Note that transaction IDs are only unique per session.                                                                                                                                                              |
 | `prepared_statement_id`    | [`uuid`]                     | An ID that is unique for each prepared statement. For example, if a statement is prepared once and then executed multiple times, all executions will have the same value for this column (but different values for `execution_id`).                                           |
 | `sql_hash`                 | [`bytea`]                    | An opaque value uniquely identifying the text of the query.                                                                                                                                                                                                                   |
@@ -72,7 +72,7 @@ granted the [`mz_monitor` role](/security/appendix/appendix-built-in-roles/#syst
 | `session_id`               | [`uuid`]                     | An ID that is unique for each session. Corresponds to [mz_sessions.id](#mz_sessions). |
 | `prepared_at`              | [`timestamp with time zone`] | The time at which the statement was prepared.                                                                                                                                                                                                                                 |
 | `statement_type`           | [`text`]                     | The _type_ of the statement, e.g. `select` for a `SELECT` query, or `NULL` if the statement was empty.                                                                                                                                                                        |
-| `throttled_count`          | [`uint8`]                    | The number of statement executions that were dropped due to throttling before the current one was seen. If you have a very high volume of queries and need to log them without throttling, [contact our team](/support/).                                   |
+| `throttled_count`          | [`uint8`]                    | The number of statement executions dropped due to throttling between the previously logged statement and this one. If you have a very high volume of queries and need to log them without throttling, [contact our team](/support/).                          |
 | `connected_at`       | [`timestamp with time zone`]                     | The time at which the session was established.                                                                                                                                                                                                                   |
 | `initial_application_name` | [`text`]                     | The initial value of `application_name` at the beginning of the session.                                                                                                                                                                                                      |
 | `authenticated_user`       | [`text`]                     | The name of the user for which the session was established.                                                                                                                                                                                                                   |
@@ -530,21 +530,25 @@ schema information.
 | Field         | Type     | Meaning                                                                                  |
 | ------------- | -------- | ---------------------------------------------------------------------------------------- |
 | `object_name` | [`text`] | Fully qualified object name (database.schema.name).                                      |
-| `cluster`     | [`text`] | Cluster where the object computes or its index is hosted. The object can be read from any cluster. |
+| `cluster`     | [`text`] | Cluster where the object computes or its index is hosted. Reads from any cluster work, but only reads on this cluster benefit from the index. |
 | `description` | [`text`] | Index comment if available, otherwise object comment. Used as data product description.   |
 
 ## `mz_mcp_data_product_details`
 
 The `mz_mcp_data_product_details` view extends [`mz_mcp_data_products`](#mz_mcp_data_products)
-with a JSON Schema describing each data product's columns and types.
+with a JSON Schema describing each data product's columns and types, and a
+readiness summary so agents can avoid firing reads that would just block
+waiting for hydration, and can tell "still warming up" apart from "cluster
+has no replicas — needs operator action."
 
 <!-- RELATION_SPEC mz_internal.mz_mcp_data_product_details -->
 | Field         | Type     | Meaning                                                                                  |
 | ------------- | -------- | ---------------------------------------------------------------------------------------- |
 | `object_name` | [`text`] | Fully qualified object name (database.schema.name).                                      |
-| `cluster`     | [`text`] | Cluster where the object computes or its index is hosted. The object can be read from any cluster. |
+| `cluster`     | [`text`] | Cluster where the object computes or its index is hosted. Reads from any cluster work, but only reads on this cluster benefit from the index. |
 | `description` | [`text`] | Index comment if available, otherwise object comment. Used as data product description.   |
 | `schema`      | [`jsonb`]| JSON Schema describing the object's columns and types.                                   |
+| `hydration`   | [`jsonb`]| Readiness summary as a JSON object with `hydrated` (bool), `replica_count` (int), and `hydrated_replica_count` (int). `hydrated` is true only when the cluster has at least one replica and the dataflow is hydrated on every replica. Reads against a non-hydrated data product block until the dataflow catches up (they never return partial data). Check this before reading: if `hydrated` is false and `replica_count > 0`, wait and retry; if `replica_count` is 0, the cluster has no replicas and that needs operator action, not a retry. |
 
 ## `mz_object_dependencies`
 
@@ -566,7 +570,7 @@ The `mz_object_fully_qualified_names` view enriches the [`mz_catalog.mz_objects`
 | --------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------                                                |
 | `id`            | [`text`]     | Materialize's unique ID for the object.                                                                                                                                                         |
 | `name`          | [`text`]     | The name of the object.                                                                                                                                                                         |
-| `object_type`   | [`text`]     | The type of the object: one of `table`, `source`, `view`, `materialized view`, `sink`, `index`, `connection`, `secret`, `type`, or `function`.                                                  |
+| `object_type`   | [`text`]     | The type of the object: one of `table`, `source`, `view`, `materialized-view`, `sink`, `index`, `connection`, `secret`, `type`, or `function`.                                                  |
 | `schema_id`     | [`text`]     | The ID of the schema to which the object belongs. Corresponds to [`mz_schemas.id`](/reference/system-catalog/mz_catalog/#mz_schemas).                                                                 |
 | `schema_name`   | [`text`]     | The name of the schema to which the object belongs. Corresponds to [`mz_schemas.name`](/reference/system-catalog/mz_catalog/#mz_schemas).                                                             |
 | `database_id`   | [`text`]     | The ID of the database to which the object belongs. Corresponds to [`mz_databases.id`](/reference/system-catalog/mz_catalog/#mz_schemas).                                                             |
@@ -582,7 +586,7 @@ The `mz_object_lifetimes` view enriches the [`mz_catalog.mz_objects`](/reference
 | --------------- | ------------------------------ | -------------------------------------------------                                                                                              |
 | `id`            | [`text`]                       | Materialize's unique ID for the object.                                                                                                        |
 | `previous_id`   | [`text`]                       | The object's previous ID, if one exists.                                                                                                       |
-| `object_type`   | [`text`]                       | The type of the object: one of `table`, `source`, `view`, `materialized view`, `sink`, `index`, `connection`, `secret`, `type`, or `function`. |
+| `object_type`   | [`text`]                       | The type of the object: one of `table`, `source`, `view`, `materialized-view`, `sink`, `index`, `connection`, `secret`, `type`, or `function`. |
 | `event_type`    | [`text`]                       | The lifetime event, either `create` or `drop`.                                                                                                 |
 | `occurred_at`   | [`timestamp with time zone`]   | Wall-clock timestamp of when the event occurred.                                                                                               |
 
@@ -595,7 +599,7 @@ The `mz_object_history` view enriches the [`mz_catalog.mz_objects`](/reference/s
 | --------------- | ------------------------------ | -------------------------------------------------                                                                                              |
 | `id`            | [`text`]                       | Materialize's unique ID for the object.                                                                                                        |
 | `cluster_id`   | [`text`]                       | The object's cluster ID. `NULL` if the object has no associated cluster.                                                                                                       |
-| `object_type`   | [`text`]                       | The type of the object: one of `table`, `source`, `view`, `materialized view`, `sink`, `index`, `connection`, `secret`, `type`, or `function`. |
+| `object_type`   | [`text`]                       | The type of the object: one of `table`, `source`, `view`, `materialized-view`, `sink`, `index`, `connection`, `secret`, `type`, or `function`. |
 | `created_at`    | [`timestamp with time zone`]                       | Wall-clock timestamp of when the object was created. `NULL` for built in system objects.                                                                                                |
 | `dropped_at`   | [`timestamp with time zone`]   | Wall-clock timestamp of when the object was dropped. `NULL` for built in system objects or if the object hasn't been dropped.                                              |
 
@@ -1347,6 +1351,7 @@ The `mz_webhook_sources` table contains a row for each webhook source in the sys
 
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_activity_log_thinned -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_builtin_materialized_views -->
+<!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_builtin_sources -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_catalog_raw -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_cluster_workload_classes -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_compute_error_counts_raw_unified -->

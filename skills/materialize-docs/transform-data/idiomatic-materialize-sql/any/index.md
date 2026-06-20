@@ -38,48 +38,30 @@ array/list/map contains duplicates, include [`DISTINCT`](/sql/select/#select-dis
 <td><blue>Materialize SQL</blue></td>
 <td class="copyableCode">
 
-**If no duplicates exist in the unnested field:** Use a Common Table
-Expression (CTE) to [`UNNEST()`](/sql/functions/#unnest) the array of values and
-perform the equi-join on the unnested values.
-
-<br>
-<div style="background-color: var(--code-block)">
-
-```mzsql
--- array_field contains no duplicates.--
-
-WITH my_expanded_values AS
-(SELECT UNNEST(array_field) AS fieldZ FROM tableB)
-SELECT a.fieldA, ...
-FROM tableA a
-JOIN my_expanded_values t ON a.fieldZ = t.fieldZ
-;
-```
-
-</td>
-</tr>
-<tr>
-<td><blue>Materialize SQL</blue></td>
-<td class="copyableCode">
-
-**Duplicates may exist in the unnested field:** Use a Common Table
-Expression (CTE) to [`DISTINCT`](/sql/select/#select-distinct)
-[`UNNEST()`](/sql/functions/#unnest) the array of values and perform the
-equi-join on the unnested values.
-
-<br>
-<div style="background-color: var(--code-block)">
-
-```mzsql
--- array_field may contain duplicates.--
-
-WITH my_expanded_values AS
-(SELECT DISTINCT UNNEST(array_field) AS fieldZ FROM tableB)
-SELECT a.fieldA, ...
-FROM tableA a
-JOIN my_expanded_values t ON a.fieldZ = t.fieldZ
-;
-```
+<p><strong>If no duplicates exist in the unnested field:</strong> Use a Common Table
+Expression (CTE) to <a href="/sql/functions/#unnest" ><code>UNNEST()</code></a> the array of
+values and perform the equi-join on the unnested values.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- array_field contains no duplicates.--
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">my_expanded_values</span> <span class="k">AS</span>
+</span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">UNNEST</span><span class="p">(</span><span class="n">array_field</span><span class="p">)</span> <span class="k">AS</span> <span class="n">fieldZ</span> <span class="k">FROM</span> <span class="n">tableB</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="mf">...</span>
+</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">a</span>
+</span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">my_expanded_values</span> <span class="n">t</span> <span class="k">ON</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldZ</span> <span class="o">=</span> <span class="n">t</span><span class="mf">.</span><span class="n">fieldZ</span>
+</span></span><span class="line"><span class="cl"><span class="p">;</span>
+</span></span></code></pre></div><p><strong>Duplicates may exist in the unnested field:</strong> Use a Common Table
+Expression (CTE) to <a href="/sql/select/#select-distinct" ><code>DISTINCT</code></a>
+<a href="/sql/functions/#unnest" ><code>UNNEST()</code></a> the array of values and perform the
+equi-join on the unnested values.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- array_field may contain duplicates.--
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">my_expanded_values</span> <span class="k">AS</span>
+</span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">UNNEST</span><span class="p">(</span><span class="n">array_field</span><span class="p">)</span> <span class="k">AS</span> <span class="n">fieldZ</span> <span class="k">FROM</span> <span class="n">tableB</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="mf">...</span>
+</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">a</span>
+</span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">my_expanded_values</span> <span class="n">t</span> <span class="k">ON</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldZ</span> <span class="o">=</span> <span class="n">t</span><span class="mf">.</span><span class="n">fieldZ</span>
+</span></span><span class="line"><span class="cl"><span class="p">;</span>
+</span></span></code></pre></div>
 
 </td>
 </tr>
@@ -87,22 +69,15 @@ JOIN my_expanded_values t ON a.fieldZ = t.fieldZ
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<red>Avoid the use of [`ANY(...)` function](/sql/functions/#expression-bool_op-any) for equi-join
-conditions.</red>
-
-<br>
-<div style="background-color: var(--code-block)">
-
-```nofmt
--- Anti-pattern. Avoid. --
+<p><red>Avoid the use of <a href="/sql/functions/#expression-bool_op-any" ><code>ANY(...)</code> function</a> for equi-join
+conditions.</red></p>
+<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
 SELECT a.fieldA, ...
 FROM tableA a, tableB b
 WHERE a.fieldZ = ANY(b.array_field) -- Anti-pattern. Avoid.
 ;
+</code></pre>
 
-```
-
-</div>
 </td>
 </tr>
 
@@ -136,35 +111,29 @@ with the `orders` table on the unnested values.
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-***If no duplicates in the unnested field***
-
-```mzsql
--- sales_items.items contains no duplicates. --
-
-WITH individual_sales_items AS
-(SELECT unnest(items) as item, week_of FROM sales_items)
-SELECT s.week_of, o.order_id, o.item, o.quantity
-FROM orders o
-JOIN individual_sales_items s ON o.item = s.item
-WHERE date_trunc('week', o.order_date) = s.week_of
-ORDER BY s.week_of, o.order_id, o.item, o.quantity
-;
-```
-
-***To omit duplicates that may exist in the unnested field***
-
-```mzsql
--- sales_items.items may contains duplicates --
-
-WITH individual_sales_items AS
-(SELECT DISTINCT unnest(items) as item, week_of FROM sales_items)
-SELECT s.week_of, o.order_id, o.item, o.quantity
-FROM orders o
-JOIN individual_sales_items s ON o.item = s.item
-WHERE date_trunc('week', o.order_date) = s.week_of
-ORDER BY s.week_of, o.order_id, o.item, o.quantity
-;
-```
+<p><em><strong>If no duplicates in the unnested field</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- sales_items.items contains no duplicates. --
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">individual_sales_items</span> <span class="k">AS</span>
+</span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">as</span> <span class="n">item</span><span class="p">,</span> <span class="n">week_of</span> <span class="k">FROM</span> <span class="n">sales_items</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span>
+</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders</span> <span class="n">o</span>
+</span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">individual_sales_items</span> <span class="n">s</span> <span class="k">ON</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">item</span>
+</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_date</span><span class="p">)</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span>
+</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span>
+</span></span><span class="line"><span class="cl"><span class="p">;</span>
+</span></span></code></pre></div><p><em><strong>To omit duplicates that may exist in the unnested field</strong></em></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- sales_items.items may contains duplicates --
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">individual_sales_items</span> <span class="k">AS</span>
+</span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">as</span> <span class="n">item</span><span class="p">,</span> <span class="n">week_of</span> <span class="k">FROM</span> <span class="n">sales_items</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span>
+</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders</span> <span class="n">o</span>
+</span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">individual_sales_items</span> <span class="n">s</span> <span class="k">ON</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">item</span>
+</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_date</span><span class="p">)</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span>
+</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span>
+</span></span><span class="line"><span class="cl"><span class="p">;</span>
+</span></span></code></pre></div>
 
 </td>
 </tr>
@@ -173,22 +142,15 @@ ORDER BY s.week_of, o.order_id, o.item, o.quantity
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<red>Avoid the use of [`ANY()`](/sql/functions/#expression-bool_op-any) for the equi-join condition.</red>
-
-<br>
-<div style="background-color: var(--code-block)">
-
-```nofmt
--- Anti-pattern. Avoid. --
+<p><red>Avoid the use of <a href="/sql/functions/#expression-bool_op-any" ><code>ANY()</code></a> for the equi-join condition.</red></p>
+<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
 SELECT s.week_of, o.order_id, o.item, o.quantity
 FROM orders o
 JOIN sales_items s ON o.item = ANY(s.items)
-WHERE date_trunc('week', o.order_date) = s.week_of
+WHERE date_trunc(&#39;week&#39;, o.order_date) = s.week_of
 ORDER BY s.week_of, o.order_id, o.item, o.quantity
 ;
-```
-
-</div>
+</code></pre>
 
 </td>
 </tr>

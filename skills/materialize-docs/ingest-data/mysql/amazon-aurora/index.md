@@ -8,9 +8,8 @@ to Materialize using the [MySQL source](/sql/create-source/mysql/).
 
 ## Before you begin
 
-- Make sure you are running MySQL 5.7 or higher. Materialize uses
-  [GTID-based binary log (binlog) replication](/sql/create-source/mysql/#change-data-capture),
-  which is not available in older versions of MySQL.
+- Make sure you are running MySQL 8.0.1+ with support for [GTID-based binary log
+(binlog) replication](#1-enable-gtid-based-binlog-replication).
 
 - Ensure you have access to your MySQL instance via the [`mysql` client](https://dev.mysql.com/doc/refman/8.0/en/mysql.html),
   or your preferred SQL client.
@@ -23,123 +22,145 @@ to Materialize using the [MySQL source](/sql/create-source/mysql/).
 > as Aurora Serverless v2.
 
 1. Before creating a source in Materialize, you **must** configure Amazon Aurora
-   MySQL for GTID-based binlog replication. Ensure the upstream MySQL database  has been configured for GTID-based binlog replication:
+   MySQL for GTID-based binlog replication. Ensure the upstream MySQL database has been configured for GTID-based binlog replication:
 
-   <table>
-   <thead>
-   <tr>
+    <table>
+    <thead>
+    <tr>
 
-   <th>MySQL Configuration</th>
+    <th>MySQL Configuration</th>
 
-   <th>Value</th>
+    <th>Value</th>
 
-   <th>Notes</th>
+    <th>Notes</th>
 
-   </tr>
-   </thead>
-   <tbody>
+    </tr>
+    </thead>
+    <tbody>
 
-   <tr>
+    <tr>
 
-   <td>
-   <code>log_bin</code>
-   </td>
+    <td>
+    <code>log_bin</code>
+    </td>
 
-   <td>
-   <code>ON</code>
-   </td>
+    <td>
+    <code>ON</code>
+    </td>
 
-   <td>
+    <td>
 
-   </td>
+    </td>
 
-   </tr>
+    </tr>
 
-   <tr>
+    <tr>
 
-   <td>
-   <code>binlog_format</code>
-   </td>
+    <td>
+    <code>binlog_row_image</code>
+    </td>
 
-   <td>
-   <code>ROW</code>
-   </td>
+    <td>
+    <code>FULL</code>
+    </td>
 
-   <td>
+    <td>
 
-   </td>
+    </td>
 
-   </tr>
+    </tr>
 
-   <tr>
+    <tr>
 
-   <td>
-   <code>binlog_row_image</code>
-   </td>
+    <td>
+    <code>binlog_row_metadata</code>
+    </td>
 
-   <td>
-   <code>FULL</code>
-   </td>
+    <td>
+    <code>FULL</code>
+    </td>
 
-   <td>
+    <td>
+    <ul>
+    <li><strong>Required</strong> to use <a href="/sql/create-source/mysql-v2/" ><code>CREATE SOURCE</code> (New
+    syntax)</a>.</li>
+    <li>Highly recommended for use with the <a href="/sql/create-source/mysql/" ><code>CREATE SOURCE</code> (Legacy
+    syntax)</a>.</li>
+    </ul>
 
-   </td>
+    </td>
 
-   </tr>
+    </tr>
 
-   <tr>
+    <tr>
 
-   <td>
-   <code>gtid_mode</code>
-   </td>
+    <td>
+    <code>binlog_format</code>
+    </td>
 
-   <td>
-   <code>ON</code>
-   </td>
+    <td>
+    <code>ROW</code>
+    </td>
 
-   <td>
-   In the AWS console, this parameter appears as <code>gtid-mode</code>.
-   </td>
+    <td>
 
-   </tr>
+    </td>
 
-   <tr>
+    </tr>
 
-   <td>
-   <code>enforce_gtid_consistency</code>
-   </td>
+    <tr>
 
-   <td>
-   <code>ON</code>
-   </td>
+    <td>
+    <code>gtid_mode</code>
+    </td>
 
-   <td>
+    <td>
+    <code>ON</code>
+    </td>
 
-   </td>
+    <td>
+    In the AWS console, this parameter appears as <code>gtid-mode</code>.
+    </td>
 
-   </tr>
+    </tr>
 
-   <tr>
+    <tr>
 
-   <td>
-   <code>replica_preserve_commit_order</code>
-   </td>
+    <td>
+    <code>enforce_gtid_consistency</code>
+    </td>
 
-   <td>
-   <code>ON</code>
-   </td>
+    <td>
+    <code>ON</code>
+    </td>
 
-   <td>
-   Only required when connecting Materialize to a read-replica.
-   </td>
+    <td>
 
-   </tr>
+    </td>
 
-   </tbody>
-   </table>
+    </tr>
 
-   For guidance on enabling GTID-based binlog replication in Aurora, see the
-   [Amazon Aurora MySQL
+    <tr>
+
+    <td>
+    <code>replica_preserve_commit_order</code>
+    </td>
+
+    <td>
+    <code>ON</code>
+    </td>
+
+    <td>
+    Only required when connecting Materialize to a read-replica.
+    </td>
+
+    </tr>
+
+    </tbody>
+    </table>
+
+    For guidance on enabling GTID-based binlog replication in Aurora, see the
+    [Amazon Aurora MySQL
     documentation](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/mysql-replication-gtid.html).
 
 1. In addition to the step above, you **must** also ensure that
@@ -147,20 +168,20 @@ to Materialize using the [MySQL source](/sql/create-source/mysql/).
    reasonable value. To check the current value of the `binlog retention hours`
    configuration parameter, connect to your RDS instance and run:
 
-   ```mysql
-   CALL mysql.rds_show_configuration;
-   ```
+    ```mysql
+    CALL mysql.rds_show_configuration;
+    ```
 
-   If the value returned is `NULL`, or less than `168` (i.e. 7 days), run:
+    If the value returned is `NULL`, or less than `168` (i.e. 7 days), run:
 
-   ```mysql
-   CALL mysql.rds_set_configuration('binlog retention hours', 168);
-   ```
+    ```mysql
+    CALL mysql.rds_set_configuration('binlog retention hours', 168);
+    ```
 
-   Although 7 days is a reasonable retention period, we recommend using the
-   default MySQL retention period (30 days) in order to not compromise
-   Materialize’s ability to resume replication in case of failures or
-   restarts.
+    Although 7 days is a reasonable retention period, we recommend using the
+    default MySQL retention period (30 days) in order to not compromise
+    Materialize’s ability to resume replication in case of failures or
+    restarts.
 
 1. To validate that all configuration parameters are set to the expected values
    after the above configuration changes, run:
@@ -178,7 +199,8 @@ to Materialize using the [MySQL source](/sql/create-source/mysql/).
       'binlog_row_image',
       'gtid_mode',
       'enforce_gtid_consistency',
-      'replica_preserve_commit_order'
+      'replica_preserve_commit_order',
+      'binlog_row_metadata' -- must be "FULL" to use new CREATE SOURCE syntax
     );
     ```
 
@@ -228,15 +250,15 @@ There are various ways to configure your database's network to allow Materialize
 to connect:
 
 - **Allow Materialize IPs:** If your database is publicly accessible, you can
-    configure your database's security group to allow connections from a set of
-    static Materialize IP addresses.
+  configure your database's security group to allow connections from a set of
+  static Materialize IP addresses.
 
 - **Use AWS PrivateLink**: If your database is running in a private network, you
-    can use [AWS PrivateLink](/ingest-data/network-security/privatelink/) to
-    connect Materialize to the database. For details, see [AWS PrivateLink](/ingest-data/network-security/privatelink/).
+  can use [AWS PrivateLink](/ingest-data/network-security/privatelink/) to
+  connect Materialize to the database. For details, see [AWS PrivateLink](/ingest-data/network-security/privatelink/).
 
 - **Use an SSH tunnel:** If your database is running in a private network, you
-    can use an SSH tunnel to connect Materialize to the database.
+  can use an SSH tunnel to connect Materialize to the database.
 
 **Allow Materialize IPs:**
 
@@ -249,10 +271,9 @@ to connect:
     ```
 
 1. [Add an inbound rule to your Aurora security group](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Overview.RDSSecurityGroups.html)
-    for each IP address from the previous step.
+   for each IP address from the previous step.
 
     In each rule:
-
     - Set **Type** to **MySQL**.
     - Set **Source** to the IP address in CIDR notation.
 
@@ -275,18 +296,16 @@ Aurora via the network load balancer.
     the network load balancer in the next step.
 
     To get the IP address of your database instance:
-
     1. In the AWS Management Console, select your database.
     1. Find your Aurora endpoint under **Connectivity & security**.
     1. Use the `dig` or `nslooklup` command
-    to find the IP address that the endpoint resolves to:
+       to find the IP address that the endpoint resolves to:
 
-       ```sh
-       dig +short <AURORA_ENDPOINT>
-       ```
+        ```sh
+        dig +short <AURORA_ENDPOINT>
+        ```
 
 1. [Create a dedicated target group for your Aurora instance](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-target-group.html).
-
     - Choose the **IP addresses** type.
 
     - Set the protocol and port to **TCP** and **3306**.
@@ -297,16 +316,15 @@ Aurora via the network load balancer.
       as the target.
 
     **Warning:** The IP address of your Aurora instance can change without
-      notice. For this reason, it's best to set up automation to regularly
-      check the IP of the instance and update your target group accordingly.
-      You can use a lambda function to automate this process - see
-      Materialize's [Terraform module for AWS PrivateLink](https://github.com/MaterializeInc/terraform-aws-rds-privatelink/blob/main/lambda_function.py)
-      for an example. Another approach is to [configure an EC2 instance as an
-      RDS router](https://aws.amazon.com/blogs/database/how-to-use-amazon-rds-and-amazon-aurora-with-a-static-ip-address/)
-      for your network load balancer.
+    notice. For this reason, it's best to set up automation to regularly
+    check the IP of the instance and update your target group accordingly.
+    You can use a lambda function to automate this process - see
+    Materialize's [Terraform module for AWS PrivateLink](https://github.com/MaterializeInc/terraform-aws-rds-privatelink/blob/main/lambda_function.py)
+    for an example. Another approach is to [configure an EC2 instance as an
+    RDS router](https://aws.amazon.com/blogs/database/how-to-use-amazon-rds-and-amazon-aurora-with-a-static-ip-address/)
+    for your network load balancer.
 
 1. [Create a network load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html).
-
     - For **Network mapping**, choose the same VPC as your RDS instance and
       select all of the availability zones and subnets that you RDS instance is
       in.
@@ -323,7 +341,6 @@ Aurora via the network load balancer.
     CIDR of the network load balancer. If you don't want to grant access to the
     entire VPC CIDR, you can add inbound rules for the private IP addresses of
     the load balancer subnets.
-
     - To find the VPC CIDR, go to the network load balancer and look
       under **Network mapping**.
 
@@ -333,7 +350,6 @@ Aurora via the network load balancer.
       interface.
 
 1. [Create a VPC endpoint service](https://docs.aws.amazon.com/vpc/latest/privatelink/create-endpoint-service.html).
-
     - For **Load balancer type**, choose **Network** and then select the network
       load balancer you created in the previous step.
 
@@ -341,9 +357,9 @@ Aurora via the network load balancer.
       use this service name when connecting Materialize later.
 
     **Remarks** By disabling [Acceptance Required](https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#accept-reject-connection-requests),
-      while still strictly managing who can view your endpoint via IAM,
-      Materialze will be able to seamlessly recreate and migrate endpoints as
-      we work to stabilize this feature.
+    while still strictly managing who can view your endpoint via IAM,
+    Materialze will be able to seamlessly recreate and migrate endpoints as
+    we work to stabilize this feature.
 
 1. Go back to the target group you created for the network load balancer and
    make sure that the [health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html)
@@ -361,8 +377,7 @@ network to allow traffic from the bastion host.
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
-    to serve as your SSH bastion host.
-
+   to serve as your SSH bastion host.
     - Make sure the instance is publicly accessible and in the same VPC as your
       Amazon Aurora MySQL instance.
 
@@ -370,30 +385,27 @@ network to allow traffic from the bastion host.
       connecting Materialize to your bastion host.
 
     **Warning:** Auto-assigned public IP addresses can change in [certain cases](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html#concepts-public-addresses).
-      For this reason, it's best to associate an [elastic IP address](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html#ip-addressing-eips)
-      to your bastion host.
+    For this reason, it's best to associate an [elastic IP address](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html#ip-addressing-eips)
+    to your bastion host.
 
 1. Configure the SSH bastion host to allow traffic only from Materialize.
-
     1. In the [SQL Shell](/console/), or your preferred
        SQL client connected to Materialize, get the static egress IP addresses for
        the Materialize region you are running in:
 
-       ```mzsql
-       SELECT * FROM mz_egress_ips;
-       ```
+        ```mzsql
+        SELECT * FROM mz_egress_ips;
+        ```
 
     1. For each static egress IP, [add an inbound rule](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html)
        to your SSH bastion host's security group.
 
         In each rule:
-
         - Set **Type** to **MySQL**.
         - Set **Source** to the IP address in CIDR notation.
 
 1. In the security group of your RDS instance, [add an inbound rule](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Overview.RDSSecurityGroups.html)
    to allow traffic from the SSH bastion host.
-
     - Set **Type** to **All TCP**.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
@@ -422,10 +434,9 @@ database.</p>
 **Allow Materialize IPs:**
 
 1. [Add an inbound rule to your Aurora security group](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Overview.RDSSecurityGroups.html)
-    to allow traffic from Materialize IPs.
+   to allow traffic from Materialize IPs.
 
     In each rule:
-
     - Set **Type** to **MySQL**.
     - Set **Source** to the IP address in CIDR notation.
 
@@ -441,8 +452,7 @@ network to allow traffic from the bastion host.
 > [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-ec2-ssh-bastion).
 
 1. [Launch an EC2 instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/LaunchingAndUsingInstances.html)
-    to serve as your SSH bastion host.
-
+   to serve as your SSH bastion host.
     - Make sure the instance is publicly accessible and in the same VPC as your
       Amazon Aurora MySQL instance.
 
@@ -450,14 +460,13 @@ network to allow traffic from the bastion host.
       connecting Materialize to your bastion host.
 
     **Warning:** Auto-assigned public IP addresses can change in [certain cases](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html#concepts-public-addresses).
-      For this reason, it's best to associate an [elastic IP address](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html#ip-addressing-eips)
-      to your bastion host.
+    For this reason, it's best to associate an [elastic IP address](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html#ip-addressing-eips)
+    to your bastion host.
 
 1. Configure the SSH bastion host to allow traffic only from Materialize.
 
 1. In the security group of your RDS instance, [add an inbound rule](https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/Overview.RDSSecurityGroups.html)
    to allow traffic from the SSH bastion host.
-
     - Set **Type** to **All TCP**.
     - Set **Source** to **Custom** and select the bastion host's security
       group.
@@ -710,24 +719,22 @@ details for Materialize to use:
 
 ### 3. Start ingesting data
 
-Once you have created the connection, you can use the connection in the
-[`CREATE SOURCE`](/sql/create-source/) command to connect to your MySQL instance and start ingesting
-data:
-```mzsql
-CREATE SOURCE mz_source
-  FROM MYSQL CONNECTION mysql_connection
-  FOR ALL TABLES;
+{{< tabs >}}
+{{< tab "New Syntax" >}}
+#### New syntax
 
-```
+{{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="create-source" %}}
+{{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="schema-changes" %}}
+{{< /tab >}}
 
-- By default, the source will be created in the active cluster; to use a different cluster, use the `IN CLUSTER` clause.
+{{< tab "Legacy Syntax" >}}
+#### Legacy syntax
 
-- To ingest data from specific schemas or tables, use the `FOR SCHEMAS (<schema1>,<schema2>)` or `FOR TABLES (<table1>, <table2>)` options instead of `FOR ALL TABLES`.
-
-- To handle [unsupported data types](#supported-types), use the `TEXT COLUMNS` or `EXCLUDE COLUMNS` options.
-
-After source creation, refer to [schema changes
-considerations](#schema-changes) for information on handling upstream schema changes.
+{{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="create-source-legacy" %}}
+{{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="create-source-options-legacy" %}}
+{{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="schema-changes" %}}
+{{< /tab >}}
+{{< /tabs >}}
 
 [//]: # "TODO(morsapaes) Replace these Step 6. and 7. with guidance using the
 new progress metrics in mz_source_statistics + console monitoring, when
@@ -861,13 +868,16 @@ new data arrives, and serving results efficiently.
 
 ### Schema changes
 
-> **Note:** Work to more smoothly support ddl changes to upstream tables is currently in
-> progress. The work introduces the ability to re-ingest the same upstream table
-> under a new schema and switch over without downtime.
-
 Materialize supports schema changes in the upstream database as follows:
 
-#### Compatible schema changes
+#### Compatible schema changes (Legacy syntax)
+
+> **Note:** This section refer to the legacy [`CREATE SOURCE ... FOR
+> ...`](/sql/create-source/mysql/) that creates subsources as part of the `CREATE
+> SOURCE` operation.  To be able to handle the upstream column additions and
+> drops, use [`CREATE SOURCE (New Syntax)`](/sql/create-source/mysql-v2/) and
+> [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
+> [MySQL: Source versioning guide](/ingest-data/mysql/source-versioning/).
 
 <ul>
 <li>

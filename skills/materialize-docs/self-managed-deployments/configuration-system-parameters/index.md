@@ -58,7 +58,7 @@ kubectl apply -f system-params-configmap.yaml
 Reference the ConfigMap in your Materialize custom resource by setting the
 `systemParameterConfigmapName` field to the name of your ConfigMap:
 
-```yaml {hl_lines="9"}
+```yaml {hl_lines="9-10"}
 apiVersion: materialize.cloud/v1alpha1
 kind: Materialize
 metadata:
@@ -68,6 +68,7 @@ spec:
   environmentdImageRef: materialize/environmentd:v26.0.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
+  requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
 ```
 
 Apply the updated Materialize resource:
@@ -91,6 +92,9 @@ To update system parameters defined in your ConfigMap, you can either:
   ```shell
   kubectl apply -f system-params-configmap.yaml
   ```
+
+Unlike changes to the Materialize custom resource, updating the parameters in
+your ConfigMap does **not** require a rollout.
 
 ### ConfigMap sync behavior
 
@@ -128,7 +132,7 @@ spec:
   # ... rest of spec
 ```
 
-> **Note:** Even after the ConfigMap is synced, some parameters may require a restart to
+> **Note:** Even after the ConfigMap is synced, some system parameters may require a restart to
 > take effect.
 
 ## Available System Parameters

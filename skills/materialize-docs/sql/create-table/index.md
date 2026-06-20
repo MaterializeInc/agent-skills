@@ -6,10 +6,13 @@ In Materialize, you can create:
 - Read-write tables. With read-write tables, users can read ([`SELECT`]) and
   write to the tables ([`INSERT`], [`UPDATE`], [`DELETE`]).
 
--  ***Private Preview***. Read-only tables from [PostgreSQL sources (new
-  syntax)](/sql/create-source/postgres-v2/). Users cannot be write ([`INSERT`],
-  [`UPDATE`], [`DELETE`]) to these tables. These tables are populated by [data
-  ingestion from a source](/ingest-data/postgres/). 
+- Read-only tables from sources that use the new syntax:
+  [PostgreSQL](/sql/create-source/postgres-v2/),
+  [MySQL](/sql/create-source/mysql-v2/), and
+  [SQL Server](/sql/create-source/sql-server-v2/). Users cannot write
+  ([`INSERT`], [`UPDATE`], [`DELETE`]) to these tables. These tables are
+  populated by [data ingestion from a
+  source](/ingest-data/). 
 
 Tables in Materialize are similar to tables in standard relational databases:
 they consist of rows and columns where the columns are fixed when the table is
@@ -57,6 +60,8 @@ CREATE [TEMP|TEMPORARY] TABLE [IF NOT EXISTS] <table_name> (
 **PostgreSQL source table:**
 ### PostgreSQL source table
 
+> **Public Preview:** This feature is in public preview.
+
 > **Note:** You must be on **v26+** to use the new syntax.
 
 To create a read-only table from a [source](/sql/create-source/) connected
@@ -85,8 +90,40 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 For an example, see [Create a table (PostgreSQL
 source)](/sql/create-table/#create-a-table-postgresql-source).
 
+**MySQL source table:**
+### MySQL source table
+
+> **Public Preview:** This feature is in public preview.
+
+> **Note:** You must be on **v26.25+** to use the new syntax.
+
+To create a read-only table from a [source](/sql/create-source/) connected
+(via native connector) to an external MySQL database:
+
+```mzsql
+CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <upstream_schema>.<upstream_table>)
+[WITH (
+    TEXT COLUMNS (<column_name> [, ...])
+  | EXCLUDE COLUMNS (<column_name> [, ...])
+  | PARTITION BY (<column_name> [, ...])
+  [, ...]
+)]
+;
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}  |
+| `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
+| `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
+| **(REFERENCE <upstream_schema>.<upstream_table>)** |  The fully-qualified name of the upstream MySQL table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
+| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, decode data as `text` for the listed column(s), such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
+
 **SQL Server source table:**
 ### SQL Server source table
+
+> **Public Preview:** This feature is in public preview.
 
 > **Note:** You must be on **v26+** to use the new syntax.
 
@@ -133,6 +170,8 @@ See also the known limitations for [`INSERT`](/sql/insert#known-limitations),
 
 ## Source-populated tables
 
+> **Public Preview:** This feature is in public preview.
+
 > **Note:** You must be on **v26+** to use the new syntax.
 
 ### Table names and column names
@@ -160,10 +199,11 @@ use within a [transaction block](/sql/begin/#ddl-only-transactions).
 currently available data into Materialize. Because the initial snapshot is
 persisted in the storage layer atomically (i.e., at the same ingestion
 timestamp), you are not able to query the table until snapshotting is complete.</p>
-> **Note:** During the snapshotting, the data ingestion for
-> the existing tables for the same source is temporarily blocked. As such, if
-> possible, you can resize the cluster to speed up the snapshotting process and
-> once the process finishes, resize the cluster for steady-state.
+> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
+> source is temporarily blocked. As such, if possible, you can resize the cluster
+> to speed up the snapshotting process and once the process finishes, resize the
+> cluster for steady-state. You can monitor the snapshot progress on the overview
+> page for the source in the Materialize console.
 
 ### Supported data types
 
@@ -217,6 +257,62 @@ as <code>text</code>.</p>
 <p><a href="https://www.postgresql.org/docs/current/datatype-money.html" ><code>money</code></a>: When decoded as <code>text</code>, resulting <code>text</code> value cannot be cast
 back to <code>numeric</code>, since PostgreSQL adds typical currency formatting to the
 output.</p>
+</li>
+</ul>
+
+**MySQL:**
+#### MySQL types
+
+<p>Materialize natively supports the following MySQL types:</p>
+<ul style="column-count: 3">
+<li><code>bigint</code></li>
+<li><code>binary</code></li>
+<li><code>bit</code></li>
+<li><code>blob</code></li>
+<li><code>boolean</code></li>
+<li><code>char</code></li>
+<li><code>date</code></li>
+<li><code>datetime</code></li>
+<li><code>decimal</code></li>
+<li><code>double</code></li>
+<li><code>float</code></li>
+<li><code>int</code></li>
+<li><code>json</code></li>
+<li><code>longblob</code></li>
+<li><code>longtext</code></li>
+<li><code>mediumblob</code></li>
+<li><code>mediumint</code></li>
+<li><code>mediumtext</code></li>
+<li><code>numeric</code></li>
+<li><code>real</code></li>
+<li><code>smallint</code></li>
+<li><code>text</code></li>
+<li><code>time</code></li>
+<li><code>timestamp</code></li>
+<li><code>tinyblob</code></li>
+<li><code>tinyint</code></li>
+<li><code>tinytext</code></li>
+<li><code>varbinary</code></li>
+<li><code>varchar</code></li>
+</ul>
+
+<p>When replicating tables that contain the <strong>unsupported <a href="/sql/types/" >data
+types</a></strong>, you can:</p>
+<ul>
+<li>
+<p>Use <a href="/sql/create-source/mysql/#handling-unsupported-types" ><code>TEXT COLUMNS</code>
+option</a> for the
+following unsupported  MySQL types:</p>
+<ul>
+<li><code>enum</code></li>
+<li><code>year</code></li>
+</ul>
+<p>The specified columns will be treated as <code>text</code> and will not offer the
+expected MySQL type features.</p>
+</li>
+<li>
+<p>Use the <a href="/sql/create-source/mysql/#excluding-columns" ><code>EXCLUDE COLUMNS</code></a>
+option to exclude any columns that contain unsupported data types.</p>
 </li>
 </ul>
 
@@ -291,13 +387,15 @@ value when said column is updated.</p>
 
 ### Handling table schema changes
 
-The use of [`CREATE SOURCE`](/sql/create-source/postgres-v2/) with `CREATE
-TABLE FROM SOURCE` allows for the handling of the upstream DDL changes,
-specifically adding or dropping columns in the upstream tables, without
-downtime. For details, see:
+The use of `CREATE SOURCE` (new syntax) with `CREATE TABLE FROM SOURCE` allows
+for the handling of the upstream DDL changes, specifically adding or dropping
+columns in the upstream tables, without downtime. For details, see:
 
 - [PostgreSQL: Handling upstream schema changes with zero
 downtime](/ingest-data/postgres/source-versioning/)
+
+- [MySQL: Handling upstream schema changes with zero
+downtime](/ingest-data/mysql/source-versioning/)
 
 - [SQL Server: Handling upstream schema changes with zero
 downtime](/ingest-data/sql-server/source-versioning/)
@@ -387,6 +485,8 @@ SELECT * FROM mytable;
 ```
 
 ### Create a table (PostgreSQL source)
+
+> **Public Preview:** This feature is in public preview.
 
 > **Note:** You must be on **v26+** to use the new syntax.
 > The example assumes you have configured your upstream PostgreSQL 11+ (i.e.,

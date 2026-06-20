@@ -290,7 +290,6 @@ SET (
     SIZE = <text>
     [, REPLICATION FACTOR = <int>]
     [, MANAGED = <bool>]
-    [, SCHEDULE = MANUAL|ON REFRESH(...)]
 )
 [WITH ( <with_option>[,...])]
 ;
@@ -303,7 +302,6 @@ SET (
 | `SIZE` | <a name="alter-cluster-size"></a> The size of the resource allocations for the cluster. For valid size values, see [Available sizes](#available-sizes). {{< warning >}} Changing the size of a cluster may incur downtime. For more information, see [Resizing considerations](#resizing). {{< /warning >}} Not available for `ALTER CLUSTER ... RESET` since there is no default `SIZE` value. |
 | `REPLICATION FACTOR` | Optional.The number of replicas to provision for the cluster. Each replica of the cluster provisions a new pool of compute resources to perform exactly the same computations on exactly the same data. For more information, see [Replication factor considerations](#replication-factor).  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  If `FALSE`, enables the use of the <em>deprecated</em> [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) command.  Default: `TRUE`  |
-| `SCHEDULE` | Optional. The [scheduling type](/sql/create-cluster/#scheduling) for the cluster. Valid values are `MANUAL` and `ON REFRESH`.  Default: `MANUAL`  |
 | `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under activedevelopment.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* A fixed duration to wait for the new replicas to be ready. This option can lead to downtime. As such, we recommend using the `WAIT UNTIL READY` option instead.\|  |
 
 **Reset to default:**
@@ -315,7 +313,7 @@ To reset a cluster configuration back to its default value:
 ```mzsql
 ALTER CLUSTER <cluster_name>
 RESET (
-    REPLICATION FACTOR | MANAGED | SCHEDULE,
+    REPLICATION FACTOR | MANAGED,
     ...
 )
 ;
@@ -327,7 +325,6 @@ RESET (
 | `<cluster_name>` | The name of the cluster you want to alter.  |
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  Default: `TRUE`  |
-| `SCHEDULE` | Optional. The [scheduling type](/sql/create-cluster/#scheduling) for the cluster.  Default: `MANUAL`  |
 
 **Rename:**
 
@@ -605,20 +602,6 @@ ALTER CLUSTER c1 SET (SIZE '100cc');
 This will incur downtime when the cluster contains objects that need
 re-hydration before they are ready. This includes indexes, materialized views,
 and some types of sources.
-
-### Schedule
-
-For use cases that require using [scheduled clusters](/sql/create-cluster/#scheduling),
-you can set or change the originally configured schedule and related options
-using the `ALTER CLUSTER` command.
-```sql
-ALTER CLUSTER c1 SET (SCHEDULE = ON REFRESH (HYDRATION TIME ESTIMATE = '1 hour'));
-```
-
-See the reference documentation for [`CREATE
-CLUSTER`](../create-cluster/#scheduling) or [`CREATE MATERIALIZED
-VIEW`](../create-materialized-view/#refresh-strategies) for more details on
-scheduled clusters.
 
 ### Converting unmanaged to managed clusters
 
@@ -2399,7 +2382,7 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Consistency guarantees](/overview/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
 
 ### Other configuration parameters
 
@@ -2411,6 +2394,7 @@ Name                                        | Default value             |  Descr
 `client_encoding`                           | `UTF8`                    | The client's character set encoding. The only supported value is `UTF-8`.                                                                                              | Yes
 `client_min_messages`                       | `notice`                  | The message levels that are sent to the client. <br/><br/> Accepts values: `debug5`, `debug4`, `debug3`, `debug2`, `debug1`, `log`, `notice`, `warning`, `error`. Each level includes all the levels that follow it. | Yes
 `datestyle`                                 | `ISO, MDY`                | The display format for date and time values. The only supported value is `ISO, MDY`.                                                                                   | Yes
+`default_timestamp_interval`                | `1s`                      | The interval at which timestamps are assigned to data ingested from sources and tables. New sources are created with this value unless overridden by the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/). Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). This setting applies only when creating sources; changing this value does not affect existing sources. For existing sources, see [`ALTER SOURCE`](/sql/alter-source/). | [Contact support]
 `emit_introspection_query_notice`           | `true`                    | Whether to print a notice when querying replica introspection relations.                                                                                               | Yes
 `emit_timestamp_notice`                     | `false`                   | Boolean flag indicating whether to send a `notice` specifying query timestamps.                                                                                        | Yes
 `emit_trace_id_notice`                      | `false`                   | Boolean flag indicating whether to send a `notice` specifying the trace ID, when available.                                                                            | Yes
@@ -2441,10 +2425,12 @@ Name                                        | Default value             |  Descr
 `max_sinks`                                 | `1000`                    | The maximum number of sinks in the region, across all schemas.                                                                                                         | [Contact support]
 `max_sources`                               | `25`                      | The maximum number of sources in the region, across all schemas.                                                                                                       | [Contact support]
 `max_tables`                                | `200`                     | The maximum number of tables in the region, across all schemas                                                                                                         | [Contact support]
+`max_timestamp_interval`                    | `1s`                      | The upper bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval larger than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
+`min_timestamp_interval`                    | `1s`                      | The lower bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval smaller than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
 `mz_version`                                | Version-dependent         | Shows the Materialize server version.                                                                                                                                  | No
 `network_policy`                            | `default`                 | The default network policy for the region. | Yes
-`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/get-started/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
-`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/get-started/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
+`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/reference/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
+`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/reference/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
 `server_version_num`                        | Version-dependent         | The PostgreSQL compatible server version as an integer.                                                                                                                | No
 `server_version`                            | Version-dependent         | The PostgreSQL compatible server version.                                                                                                                              | No
 `sql_safe_updates`                          | `false`                   | Boolean flag indicating whether to prohibit SQL statements that may be overly destructive.                                                                             | Yes
@@ -2493,7 +2479,7 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Consistency guarantees](/overview/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
 
 ### Other configuration parameters
 
@@ -2505,6 +2491,7 @@ Name                                        | Default value             |  Descr
 `client_encoding`                           | `UTF8`                    | The client's character set encoding. The only supported value is `UTF-8`.                                                                                              | Yes
 `client_min_messages`                       | `notice`                  | The message levels that are sent to the client. <br/><br/> Accepts values: `debug5`, `debug4`, `debug3`, `debug2`, `debug1`, `log`, `notice`, `warning`, `error`. Each level includes all the levels that follow it. | Yes
 `datestyle`                                 | `ISO, MDY`                | The display format for date and time values. The only supported value is `ISO, MDY`.                                                                                   | Yes
+`default_timestamp_interval`                | `1s`                      | The interval at which timestamps are assigned to data ingested from sources and tables. New sources are created with this value unless overridden by the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/). Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). This setting applies only when creating sources; changing this value does not affect existing sources. For existing sources, see [`ALTER SOURCE`](/sql/alter-source/). | [Contact support]
 `emit_introspection_query_notice`           | `true`                    | Whether to print a notice when querying replica introspection relations.                                                                                               | Yes
 `emit_timestamp_notice`                     | `false`                   | Boolean flag indicating whether to send a `notice` specifying query timestamps.                                                                                        | Yes
 `emit_trace_id_notice`                      | `false`                   | Boolean flag indicating whether to send a `notice` specifying the trace ID, when available.                                                                            | Yes
@@ -2535,10 +2522,12 @@ Name                                        | Default value             |  Descr
 `max_sinks`                                 | `1000`                    | The maximum number of sinks in the region, across all schemas.                                                                                                         | [Contact support]
 `max_sources`                               | `25`                      | The maximum number of sources in the region, across all schemas.                                                                                                       | [Contact support]
 `max_tables`                                | `200`                     | The maximum number of tables in the region, across all schemas                                                                                                         | [Contact support]
+`max_timestamp_interval`                    | `1s`                      | The upper bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval larger than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
+`min_timestamp_interval`                    | `1s`                      | The lower bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval smaller than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
 `mz_version`                                | Version-dependent         | Shows the Materialize server version.                                                                                                                                  | No
 `network_policy`                            | `default`                 | The default network policy for the region. | Yes
-`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/get-started/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
-`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/get-started/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
+`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/reference/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
+`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/reference/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
 `server_version_num`                        | Version-dependent         | The PostgreSQL compatible server version as an integer.                                                                                                                | No
 `server_version`                            | Version-dependent         | The PostgreSQL compatible server version.                                                                                                                              | No
 `sql_safe_updates`                          | `false`                   | Boolean flag indicating whether to prohibit SQL statements that may be overly destructive.                                                                             | Yes
@@ -2795,7 +2784,7 @@ You can specify the following optional settings for `BEGIN`:
 
 Option | Description
 -------|----------
-`ISOLATION LEVEL <level>` | *Optional*. If specified, sets the transaction [isolation level](/get-started/isolation-level).
+`ISOLATION LEVEL <level>` | *Optional*. If specified, sets the transaction [isolation level](/reference/isolation-level).
 `READ ONLY` | <a name="begin-option-read-only"></a> *Optional*. If specified, restricts the transaction to [**read-only** statements](#read-only-transactions). If unspecified, Materialize restricts the transaction to [**read-only** statements](#read-only-transactions), [**write-only** statements](#write-only-transactions), or [**DDL-only** statements](#ddl-only-transactions) based on the first statement in the transaction.
 
 ## Details
@@ -3254,6 +3243,8 @@ Supported PARQUET compression formats
 - brotli
 - zstd
 - lz4
+
+[//]: # "TODO: - Text can be imported as text or JSON/JSONB or a map.. do we document casting rules/make a whole section for casting?"
 
 | [Arrow type](https://github.com/apache/arrow/blob/main/format/Schema.fbs) | [Parquet primitive type](https://parquet.apache.org/docs/file-format/types/) | [Parquet logical type](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md) | Materialize type                                                                  |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
@@ -3827,7 +3818,6 @@ CREATE CLUSTER <cluster_name> (
     SIZE = <text>
     [, REPLICATION FACTOR = <int>]
     [, MANAGED = <bool>]
-    [, SCHEDULE = MANUAL|ON REFRESH(...)]
 );
 
 ```
@@ -3838,7 +3828,6 @@ CREATE CLUSTER <cluster_name> (
 | `SIZE` | The size of the resource allocations for the cluster.  For valid size values, see [Available sizes](#available-sizes).  |
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. See [Replication factor](#replication-factor) for details.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  <a name="unmanaged-clusters"></a>  Specify `FALSE` to create an **unmanaged** cluster. With unmanaged clusters, you need to manually manage the cluster's replicas using the the [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) and [`DROP CLUSTER REPLICA`](/sql/drop-cluster-replica) commands. When creating an unmanaged cluster, you must specify the `REPLICAS` option as well.  {{< tip >}} When getting started with Materialize, we recommend starting with managed clusters. {{</ tip >}}  Default: `TRUE`  |
-| `SCHEDULE` | Optional. The [scheduling type](#scheduling) for the cluster. Valid values are: - `MANUAL` - `ON REFRESH`  Default: `MANUAL`  |
 
 ## Details
 
@@ -4080,96 +4069,6 @@ Cluster `c` will have consumed 0.4 credits in total:
     credits.
   * Replica `c.r2` was provisioned from 3:45:00 to 3:45:45, consuming 0.1
     credits.
-
-### Scheduling
-
-To support [scheduled refreshes in materialized views](../create-materialized-view/#refresh-strategies),
-you can configure a cluster to automatically turn on and off using the
-`SCHEDULE...ON REFRESH` syntax.
-
-```mzsql
-CREATE CLUSTER my_scheduled_cluster (
-  SIZE = '800cc',
-  SCHEDULE = ON REFRESH (HYDRATION TIME ESTIMATE = '1 hour')
-);
-```
-
-Scheduled clusters should **only** contain materialized views configured with a
-non-default [refresh strategy](../create-materialized-view/#refresh-strategies)
-(and any indexes built on these views). These clusters will automatically turn
-on (i.e., be provisioned with compute resources) based on the configured
-refresh strategies, and **only** consume credits for the duration of the
-refreshes.
-
-It's not possible to manually turn on a cluster with `ON REFRESH` scheduling. If
-you need to turn on a cluster outside its schedule, you can temporarily disable
-scheduling and provision compute resources using [`ALTER CLUSTER`](../alter-cluster/#schedule):
-
-```mzsql
-ALTER CLUSTER my_scheduled_cluster SET (SCHEDULE = MANUAL, REPLICATION FACTOR = 1);
-```
-
-To re-enable scheduling:
-
-```mzsql
-ALTER CLUSTER my_scheduled_cluster
-SET (SCHEDULE = ON REFRESH (HYDRATION TIME ESTIMATE = '1 hour'));
-```
-
-#### Hydration time estimate
-
-<p style="font-size:14px"><b>Syntax:</b> <code>HYDRATION TIME ESTIMATE</code> <i>interval</i></p>
-
-By default, scheduled clusters will turn on at the scheduled refresh time. To
-avoid [unavailability of the objects scheduled for refresh](/sql/create-materialized-view/#querying-materialized-views-with-refresh-strategies) during the refresh
-operation, we recommend turning the cluster on ahead of the scheduled time to
-allow hydration to complete. This can be controlled using the `HYDRATION
-TIME ESTIMATE` clause.
-
-#### Scheduling strategy
-
-To check the scheduling strategy associated with a cluster, you can query the
-[`mz_internal.mz_cluster_schedules`](/reference/system-catalog/mz_internal/#mz_cluster_schedules)
-system catalog table:
-
-```mzsql
-SELECT c.id AS cluster_id,
-       c.name AS cluster_name,
-       cs.type AS schedule_type,
-       cs.refresh_hydration_time_estimate
-FROM mz_internal.mz_cluster_schedules cs
-JOIN mz_clusters c ON cs.cluster_id = c.id
-WHERE c.name = 'my_refresh_cluster';
-```
-
-To check if a scheduled cluster is turned on, you can query the
-[`mz_catalog.mz_cluster_replicas`](/reference/system-catalog/mz_catalog/#mz_cluster_replicas)
-system catalog table:
-
-```mzsql
-SELECT cs.cluster_id,
-       -- A cluster with scheduling is "on" when it has compute resources
-       -- (i.e. a replica) attached.
-       CASE WHEN cr.id IS NOT NULL THEN true
-       ELSE false END AS is_on
-FROM mz_internal.mz_cluster_schedules cs
-JOIN mz_clusters c ON cs.cluster_id = c.id AND cs.type = 'on-refresh'
-LEFT JOIN mz_cluster_replicas cr ON c.id = cr.cluster_id;
-```
-
-You can also use the [audit log](/reference/system-catalog/mz_catalog/#mz_audit_events)
-to observe the commands that are automatically run when a scheduled cluster is
-turned on and off for materialized view refreshes:
-
-```mzsql
-SELECT *
-FROM mz_audit_events
-WHERE object_type = 'cluster-replica'
-ORDER BY occurred_at DESC;
-```
-
-Any commands attributed to scheduled refreshes will be marked with
-`"reason":"schedule"` under the `details` column.
 
 ### Known limitations
 
@@ -4707,8 +4606,63 @@ SSH bastion host.
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
 
 Depending on the hosted service you are connecting to, you might need to specify
-a PrivateLink connection [per advertised broker](#kafka-privatelink-syntax)
-(e.g. Amazon MSK), or a single [default PrivateLink connection](#kafka-privatelink-default) (e.g. Redpanda Cloud).
+a PrivateLink connection and [per-availability-zone routing rules for brokers](#kafka-privatelinks) (e.g. Confluent Cloud),
+a PrivateLink connection [per advertised broker](#kafka-privatelink-syntax) (e.g. Amazon MSK),
+or a single [default PrivateLink connection](#kafka-privatelink-default) (e.g. Redpanda Cloud).
+
+##### Dynamic broker discovery {#kafka-privatelinks}
+
+Confluent Cloud does not require listing every broker individually.
+Instead, include a static broker address for the initial connection
+alongside wildcard `MATCHING` rules for routing dynamically discovered
+brokers through PrivateLink.
+
+```mzsql
+CREATE CONNECTION <connection_name> TO KAFKA (
+    BROKERS (
+        '<broker_address>' USING AWS PRIVATELINK <privatelink_connection>,
+        MATCHING '<pattern1>' USING AWS PRIVATELINK <privatelink_connection1> (
+            PORT <port1>,
+            AVAILABILITY ZONE = '<az_id1>'
+        ),
+        MATCHING '<pattern2>' USING AWS PRIVATELINK <privatelink_connection2>
+    ),
+    ...
+);
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `'<broker_address>' USING AWS PRIVATELINK ...` | A static broker address used for bootstrapping the initial connection to the Kafka cluster. At least one static broker is required when using `MATCHING` rules. The broker is routed through the specified AWS PrivateLink connection.  |
+| `MATCHING '<pattern>' USING AWS PRIVATELINK <connection_name>` | Routes brokers whose advertised `host:port` matches `<pattern>` through the named AWS PrivateLink connection. A pattern may begin with `*` to match any prefix. A pattern may end with `*` to match any suffix. All other characters in the pattern are matched literally. Rules are evaluated in order. The first matching rule wins. If no rule matches, Materialize will attempt to connect to the broker directly, without tunneling.  |
+| `AVAILABILITY ZONE` | *Value:* `text`. Optional.  The ID of the availability zone of the AWS PrivateLink service in which the broker is accessible. If omitted, traffic routes through the default PrivateLink endpoint, which distributes across all configured availability zones. Specify this only when you need to pin brokers to specific AZs.  |
+| `PORT` | *Value:* `integer`. Optional.  The port of the AWS PrivateLink service to connect to. Defaults to the broker's port.  |
+
+The static broker address is used to bootstrap the initial connection to
+Kafka. It does not require an `AVAILABILITY ZONE` — Materialize will
+attempt all configured availability zones to find it.
+
+After bootstrapping, Kafka returns the addresses of all brokers in the
+cluster. The `MATCHING` rules route these discovered brokers through the
+correct AZ-specific PrivateLink endpoint based on their advertised
+hostname.
+
+```mzsql
+CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
+    SERVICE NAME 'com.amazonaws.vpce.us-east-1.vpce-svc-0e123abc123198abc',
+    AVAILABILITY ZONES ('use1-az1', 'use1-az4')
+);
+
+CREATE CONNECTION kafka_connection TO KAFKA (
+    BROKERS (
+        'lkc-xxx.domyyy.us-east-1.aws.confluent.cloud:9092'
+            USING AWS PRIVATELINK privatelink_svc,
+        MATCHING '*.use1-az1.*' USING AWS PRIVATELINK privatelink_svc (AVAILABILITY ZONE = 'use1-az1'),
+        MATCHING '*.use1-az4.*' USING AWS PRIVATELINK privatelink_svc (AVAILABILITY ZONE = 'use1-az4')
+    )
+);
+```
 
 ##### Broker connection syntax {#kafka-privatelink-syntax}
 
@@ -4758,7 +4712,7 @@ broker that you want to connect to via the tunnel.
 Field                                   | Value            | Required | Description
 ----------------------------------------|------------------|:--------:|-------------------------------
 `AWS PRIVATELINK`                       | object name      | ✓        | The name of an [AWS PrivateLink connection](#aws-privatelink) through which network traffic for this broker should be routed.
-`AVAILABILITY ZONE`                     | `text`           |          | The ID of the availability zone of the AWS PrivateLink service in which the broker is accessible. If unspecified, traffic will be routed to each availability zone declared in the [AWS PrivateLink connection](#aws-privatelink) in sequence until the correct availability zone for the broker is discovered. If specified, Materialize will always route connections via the specified availability zone.
+`AVAILABILITY ZONE`                     | `text`           |          | The ID of the availability zone of the AWS PrivateLink service in which the broker is accessible.
 `PORT`                                  | `integer`        |          | The port of the AWS PrivateLink service to connect to. Defaults to the broker's port.
 
 ##### Example {#kafka-privatelink-example}
@@ -4807,15 +4761,8 @@ CREATE CONNECTION <connection_name> TO KAFKA (
 
 | Syntax element | Description |
 | --- | --- |
-| `AWS PRIVATELINK <privatelink_connection_name>` | The name of an AWS PrivateLink connection through which network traffic should be routed.  |
-| `PORT` | The port of the AWS PrivateLink service to connect to.  |
-
-##### Default connection options {#kafka-privatelink-default-options}
-
-Field                                   | Value            | Required | Description
-----------------------------------------|------------------|:--------:|-------------------------------
-`AWS PRIVATELINK`                       | object name      | ✓        | The name of an [AWS PrivateLink connection](#aws-privatelink) through which network traffic for this broker should be routed.
-`PORT`                                  | `integer`        |          | The port of the AWS PrivateLink service to connect to. Defaults to the broker's port.
+| `AWS PRIVATELINK <privatelink_connection_name>` | *Value:* object name. Required.  The name of an AWS PrivateLink connection through which network traffic should be routed.  |
+| `PORT` | *Value:* `integer`  The port of the AWS PrivateLink service to connect to. Defaults to the broker's port.  |
 
 ##### Example {#kafka-privatelink-default-example}
 
@@ -5932,7 +5879,7 @@ AS <select_stmt>;
 | `<view_name>` | A name for the materialized view.  |
 | `(<col_ident>, ...)` | Rename the `SELECT` statement's columns to the list of identifiers. Both must be the same length. Note that this is required for statements that return multiple columns with the same identifier.  |
 | `IN CLUSTER <cluster_name>` | The cluster to maintain this materialized view. If not specified, defaults to the active cluster.  |
-| `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `ASSERT NOT NULL` *col_ident* \| `text` \| The column identifier for which to create a [non-null assertion](#non-null-assertions). To specify multiple columns, use the option multiple times. \| \| `PARTITION BY` *columns* \| `(ident [, ident]*)` \| The key by which Materialize should internally partition this durable collection. See the [partitioning guide](/transform-data/patterns/partition-by/) for restrictions on valid values and other details. \| \| `RETAIN HISTORY FOR` *retention_period* \| `interval` \| ***Private preview.*** Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `REFRESH` *refresh_strategy* \| \| ***Private preview.*** The refresh strategy for the materialized view. See [Refresh strategies](#refresh-strategies) for syntax options. Default: `ON COMMIT`. \|  |
+| `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `ASSERT NOT NULL` *col_ident* \| `text` \| The column identifier for which to create a [non-null assertion](#non-null-assertions). To specify multiple columns, use the option multiple times. \| \| `PARTITION BY` *columns* \| `(ident [, ident]*)` \| The key by which Materialize should internally partition this durable collection. See the [partitioning guide](/transform-data/patterns/partition-by/) for restrictions on valid values and other details. \| \| `RETAIN HISTORY FOR` *retention_period* \| `interval` \| ***Private preview.*** Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) whose results you want to maintain incrementally updated.  |
 
 **CREATE REPLACEMENT MATERIALIZED VIEW:**
@@ -6036,187 +5983,6 @@ value is in fact produced in a column for which `ASSERT NOT NULL` was
 specified, querying the materialized view will produce an error until the
 offending row is deleted.
 
-### Refresh strategies
-
-Materialized views in Materialize are incrementally maintained by default, meaning their results are automatically updated as soon as new data arrives.
-This guarantees that queries returns the most up-to-date information available with minimal delay and that results are always as [fresh](/concepts/reaction-time) as the input data itself.
-
-In most cases, this default behavior is ideal.
-However, in some very specific scenarios like reporting over slow changing historical data, it may be acceptable to relax freshness in order to reduce compute usage.
-For these cases, Materialize supports refresh strategies, which allow you to configure a materialized view to recompute itself on a fixed schedule rather than maintaining them incrementally.
-
-> **Note:** The use of refresh strategies is discouraged unless you have a clear and measurable need to reduce maintenance costs on stale or archival data. For most use cases, the default incremental maintenance model provides a better experience.
-
-[//]: # "TODO(morsapaes) We should add a SQL pattern that walks through a
-full-blown example of how to implement the cold, warm, hot path with refresh
-strategies."
-
-#### Refresh on commit
-
-<p style="font-size:14px"><b>Syntax:</b> <code>REFRESH ON COMMIT</code></p>
-
-Materialized views in Materialize are incrementally updated by default. This means that as soon as new data arrives in the system, any dependent materialized views are automatically and continuously updated. This behavior, known as **refresh on commit**, ensures that the view's contents are always as fresh as the underlying data.
-
-**`REFRESH ON COMMIT` is:**
-
-* **Generally available**
-* The **default behavior** for all materialized views
-* **Implicit** and does not need to be manually specified
-* **Strongly recommended** for the vast majority of use cases
-
-With `REFRESH ON COMMIT`, Materialize provides low-latency, up-to-date results without requiring user-defined schedules or manual refreshes. This model is ideal for most workloads, including streaming analytics, live dashboards, customer-facing queries, and applications that rely on timely, accurate results.
-
-Only in rare cases—such as batch-oriented processing or reporting over slowly changing historical datasets—might it make sense to trade off freshness for potential cost savings. In such cases, consider defining an explicit [refresh strategy](#refresh-strategies) to control when recomputation occurs.
-
-#### Refresh at
-
-<p style="font-size:14px"><b>Syntax:</b> <code>REFRESH AT</code> { <code>CREATION</code> | <i>timestamp</i> }</p>
-
-This strategy allows configuring a materialized view to **refresh at a specific
-time**. The refresh time can be specified as a timestamp, or using the `AT CREATION`
-clause, which triggers a first refresh when the materialized view is created.
-
-**Example**
-
-To create a materialized view that is refreshed at creation, and then at the
-specified times:
-
-```mzsql
-CREATE MATERIALIZED VIEW mv_refresh_at
-IN CLUSTER my_scheduled_cluster
-WITH (
-  -- Refresh at creation, so the view is populated ahead of
-  -- the first user-specified refresh time
-  REFRESH AT CREATION,
-  -- Refresh at a user-specified (future) time
-  REFRESH AT '2024-06-06 12:00:00',
-  -- Refresh at another user-specified (future) time
-  REFRESH AT '2024-06-08 22:00:00'
-)
-AS SELECT ... FROM ...;
-```
-
-You can specify multiple `REFRESH AT` strategies in the same `CREATE` statement,
-and combine them with the [`REFRESH EVERY` strategy](#refresh-every).
-
-#### Refresh every
-
-<p style="font-size:14px"><b>Syntax:</b> <code>REFRESH EVERY</code> <i>interval</i> [ <code>ALIGNED TO</code> <i>timestamp</i> ]</code></p>
-
-This strategy allows configuring a materialized view to **refresh at regular
-intervals**. The `ALIGNED TO` clause additionally allows specifying the _phase_
-of the scheduled refreshes: for daily refreshes, it specifies the time of the
-day when the refresh will happen; for weekly refreshes, it specifies the day of
-the week and the time of the day when the refresh will happen. If `ALIGNED TO`
-is not specified, it defaults to the time when the materialized view is
-created.
-
-**Example**
-
-To create a materialized view that is refreshed at creation, and then once a day
-at 10PM UTC:
-
-```mzsql
-CREATE MATERIALIZED VIEW mv_refresh_every
-IN CLUSTER my_scheduled_cluster
-WITH (
-  -- Refresh at creation, so the view is populated ahead of
-  -- the first user-specified refresh time
-  REFRESH AT CREATION,
-  -- Refresh every day at 10PM UTC
-  REFRESH EVERY '1 day' ALIGNED TO '2024-06-06 22:00:00'
-) AS
-SELECT ...;
-```
-
-You can specify multiple `REFRESH EVERY` strategies in the same `CREATE`
-statement, and combine them with the [`REFRESH AT` strategy](#refresh-at). When
-this strategy, we recommend **always** using the [`REFRESH AT CREATION`](#refresh-at)
-clause, so the materialized view is available for querying ahead of the first
-user-specified refresh time.
-
-#### Querying materialized views with refresh strategies
-
-Materialized views configured with [`REFRESH EVERY` strategies](#refresh-every)
-have a period of unavailability around the scheduled refresh times — during this
-period, the view **will not return any results**. To avoid unavailability
-during the refresh operation, you must host these views in
-[**scheduled clusters**](/sql/create-cluster/#scheduling), which can be
-configured to automatically [turn on ahead of the scheduled refresh time](/sql/create-cluster/#hydration-time-estimate).
-
-**Example**
-
-To create a scheduled cluster that turns on 1 hour ahead of any scheduled
-refresh times:
-
-```mzsql
-CREATE CLUSTER my_scheduled_cluster (
-  SIZE = '3200cc',
-  SCHEDULE = ON REFRESH (HYDRATION TIME ESTIMATE = '1 hour')
-);
-```
-
-You can then create a materialized view in this cluster, configured to refresh
-at creation, then once a day at 12PM UTC:
-
-```mzsql
-CREATE MATERIALIZED VIEW mv_refresh_every
-IN CLUSTER my_scheduled_cluster
-WITH (
-  -- Refresh at creation, so the view is populated ahead of
-  -- the first user-specified refresh time
-  REFRESH AT CREATION,
-  -- Refresh every day at 12PM UTC
-  REFRESH EVERY '1 day' ALIGNED TO '2024-06-18 00:00:00'
-) AS
-SELECT ...;
-```
-
-Because the materialized view is hosted on a scheduled cluster that is
-configured to **turn on ahead of any scheduled refreshes**, you can expect
-`my_scheduled_cluster` to be provisioned at 11PM UTC — or, 1 hour ahead of the
-scheduled refresh time for `mv_refresh_every`. This means that the cluster can
-backfill the view with pre-existing data — a process known as [_hydration_](/transform-data/troubleshooting/#hydrating-upstream-objects)
-— ahead of the refresh operation, which **reduces the total unavailability window
-of the view** to just the duration of the refresh.
-
-If the cluster is **not** configured to turn on ahead of scheduled refreshes
-(i.e., using the `HYDRATION TIME ESTIMATE` option), the total unavailability
-window of the view will be a combination of the hydration time for all objects
-in the cluster (typically long) and the duration of the refresh for the
-materialized view (typically short).
-
-Depending on the actual time it takes to hydrate the view or set of views in the
-cluster, you can later adjust the hydration time estimate value for the
-cluster using [`ALTER CLUSTER`](../alter-cluster/#schedule):
-
-```mzsql
-ALTER CLUSTER my_scheduled_cluster
-SET (SCHEDULE = ON REFRESH (HYDRATION TIME ESTIMATE = '30 minutes'));
-```
-
-#### Introspection
-
-To check details about the (non-default) refresh strategies associated with any materialized
-view in the system, you can query
-the [`mz_internal.mz_materialized_view_refresh_strategies`](/reference/system-catalog/mz_internal/#mz_materialized_view_refresh_strategies)
-and [`mz_internal.mz_materialized_view_refreshes`](/reference/system-catalog/mz_internal/#mz_materialized_view_refreshes)
-system catalog tables:
-
-```mzsql
-SELECT mv.id AS materialized_view_id,
-       mv.name AS materialized_view_name,
-       rs.type AS refresh_strategy,
-       rs.interval AS refresh_interval,
-       rs.aligned_to AS refresh_interval_phase,
-       rs.at AS refresh_time,
-       r.last_completed_refresh,
-       r.next_refresh
-FROM mz_internal.mz_materialized_view_refresh_strategies rs
-JOIN mz_internal.mz_materialized_view_refreshes r ON r.materialized_view_id = rs.materialized_view_id
-JOIN mz_materialized_views mv ON rs.materialized_view_id = mv.id;
-```
-
 ### Creating replacement materialized views
 
 > **Public Preview:** This feature is in public preview.
@@ -6302,23 +6068,6 @@ SELECT
   coalesce(users.id, orders.user_id) AS user_id,
   ...
 FROM users FULL OUTER JOIN orders ON users.id = orders.user_id
-```
-
-### Using refresh strategies
-
-```mzsql
-CREATE MATERIALIZED VIEW mv
-IN CLUSTER my_refresh_cluster
-WITH (
-  -- Refresh every Tuesday at 12PM UTC
-  REFRESH EVERY '7 days' ALIGNED TO '2024-06-04 12:00:00',
-  -- Refresh every Thursday at 12PM UTC
-  REFRESH EVERY '7 days' ALIGNED TO '2024-06-06 12:00:00',
-  -- Refresh on creation, so the view is populated ahead of
-  -- the first user-specified refresh time
-  REFRESH AT CREATION
-)
-AS SELECT ... FROM ...;
 ```
 
 [//]: # "TODO(morsapaes) Add more elaborate examples with \timing that show
@@ -6876,7 +6625,17 @@ The privileges required to execute this statement are:
 
 ## CREATE SOURCE
 
-A [source](/concepts/sources/) describes an external system you want Materialize to read data from, and provides details about how to decode and interpret that data.
+A source in Materialize represents an external data source. More concretely, it
+specifies the connection and the ingestion configuration to use for a particular
+external data source (e.g., PostgreSQL, Kafka). For those familiar with
+PostgreSQL's foreign servers and foreign tables, a source is like a foreign
+server, and the tables (or subsources) created from the source are like foreign
+tables.
+
+Before creating a source in Materialize, you must ensure that the external data
+source is properly configured and accessible so that Materialize can establish a
+connection and ingest its data. The exact configuration depends on the type of
+data source.
 
 ## Syntax summary
 
@@ -6890,6 +6649,7 @@ To create a source from an external PostgreSQL:
 CREATE SOURCE [IF NOT EXISTS] <source_name>
 [IN CLUSTER <cluster_name>]
 FROM POSTGRES CONNECTION <connection_name> (PUBLICATION '<publication_name>')
+[WITH ( <with_option> [, ...] )]
 ;
 
 ```
@@ -6908,13 +6668,27 @@ FROM POSTGRES CONNECTION <connection_name> (
 )
 <FOR ALL TABLES | FOR SCHEMAS ( <schema1> [, ...] ) | FOR TABLES ( <table1> [AS <subsrc_name>] [, ...] )>
 [EXPOSE PROGRESS AS <progress_subsource_name>]
-[WITH (RETAIN HISTORY FOR <retention_period>)]
+[WITH ( <with_option> [, ...] )]
 
 ```
 
 For details, see [CREATE SOURCE: PostgreSQL (Legacy)](/sql/create-source/postgres/).
 
-**MySQL:**
+**MySQL (New):**
+
+To create a source from an external MySQL database:
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <source_name>
+[IN CLUSTER <cluster_name>]
+FROM MYSQL CONNECTION <connection_name>
+[WITH ( <with_option> [, ...] )]
+;
+
+```
+
+For details, see [CREATE SOURCE: MySQL (New Syntax)](/sql/create-source/mysql-v2/).
+
+**MySQL (Legacy):**
 
 <no value>```mzsql
 CREATE SOURCE [IF NOT EXISTS] <src_name>
@@ -6927,11 +6701,11 @@ FROM MYSQL CONNECTION <connection_name> [
 ]
 <FOR ALL TABLES | FOR SCHEMAS ( <schema1> [, ...] ) | FOR TABLES ( <table1> [AS <subsrc_name>] [, ...] )>
 [EXPOSE PROGRESS AS <progress_subsource_name>]
-[WITH (RETAIN HISTORY FOR <retention_period>)]
+[WITH ( <with_option> [, ...] )]
 
 ```
 
-For details, see [CREATE SOURCE: MySQL](/sql/create-source/mysql/).
+For details, see [CREATE SOURCE: MySQL (Legacy)](/sql/create-source/mysql/).
 
 **SQL Server (New):**
 
@@ -6939,6 +6713,7 @@ For details, see [CREATE SOURCE: MySQL](/sql/create-source/mysql/).
 CREATE SOURCE [IF NOT EXISTS] <src_name>
 [IN CLUSTER <cluster_name>]
 FROM SQL SERVER CONNECTION <connection_name>
+[WITH ( <with_option> [, ...] )]
 
 ```
 
@@ -6953,7 +6728,7 @@ FROM SQL SERVER CONNECTION <connection_name>
   [ ( EXCLUDE COLUMNS (<col1> [, ...]) ) ]
   [ ( TEXT COLUMNS (<col1> [, ...]) ) ]
 <FOR ALL TABLES | FOR TABLES ( <table1> [AS <subsrc_name>] [, ...] )>
-[WITH (RETAIN HISTORY FOR <retention_period>)]
+[WITH ( <with_option> [, ...] )]
 
 ```
 
@@ -6990,7 +6765,7 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
   | UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]
 ]
 [EXPOSE PROGRESS AS <progress_subsource_name>]
-[WITH (RETAIN HISTORY FOR <retention_period>)]
+[WITH ( <with_option> [, ...] )]
 
 ```
 
@@ -7016,7 +6791,7 @@ FORMAT JSON
 ]
 [ENVELOPE NONE]
 [EXPOSE PROGRESS AS <progress_subsource_name>]
-[WITH (RETAIN HISTORY FOR <retention_period>)]
+[WITH ( <with_option> [, ...] )]
 
 ```
 
@@ -7042,7 +6817,7 @@ FORMAT TEXT | BYTES
 ]
 [ENVELOPE NONE]
 [EXPOSE PROGRESS AS <progress_subsource_name>]
-[WITH (RETAIN HISTORY FOR <retention_period>)]
+[WITH ( <with_option> [, ...] )]
 
 ```
 
@@ -7068,7 +6843,7 @@ FORMAT CSV WITH <n> COLUMNS | WITH HEADER [ ( <col_name> [, ...] ) ]
 ]
 [ENVELOPE NONE]
 [EXPOSE PROGRESS AS <progress_subsource_name>]
-[WITH (RETAIN HISTORY FOR <retention_period>)]
+[WITH ( <with_option> [, ...] )]
 
 ```
 
@@ -7099,7 +6874,7 @@ FORMAT PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
   | UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]
 ]
 [EXPOSE PROGRESS AS <progress_subsource_name>]
-[WITH (RETAIN HISTORY FOR <retention_period>)]
+[WITH ( <with_option> [, ...] )]
 
 ```
 
@@ -7138,7 +6913,7 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
   | UPSERT [(VALUE DECODING ERRORS = INLINE [AS name])]
 ]
 [EXPOSE PROGRESS AS <progress_subsource_name>]
-[WITH (RETAIN HISTORY FOR <retention_period>)]
+[WITH ( <with_option> [, ...] )]
 
 ```
 
@@ -7282,10 +7057,13 @@ In Materialize, you can create:
 - Read-write tables. With read-write tables, users can read ([`SELECT`]) and
   write to the tables ([`INSERT`], [`UPDATE`], [`DELETE`]).
 
--  ***Private Preview***. Read-only tables from [PostgreSQL sources (new
-  syntax)](/sql/create-source/postgres-v2/). Users cannot be write ([`INSERT`],
-  [`UPDATE`], [`DELETE`]) to these tables. These tables are populated by [data
-  ingestion from a source](/ingest-data/postgres/). 
+- Read-only tables from sources that use the new syntax:
+  [PostgreSQL](/sql/create-source/postgres-v2/),
+  [MySQL](/sql/create-source/mysql-v2/), and
+  [SQL Server](/sql/create-source/sql-server-v2/). Users cannot write
+  ([`INSERT`], [`UPDATE`], [`DELETE`]) to these tables. These tables are
+  populated by [data ingestion from a
+  source](/ingest-data/). 
 
 Tables in Materialize are similar to tables in standard relational databases:
 they consist of rows and columns where the columns are fixed when the table is
@@ -7333,6 +7111,8 @@ CREATE [TEMP|TEMPORARY] TABLE [IF NOT EXISTS] <table_name> (
 **PostgreSQL source table:**
 ### PostgreSQL source table
 
+> **Public Preview:** This feature is in public preview.
+
 > **Note:** You must be on **v26+** to use the new syntax.
 
 To create a read-only table from a [source](/sql/create-source/) connected
@@ -7361,8 +7141,40 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 For an example, see [Create a table (PostgreSQL
 source)](/sql/create-table/#create-a-table-postgresql-source).
 
+**MySQL source table:**
+### MySQL source table
+
+> **Public Preview:** This feature is in public preview.
+
+> **Note:** You must be on **v26.25+** to use the new syntax.
+
+To create a read-only table from a [source](/sql/create-source/) connected
+(via native connector) to an external MySQL database:
+
+```mzsql
+CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <upstream_schema>.<upstream_table>)
+[WITH (
+    TEXT COLUMNS (<column_name> [, ...])
+  | EXCLUDE COLUMNS (<column_name> [, ...])
+  | PARTITION BY (<column_name> [, ...])
+  [, ...]
+)]
+;
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}  |
+| `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
+| `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
+| **(REFERENCE <upstream_schema>.<upstream_table>)** |  The fully-qualified name of the upstream MySQL table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
+| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, decode data as `text` for the listed column(s), such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
+
 **SQL Server source table:**
 ### SQL Server source table
+
+> **Public Preview:** This feature is in public preview.
 
 > **Note:** You must be on **v26+** to use the new syntax.
 
@@ -7409,6 +7221,8 @@ See also the known limitations for [`INSERT`](/sql/insert#known-limitations),
 
 ## Source-populated tables
 
+> **Public Preview:** This feature is in public preview.
+
 > **Note:** You must be on **v26+** to use the new syntax.
 
 ### Table names and column names
@@ -7436,10 +7250,11 @@ use within a [transaction block](/sql/begin/#ddl-only-transactions).
 currently available data into Materialize. Because the initial snapshot is
 persisted in the storage layer atomically (i.e., at the same ingestion
 timestamp), you are not able to query the table until snapshotting is complete.</p>
-> **Note:** During the snapshotting, the data ingestion for
-> the existing tables for the same source is temporarily blocked. As such, if
-> possible, you can resize the cluster to speed up the snapshotting process and
-> once the process finishes, resize the cluster for steady-state.
+> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
+> source is temporarily blocked. As such, if possible, you can resize the cluster
+> to speed up the snapshotting process and once the process finishes, resize the
+> cluster for steady-state. You can monitor the snapshot progress on the overview
+> page for the source in the Materialize console.
 
 ### Supported data types
 
@@ -7493,6 +7308,62 @@ as <code>text</code>.</p>
 <p><a href="https://www.postgresql.org/docs/current/datatype-money.html" ><code>money</code></a>: When decoded as <code>text</code>, resulting <code>text</code> value cannot be cast
 back to <code>numeric</code>, since PostgreSQL adds typical currency formatting to the
 output.</p>
+</li>
+</ul>
+
+**MySQL:**
+#### MySQL types
+
+<p>Materialize natively supports the following MySQL types:</p>
+<ul style="column-count: 3">
+<li><code>bigint</code></li>
+<li><code>binary</code></li>
+<li><code>bit</code></li>
+<li><code>blob</code></li>
+<li><code>boolean</code></li>
+<li><code>char</code></li>
+<li><code>date</code></li>
+<li><code>datetime</code></li>
+<li><code>decimal</code></li>
+<li><code>double</code></li>
+<li><code>float</code></li>
+<li><code>int</code></li>
+<li><code>json</code></li>
+<li><code>longblob</code></li>
+<li><code>longtext</code></li>
+<li><code>mediumblob</code></li>
+<li><code>mediumint</code></li>
+<li><code>mediumtext</code></li>
+<li><code>numeric</code></li>
+<li><code>real</code></li>
+<li><code>smallint</code></li>
+<li><code>text</code></li>
+<li><code>time</code></li>
+<li><code>timestamp</code></li>
+<li><code>tinyblob</code></li>
+<li><code>tinyint</code></li>
+<li><code>tinytext</code></li>
+<li><code>varbinary</code></li>
+<li><code>varchar</code></li>
+</ul>
+
+<p>When replicating tables that contain the <strong>unsupported <a href="/sql/types/" >data
+types</a></strong>, you can:</p>
+<ul>
+<li>
+<p>Use <a href="/sql/create-source/mysql/#handling-unsupported-types" ><code>TEXT COLUMNS</code>
+option</a> for the
+following unsupported  MySQL types:</p>
+<ul>
+<li><code>enum</code></li>
+<li><code>year</code></li>
+</ul>
+<p>The specified columns will be treated as <code>text</code> and will not offer the
+expected MySQL type features.</p>
+</li>
+<li>
+<p>Use the <a href="/sql/create-source/mysql/#excluding-columns" ><code>EXCLUDE COLUMNS</code></a>
+option to exclude any columns that contain unsupported data types.</p>
 </li>
 </ul>
 
@@ -7567,13 +7438,15 @@ value when said column is updated.</p>
 
 ### Handling table schema changes
 
-The use of [`CREATE SOURCE`](/sql/create-source/postgres-v2/) with `CREATE
-TABLE FROM SOURCE` allows for the handling of the upstream DDL changes,
-specifically adding or dropping columns in the upstream tables, without
-downtime. For details, see:
+The use of `CREATE SOURCE` (new syntax) with `CREATE TABLE FROM SOURCE` allows
+for the handling of the upstream DDL changes, specifically adding or dropping
+columns in the upstream tables, without downtime. For details, see:
 
 - [PostgreSQL: Handling upstream schema changes with zero
 downtime](/ingest-data/postgres/source-versioning/)
+
+- [MySQL: Handling upstream schema changes with zero
+downtime](/ingest-data/mysql/source-versioning/)
 
 - [SQL Server: Handling upstream schema changes with zero
 downtime](/ingest-data/sql-server/source-versioning/)
@@ -7663,6 +7536,8 @@ SELECT * FROM mytable;
 ```
 
 ### Create a table (PostgreSQL source)
+
+> **Public Preview:** This feature is in public preview.
 
 > **Note:** You must be on **v26+** to use the new syntax.
 > The example assumes you have configured your upstream PostgreSQL 11+ (i.e.,
@@ -10116,7 +9991,7 @@ The following table lists the operators that are available in the LIR plan.
 | **Map/Filter/Project** | <p>Computes new columns (maps), filters columns, and projects away columns. Works row-by-row. Maps and filters will be printed, but projects will not.</p> <p>These may be marked as <strong><code>Fused</code></strong> <code>Map/Filter/Project</code>, which means they will combine with the operator beneath them to run more efficiently.</p>   **Can increase data size:** Each row may have more data, from the <code>Map</code>. Each row may also have less data, from the <code>Project</code>. There may be fewer rows, from the <code>Filter</code>. **Uses memory:** No | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="k">Map</span><span class="o">/</span><span class="k">Filter</span><span class="o">/</span><span class="n">Project</span> </span></span><span class="line"><span class="cl">  <span class="k">Filter</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">}</span> <span class="o">&lt;</span> <span class="mf">7</span><span class="p">)</span> </span></span><span class="line"><span class="cl">  <span class="k">Map</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">}</span> <span class="o">+</span> <span class="o">#</span><span class="mf">1</span><span class="p">{</span><span class="n">b</span><span class="p">})</span> </span></span></code></pre></div> |
 | **Table Function** | <p>Appends the result of some (one-to-many) <a href="/sql/functions/#table-functions" >table function</a> to each row in the input.</p> <p>A parent <code>Fused Table Function unnest_list</code> operator will fuse with its child <code>GroupAggregate</code> operator. Fusing these operator is part of how we efficiently compile window functions from SQL to dataflows.</p> <p>A parent <code>Fused Map/Filter/Project</code> can combine with this operator.</p>   **Can increase data size:** Depends on the <a href="/sql/functions/#table-functions" >table function</a> used. **Uses memory:** No | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="k">Table</span> <span class="k">Function</span> <span class="n">generate_series</span><span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">},</span> <span class="o">#</span><span class="mf">1</span><span class="p">{</span><span class="n">b</span><span class="p">},</span> <span class="mf">1</span><span class="p">)</span> </span></span><span class="line"><span class="cl">  <span class="k">Input</span> <span class="k">key</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">})</span> </span></span></code></pre></div> |
 | **Differential Join, Delta Join** | <p>Both join operators indicate the join ordering selected.</p> <p>Returns combinations of rows from each input whenever some equality predicates are <code>true</code>.</p> <p>Joins will indicate the join order of their children, starting from 0. For example, <code>Differential Join %1 » %0</code> will join its second child into its first.</p> <p>The <a href="/transform-data/optimization/#join" >two joins differ in performance characteristics</a>.</p>   **Can increase data size:** Depends on the join order and facts about the joined collections. **Uses memory:** ✅ Uses memory for 3-way or more differential joins. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Differential</span> <span class="k">Join</span> <span class="o">%</span><span class="mf">1</span> <span class="err">»</span> <span class="o">%</span><span class="mf">0</span> </span></span><span class="line"><span class="cl">  <span class="k">Join</span> <span class="n">stage</span> <span class="o">%</span><span class="mf">0</span><span class="p">:</span> <span class="n">Lookup</span> <span class="k">key</span> <span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">}</span> <span class="k">in</span> <span class="o">%</span><span class="mf">0</span> </span></span></code></pre></div> |
-| **GroupAggregate** | <p>Groups the input rows by some scalar expressions, reduces each group using some aggregate functions, and produces rows containing the group key and aggregate outputs.</p> <p>There are five types of <code>GroupAggregate</code>, ordered by increasing complexity:</p> <ol> <li> <p><code>Distinct GroupAggregate</code> corresponds to the SQL <code>DISTINCT</code> operator.</p> </li> <li> <p><code>Accumulable GroupAggregate</code> (e.g., <code>SUM</code>, <code>COUNT</code>) corresponds to several easy to implement aggregations that can be executed simultaneously and efficiently.</p> </li> <li> <p><code>Hierarchical GroupAggregate</code> (e.g., <code>MIN</code>, <code>MAX</code>) corresponds to an aggregation requiring a tower of arrangements. These can be either monotonic (more efficient) or bucketed. These may benefit from a hint; <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" >see <code>mz_introspection.mz_expected_group_size_advice</code></a>. These may either be bucketed or monotonic (more efficient). These may consolidate their output, which will increase memory usage.</p> </li> <li> <p><code>Collated Multi-GroupAggregate</code> corresponds to an arbitrary mix of reductions of different types, which will be performed separately and then joined together.</p> </li> <li> <p><code>Non-incremental GroupAggregate</code> (e.g., window functions, <code>list_agg</code>) corresponds to a single non-incremental aggregation. These are the most computationally intensive reductions.</p> </li> </ol> <p>A parent <code>Fused Map/Filter/Project</code> can combine with this operator.</p>   **Can increase data size:** No **Uses memory:** ✅ <code>Distinct</code> and <code>Accumulable</code> aggregates use a moderate amount of memory (proportional to twice the output size). <code>MIN</code> and <code>MAX</code> aggregates can use significantly more memory. This can be improved by including group size hints in the query, see <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. <code>Non-incremental</code> aggregates use memory proportional to the input + output size. <code>Collated</code> aggregates use memory that is the sum of their constituents, plus some memory for the join at the end. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Accumulable</span> <span class="n">GroupAggregate</span> </span></span><span class="line"><span class="cl">  <span class="n">Simple</span> <span class="n">aggregates</span><span class="p">:</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> </span></span><span class="line"><span class="cl">  <span class="n">Post</span><span class="o">-</span><span class="n">process</span> <span class="k">Map</span><span class="o">/</span><span class="k">Filter</span><span class="o">/</span><span class="n">Project</span> </span></span><span class="line"><span class="cl">    <span class="k">Filter</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span> <span class="o">&gt;</span> <span class="mf">1</span><span class="p">)</span> </span></span></code></pre></div> |
+| **GroupAggregate** | <p>Groups the input rows by some scalar expressions, reduces each group using some aggregate functions, and produces rows containing the group key and aggregate outputs.</p> <p>There are five types of <code>GroupAggregate</code>, ordered by increasing complexity:</p> <ol> <li> <p><code>Distinct GroupAggregate</code> corresponds to the SQL <code>DISTINCT</code> operator.</p> </li> <li> <p><code>Accumulable GroupAggregate</code> (e.g., <code>SUM</code>, <code>COUNT</code>) corresponds to several easy to implement aggregations that can be executed efficiently.</p> </li> <li> <p><code>Hierarchical GroupAggregate</code> (e.g., <code>MIN</code>, <code>MAX</code>) corresponds to an aggregation requiring a tower of arrangements. These can be either monotonic (more efficient) or bucketed. These may benefit from a hint; <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" >see <code>mz_introspection.mz_expected_group_size_advice</code></a>. These may either be bucketed or monotonic (more efficient). These may consolidate their output, which will increase memory usage.</p> </li> <li> <p><code>Collated Multi-GroupAggregate</code> corresponds to an arbitrary mix of reductions of different types, which will be performed separately and then joined together.</p> </li> <li> <p><code>Non-incremental GroupAggregate</code> (e.g., window functions, <code>list_agg</code>) corresponds to a single non-incremental aggregation. These are the most computationally intensive reductions.</p> </li> </ol> <p>A parent <code>Fused Map/Filter/Project</code> can combine with this operator.</p>   **Can increase data size:** No **Uses memory:** ✅ <code>Distinct</code> and <code>Accumulable</code> aggregates use a moderate amount of memory (proportional to twice the output size). <code>MIN</code> and <code>MAX</code> aggregates can use significantly more memory. This can be improved by including group size hints in the query, see <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. <code>Non-incremental</code> aggregates use memory proportional to the input + output size. <code>Collated</code> aggregates use memory that is the sum of their constituents, plus some memory for the join at the end. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Accumulable</span> <span class="n">GroupAggregate</span> </span></span><span class="line"><span class="cl">  <span class="n">Simple</span> <span class="n">aggregates</span><span class="p">:</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> </span></span><span class="line"><span class="cl">  <span class="n">Post</span><span class="o">-</span><span class="n">process</span> <span class="k">Map</span><span class="o">/</span><span class="k">Filter</span><span class="o">/</span><span class="n">Project</span> </span></span><span class="line"><span class="cl">    <span class="k">Filter</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span> <span class="o">&gt;</span> <span class="mf">1</span><span class="p">)</span> </span></span></code></pre></div> |
 | **TopK** | <p>Groups the input rows, sorts them according to some ordering, and returns at most <code>K</code> rows at some offset from the top of the list, where <code>K</code> is some (possibly computed) limit.</p> <p>There are three types of <code>TopK</code>. Two are special cased for monotonic inputs (i.e., inputs which never retract data).</p> <ol> <li><code>Monotonic Top1</code>.</li> <li><code>Monotonic TopK</code>, which may give an expression indicating the limit.</li> <li><code>Non-monotonic TopK</code>, a generic <code>TopK</code> plan.</li> </ol> <p>Each version of the <code>TopK</code> operator may include grouping, ordering, and limit directives.</p>   **Can increase data size:** No **Uses memory:** ✅ <code>Monotonic Top1</code> and <code>Monotonic TopK</code> use a moderate amount of memory. <code>Non-monotonic TopK</code> uses significantly more memory as the operator can significantly overestimate the group sizes. Consult <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Consolidating</span> <span class="n">Monotonic</span> <span class="n">TopK</span> </span></span><span class="line"><span class="cl">  <span class="k">Order</span> <span class="k">By</span> <span class="o">#</span><span class="mf">1</span> <span class="k">asc</span> <span class="n">nulls_last</span><span class="p">,</span> <span class="o">#</span><span class="mf">0</span> <span class="k">desc</span> <span class="n">nulls_first</span> </span></span><span class="line"><span class="cl">  <span class="k">Limit</span> <span class="mf">5</span> </span></span></code></pre></div> |
 | **Negate Diffs** | Negates the row counts of the input. This is usually used in combination with union to remove rows from the other union input.  **Can increase data size:** No **Uses memory:** No | <code>→Negate Diffs</code> |
 | **Threshold Diffs** | Removes any rows with negative counts.  **Can increase data size:** No **Uses memory:** ✅ Uses memory proportional to the input and output size, twice. | <code>→Threshold Diffs</code> |
@@ -11121,7 +10996,7 @@ the syntax errors that result are not always obvious.
 The current keywords are listed below.
 
 | | | | |
-|--|--|--|--||`ABORT` |`ACCESS` |`ACTION` |`ADD`||`ADDED` |`ADDRESS` |`ADDRESSES` |`AFTER`||`AGGREGATE` |`AGGREGATION` |`ALIGNED` |`ALL`||`ALTER` |`ANALYSE` |`ANALYSIS` |`ANALYZE`||`AND` |`ANY` |`APPEND` |`APPLY`||`ARITY` |`ARN` |`ARRANGED` |`ARRANGEMENT`||`ARRAY` |`AS` |`ASC` |`ASSERT`||`ASSUME` |`AT` |`AUCTION` |`AUTHORITY`||`AVAILABILITY` |`AVRO` |`AWS` |`BATCH`||`BEGIN` |`BETWEEN` |`BIGINT` |`BILLED`||`BODY` |`BOOLEAN` |`BOTH` |`BPCHAR`||`BROKEN` |`BROKER` |`BROKERS` |`BY`||`BYTES` |`CAPTURE` |`CARDINALITY` |`CASCADE`||`CASE` |`CAST` |`CATALOG` |`CERTIFICATE`||`CHAIN` |`CHAINS` |`CHAR` |`CHARACTER`||`CHARACTERISTICS` |`CHECK` |`CLASS` |`CLIENT`||`CLOCK` |`CLOSE` |`CLUSTER` |`CLUSTERS`||`COALESCE` |`COLLATE` |`COLUMN` |`COLUMNS`||`COMMENT` |`COMMIT` |`COMMITTED` |`COMPACTION`||`COMPATIBILITY` |`COMPRESSION` |`COMPUTE` |`COMPUTECTL`||`CONFIG` |`CONFLUENT` |`CONNECTION` |`CONNECTIONS`||`CONSTRAINT` |`COPY` |`COUNT` |`COUNTER`||`CPU` |`CREATE` |`CREATECLUSTER` |`CREATEDB`||`CREATENETWORKPOLICY` |`CREATEROLE` |`CREATION` |`CREDENTIAL`||`CROSS` |`CSE` |`CSV` |`CURRENT`||`CURSOR` |`DATABASE` |`DATABASES` |`DATUMS`||`DAY` |`DAYS` |`DEALLOCATE` |`DEBEZIUM`||`DEBUG` |`DEBUGGING` |`DEC` |`DECIMAL`||`DECLARE` |`DECODING` |`DECORRELATED` |`DEFAULT`||`DEFAULTS` |`DELETE` |`DELIMITED` |`DELIMITER`||`DELTA` |`DESC` |`DETAILS` |`DIRECTION`||`DISCARD` |`DISK` |`DISTINCT` |`DOC`||`DOT` |`DOUBLE` |`DROP` |`EAGER`||`ELEMENT` |`ELSE` |`ENABLE` |`END`||`ENDPOINT` |`ENFORCED` |`ENVELOPE` |`EQUIVALENCES`||`ERROR` |`ERRORS` |`ESCAPE` |`ESTIMATE`||`EVERY` |`EXCEPT` |`EXCLUDE` |`EXECUTE`||`EXISTS` |`EXPECTED` |`EXPLAIN` |`EXPOSE`||`EXPRESSIONS` |`EXTERNAL` |`EXTRACT` |`FACTOR`||`FALSE` |`FAST` |`FEATURES` |`FETCH`||`FIELDS` |`FILE` |`FILES` |`FILTER`||`FIRST` |`FIXPOINT` |`FLOAT` |`FOLLOWING`||`FOR` |`FOREIGN` |`FORMAT` |`FORWARD`||`FROM` |`FULL` |`FULLNAME` |`FUNCTION`||`FUSION` |`GENERATOR` |`GRANT` |`GREATEST`||`GROUP` |`GROUPS` |`HAVING` |`HEADER`||`HEADERS` |`HINTS` |`HISTORY` |`HOLD`||`HOST` |`HOUR` |`HOURS` |`HUMANIZED`||`HYDRATION` |`ICEBERG` |`ID` |`IDENTIFIERS`||`IDS` |`IF` |`IGNORE` |`ILIKE`||`IMPLEMENTATIONS` |`IMPORTED` |`IN` |`INCLUDE`||`INDEX` |`INDEXES` |`INFO` |`INHERIT`||`INLINE` |`INNER` |`INPUT` |`INSERT`||`INSIGHTS` |`INSPECT` |`INSTANCE` |`INT`||`INTEGER` |`INTERNAL` |`INTERSECT` |`INTERVAL`||`INTO` |`INTROSPECTION` |`IS` |`ISNULL`||`ISOLATION` |`JOIN` |`JOINS` |`JSON`||`KAFKA` |`KEY` |`KEYS` |`LAST`||`LATERAL` |`LATEST` |`LEADING` |`LEAST`||`LEFT` |`LEGACY` |`LETREC` |`LEVEL`||`LIKE` |`LIMIT` |`LINEAR` |`LIST`||`LOAD` |`LOCAL` |`LOCALLY` |`LOG`||`LOGICAL` |`LOGIN` |`LOWERING` |`MANAGED`||`MANUAL` |`MAP` |`MARKETING` |`MATCHING`||`MATERIALIZE` |`MATERIALIZED` |`MAX` |`MECHANISMS`||`MEMBERSHIP` |`MEMORY` |`MESSAGE` |`METADATA`||`MINUTE` |`MINUTES` |`MODE` |`MONTH`||`MONTHS` |`MUTUALLY` |`MYSQL` |`NAME`||`NAMES` |`NAMESPACE` |`NATURAL` |`NEGATIVE`||`NETWORK` |`NEW` |`NEXT` |`NFC`||`NFD` |`NFKC` |`NFKD` |`NO`||`NOCREATECLUSTER` |`NOCREATEDB` |`NOCREATEROLE` |`NODE`||`NOINHERIT` |`NOLOGIN` |`NON` |`NONE`||`NORMALIZE` |`NOSUPERUSER` |`NOT` |`NOTICE`||`NOTICES` |`NULL` |`NULLIF` |`NULLS`||`OBJECTS` |`OF` |`OFFSET` |`ON`||`ONLY` |`OPERATOR` |`OPTIMIZED` |`OPTIMIZER`||`OPTIONS` |`OR` |`ORDER` |`ORDINALITY`||`OUTER` |`OVER` |`OWNED` |`OWNER`||`PARTITION` |`PARTITIONS` |`PASSWORD` |`PATH`||`PATTERN` |`PHYSICAL` |`PLAN` |`PLANS`||`POLICIES` |`POLICY` |`PORT` |`POSITION`||`POSTGRES` |`PRECEDING` |`PRECISION` |`PREFIX`||`PREPARE` |`PRIMARY` |`PRIORITIZE` |`PRIVATELINK`||`PRIVILEGES` |`PROGRESS` |`PROJECTION` |`PROTOBUF`||`PROTOCOL` |`PUBLIC` |`PUBLICATION` |`PUSHDOWN`||`QUALIFY` |`QUERY` |`QUOTE` |`RAISE`||`RANGE` |`RATE` |`RAW` |`READ`||`READY` |`REAL` |`REASSIGN` |`RECURSION`||`RECURSIVE` |`REDACTED` |`REDUCE` |`REFERENCE`||`REFERENCES` |`REFRESH` |`REGEX` |`REGION`||`REGISTRY` |`RELATION` |`RENAME` |`REOPTIMIZE`||`REPEATABLE` |`REPLACE` |`REPLACEMENT` |`REPLAN`||`REPLICA` |`REPLICAS` |`REPLICATION` |`RESET`||`RESPECT` |`RESTRICT` |`RETAIN` |`RETURN`||`RETURNING` |`REVOKE` |`RIGHT` |`ROLE`||`ROLES` |`ROLLBACK` |`ROTATE` |`ROUNDS`||`ROW` |`ROWS` |`RULES` |`SASL`||`SCALE` |`SCHEDULE` |`SCHEMA` |`SCHEMAS`||`SCOPE` |`SECOND` |`SECONDS` |`SECRET`||`SECRETS` |`SECURITY` |`SEED` |`SELECT`||`SEQUENCES` |`SERIALIZABLE` |`SERVER` |`SERVICE`||`SESSION` |`SET` |`SHARD` |`SHOW`||`SINK` |`SINKS` |`SIZE` |`SKEW`||`SMALLINT` |`SNAPSHOT` |`SOME` |`SOURCE`||`SOURCES` |`SQL` |`SSH` |`SSL`||`START` |`STDIN` |`STDOUT` |`STORAGE`||`STORAGECTL` |`STRATEGY` |`STRICT` |`STRING`||`STRONG` |`SUBSCRIBE` |`SUBSOURCE` |`SUBSOURCES`||`SUBSTRING` |`SUBTREE` |`SUPERUSER` |`SWAP`||`SYNTAX` |`SYSTEM` |`TABLE` |`TABLES`||`TAIL` |`TEMP` |`TEMPORARY` |`TEXT`||`THEN` |`TICK` |`TIES` |`TIME`||`TIMEOUT` |`TIMESTAMP` |`TIMESTAMPTZ` |`TIMING`||`TO` |`TOKEN` |`TOPIC` |`TPCH`||`TRACE` |`TRAILING` |`TRANSACTION` |`TRANSACTIONAL`||`TRANSFORM` |`TRIM` |`TRUE` |`TUNNEL`||`TYPE` |`TYPES` |`UNBOUNDED` |`UNCOMMITTED`||`UNION` |`UNIQUE` |`UNKNOWN` |`UNNEST`||`UNTIL` |`UP` |`UPDATE` |`UPSERT`||`URL` |`USAGE` |`USER` |`USERNAME`||`USERS` |`USING` |`VALIDATE` |`VALUE`||`VALUES` |`VARCHAR` |`VARIADIC` |`VARYING`||`VERBOSE` |`VERSION` |`VIEW` |`VIEWS`||`WAIT` |`WAREHOUSE` |`WARNING` |`WEBHOOK`||`WHEN` |`WHERE` |`WHILE` |`WINDOW`||`WIRE` |`WITH` |`WITHIN` |`WITHOUT`||`WORK` |`WORKERS` |`WORKLOAD` |`WRITE`||`YEAR` |`YEARS` |`ZONE` |`ZONES`|
+|--|--|--|--||`ABORT` |`ACCESS` |`ACCOUNT` |`ACTION`||`ADD` |`ADDED` |`ADDRESS` |`ADDRESSES`||`AFTER` |`AGGREGATE` |`AGGREGATION` |`ALIGNED`||`ALL` |`ALTER` |`ANALYSE` |`ANALYSIS`||`ANALYZE` |`AND` |`ANY` |`APPEND`||`APPLY` |`ARITY` |`ARN` |`ARRANGED`||`ARRANGEMENT` |`ARRAY` |`AS` |`ASC`||`ASSERT` |`ASSUME` |`AT` |`AUCTION`||`AUTHORITY` |`AVAILABILITY` |`AVRO` |`AWS`||`BATCH` |`BEGIN` |`BETWEEN` |`BIGINT`||`BILLED` |`BODY` |`BOOLEAN` |`BOTH`||`BPCHAR` |`BROKEN` |`BROKER` |`BROKERS`||`BY` |`BYTES` |`CAPTURE` |`CARDINALITY`||`CASCADE` |`CASE` |`CAST` |`CATALOG`||`CERTIFICATE` |`CHAIN` |`CHAINS` |`CHAR`||`CHARACTER` |`CHARACTERISTICS` |`CHECK` |`CLASS`||`CLIENT` |`CLOCK` |`CLOSE` |`CLUSTER`||`CLUSTERS` |`COALESCE` |`COLLATE` |`COLUMN`||`COLUMNS` |`COMMENT` |`COMMIT` |`COMMITTED`||`COMPACTION` |`COMPATIBILITY` |`COMPRESSION` |`COMPUTE`||`COMPUTECTL` |`CONFIG` |`CONFLUENT` |`CONNECTION`||`CONNECTIONS` |`CONSTRAINT` |`COPY` |`COUNT`||`COUNTER` |`CPU` |`CREATE` |`CREATECLUSTER`||`CREATEDB` |`CREATENETWORKPOLICY` |`CREATEROLE` |`CREATION`||`CREDENTIAL` |`CROSS` |`CSE` |`CSV`||`CURRENT` |`CURSOR` |`DATABASE` |`DATABASES`||`DATUMS` |`DAY` |`DAYS` |`DEALLOCATE`||`DEBEZIUM` |`DEBUG` |`DEBUGGING` |`DEC`||`DECIMAL` |`DECLARE` |`DECODING` |`DECORRELATED`||`DEFAULT` |`DEFAULTS` |`DELETE` |`DELIMITED`||`DELIMITER` |`DELTA` |`DESC` |`DETAILS`||`DIRECTION` |`DISCARD` |`DISK` |`DISTINCT`||`DOC` |`DOT` |`DOUBLE` |`DROP`||`EAGER` |`ELEMENT` |`ELSE` |`ENABLE`||`END` |`ENDPOINT` |`ENFORCED` |`ENVELOPE`||`EQUIVALENCES` |`ERROR` |`ERRORS` |`ESCAPE`||`ESTIMATE` |`EVERY` |`EXCEPT` |`EXCLUDE`||`EXECUTE` |`EXISTS` |`EXPECTED` |`EXPLAIN`||`EXPOSE` |`EXPRESSIONS` |`EXTERNAL` |`EXTRACT`||`FACTOR` |`FALSE` |`FAST` |`FEATURES`||`FETCH` |`FIELDS` |`FILE` |`FILES`||`FILTER` |`FIRST` |`FIXPOINT` |`FLOAT`||`FOLLOWING` |`FOR` |`FOREIGN` |`FORMAT`||`FORWARD` |`FROM` |`FULL` |`FULLNAME`||`FUNCTION` |`FUSION` |`GCP` |`GENERATOR`||`GLUE` |`GRANT` |`GREATEST` |`GROUP`||`GROUPS` |`HAVING` |`HEADER` |`HEADERS`||`HINTS` |`HISTORY` |`HOLD` |`HOST`||`HOUR` |`HOURS` |`HUMANIZED` |`HYDRATION`||`ICEBERG` |`ID` |`IDENTIFIERS` |`IDS`||`IF` |`IGNORE` |`ILIKE` |`IMPLEMENTATIONS`||`IMPORTED` |`IN` |`INCLUDE` |`INDEX`||`INDEXES` |`INFO` |`INHERIT` |`INLINE`||`INNER` |`INPUT` |`INSERT` |`INSIGHTS`||`INSPECT` |`INSTANCE` |`INT` |`INTEGER`||`INTERNAL` |`INTERSECT` |`INTERVAL` |`INTO`||`INTROSPECTION` |`IS` |`ISNULL` |`ISOLATION`||`JOIN` |`JOINS` |`JSON` |`KAFKA`||`KEY` |`KEYS` |`LAST` |`LATERAL`||`LATEST` |`LEADING` |`LEAST` |`LEFT`||`LEGACY` |`LETREC` |`LEVEL` |`LIKE`||`LIMIT` |`LINEAR` |`LIST` |`LOAD`||`LOCAL` |`LOCALLY` |`LOG` |`LOGICAL`||`LOGIN` |`LOWERING` |`MANAGED` |`MANUAL`||`MAP` |`MARKETING` |`MATCHING` |`MATERIALIZE`||`MATERIALIZED` |`MAX` |`MECHANISMS` |`MEMBERSHIP`||`MEMORY` |`MESSAGE` |`METADATA` |`MINUTE`||`MINUTES` |`MOCK` |`MODE` |`MONTH`||`MONTHS` |`MUTUALLY` |`MYSQL` |`NAME`||`NAMES` |`NAMESPACE` |`NATURAL` |`NEGATIVE`||`NETWORK` |`NEW` |`NEXT` |`NFC`||`NFD` |`NFKC` |`NFKD` |`NO`||`NOCREATECLUSTER` |`NOCREATEDB` |`NOCREATEROLE` |`NODE`||`NOINHERIT` |`NOLOGIN` |`NON` |`NONE`||`NORMALIZE` |`NOSUPERUSER` |`NOT` |`NOTICE`||`NOTICES` |`NULL` |`NULLIF` |`NULLS`||`OBJECTS` |`OF` |`OFFSET` |`ON`||`ONLY` |`OPERATOR` |`OPTIMIZED` |`OPTIMIZER`||`OPTIONS` |`OR` |`ORDER` |`ORDINALITY`||`OUTER` |`OVER` |`OWNED` |`OWNER`||`PARTITION` |`PARTITIONS` |`PASSWORD` |`PATH`||`PATTERN` |`PHYSICAL` |`PLAN` |`PLANS`||`POLICIES` |`POLICY` |`PORT` |`POSITION`||`POSTGRES` |`PRECEDING` |`PRECISION` |`PREFIX`||`PREPARE` |`PRIMARY` |`PRIORITIZE` |`PRIVATELINK`||`PRIVILEGES` |`PROGRESS` |`PROJECTION` |`PROTOBUF`||`PROTOCOL` |`PUBLIC` |`PUBLICATION` |`PUSHDOWN`||`QUALIFY` |`QUERY` |`QUOTE` |`RAISE`||`RANGE` |`RATE` |`RAW` |`READ`||`READY` |`REAL` |`REASSIGN` |`RECURSION`||`RECURSIVE` |`REDACTED` |`REDUCE` |`REFERENCE`||`REFERENCES` |`REFRESH` |`REGEX` |`REGION`||`REGISTRY` |`RELATION` |`RENAME` |`REOPTIMIZE`||`REPEATABLE` |`REPLACE` |`REPLACEMENT` |`REPLAN`||`REPLICA` |`REPLICAS` |`REPLICATION` |`RESET`||`RESPECT` |`RESTRICT` |`RETAIN` |`RETURN`||`RETURNING` |`REVOKE` |`RIGHT` |`ROLE`||`ROLES` |`ROLLBACK` |`ROTATE` |`ROUNDS`||`ROW` |`ROWS` |`RULES` |`SASL`||`SCALE` |`SCHEDULE` |`SCHEMA` |`SCHEMAS`||`SCOPE` |`SECOND` |`SECONDS` |`SECRET`||`SECRETS` |`SECURITY` |`SEED` |`SELECT`||`SEQUENCES` |`SERIALIZABLE` |`SERVER` |`SERVICE`||`SESSION` |`SET` |`SHARD` |`SHOW`||`SINK` |`SINKS` |`SIZE` |`SKEW`||`SMALLINT` |`SNAPSHOT` |`SOME` |`SOURCE`||`SOURCES` |`SQL` |`SSH` |`SSL`||`START` |`STDIN` |`STDOUT` |`STORAGE`||`STORAGECTL` |`STRATEGY` |`STRICT` |`STRING`||`STRONG` |`SUBSCRIBE` |`SUBSOURCE` |`SUBSOURCES`||`SUBSTRING` |`SUBTREE` |`SUPERUSER` |`SWAP`||`SYNTAX` |`SYSTEM` |`TABLE` |`TABLES`||`TAIL` |`TEMP` |`TEMPORARY` |`TEST`||`TEXT` |`THEN` |`TICK` |`TIES`||`TIME` |`TIMEOUT` |`TIMESTAMP` |`TIMESTAMPTZ`||`TIMING` |`TO` |`TOKEN` |`TOPIC`||`TPCH` |`TRACE` |`TRAILING` |`TRANSACTION`||`TRANSACTIONAL` |`TRANSFORM` |`TRIM` |`TRUE`||`TUNNEL` |`TYPE` |`TYPES` |`UNBOUNDED`||`UNCOMMITTED` |`UNION` |`UNIQUE` |`UNIT`||`UNKNOWN` |`UNNEST` |`UNTIL` |`UP`||`UPDATE` |`UPSERT` |`URL` |`USAGE`||`USER` |`USERNAME` |`USERS` |`USING`||`VALIDATE` |`VALUE` |`VALUES` |`VARCHAR`||`VARIADIC` |`VARYING` |`VERBOSE` |`VERSION`||`VIEW` |`VIEWS` |`WAIT` |`WAREHOUSE`||`WARNING` |`WEBHOOK` |`WHEN` |`WHERE`||`WHILE` |`WINDOW` |`WIRE` |`WITH`||`WITHIN` |`WITHOUT` |`WORK` |`WORKERS`||`WORKLOAD` |`WRITE` |`YEAR` |`YEARS`||`ZONE` |`ZONES` |&nbsp; |&nbsp;|
 
 ---
 
@@ -11351,7 +11226,7 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Consistency guarantees](/overview/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
 
 ### Other configuration parameters
 
@@ -11363,6 +11238,7 @@ Name                                        | Default value             |  Descr
 `client_encoding`                           | `UTF8`                    | The client's character set encoding. The only supported value is `UTF-8`.                                                                                              | Yes
 `client_min_messages`                       | `notice`                  | The message levels that are sent to the client. <br/><br/> Accepts values: `debug5`, `debug4`, `debug3`, `debug2`, `debug1`, `log`, `notice`, `warning`, `error`. Each level includes all the levels that follow it. | Yes
 `datestyle`                                 | `ISO, MDY`                | The display format for date and time values. The only supported value is `ISO, MDY`.                                                                                   | Yes
+`default_timestamp_interval`                | `1s`                      | The interval at which timestamps are assigned to data ingested from sources and tables. New sources are created with this value unless overridden by the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/). Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). This setting applies only when creating sources; changing this value does not affect existing sources. For existing sources, see [`ALTER SOURCE`](/sql/alter-source/). | [Contact support]
 `emit_introspection_query_notice`           | `true`                    | Whether to print a notice when querying replica introspection relations.                                                                                               | Yes
 `emit_timestamp_notice`                     | `false`                   | Boolean flag indicating whether to send a `notice` specifying query timestamps.                                                                                        | Yes
 `emit_trace_id_notice`                      | `false`                   | Boolean flag indicating whether to send a `notice` specifying the trace ID, when available.                                                                            | Yes
@@ -11393,10 +11269,12 @@ Name                                        | Default value             |  Descr
 `max_sinks`                                 | `1000`                    | The maximum number of sinks in the region, across all schemas.                                                                                                         | [Contact support]
 `max_sources`                               | `25`                      | The maximum number of sources in the region, across all schemas.                                                                                                       | [Contact support]
 `max_tables`                                | `200`                     | The maximum number of tables in the region, across all schemas                                                                                                         | [Contact support]
+`max_timestamp_interval`                    | `1s`                      | The upper bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval larger than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
+`min_timestamp_interval`                    | `1s`                      | The lower bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval smaller than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
 `mz_version`                                | Version-dependent         | Shows the Materialize server version.                                                                                                                                  | No
 `network_policy`                            | `default`                 | The default network policy for the region. | Yes
-`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/get-started/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
-`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/get-started/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
+`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/reference/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
+`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/reference/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
 `server_version_num`                        | Version-dependent         | The PostgreSQL compatible server version as an integer.                                                                                                                | No
 `server_version`                            | Version-dependent         | The PostgreSQL compatible server version.                                                                                                                              | No
 `sql_safe_updates`                          | `false`                   | Boolean flag indicating whether to prohibit SQL statements that may be overly destructive.                                                                             | Yes
@@ -12035,15 +11913,17 @@ above: Materialize tears down the created dataflow after returning the results.
 The privileges required to execute this statement are:
 
 - `SELECT` privileges on all **directly** referenced relations in the query. If
-  the directly referenced relation is a view or materialized view: - `SELECT` privileges are required only on the directly referenced
-  view/materialized view. `SELECT` privileges are **not** required for the
-  underlying relations referenced in the view/materialized view definition
-  unless those relations themselves are directly referenced in the query.
+  the directly referenced relation is a view or materialized view:
 
-- However, the owner of the view/materialized view (including those with
-  **superuser** privileges) must have all required `SELECT` and `USAGE`
-  privileges to run the view definition regardless of who is selecting from the
-  view/materialized view.
+  - `SELECT` privileges are required only on the directly referenced
+    view/materialized view. `SELECT` privileges are **not** required for the
+    underlying relations referenced in the view/materialized view definition
+    unless those relations themselves are directly referenced in the query.
+
+  - However, the owner of the view/materialized view (including those with
+    **superuser** privileges) must have all required `SELECT` and `USAGE`
+    privileges to run the view definition regardless of who is selecting from the
+    view/materialized view.
 
 - `USAGE` privileges on the schemas that contain the relations in the query.
 - `USAGE` privileges on the active cluster.
@@ -12085,7 +11965,7 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Consistency guarantees](/overview/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
 
 ### Other configuration parameters
 
@@ -12097,6 +11977,7 @@ Name                                        | Default value             |  Descr
 `client_encoding`                           | `UTF8`                    | The client's character set encoding. The only supported value is `UTF-8`.                                                                                              | Yes
 `client_min_messages`                       | `notice`                  | The message levels that are sent to the client. <br/><br/> Accepts values: `debug5`, `debug4`, `debug3`, `debug2`, `debug1`, `log`, `notice`, `warning`, `error`. Each level includes all the levels that follow it. | Yes
 `datestyle`                                 | `ISO, MDY`                | The display format for date and time values. The only supported value is `ISO, MDY`.                                                                                   | Yes
+`default_timestamp_interval`                | `1s`                      | The interval at which timestamps are assigned to data ingested from sources and tables. New sources are created with this value unless overridden by the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/). Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). This setting applies only when creating sources; changing this value does not affect existing sources. For existing sources, see [`ALTER SOURCE`](/sql/alter-source/). | [Contact support]
 `emit_introspection_query_notice`           | `true`                    | Whether to print a notice when querying replica introspection relations.                                                                                               | Yes
 `emit_timestamp_notice`                     | `false`                   | Boolean flag indicating whether to send a `notice` specifying query timestamps.                                                                                        | Yes
 `emit_trace_id_notice`                      | `false`                   | Boolean flag indicating whether to send a `notice` specifying the trace ID, when available.                                                                            | Yes
@@ -12127,10 +12008,12 @@ Name                                        | Default value             |  Descr
 `max_sinks`                                 | `1000`                    | The maximum number of sinks in the region, across all schemas.                                                                                                         | [Contact support]
 `max_sources`                               | `25`                      | The maximum number of sources in the region, across all schemas.                                                                                                       | [Contact support]
 `max_tables`                                | `200`                     | The maximum number of tables in the region, across all schemas                                                                                                         | [Contact support]
+`max_timestamp_interval`                    | `1s`                      | The upper bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval larger than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
+`min_timestamp_interval`                    | `1s`                      | The lower bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval smaller than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
 `mz_version`                                | Version-dependent         | Shows the Materialize server version.                                                                                                                                  | No
 `network_policy`                            | `default`                 | The default network policy for the region. | Yes
-`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/get-started/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
-`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/get-started/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
+`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/reference/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
+`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/reference/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
 `server_version_num`                        | Version-dependent         | The PostgreSQL compatible server version as an integer.                                                                                                                | No
 `server_version`                            | Version-dependent         | The PostgreSQL compatible server version.                                                                                                                              | No
 `sql_safe_updates`                          | `false`                   | Boolean flag indicating whether to prohibit SQL statements that may be overly destructive.                                                                             | Yes
@@ -12219,7 +12102,7 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Consistency guarantees](/overview/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
 
 ### Other configuration parameters
 
@@ -12231,6 +12114,7 @@ Name                                        | Default value             |  Descr
 `client_encoding`                           | `UTF8`                    | The client's character set encoding. The only supported value is `UTF-8`.                                                                                              | Yes
 `client_min_messages`                       | `notice`                  | The message levels that are sent to the client. <br/><br/> Accepts values: `debug5`, `debug4`, `debug3`, `debug2`, `debug1`, `log`, `notice`, `warning`, `error`. Each level includes all the levels that follow it. | Yes
 `datestyle`                                 | `ISO, MDY`                | The display format for date and time values. The only supported value is `ISO, MDY`.                                                                                   | Yes
+`default_timestamp_interval`                | `1s`                      | The interval at which timestamps are assigned to data ingested from sources and tables. New sources are created with this value unless overridden by the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/). Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). This setting applies only when creating sources; changing this value does not affect existing sources. For existing sources, see [`ALTER SOURCE`](/sql/alter-source/). | [Contact support]
 `emit_introspection_query_notice`           | `true`                    | Whether to print a notice when querying replica introspection relations.                                                                                               | Yes
 `emit_timestamp_notice`                     | `false`                   | Boolean flag indicating whether to send a `notice` specifying query timestamps.                                                                                        | Yes
 `emit_trace_id_notice`                      | `false`                   | Boolean flag indicating whether to send a `notice` specifying the trace ID, when available.                                                                            | Yes
@@ -12261,10 +12145,12 @@ Name                                        | Default value             |  Descr
 `max_sinks`                                 | `1000`                    | The maximum number of sinks in the region, across all schemas.                                                                                                         | [Contact support]
 `max_sources`                               | `25`                      | The maximum number of sources in the region, across all schemas.                                                                                                       | [Contact support]
 `max_tables`                                | `200`                     | The maximum number of tables in the region, across all schemas                                                                                                         | [Contact support]
+`max_timestamp_interval`                    | `1s`                      | The upper bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval larger than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
+`min_timestamp_interval`                    | `1s`                      | The lower bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval smaller than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
 `mz_version`                                | Version-dependent         | Shows the Materialize server version.                                                                                                                                  | No
 `network_policy`                            | `default`                 | The default network policy for the region. | Yes
-`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/get-started/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
-`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/get-started/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
+`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/reference/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
+`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/reference/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
 `server_version_num`                        | Version-dependent         | The PostgreSQL compatible server version as an integer.                                                                                                                | No
 `server_version`                            | Version-dependent         | The PostgreSQL compatible server version.                                                                                                                              | No
 `sql_safe_updates`                          | `false`                   | Boolean flag indicating whether to prohibit SQL statements that may be overly destructive.                                                                             | Yes
@@ -13973,15 +13859,21 @@ Materialize's type system consists of two classes of types:
 
 ## Built-in types
 
-Type | Aliases | Use | Size (bytes) | Catalog name | Syntax
------|-------|-----|--------------|----------------|-----
+The following table lists Materialize's built-in types and details. In the
+table, the logical width is the nominal width of the type (similar to
+PostgreSQL's `pg_type.typlen`). The actual number of bytes written depends on
+the actual value. For example, a `bigint` value of `3` takes 2 bytes total (1
+payload byte plus 1 tag byte).
+
+| Type | Aliases | Description | Logical width (bytes) | Catalog name | Example |
+| -----|-------|-----|--------------|----------------|-----|
 [`bigint`](integer) | `int8` | Large signed integer | 8 | Named | `123`
 [`boolean`](boolean) | `bool` | State of `TRUE` or `FALSE` | 1 | Named | `TRUE`, `FALSE`
-[`bytea`](bytea) | `bytea` | Unicode string | Variable | Named | `'\xDEADBEEF'` or `'\\000'`
+[`bytea`](bytea) | | Binary data | Variable | Named | `'\xDEADBEEF'` or `'\\000'`
 [`date`](date) | | Date without a specified time | 4 | Named | `DATE '2007-02-01'`
 [`double precision`](float) | `float`, `float8`, `double` | Double precision floating-point number | 8 | Named | `1.23`
 [`integer`](integer) | `int`, `int4` | Signed integer | 4 | Named | `123`
-[`interval`](interval) | | Duration of time | 32 | Named | `INTERVAL '1-2 3 4:5:6.7'`
+[`interval`](interval) | | Duration of time | 16 | Named | `INTERVAL '1-2 3 4:5:6.7'`
 [`jsonb`](jsonb) | `json` | JSON | Variable | Named | `'{"1":2,"3":4}'::jsonb`
 [`map`](map) | | Map with [`text`](text) keys and a uniform value type | Variable | Anonymous | `'{a => 1, b => 2}'::map[text=>int]`
 [`list`](list) | | Multidimensional list | Variable | Anonymous | `LIST[[1,2],[3]]`
@@ -13991,12 +13883,12 @@ Type | Aliases | Use | Size (bytes) | Catalog name | Syntax
 [`record`](record) | | Tuple with arbitrary contents | Variable | Unnameable | `ROW($expr, ...)`
 [`smallint`](integer) | `int2` | Small signed integer | 2 | Named | `123`
 [`text`](text) | `string` | Unicode string | Variable | Named | `'foo'`
-[`time`](time) | | Time without date | 4 | Named | `TIME '01:23:45'`
+[`time`](time) | | Time without date | 8 | Named | `TIME '01:23:45'`
 [`uint2`](uint) | | Small unsigned integer | 2 | Named | `123`
 [`uint4`](uint) | | Unsigned integer | 4 | Named | `123`
 [`uint8`](uint) | | Large unsigned integer | 8 | Named | `123`
 [`timestamp`](timestamp) | | Date and time | 8 | Named | `TIMESTAMP '2007-02-01 15:04:05'`
-[`timestamp with time zone`](timestamp) | `timestamp with time zone` | Date and time with timezone | 8 | Named | `TIMESTAMPTZ '2007-02-01 15:04:05+06'`
+[`timestamp with time zone`](timestamp) | `timestamptz` | Date and time with timezone | 8 | Named | `TIMESTAMPTZ '2007-02-01 15:04:05+06'`
 [Arrays](array) (`[]`) | | Multidimensional array | Variable | Named | `ARRAY[...]`
 [`uuid`](uuid) | | UUID | 16 | Named | `UUID 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'`
 
@@ -14582,7 +14474,14 @@ Extracts separated values from a column containing a CSV file formatted as a str
 
 <code>true</code> if <code>s</code> returns zero rows.#### `expression NOT IN(s: Query) -> bool`
 
-<code>s</code> must return exactly one column; <code>true</code> for each value in <code>expression</code> if it does not match any elements of <code>s</code>.#### `expression bool_op SOME(s: Query) -> bool`
+<p><code>s</code> must return exactly one column; <code>true</code> for each value in <code>expression</code>
+if it does not match any elements of <code>s</code>.</p>
+> **Note:** When evaluating a `WHERE fieldX NOT IN (<subquery>)` predicate involving
+> possible `NULL` values for `fieldX` or `<subquery>`, Materialize performs a
+> cross join between the outer relation and the subquery to preserve SQL
+> `NULL` semantics, which can significantly increase memory usage. If
+> possible, rewrite using [idiomatic Materialize
+> SQL](/transform-data/idiomatic-materialize-sql/not-in/).#### `expression bool_op SOME(s: Query) -> bool`
 
 <code>s</code> must return exactly one column; <code>true</code> if applying <a href="#boolean-operators" >bool_op</a> to <code>expression</code> and any value of <code>s</code> evaluates to <code>true</code>.### Date and time functionsTime functions take or produce a time-like type, e.g. <a href="../types/date" ><code>date</code></a>, <a href="../types/timestamp" ><code>timestamp</code></a>, <a href="../types/timestamptz" ><code>timestamp with time zone</code></a>.#### `age(timestamp, timestamp) -> interval`
 
@@ -14770,21 +14669,19 @@ but supports only the following frame modes:</p>
 <p>the default frame, which is <code>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code>.</p>
 </li>
 </ul>
-> **Note:** For [window functions](/sql/functions/#window-functions), when an input record
-> in a partition (as determined by the `PARTITION BY` clause of your window
-> function) is added/removed/changed, Materialize recomputes the results for the
-> entire window partition. This means that when a new batch of input data arrives
-> (that is, every second), **the amount of computation performed is proportional
-> to the total size of the touched partitions**.
-> For example, assume that in a given second, 20 input records change, and these
-> records belong to **10** different partitions, where the average size of each
-> partition is **100**. Then, amount of work to perform is proportional to
-> computing the window function results for **10\*100=1000** rows.
+> **Note:** For indexed views and materialized views that contain [window
+> functions](/sql/functions/#window-functions) (including aggregate functions used
+> with an `OVER` clause), when an input record in a partition is
+> added/removed/changed, Materialize **recomputes the results from scratch** for
+> that partition (instead of using incremental computation).
+> The `PARTITION BY` clause of your window function determines your partitions. If
+> `PARTITION BY` is omitted, all records belong to a single partition (i.e., any
+> record change results in a recomputation from scratch over the whole input).
 > To avoid performance issues that may arise as the number of records grows,
-> consider rewriting your query to use idiomatic Materialize SQL instead of window
-> functions. If your query cannot be rewritten without the window functions and
-> the performance of window functions is insufficient for your use case, please
-> [contact our team](/support/).
+> consider rewriting your indexed views and materialized views to use idiomatic
+> Materialize SQL instead of window functions. If your view definitions cannot be
+> rewritten without the window functions and the performance of window functions
+> is insufficient for your use case, please [contact our team](/support/).
 > See [Idiomatic Materialize SQL](/transform-data/idiomatic-materialize-sql/)
 > for examples of rewriting window functions.
 

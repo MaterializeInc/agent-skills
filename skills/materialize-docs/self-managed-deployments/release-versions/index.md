@@ -3,6 +3,12 @@
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
+| v26.27 | v26.27 | v26.27 | 2026-06-05 | See <a href="/releases/#v26270" >v26.27 release notes</a> |
+| v26.26 | v26.26 | v26.26 | 2026-05-29 | See <a href="/releases/#v26260" >v26.26 release notes</a> |
+| v26.24.3 | v26.24.3 | v26.24.3 | 2026-05-20 | See <a href="/releases/#v26243" >v26.24.3 release notes</a> |
+| v26.24.2 | v26.24.2 | v26.24.2 | 2026-05-18 | See <a href="/releases/#v26242" >v26.24.2 release notes</a> |
+| v26.24.1 | v26.24.1 | v26.24.1 | 2026-05-15 | See <a href="/releases/#v26241" >v26.24.1 release notes</a> |
+| v26.24.0 | v26.24.0 | v26.24.0 | 2026-05-15 | See <a href="/releases/#v26241" >v26.24.1 release notes</a> |
 | v26.22.0 | v26.22.0 | v26.22.0 | 2026-05-01 | See <a href="/releases/#v26220" >v26.22.0 release notes</a> |
 | v26.20.2 | v26.20.2 | v26.20.2 | 2026-04-18 | See <a href="/releases/#v26202" >v26.20.2 release notes</a> |
 | v26.20.0 | v26.20.0 | v26.20.0 | 2026-04-17 |  |

@@ -8,9 +8,8 @@ to Materialize using the [MySQL source](/sql/create-source/mysql/).
 
 ## Before you begin
 
-- Make sure you are running MySQL 5.7 or higher. Materialize uses
-  [GTID-based binary log (binlog) replication](/sql/create-source/mysql/#change-data-capture),
-  which is not available in older versions of MySQL.
+- Make sure you are running MySQL 8.0.1+ with support for [GTID-based binary log
+(binlog) replication](#1-enable-gtid-based-binlog-replication).
 
 - Ensure you have access to your MySQL instance via the [`mysql` client](https://dev.mysql.com/doc/refman/8.0/en/mysql.html),
   or your preferred SQL client.
@@ -59,22 +58,6 @@ been configured for GTID-based binlog replication:
 <tr>
 
 <td>
-<code>binlog_format</code>
-</td>
-
-<td>
-<code>ROW</code>
-</td>
-
-<td>
-<a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
-</td>
-
-</tr>
-
-<tr>
-
-<td>
 <code>binlog_row_image</code>
 </td>
 
@@ -84,6 +67,44 @@ been configured for GTID-based binlog replication:
 
 <td>
 
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>binlog_row_metadata</code>
+</td>
+
+<td>
+<code>FULL</code>
+</td>
+
+<td>
+<ul>
+<li><strong>Required</strong> to use <a href="/sql/create-source/mysql-v2/" ><code>CREATE SOURCE</code> (New
+syntax)</a>.</li>
+<li>Highly recommended for use with the <a href="/sql/create-source/mysql/" ><code>CREATE SOURCE</code> (Legacy
+syntax)</a>.</li>
+</ul>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>binlog_format</code>
+</td>
+
+<td>
+<code>ROW</code>
+</td>
+
+<td>
+<a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
 </td>
 
 </tr>
@@ -424,24 +445,22 @@ your networking configuration.
 
 ### 3. Start ingesting data
 
-Once you have created the connection, you can use the connection in the
-[`CREATE SOURCE`](/sql/create-source/) command to connect to your MySQL instance and start ingesting
-data:
-```mzsql
-CREATE SOURCE mz_source
-  FROM MYSQL CONNECTION mysql_connection
-  FOR ALL TABLES;
+{{< tabs >}}
+{{< tab "New Syntax" >}}
+#### New syntax
 
-```
+{{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="create-source" %}}
+{{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="schema-changes" %}}
+{{< /tab >}}
 
-- By default, the source will be created in the active cluster; to use a different cluster, use the `IN CLUSTER` clause.
+{{< tab "Legacy Syntax" >}}
+#### Legacy syntax
 
-- To ingest data from specific schemas or tables, use the `FOR SCHEMAS (<schema1>,<schema2>)` or `FOR TABLES (<table1>, <table2>)` options instead of `FOR ALL TABLES`.
-
-- To handle [unsupported data types](#supported-types), use the `TEXT COLUMNS` or `EXCLUDE COLUMNS` options.
-
-After source creation, refer to [schema changes
-considerations](#schema-changes) for information on handling upstream schema changes.
+{{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="create-source-legacy" %}}
+{{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="create-source-options-legacy" %}}
+{{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="schema-changes" %}}
+{{< /tab >}}
+{{< /tabs >}}
 
 ### 4. Monitor the ingestion status
 
@@ -571,13 +590,16 @@ new data arrives, and serving results efficiently.
 
 ### Schema changes
 
-> **Note:** Work to more smoothly support ddl changes to upstream tables is currently in
-> progress. The work introduces the ability to re-ingest the same upstream table
-> under a new schema and switch over without downtime.
-
 Materialize supports schema changes in the upstream database as follows:
 
-#### Compatible schema changes
+#### Compatible schema changes (Legacy syntax)
+
+> **Note:** This section refer to the legacy [`CREATE SOURCE ... FOR
+> ...`](/sql/create-source/mysql/) that creates subsources as part of the `CREATE
+> SOURCE` operation.  To be able to handle the upstream column additions and
+> drops, use [`CREATE SOURCE (New Syntax)`](/sql/create-source/mysql-v2/) and
+> [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
+> [MySQL: Source versioning guide](/ingest-data/mysql/source-versioning/).
 
 <ul>
 <li>

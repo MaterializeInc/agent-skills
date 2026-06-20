@@ -13,7 +13,53 @@ components that work together to provide a fully functional database
 environment. Understanding these components and how they interact is essential
 for deploying, managing, and troubleshooting your Self-Managed Materialize.
 
-This page provides an overview of the core architectural components in a Self-Managed deployment, from the infrastructure level (Helm chart) down to the application level (clusters and replicas).
+## Getting started
+
+To help you get started, the following installation guides are available:
+
+<h3 id="install-using-helm-commands">Install using Helm Commands</h3>
+<table>
+  <thead>
+      <tr>
+          <th>Guide</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><a href="/self-managed-deployments/installation/install-on-local-kind/" >Install locally on Kind</a></td>
+          <td>Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.</td>
+      </tr>
+  </tbody>
+</table>
+
+### Install using Terraform Modules
+
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
+
+**Terraform Modules (New!):**
+
+Materialize provides [**Terraform
+modules**](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main?tab=readme-ov-file#materialize-self-managed-terraform-modules),
+which provides concrete examples and an opinionated model for deploying Materialize.
+
+| Module | Description |
+| --- | --- |
+| <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws" >Amazon Web Services (AWS)</a> | An example Terraform module for deploying Materialize on AWS. See <a href="/self-managed-deployments/installation/install-on-aws/" >Install on AWS</a> for detailed instructions usage. |
+| <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure" >Azure</a> | An example Terraform module for deploying Materialize on Azure. See <a href="/self-managed-deployments/installation/install-on-azure/" >Install on Azure</a> for detailed instructions usage. |
+| <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp" >Google Cloud Platform (GCP)</a> | An example Terraform module for deploying Materialize on GCP. See <a href="/self-managed-deployments/installation/install-on-gcp/" >Install on GCP</a> for detailed instructions usage. |
+
+**Legacy Terraform Modules:**
+
+| Sample Module | Description |
+| --- | --- |
+| <a href="https://github.com/MaterializeInc/terraform-helm-materialize" >terraform-helm-materialize (Legacy)</a> | A sample Terraform module for installing the Materialize Helm chart into a Kubernetes cluster. |
+| <a href="https://github.com/MaterializeInc/terraform-aws-materialize" >Materialize on AWS (Legacy)</a> | A sample Terraform module for deploying Materialize on AWS Cloud Platform with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-aws-legacy/" >Install on AWS (Legacy)</a> for an example usage. |
+| <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize" >Materialize on Azure (Legacy)</a> | A sample Terraform module for deploying Materialize on Azure with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-azure-legacy/" >Install on Azure</a> for an example usage. |
+| <a href="https://github.com/MaterializeInc/terraform-google-materialize" >Materialize on GCP (Legacy)</a> | A sample Terraform module for deploying Materialize on Google Cloud Platform (GCP) with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-gcp-legacy/" >Install on GCP</a> for an example usage. |
 
 ## Architecture layers
 
@@ -26,54 +72,22 @@ Layer | Component | Description
 **Database** | [Materialize Instance](#materialize-instance) | The Materialize database instance itself
 **Compute** | [Clusters and Replicas](#clusters-and-replicas) | Isolated compute resources for workloads
 
-## Helm chart
+### Helm chart
 
-The Helm chart is the entry point for deploying Materialize in a self-managed Kubernetes environment. It serves as a package manager component that defines and deploys the Materialize Operator.
+The Helm chart is the entry point for deploying Materialize in a self-managed
+Kubernetes environment. It defines and deploys the Materialize Operator as part
+of the Helm package management workflow.
 
-### Working with the Helm chart
+The Helm repository is hosted at `https://materializeinc.github.io/materialize`.
 
-You interact with the Helm chart through standard Helm commands. For example:
-
-- To add the Materialize Helm chart repository:
-
-  ```bash
-  helm repo add materialize https://materializeinc.github.io/materialize
-  ```
-
-- To update the repository index:
-
-  ```bash
-  helm repo update materialize
-  ```
-
-- To install the Materialize Helm chart and deploy the Materialize Operator and
-  other resources:
-
-  ```bash
-  helm install materialize materialize/materialize-operator
-  ```
-
-- To upgrade the the Materialize Helm chart (and the Materialize Operator and
-  other resources):
-
-  ```bash
-  helm upgrade materialize materialize/materialize-operator
-  ```
-
-- To uninstall the Helm chart (and the Materialize Operator and other
-  resources):
-
-  ```bash
-  helm uninstall materialize
-  ```
-
-### What gets installed
-
-```bash
-helm install materialize materialize/materialize-operator
+```sh
+helm repo add materialize https://materializeinc.github.io/materialize
 ```
 
-When you install the the Materialize Helm Chart, it:
+#### What gets installed
+
+When you install the Materialize Helm Chart (e.g., `helm install materialize
+materialize/materialize-operator ...`), it:
 
 - Deploys the **Materialize Operator** as a Kubernetes deployment.
 - Creates necessary cluster-wide resources (CRDs, RBAC roles, service accounts).
@@ -82,11 +96,11 @@ When you install the the Materialize Helm Chart, it:
 Once installed, the **Materialize Operator** handles the deployment and
 management of Materialize instances.
 
-## Materialize Operator
+### Materialize Operator
 
 The Materialize Operator (implemented as `orchestratord`) is a Kubernetes operator that automates the deployment and lifecycle management of Materialize instances. It implements the [Kubernetes operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) to extend Kubernetes with domain-specific knowledge about Materialize.
 
-### Managed resources
+#### Managed resources
 
 The operator watches for Materialize custom resources and creates/manages all the Kubernetes resources required to run a Materialize instance, including:
 
@@ -98,20 +112,20 @@ The operator watches for Materialize custom resources and creates/manages all th
 - **Deployments**: These support the `balancerd` and `console` pod used as the ingress layer for Materialize.
 - **StatefulSets**: `environmentd` and `clusterd` which are the database control plane and compute resources respectively.
 
-### Configuration
+#### Configuration
 
 For configuration options for the Materialize Operator, see
 the [Materialize Operator Configuration
 page](/self-managed-deployments/operator-configuration/).
 
-## Materialize Instance
+### Materialize Instance
 
 A Materialize instance is the actual database that you connect to and interact
 with. Each instance is an isolated Materialize deployment (deployed via a
 Kubernetes Custom Resource) with its own data, configuration, and compute
 resources.
 
-### Components
+#### Components
 
 When you create a Materialize instance, the operator deploys three core
 components as Kubernetes resources:
@@ -134,7 +148,7 @@ components as Kubernetes resources:
 
 - **console**: Web-based administration interface, deployed as a Deployment.
 
-### Instance responsibilities
+#### Instance responsibilities
 
 A Materialize instance manages:
 
@@ -144,10 +158,10 @@ A Materialize instance manages:
 - **Catalog metadata**: System information about all objects and configuration
 - **Compute orchestration**: Coordination of work across clusters and replicas
 
-### Deploying with the operator
+#### Deploying with the operator
 
 To deploy Materialize instances with the operator, create and apply Materialize
-custom resources definitions(CRDs). For a full list of fields available for the
+custom resource definitions(CRDs). For a full list of fields available for the
 Materialize CR, see [Materialize CRD Field
 Descriptions](/self-managed-deployments/materialize-crd-field-descriptions/).
 
@@ -158,20 +172,20 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.22.0
+  environmentdImageRef: materialize/environmentd:v26.27.0
 # ... additional fields omitted for brevity
 ```
 
 When you first apply the Materialize custom resource, the operator automatically
 creates all required Kubernetes resources.
 
-### Modifying the custom resource
+#### Modifying the custom resource
 
 To modify a custom resource, update the CRD with your changes, including the
 `requestRollout` field with a new UUID value. When you apply the CRD, the
 operator will roll out the changes.
 
-> **Note:** If you do not specify  a new `requestRollout` UUID, the operator
+> **Note:** If you do not specify a new `requestRollout` UUID, the operator
 > watches for updates but does not roll out the changes.
 
 For a full list of fields available for the Materialize CR, see [Materialize CRD
@@ -182,7 +196,7 @@ See also:
 
 - [Upgrade Overview](/self-managed-deployments/upgrading/)
 
-### Connecting to an instance
+#### Connecting to an instance
 
 Once deployed, you interact with a Materialize instance through the Materialize
 Console or standard PostgreSQL-compatible tools and drivers:
@@ -206,20 +220,20 @@ CREATE MATERIALIZED VIEW my_view AS
 SELECT * FROM my_view;
 ```
 
-## Clusters and Replicas
+### Clusters and Replicas
 
 Clusters are isolated pools of compute resources that execute workloads in Materialize. They provide resource isolation and fault tolerance for your data processing pipelines.
 
 For a comprehensive overview of clusters in Materialize, see the [Clusters concept page](/concepts/clusters/).
 
-### Cluster architecture
+#### Cluster architecture
 
 - **Clusters**: Logical groupings of compute resources dedicated to specific workloads (sources, sinks, indexes, materialized views, queries)
 - **Replicas**: Physical instantiations of a cluster's compute resources, deployed as Kubernetes StatefulSets
 
 Each replica contains identical compute resources and processes the same data independently, providing fault tolerance and high availability.
 
-### Kubernetes resources
+#### Kubernetes resources
 
 When you create a cluster with one or more replicas in Materialize, the instance coordinates with the operator to create:
 
@@ -236,7 +250,7 @@ CREATE CLUSTER my_cluster SIZE = '100cc', REPLICATION FACTOR = 2;
 
 This creates two separate StatefulSets in Kubernetes, each running compute processes.
 
-### Managing clusters
+#### Managing clusters
 
 You interact with clusters primarily through SQL:
 
@@ -259,12 +273,11 @@ CREATE MATERIALIZED VIEW my_view
 
 -- Resize a cluster
 ALTER CLUSTER compute_cluster SET (SIZE = '200cc');
-
 ```
 
 Materialize handles the underlying Kubernetes resource creation and management automatically.
 
-## Workflow
+### Workflow
 
 The following outlines the workflow process, summarizing how the various
 components work together:
@@ -277,7 +290,7 @@ components work together:
    including the `environmentd`, `balancerd`, and `console` pods.
 
 1. **Connect to the instance**: Use the Materialize Console on port 8080 to
-   connecto to the `console` service endpoint or SQL client on port 6875 to
+   connect to the `console` service endpoint or SQL client on port 6875 to
    connect to the `balancerd` service endpoint.
 
    If authentication is enabled, you must first connect to the Materialize
@@ -288,38 +301,6 @@ components work together:
 
 1. **Run your workloads**: Create sources, materialized views, indexes, and
    sinks on your clusters.
-
-## Available Terraform Modules
-
-To help you get started, Materialize provides Terraform modules.
-
-> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
-> changes in future versions.
-> We recommend updating your module source tags when updating Materialize versions,
-> taking care to follow any instructions in the release notes.
-
-**Terraform Modules (New!):**
-### Terraform Modules
-
-Materialize provides [**Terraform
-modules**](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main?tab=readme-ov-file#materialize-self-managed-terraform-modules),
-which provides concrete examples and an opinionated model for deploying Materialize.
-
-| Module | Description |
-| --- | --- |
-| <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws" >Amazon Web Services (AWS)</a> | An example Terraform module for deploying Materialize on AWS. See <a href="/self-managed-deployments/installation/install-on-aws/" >Install on AWS</a> for detailed instructions usage. |
-| <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure" >Azure</a> | An example Terraform module for deploying Materialize on Azure. See <a href="/self-managed-deployments/installation/install-on-azure/" >Install on Azure</a> for detailed instructions usage. |
-| <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp" >Google Cloud Platform (GCP)</a> | An example Terraform module for deploying Materialize on GCP. See <a href="/self-managed-deployments/installation/install-on-gcp/" >Install on GCP</a> for detailed instructions usage. |
-
-**Legacy Terraform Modules:**
-### Legacy Terraform Modules
-
-| Sample Module | Description |
-| --- | --- |
-| <a href="https://github.com/MaterializeInc/terraform-helm-materialize" >terraform-helm-materialize (Legacy)</a> | A sample Terraform module for installing the Materialize Helm chart into a Kubernetes cluster. |
-| <a href="https://github.com/MaterializeInc/terraform-aws-materialize" >Materialize on AWS (Legacy)</a> | A sample Terraform module for deploying Materialize on AWS Cloud Platform with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-aws-legacy/" >Install on AWS (Legacy)</a> for an example usage. |
-| <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize" >Materialize on Azure (Legacy)</a> | A sample Terraform module for deploying Materialize on Azure with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-azure-legacy/" >Install on Azure</a> for an example usage. |
-| <a href="https://github.com/MaterializeInc/terraform-google-materialize" >Materialize on GCP (Legacy)</a> | A sample Terraform module for deploying Materialize on Google Cloud Platform (GCP) with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-gcp-legacy/" >Install on GCP</a> for an example usage. |
 
 ## Related pages
 
@@ -403,7 +384,7 @@ kubectl apply -f system-params-configmap.yaml
 Reference the ConfigMap in your Materialize custom resource by setting the
 `systemParameterConfigmapName` field to the name of your ConfigMap:
 
-```yaml {hl_lines="9"}
+```yaml {hl_lines="9-10"}
 apiVersion: materialize.cloud/v1alpha1
 kind: Materialize
 metadata:
@@ -413,6 +394,7 @@ spec:
   environmentdImageRef: materialize/environmentd:v26.0.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
+  requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
 ```
 
 Apply the updated Materialize resource:
@@ -436,6 +418,9 @@ To update system parameters defined in your ConfigMap, you can either:
   ```shell
   kubectl apply -f system-params-configmap.yaml
   ```
+
+Unlike changes to the Materialize custom resource, updating the parameters in
+your ConfigMap does **not** require a rollout.
 
 ### ConfigMap sync behavior
 
@@ -473,7 +458,7 @@ spec:
   # ... rest of spec
 ```
 
-> **Note:** Even after the ConfigMap is synced, some parameters may require a restart to
+> **Note:** Even after the ConfigMap is synced, some system parameters may require a restart to
 > take effect.
 
 ## Available System Parameters
@@ -687,8 +672,10 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 </table>
 
 <h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
-> **Tip:** The Terraform modules are provided as examples. They are not required for
-> installing Materialize.
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
 <table>
   <thead>
@@ -714,8 +701,10 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 </table>
 
 <h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
-> **Tip:** The Terraform modules are provided as examples. They are not required for
-> installing Materialize.
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
 <table>
   <thead>
@@ -1020,6 +1009,33 @@ generation rollout is automatically triggered.</p>
 <p><strong>Default:</strong> <code>00000000-0000-0000-0000-000000000000</code></p></td>
 </tr>
 <tr>
+<td><code>rolloutRequestTimeout</code></td>
+<td></td>
+<td>
+<em><strong>RolloutRequestTimeout</strong></em>
+
+<p><p>The maximum amount of time a rollout may remain in progress before
+it is automatically cancelled.</p>
+<p>While a rollout is in progress, the new generation of <code>environmentd</code>
+runs in a read-only, un-promoted state and holds back compaction via
+read holds. Leaving it in this state for too long can cause
+incident-inducing load when it is eventually promoted, so the
+operator cancels the rollout once this timeout is exceeded: the new
+generation is torn down and the previously-active generation
+continues serving. A new rollout can then be triggered by setting
+<code>requestRollout</code> to a new value.</p>
+<p>This does not apply to the <code>ImmediatelyPromoteCausingDowntime</code>
+rollout strategy or to force-promoted rollouts, since by the time
+those are in progress the old generation may already be gone.</p>
+<p>The value is parsed as a human-readable duration, e.g. <code>24h</code>,
+<code>90m</code>, or <code>1h 30m</code>. Defaults to [<code>DEFAULT_ROLLOUT_REQUEST_TIMEOUT</code>]
+when omitted (the API server fills it in); an unparseable value also
+falls back to that default.</p>
+</p>
+
+<p><strong>Default:</strong> <code>24h</code></p></td>
+</tr>
+<tr>
 <td><code>rolloutStrategy</code></td>
 <td></td>
 <td>
@@ -1049,6 +1065,9 @@ status of the Materialize Resource. If the condition&rsquo;s reason is
 >   cancelled, those read holds are released. If left unpromoted for an extended time, this
 >   data can build up, and can cause extreme deletion load on the metadata backend database
 >   when finally promoted or cancelled.
+>   To guard against this, a rollout that remains in progress longer
+>   than `rolloutRequestTimeout` (default 24h) is automatically
+>   cancelled.
 
 </li>
 <li>
@@ -2062,7 +2081,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.24.2&quot;</code>
+<code>&quot;v26.29.0&quot;</code>
 </td>
 </tr>
 
@@ -2543,7 +2562,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.24.2&quot;</code>
+**Default**: <code>&quot;v26.29.0&quot;</code>
 
 The tag/version of the operator image to be used
 
@@ -2678,6 +2697,12 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
+| v26.27 | v26.27 | v26.27 | 2026-06-05 | See <a href="/releases/#v26270" >v26.27 release notes</a> |
+| v26.26 | v26.26 | v26.26 | 2026-05-29 | See <a href="/releases/#v26260" >v26.26 release notes</a> |
+| v26.24.3 | v26.24.3 | v26.24.3 | 2026-05-20 | See <a href="/releases/#v26243" >v26.24.3 release notes</a> |
+| v26.24.2 | v26.24.2 | v26.24.2 | 2026-05-18 | See <a href="/releases/#v26242" >v26.24.2 release notes</a> |
+| v26.24.1 | v26.24.1 | v26.24.1 | 2026-05-15 | See <a href="/releases/#v26241" >v26.24.1 release notes</a> |
+| v26.24.0 | v26.24.0 | v26.24.0 | 2026-05-15 | See <a href="/releases/#v26241" >v26.24.1 release notes</a> |
 | v26.22.0 | v26.22.0 | v26.22.0 | 2026-05-01 | See <a href="/releases/#v26220" >v26.22.0 release notes</a> |
 | v26.20.2 | v26.20.2 | v26.20.2 | 2026-04-18 | See <a href="/releases/#v26202" >v26.20.2 release notes</a> |
 | v26.20.0 | v26.20.0 | v26.20.0 | 2026-04-17 |  |
@@ -2984,7 +3009,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.22.0
+  --version v26.27.0
 ```
 
 ## Upgrading Materialize Instances
@@ -3022,13 +3047,13 @@ To stage the Materialize instances version upgrade, update the
 compatible version of your currently deployed Materialize Operator.
 
 To stage, but **not** rollout, the Materialize instance version upgrade, you can
-use the `kubectl patch` command; for example, if the **App Version** is v26.22.0:
+use the `kubectl patch` command; for example, if the **App Version** is v26.27.0:
 
 ```shell
 kubectl patch materialize <instance-name> \
   -n <materialize-instance-namespace> \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.22.0\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.27.0\"}}"
 ```
 
 > **Note:** Until you specify a new `requestRollout`, the Operator watches for updates but
@@ -3056,7 +3081,7 @@ can, if preferred, combine both operations in a single command
 kubectl patch materialize <instance-name> \
   -n materialize-environment \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.22.0\", \"requestRollout\": \"$(uuidgen)\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.27.0\", \"requestRollout\": \"$(uuidgen)\"}}"
 ```
 
 #### Using YAML Definition
@@ -3070,7 +3095,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.22.0 # Update version as needed
+  environmentdImageRef: materialize/environmentd:v26.27.0 # Update version as needed
   requestRollout: 22222222-2222-2222-2222-222222222222    # Use a new UUID
   forceRollout: 33333333-3333-3333-3333-333333333333      # Optional: for forced rollouts
   inPlaceRollout: false                                   # In Place rollout is deprecated and ignored. Please use rolloutStrategy
@@ -3162,19 +3187,28 @@ kubectl logs -l app.kubernetes.io/name=materialize-operator -n materialize
 
 You may want to cancel an in-progress rollout if the upgrade has failed. This may be indicated by new pods not being healthy. Before cancelling, verify that the upgrade has not already completed by checking that the deploy generation (found via `status.activeGeneration`) is still the one from before the upgrade. Once an upgrade has already happened, you cannot revert using this method.
 
-To cancel an in-progress rollout and revert to the last completed rollout state, first retrieve the last rollout request ID from your Materialize CR:
+To cancel an in-progress rollout and revert to the last completed rollout
+state, revert both `requestRollout` and `environmentdImageRef` back to the
+values from the last completed rollout. Reverting `environmentdImageRef`
+alongside `requestRollout` keeps the spec aligned with what is actually
+running, so a later rollout doesn't accidentally pick up the previously
+attempted upgrade image.
+
+First, retrieve the last completed rollout request ID and the matching
+environmentd image ref from your Materialize CR:
 
 ```shell
-kubectl get materialize <instance-name> -n materialize-environment -o jsonpath='{.status.lastCompletedRolloutRequest}'
+kubectl get materialize <instance-name> -n materialize-environment \
+  -o jsonpath='{.status.lastCompletedRolloutRequest} {.status.lastCompletedRolloutEnvironmentdImageRef}'
 ```
 
-Then, set the `requestRollout` back to this value:
+Then, set both fields back to these values in a single patch:
 
 ```shell
 kubectl patch materialize <instance-name> \
   -n materialize-environment \
   --type='merge' \
-  -p "{\"spec\": {\"requestRollout\": \"<lastCompletedRolloutRequest-value>\"}}"
+  -p "{\"spec\": {\"requestRollout\": \"<lastCompletedRolloutRequest-value>\", \"environmentdImageRef\": \"<lastCompletedRolloutEnvironmentdImageRef-value>\"}}"
 ```
 
 ## Version Specific Upgrade Notes

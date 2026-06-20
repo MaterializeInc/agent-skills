@@ -5,6 +5,396 @@ Materialize release notes
 > **Note:** Starting with the v26.1.0 release, Materialize releases on a weekly schedule for
 > both Cloud and Self-Managed. See [Release schedule](/releases/schedule) for details.
 
+## v26.27.0
+*Released to Materialize Cloud: 2026-06-04* <br>
+*Released to Materialize Self-Managed: 2026-06-05* <br>
+
+This release includes improvements to the MCP Server for Agents, general
+improvements, and bug fixes.
+
+### MCP Server for Agents
+We've made several improvements to our MCP Server for Agents, which can be used to give agents in production fresh context from Materialize.
+
+- **`query` tool enabled by default**: The MCP Server for Agents now
+  enables the [`query` tool](/integrations/mcp-server/mcp-agent-tools/#query)
+  by default, allowing agents to join across data products.
+- **Data product routing**: The `read_data_product` tool now
+  automatically routes queries to the data product's catalog cluster,
+  eliminating the need to specify the cluster manually.
+- **Data product hydration status**: The MCP Server for Agents now
+  surfaces hydration readiness state for data products, enabling agents
+  to check whether a data product is fully hydrated before querying.
+
+For more information, refer to:
+- [MCP Server for Agents](/integrations/mcp-server/mcp-agent/)
+
+### Improvements {#v26.27-improvements}
+
+- **Improved `EXPLAIN` output**: Default `EXPLAIN` output now uses
+  cleaner formatting for joins and explicitly identifies cross joins.
+
+### Bug Fixes {#v26.27-bug-fixes}
+
+- Fixed the Console in self-managed deployments not displaying the
+  balancerd hostname in the connection dialog.
+- Fixed incorrect query results from filter pushdown when using
+  timestamp or date arithmetic with interval values.
+- Fixed incorrect query results from filter pushdown when using `CASE`
+  expressions over JSON columns with keys present in only one branch.
+- Fixed `LATERAL` subqueries with table functions returning wrong
+  results when the input table has an index on a non-leading column.
+- Fixed `COPY FROM` CSV decoding silently treating quoted `NULL` markers
+  as SQL `NULL` and dropping rows after a quoted end-of-copy marker.
+- Fixed a panic when applying a timezone offset to a near-maximum
+  timestamp value.
+- Fixed a panic when applying a timezone offset to a leap-second
+  timestamp value.
+- Fixed a panic when a replica targeted by `CREATE MATERIALIZED VIEW ...
+  IN CLUSTER ... REPLICA <name>` was concurrently dropped.
+- Fixed a panic when specifying a `REFRESH` interval shorter than
+  1 millisecond; now returns a clear error instead.
+- Fixed SSH tunnel connections to HTTPS schema registries failing with
+  TLS handshake errors when the URL omitted the default port.
+- Fixed Iceberg sink errors when writing tables with `smallint` columns,
+  map-typed columns, or `range`-typed equality delete keys.
+- Fixed `SHOW CREATE` incorrectly displaying passwords and `AS OF`
+  clauses.
+
+## v26.26.0
+*Released to Materialize Cloud: 2026-05-28* <br>
+*Released to Materialize Self-Managed: 2026-05-29* <br>
+
+This release includes Single Sign-On (SSO) for Self-Managed, a new Objects page
+in the Console, performance improvements, and bug fixes.
+
+### Single Sign-On (SSO) for Self-Managed
+
+> **Public Preview:** This feature is in public preview.
+
+Self-managed deployments can now configure single sign-on via any OIDC-compliant identity provider (Okta, Microsoft Entra ID, Auth0, Keycloak). Users authenticate via their IdP and receive a JWT token that Materialize validates; new users are auto-provisioned as database roles on first login, and existing users with matching emails map automatically to their current accounts. Enabling SSO is backward compatible: password-based auth continues to work for applications and service accounts.
+
+For more information, refer to:
+- [Single sign-on (SSO)](https://materialize.com/docs/security/self-managed/sso/)
+
+### Objects page
+
+The Console includes a new Objects page, which provides a unified view of all
+sources, materialized views, indexes and sinks. You can track real-time freshness
+metrics, hydration status, and cluster assignments. If an object is stale, you can diagnose why.
+If lag is inherited from upstream, you can visualize the critical path. And if an object itself
+is the cause of lag, you can diagnose the root cause.
+
+### Improvements {#v26.26-improvements}
+
+- **More performant temporal filters**: We've significantly improved the performance of
+  temporal filters. While specific results will vary by workload, in our tests we saw CPU utilization drop from 75% to
+  4% on workloads dominated by temporal filter evaluation.
+- **Faster DDL at scale**: DDL operations (`CREATE TABLE`, `DROP TABLE`,
+  etc.) are now up to 65% faster in environments with many objects by
+  eliminating a per-table loop that previously ran on every group commit.
+- **Faster storage usage collection**: Periodic storage usage collection is
+  now up to 17x faster at 10,000 shards, reducing coordinator stalls from
+  ~500ms to ~30ms per cycle.
+- **`dbt-materialize`: `PARTITION BY` support**: Added a `partition_by`
+  config option for materialized views, generating the `PARTITION BY (...)`
+  clause in `CREATE MATERIALIZED VIEW`.
+- **`dbt-materialize`: Unmanaged cluster support for blue/green
+  deployments**: The `deploy_init` macro now supports unmanaged clusters by
+  cloning each replica's size and availability zone, enabling blue/green
+  deployments for environments not using managed clusters.
+
+### Bug Fixes {#v26.26-bug-fixes}
+
+- Fixed wrong results for `JOIN ... USING (col) AS t` with `RIGHT` or
+  `FULL` joins.
+- Fixed `round()` producing `-0` for negative fractional values that round
+  to zero, causing mismatches in `DISTINCT`, `UNION`, and `GROUP BY`.
+- Fixed `list_length_max` returning incorrect results for list-of-lists with
+  `NULL` siblings before non-`NULL` sublists.
+- Fixed incorrect query results when casting `text` to `"char"` or `bytea`
+  in index lookups and equality filters.
+- Fixed incorrect query results when casting `text` to `name` or
+  `varchar(n)` in contexts that rely on uniqueness, such as `DISTINCT` or
+  joins.
+- Fixed MySQL sources failing to decode `TIMESTAMP` and `DATETIME` columns
+  when using `TEXT COLUMNS`.
+- Fixed `COPY FROM ... (FORMAT PARQUET)` producing range values that did not
+  compare equal to logically-identical values constructed in SQL.
+- Fixed missing audit log entries for `ALTER TABLE ADD COLUMN` and
+  `ALTER SOURCE ... SET (TIMESTAMP INTERVAL)`.
+- Fixed the Console Data Explorer page intermittently failing to load due to
+  a WebSocket connection race condition.
+
+## v26.25.0
+*Released to Materialize Cloud: 2026-05-21* <br>
+*Released to Materialize Self-Managed: 2026-05-22* <br>
+
+This release includes source versioning for MySQL sources, improvements, and
+bug fixes.
+
+### MySQL: Source versioning
+
+> **Public Preview:** This feature is in public preview.
+
+For MySQL sources, we've introduced new syntax for [`CREATE
+SOURCE`](/sql/create-source/mysql-v2/) and [`CREATE
+TABLE`](/sql/create-table/). This allows you to better handle schema changes
+in your source MySQL tables.
+
+> **Note:** - Changing column types is currently unsupported.
+
+For more information, refer to:
+- [Guide: Handling upstream MySQL schema changes with zero
+  downtime](/ingest-data/mysql/source-versioning/)
+- [Syntax: `CREATE SOURCE`](/sql/create-source/mysql-v2/)
+- [Syntax: `CREATE TABLE`](/sql/create-table/)
+
+### Improvements {#v26.25-improvements}
+
+- **Source versioning in public preview**: Source versioning helps you handle
+  upstream schema changes without downtime in Materialize. With v26.25, source
+  versioning has graduated from private preview to public preview, and is now
+  available by default across all environments. For more information, refer to
+  the source versioning guides:
+    - [PostgreSQL](/ingest-data/postgres/source-versioning/)
+    - [MySQL](/ingest-data/mysql/source-versioning/)
+    - [SQL Server](/ingest-data/sql-server/source-versioning/)
+
+### Bug Fixes {#v26.25-bug-fixes}
+
+- Fixed dependents of replica-targeted materialized views being left in an
+  inconsistent state when the target replica is dropped, causing subsequent
+  queries against those dependents to fail.
+- Fixed `ALTER CLUSTER ... SET (SIZE, WORKLOAD CLASS) WITH (WAIT FOR ...)`
+  silently dropping the workload class change during zero-downtime
+  reconfiguration.
+- Fixed `CREATE TABLE FROM SOURCE` retaining the old source name in the stored
+  definition after the source is renamed.
+- Fixed `ALTER CONNECTION IF EXISTS` notice reporting the wrong object type.
+- Fixed ambiguous column names being silently accepted in sink `KEY` clauses
+  instead of returning an error.
+- Fixed a panic during query optimization when `EXPECTED GROUP SIZE` is set
+  to `0`.
+- Fixed real-time recency timeout and dropped-object errors returning generic
+  error messages instead of the correct SQL error codes and descriptions.
+- Fixed Kafka sources hanging indefinitely when the start offset no longer
+  exists due to topic retention or compaction.
+- Fixed `EXPLAIN` plans omitting join projections, making some join closures
+  appear as identity when they were not.
+- Fixed Self-Managed replica scheduling when `availability_zones` is set,
+  where `minDomains` could leave additional replicas stuck in a pending state.
+
+## v26.24.3
+*Released to Materialize Self-Managed: 2026-05-20* <br>
+
+This patch release fixes a MySQL source ingestion bug.
+
+### Bug Fixes {#v26.24.3-bug-fixes}
+
+- Fixed MySQL sources failing to decode `TIMESTAMP` and `DATETIME` columns
+  ingested via `TEXT COLUMNS`. Zero-value timestamps (`0000-00-00 00:00:00`)
+  continue to require `TEXT COLUMNS` plus a `CAST` in user queries.
+
+## v26.24.2
+*Released to Materialize Self-Managed: 2026-05-18* <br>
+
+This patch release extends the v26.24.0 catalog migration repair to cover
+additional edge cases.
+
+### Bug Fixes {#v26.24.2-bug-fixes}
+
+- Extended the v26.24.0 catalog migration repair to also clear residual
+  negative multiplicities and normalize Role rows still stored in the
+  pre-v81 byte form.
+
+## v26.24.1
+*Released to Materialize Cloud: 2026-05-14 on as-needs basis* <br>
+
+This patch release adds configurable Kafka sink message and batch size limits.
+
+### Improvements {#v26.24.1-improvements}
+Configurable Kafka sink size limits: The maximum size of individual Kafka sink messages and message batches can now be configured beyond their previous defaults.
+
+## v26.24.0
+*Released to Materialize Cloud: 2026-05-14* <br>
+
+This release introduces the built-in MCP server for agents, improvements, and
+bug fixes.
+
+### MCP Server for Agents
+
+> **Public Preview:** This feature is in public preview.
+
+Give your agents fresh context using Materialize. Materialize environments now
+include a built-in Model Context Protocol (MCP) [server for agents
+(`/api/mcp/agent`)](/integrations/mcp-server/mcp-agent/). Once connected, an
+agent can discover your data products, understand the underlying data ontology,
+and run queries to fetch fresh data.
+
+Agents can discover [materialized views](/sql/create-materialized-view/) or [indexed](/sql/create-index/) views. You can use [comments](/sql/comment-on/) to document the data products, and describe them to agents. Agents authenticate as [roles](/sql/create-role/) in Materialize, so [RBAC privileges](/manage/access-control/) govern which data products are visible. Finally, you can set up a dedicated [cluster](/concepts/clusters/) for your agents, so they're isolated from the rest of your environment.
+
+The MCP server for agents complements the [MCP server for
+developers](/integrations/mcp-server/mcp-developer/) released in v26.20.2. The
+developer server gives coding agents (like Claude Code) access to Materialize's
+observability so you can build on Materialize faster; the agent server gives
+production agents fresh, governed context from your data products.
+
+For more information, refer to:
+- [Integrations: MCP Server for Agents](/integrations/mcp-server/mcp-agent/)
+
+### Improvements {#v26.24-improvements}
+
+- **`dbt-materialize` connection overrides**: The dbt adapter now supports
+  passing custom connection options via the `options` field in `profiles.yml`,
+  enabling OIDC authentication and other advanced connection configurations.
+- **`COPY FROM` rejects HTTP redirects**: `COPY FROM` now returns a clear error
+  if the target URL responds with an HTTP redirect, preventing unexpected data
+  sources and potential security issues.
+- **[Agent skills](/integrations/coding-agent-skills/) — improved `mcp-developer-analysis` client setup**: The skill now includes a comprehensive playbook for connecting MCP-capable clients (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to the [MCP server for developers](/integrations/mcp-server/mcp-developer/).
+
+### Bug Fixes {#v26.24-bug-fixes}
+
+- Fixed MySQL sources with RDS IAM authentication failing when the database
+  username contains special characters like `&` or `#`.
+- Fixed joins incorrectly failing with a type mismatch error when join columns
+  differed only in nullability.
+- Fixed fast-path `SELECT` queries returning incorrect results when `OFFSET`
+  was specified.
+- Fixed `string_to_array` returning incorrect results when `null_string` is
+  specified and the delimiter is empty.
+- Fixed `INSERT INTO ... SELECT` silently ignoring the `OFFSET` clause in the
+  source query.
+- Fixed `seahash` function catalog metadata reporting the wrong return type
+  (`uint4` instead of `uint8`).
+- Fixed `mz_egress_ips` storing non-canonical CIDR notation (e.g.,
+  `10.0.5.7/24` instead of `10.0.5.0/24`).
+- Fixed Console crashing on OIDC-protected routes when the identity provider
+  initialization fails, instead of falling through to password-based sign-in.
+- Fixed catalog migration bug from v26.18.0 by which a
+  `Non-positive multiplicity in DistinctBy` error could occur on queries
+  containing `SELECT DISTINCT` over role-derived catalog views (e.g.,
+  anything reading from `mz_roles`, `mz_role_members`, or views that
+  internally project role columns). The error is resolved automatically by
+  upgrading to v26.24.2 or newer.
+
+## v26.23.2
+*Released to Materialize Cloud: 2026-05-11* <br>
+
+This patch release includes bug fixes.
+
+### Bug Fixes {#v26.23.2-bug-fixes}
+
+- Fixed a regression in v26.23.0 that caused storage replicas to spend a large
+  share of their CPU time walking small data fragments during Parquet decode,
+  slowing queries that read from object storage.
+- Fixed a regression in v26.23.0 that caused storage replicas to retain extra
+  memory when reading from object storage.
+
+## v26.23.0
+*Released to Materialize Cloud: 2026-05-07* <br>
+
+This release introduces enhanced Kafka PrivateLink routing options, security
+improvements, and bug fixes.
+
+### Features {#v26.23-features}
+
+- **Dynamic Kafka brokers with AWS PrivateLink**: Kafka connections can now
+  route dynamically discovered brokers through a PrivateLink tunnel, rather than
+  requiring every advertised broker to be enumerated in the `BROKERS (...)`
+  clause. Two new options are available:
+  - `MATCHING 'pattern' USING AWS PRIVATELINK conn (...)` inside `BROKERS (...)`
+    associates a PrivateLink connection with any broker whose advertised
+    hostname matches `pattern`, including brokers that only appear in Kafka
+    metadata after the connection is established.
+  - `BOOTSTRAP BROKER 'addr' USING AWS PRIVATELINK conn (...)` pins the initial
+    bootstrap address to an explicit PrivateLink tunnel.
+
+  Together, these resolve availability-zone mismatches that previously affected
+  MSK and other Kafka clusters that rely on broker discovery, by ensuring every
+  broker, including those learned from metadata, is reached through a
+  PrivateLink endpoint in the broker's own AZ. Refer to our documentation on
+  [AWS PrivateLink connections](/ingest-data/network-security/privatelink/) and
+  the [Kafka `CREATE CONNECTION` PrivateLink syntax](/sql/create-connection/#kafka-privatelink-syntax)
+  for more information.
+
+### Improvements {#v26.23-improvements}
+
+- **New `repeat_row_non_negative` SQL function**: The new
+  `repeat_row_non_negative` table function generates a specified number of rows
+  but errors on negative input rather than silently producing incorrect results,
+  making it safer to use in general-purpose queries than the existing
+  `repeat_row`.
+- **Queries fail gracefully on internal errors**: Certain internal errors that
+  previously caused `environmentd` to crash now return a query error instead,
+  improving cluster stability.
+- **dbt deploy retries on concurrent DDL conflicts**: `dbt deploy` now
+  automatically retries the `ALTER SWAP` atomic deployment when it encounters a
+  DDL interrupt from concurrent catalog operations, preventing spurious
+  deployment failures in busy environments.
+- **Clearer temporal filter error messages**: Error messages for unsupported
+  temporal predicates now include the actual filter expression, making it easier
+  to identify and fix the offending query.
+- **`COPY TO S3` Parquet type validation at planning time**: `COPY TO S3` with
+  `FORMAT PARQUET` now rejects Parquet-incompatible column types (such as
+  `interval`) at query planning time with a clear error, rather than failing at
+  execution time with an opaque message.
+- **`mcp-developer-analysis`**: A new
+  [coding agent skill](/integrations/coding-agent-skills/) that pairs with the
+  `/api/mcp/developer` endpoint to provide diagnostic workflows, system catalog
+  references, and remediation runbooks for AI-powered troubleshooting.
+- **System catalog ontology for the MCP developer server**: The system
+  catalog now exposes an ontology that describes how `mz_*` tables relate to
+  one another and which tables to consult for common diagnostic questions. The
+  [MCP server for developers](/integrations/mcp-server/mcp-developer/) uses
+  this ontology to plan catalog queries directly instead of probing the schema,
+  reducing the number of round trips needed to answer questions about
+  hydration, freshness, and resource usage.
+- **~10% faster materialized view hydration**: We've reduced the work performed
+  during initial materialized view hydration, observing approximately 10%
+  faster hydration times across our benchmarks. This shortens the window
+  between creating (or restarting) a materialized view and the point at which
+  it begins serving up-to-date results.
+
+### Bug Fixes {#v26.23-bug-fixes}
+
+- Fixed `statement_timeout = 0` (which means "disabled" in PostgreSQL semantics)
+  causing every `SELECT` and `EXPLAIN FILTER PUSHDOWN` to fail immediately with a
+  spurious `StatementTimeout` error.
+- Tightened default validation on headers in Self-Managed deployments.
+- Enhanced session-based HTTP authentication.
+- Fixed `SHOW CREATE TYPE` emitting the bare type name instead of the
+  fully-qualified `database.schema.type` name, unlike every other `SHOW CREATE`
+  variant.
+- Fixed Self-Managed `orchestratord` `--enable-rbac False` silently inverting
+  the value and enabling RBAC instead of disabling it.
+- Fixed SQL Server source composite primary key columns being recorded in
+  non-deterministic order, causing incorrect constraint definitions and
+  non-deterministic behavior across `ALTER SOURCE` and re-purification.
+- Fixed PostgreSQL source RLS policy validation producing false positives that
+  blocked replication for users whose roles inherit BYPASSRLS through role
+  membership.
+- Fixed SQL Server source growing memory without bound during table snapshots due
+  to a `RowArena` that was never cleared between rows.
+- Fixed `SELECT` queries with both `LIMIT` and `OFFSET` processing all remaining
+  rows instead of stopping after the limit was reached.
+- Fixed SQL Server source opening one upstream connection per Timely worker
+  instead of one total, multiplying SQL Server connections and
+  `sp_cdc_cleanup_change_table` calls by the worker count.
+- Fixed SQL Server source with PrivateLink connections only attempting the first
+  resolved IP address instead of trying all available addresses.
+- Fixed `regexp_replace` returning an invalid regular expression error instead of
+  `NULL` when called with a `NULL` replacement column and a literal pattern that
+  fails to compile.
+- Fixed `pg_index.indnatts` counting columns of the indexed table instead of the
+  index itself, and `pg_class.relnatts` always reporting `0` for index rows,
+  improving compatibility with tools that introspect the PostgreSQL catalog.
+- Fixed toggling `memory_limiter_interval` from `0s` to a non-zero value at
+  runtime potentially triggering an immediate replica kill even when memory usage
+  was well below the limit.
+- Fixed Self-Managed Kubernetes deployments where setting both
+  `cluster_topology_spread_soft = on` and `cluster_topology_spread_min_domains`
+  caused all replica pod creation to fail with an admission error.
+
 ## v26.22.0
 *Released to Materialize Cloud: 2026-04-30* <br>
 *Released to Materialize Self-Managed: 2026-05-01* <br>
@@ -78,7 +468,7 @@ with up to 50% lower memory usage, and bug fixes.
 This release introduces the built-in Developer MCP server, Console
 improvements, and bug fixes.
 
-### Developer MCP server
+### MCP Server for Developers
 
 > **Public Preview:** This feature is in public preview.
 
@@ -903,6 +1293,26 @@ notes](/self-managed-deployments/upgrading/#version-specific-upgrade-notes).
 ## See also
 
 - [Release Schedule](/releases/schedule/)
+
+---
+
+## Materialize v26.29
+
+---
+
+## Materialize v26.28
+
+---
+
+## Materialize v26.27
+
+---
+
+## Materialize v26.26
+
+---
+
+## Materialize v26.25
 
 ---
 

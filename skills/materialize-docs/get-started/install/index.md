@@ -38,8 +38,10 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 </table>
 
 <h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
-> **Tip:** The Terraform modules are provided as examples. They are not required for
-> installing Materialize.
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
 <table>
   <thead>
@@ -65,8 +67,10 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 </table>
 
 <h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
-> **Tip:** The Terraform modules are provided as examples. They are not required for
-> installing Materialize.
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
 <table>
   <thead>
