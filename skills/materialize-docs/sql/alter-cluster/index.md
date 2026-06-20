@@ -26,7 +26,6 @@ SET (
     SIZE = <text>
     [, REPLICATION FACTOR = <int>]
     [, MANAGED = <bool>]
-    [, SCHEDULE = MANUAL|ON REFRESH(...)]
 )
 [WITH ( <with_option>[,...])]
 ;
@@ -39,7 +38,6 @@ SET (
 | `SIZE` | <a name="alter-cluster-size"></a> The size of the resource allocations for the cluster. For valid size values, see [Available sizes](#available-sizes). {{< warning >}} Changing the size of a cluster may incur downtime. For more information, see [Resizing considerations](#resizing). {{< /warning >}} Not available for `ALTER CLUSTER ... RESET` since there is no default `SIZE` value. |
 | `REPLICATION FACTOR` | Optional.The number of replicas to provision for the cluster. Each replica of the cluster provisions a new pool of compute resources to perform exactly the same computations on exactly the same data. For more information, see [Replication factor considerations](#replication-factor).  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  If `FALSE`, enables the use of the <em>deprecated</em> [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) command.  Default: `TRUE`  |
-| `SCHEDULE` | Optional. The [scheduling type](/sql/create-cluster/#scheduling) for the cluster. Valid values are `MANUAL` and `ON REFRESH`.  Default: `MANUAL`  |
 | `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under activedevelopment.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* A fixed duration to wait for the new replicas to be ready. This option can lead to downtime. As such, we recommend using the `WAIT UNTIL READY` option instead.\|  |
 
 **Reset to default:**
@@ -51,7 +49,7 @@ To reset a cluster configuration back to its default value:
 ```mzsql
 ALTER CLUSTER <cluster_name>
 RESET (
-    REPLICATION FACTOR | MANAGED | SCHEDULE,
+    REPLICATION FACTOR | MANAGED,
     ...
 )
 ;
@@ -63,7 +61,6 @@ RESET (
 | `<cluster_name>` | The name of the cluster you want to alter.  |
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  Default: `TRUE`  |
-| `SCHEDULE` | Optional. The [scheduling type](/sql/create-cluster/#scheduling) for the cluster.  Default: `MANUAL`  |
 
 **Rename:**
 
@@ -341,20 +338,6 @@ ALTER CLUSTER c1 SET (SIZE '100cc');
 This will incur downtime when the cluster contains objects that need
 re-hydration before they are ready. This includes indexes, materialized views,
 and some types of sources.
-
-### Schedule
-
-For use cases that require using [scheduled clusters](/sql/create-cluster/#scheduling),
-you can set or change the originally configured schedule and related options
-using the `ALTER CLUSTER` command.
-```sql
-ALTER CLUSTER c1 SET (SCHEDULE = ON REFRESH (HYDRATION TIME ESTIMATE = '1 hour'));
-```
-
-See the reference documentation for [`CREATE
-CLUSTER`](../create-cluster/#scheduling) or [`CREATE MATERIALIZED
-VIEW`](../create-materialized-view/#refresh-strategies) for more details on
-scheduled clusters.
 
 ### Converting unmanaged to managed clusters
 

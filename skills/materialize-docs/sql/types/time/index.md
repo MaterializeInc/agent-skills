@@ -5,7 +5,7 @@ Expresses a time without a specific date
 Detail | Info
 -------|------
 **Quick Syntax** | `TIME '01:23:45'`
-**Size** | 4 bytes
+**Size** | 8 bytes
 **Catalog name** | `pg_catalog.time`
 **OID** | 1083
 **Min value** | `TIME '00:00:00'`

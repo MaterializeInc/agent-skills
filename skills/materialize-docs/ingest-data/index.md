@@ -125,8 +125,8 @@ Although Materialize is continually ingesting changes from the upstream system,
 depending on the volume of the upstream changes, Materialize may lag behind the
 upstream system. If the lag is significant, queries may block until Materialize
 has caught up sufficiently with the upstream system when using the default
-[isolation level](/get-started/isolation-level/) of [strict
-serializability](/get-started/isolation-level/#strict-serializable).
+[isolation level](/reference/isolation-level/) of [strict
+serializability](/reference/isolation-level/#strict-serializable).
 
 In the Materialize Console, you can see a source's data freshness from the
 **Data Explorer** screen. Alternatively, you can run a query to monitor the lag.
@@ -187,6 +187,10 @@ exploration more lightweight.
 
 For example, when creating a PostgreSQL source, you may want to create a
 publication with specific tables rather than for all tables in the database.
+
+Once the data is in Materialize, you can further [reduce the size of the
+data](/transform-data/optimization/#reduce-the-size-of-the-data) maintained by
+your view definitions.
 
 ### Upsert sources
 
@@ -1134,126 +1138,27 @@ new data arrives, and serving results efficiently.
 
 ## Debezium
 
-You can use [Debezium](https://debezium.io/) to propagate Change Data Capture
-(CDC) data to Materialize from databases that are not supported via native
-connectors. For PostgreSQL and MySQL databases, we **strongly recommend** using
-the native [PostgreSQL](/sql/create-source/postgres/) and [MySQL](/sql/create-source/mysql/)
-sources instead.
+For databases that are not natively supported, like Oracle or MongoDB, you can
+use [Debezium](https://debezium.io/) to propagate Change Data Capture (CDC) data
+to Materialize.
 
 | Database   | Natively supported? | Integration guide                                                                              |
 |------------|---------------------| ---------------------------------------------------------------------------------------------- |
-| PostgreSQL | ✓                   | <ul><li>[AlloyDB for PostgreSQL](/ingest-data/postgres/alloydb/)</li><li>[Amazon Aurora for PostgreSQL](/ingest-data/postgres/amazon-aurora/)</li><li>[Amazon RDS for PostgreSQL](/ingest-data/postgres/amazon-rds/)</li><li>[Azure DB for PostgreSQL](/ingest-data/postgres/azure-db/)</li><li>[Google Cloud SQL for PostgreSQL](/ingest-data/postgres/cloud-sql/)</li><li>[Neon](/ingest-data/postgres/neon/)</li><li>[Self-hosted PostgreSQL](/ingest-data/postgres/self-hosted/)</li></ul>
-                                                    |
-| MySQL      | ✓                   | <ul><li>[Amazon Aurora for MySQL](/ingest-data/mysql/amazon-aurora/)</li><li>[Amazon RDS for MySQL](/ingest-data/mysql/amazon-rds/)</li><li>[Azure DB for MySQL](/ingest-data/mysql/azure-db/)</li><li>[Google Cloud SQL for MySQL](/ingest-data/mysql/google-cloud-sql/)</li><li>[Self-hosted MySQL](/ingest-data/mysql/self-hosted/)</li></ul>
-                                                       |
-| SQL Server | ✓                   | <ul><li>[Self-hosted SQL Server](/ingest-data/sql-server/self-hosted/)</li></ul>
-                                                  |
 | Oracle     |                     | [Kafka + Debezium](https://debezium.io/documentation/reference/stable/connectors/oracle.html)  |
 | MongoDB    |                     | [Kafka + Debezium](/ingest-data/mongodb/) |
 
-### Using Debezium
-
-For databases that are not yet natively supported, like Oracle, SQL Server, or
-MongoDB, you can use [Debezium](https://debezium.io/) to propagate Change Data
-Capture (CDC) data to Materialize.
+Debezium captures row-level changes resulting from `INSERT`, `UPDATE`, and
+`DELETE` operations in the upstream database and publishes them as events to
+Kafka (and other Kafka API-compatible brokers) using Kafka Connect-compatible
+connectors.
 
 <div class="note">
   <strong class="gutter">NOTE:</strong> Currently, Materialize only supports Avro-encoded Debezium records. If you're interested in JSON support, please reach out in the community Slack or submit a <a href="https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests">feature request</a>.
 </div>
 
-Debezium captures row-level changes resulting from `INSERT`, `UPDATE`, and
-`DELETE` operations in the upstream database and publishes them as events to
-Kafka (and other Kafka API-compatible brokers) using Kafka Connect-compatible
-connectors. For more details on CDC support in Materialize, check the
+For more details on CDC support in Materialize, check the
 [Kafka source](/sql/create-source/kafka/#debezium-envelope) reference
 documentation.
-
----
-
-## Fivetran
-
-[Fivetran](https://www.fivetran.com/) is a cloud-based automated data movement platform for
-extracting, loading and transforming data from a wide variety of connectors.
-
-You can use Fivetran to sync data into Materialize for the following use cases:
-- To sync data from SaaS applications or platforms, such as HubSpot, Shopify, or Stripe.
-- To sync data from event streaming sources, such as Kinesis or Google Pub/Sub.
-- To sync data from other data warehouses, such as Snowflake, Databricks, or Oracle.
-
-For relational databases like PostgreSQL or MySQL, and event streaming sources like Apache Kafka,
-you should prefer to use [Materialize native sources](/sql/create-source/).
-
-## Before you begin
-### Terminology
-Fivetran syncs data from what they call
-[sources](https://fivetran.com/docs/getting-started/glossary#source) to what they call
-[destinations](https://fivetran.com/docs/getting-started/glossary#destination). Users create
-[connectors](https://fivetran.com/docs/getting-started/glossary#connector) to configure the data
-pipelines that repeatedly sync the data from each source to the destination at a scheduled cadence.
-
-In this setup, Materialize is the destination. The source is whichever data source you're syncing
-into Materialize, such as Hubspot or Shopify.
-
-### Prerequisites
-Ensure that you have:
-- An active [Fivetran](https://www.fivetran.com/) account with
-[permission to add destinations and connectors](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/account-management/role-based-access-control#legacyandnewrbacmodel).
-- For the Materialize user that you're using to connect to Fivetran,
-[`CREATE`](/security/appendix/appendix-privileges/) privileges on the
-target database in Materialize.
-
-## Setup guide
-### Step 1: Create the Materialize destination
-Follow this
-[Materialize-authored guide in the Fivetran docs](https://fivetran.com/docs/destinations/materialize/setup-guide#materializesetupguide) to set up Materialize as a destination in Fivetran.
-
-### Step 2: Create the connector(s)
-Follow the
-[Fivetran guide on connectors](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/connectors#overview)
-to set up your connector(s). Choose your newly created Materialize destination as the destination
-for the connector.
-
-Schema changes to existing tables is not currently supported. When creating a Connector you should
-select the option to
-["Block all" schema changes](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/connectors/schema#defineschemachangehandlingsettings).
-
-You can see the full list of available [Fivetran connectors](https://fivetran.com/docs/connectors)
-in their docs.
-
-## Other setup information
-### Type transformation mapping
-As we extract your data, we match Fivetran data types to types that Materialize supports. If we don't
-support a specific data type, we automatically change that type to the closest supported data type.
-
-The data types in Materialize follow Fivetran's standard data type storage.
-
-The following table illustrates how we transform Fivetran data types into Materialize-supported
-types:
-
-| FIVETRAN DATA TYPE | MATERIALIZE DATA TYPE |
-|--------------------|-----------------------|
-| BOOLEAN            | BOOLEAN               |
-| SHORT              | INT16                 |
-| INT                | INT32                 |
-| LONG               | INT64                 |
-| BIGDECIMAL         | DOUBLE                |
-| FLOAT              | FLOAT                 |
-| DOUBLE             | DOUBLE                |
-| LOCALDATE          | DATE                  |
-| LOCALDATETIME      | TIMESTAMP             |
-| INSTANT            | TIMESTAMP             |
-| STRING             | STRING                |
-| JSON               | JSONB                 |
-| BINARY             | STRING                |
-| XML                | Unsupported           |
-
-----
-
-### Sync frequency
-The highest sync frequency Fivetran offers is 1 minute for Enterprise and Business Critical plans,
-and 5 minutes for all other plans. The lowest sync frequency is 24 hours. You can read more about
-sync scheduling in the
-[Fivetran docs](https://fivetran.com/docs/core-concepts/syncoverview#syncfrequencyandscheduling).
 
 ---
 
@@ -1939,25 +1844,25 @@ absolute values at any moment in time.
 
 ## Change Data Capture (CDC)
 
-Materialize supports MySQL as a real-time data source. The [MySQL source](/sql/create-source/mysql/)
-uses MySQL's [binlog replication protocol](/sql/create-source/mysql/#change-data-capture)
+Materialize supports MySQL (8.0.1+) as a real-time data source. The [MySQL source](/sql/create-source/mysql-v2/)
+uses MySQL's [binlog replication protocol](/sql/create-source/mysql-v2/#change-data-capture)
 to **continually ingest changes** resulting from CRUD operations in the upstream
 database. The native support for MySQL Change Data Capture (CDC) in Materialize
 gives you the following benefits:
 
-* **No additional infrastructure:** Ingest MySQL change data into Materialize in
-    real-time with no architectural changes or additional operational overhead.
-    In particular, you **do not need to deploy Kafka and Debezium** for MySQL
-    CDC.
+- **No additional infrastructure:** Ingest MySQL change data into Materialize in
+  real-time with no architectural changes or additional operational overhead.
+  In particular, you **do not need to deploy Kafka and Debezium** for MySQL
+  CDC.
 
-* **Transactional consistency:** The MySQL source ensures that transactions in
-    the upstream MySQL database are respected downstream. Materialize will
-    **never show partial results** based on partially replicated transactions.
+- **Transactional consistency:** The MySQL source ensures that transactions in
+  the upstream MySQL database are respected downstream. Materialize will
+  **never show partial results** based on partially replicated transactions.
 
-* **Incrementally updated materialized views:** Materialized views are **not
-    supported in MySQL**, so you can use Materialize as a
-    read-replica to build views on top of your MySQL data that are efficiently
-    maintained and always up-to-date.
+- **Incrementally updated materialized views:** Materialized views are **not
+  supported in MySQL**, so you can use Materialize as a
+  read-replica to build views on top of your MySQL data that are efficiently
+  maintained and always up-to-date.
 
 ## Supported versions and services
 
@@ -1965,29 +1870,33 @@ gives you the following benefits:
 > source out-of-the-box. [MariaDB](https://mariadb.org/), [Vitess](https://vitess.io/)
 > and [PlanetScale](https://planetscale.com/) are currently **not supported**.
 
-The MySQL source requires **MySQL 5.7+** and is compatible with most common
+The MySQL source requires **MySQL 8.0.1+** and is compatible with most common
 MySQL hosted services.
 
-| Integration guides                          |
-| ------------------------------------------- |
-| <ul><li>[Amazon Aurora for MySQL](/ingest-data/mysql/amazon-aurora/)</li><li>[Amazon RDS for MySQL](/ingest-data/mysql/amazon-rds/)</li><li>[Azure DB for MySQL](/ingest-data/mysql/azure-db/)</li><li>[Google Cloud SQL for MySQL](/ingest-data/mysql/google-cloud-sql/)</li><li>[Self-hosted MySQL](/ingest-data/mysql/self-hosted/)</li></ul>
-    |
+## Integration guides
 
-If there is a hosted service or MySQL distribution that is not listed above but
-you would like to use with Materialize, please submit a [feature request](https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests&labels=A-integration)
-or reach out in the Materialize [Community Slack](https://materialize.com/s/chat).
+To help you get started, the following integration guides are available:
+
+- [Amazon Aurora for MySQL](/ingest-data/mysql/amazon-aurora/)
+- [Amazon RDS for MySQL](/ingest-data/mysql/amazon-rds/)
+- [Azure DB for MySQL](/ingest-data/mysql/azure-db/)
+- [Google Cloud SQL for MySQL](/ingest-data/mysql/google-cloud-sql/)
+- [Self-hosted MySQL](/ingest-data/mysql/self-hosted/)
 
 ## Considerations
 
 ### Schema changes
 
-> **Note:** Work to more smoothly support ddl changes to upstream tables is currently in
-> progress. The work introduces the ability to re-ingest the same upstream table
-> under a new schema and switch over without downtime.
-
 Materialize supports schema changes in the upstream database as follows:
 
-#### Compatible schema changes
+#### Compatible schema changes (Legacy syntax)
+
+> **Note:** This section refer to the legacy [`CREATE SOURCE ... FOR
+> ...`](/sql/create-source/mysql/) that creates subsources as part of the `CREATE
+> SOURCE` operation.  To be able to handle the upstream column additions and
+> drops, use [`CREATE SOURCE (New Syntax)`](/sql/create-source/mysql-v2/) and
+> [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
+> [MySQL: Source versioning guide](/ingest-data/mysql/source-versioning/).
 
 <ul>
 <li>
@@ -2126,7 +2035,7 @@ common PostgreSQL hosted services.
 
 ## Integration guides
 
-The following integration guides are available:
+To help you get started, the following integration guides are available:
 
 <ul>
 <li><a href="/ingest-data/postgres/alloydb/" >AlloyDB for PostgreSQL</a></li>

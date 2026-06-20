@@ -1,5 +1,6 @@
 # Guide: Handle upstream schema changes with zero downtime
 How to add a column, or drop a column, from your source PostgreSQL database, without any downtime in Materialize
+> **Public Preview:** This feature is in public preview.
 
 > **Note:** - Changing column types is currently unsupported.
 
@@ -14,8 +15,7 @@ This guide walks you through how to handle these changes without any downtime in
 ## Prerequisites
 
 Some familiarity with Materialize. If you've never used Materialize before,
-start with our [guide to getting started](/get-started/quickstart/) to learn
-how to connect a database to Materialize.
+start with our [guide to getting started](/get-started/quickstart/).
 
 ### Set up a PostgreSQL database
 
@@ -91,10 +91,11 @@ CREATE TABLE v1.T
 Once you've created a table from source, the [initial
 snapshot](/ingest-data/#snapshotting) of table `v1.T` will begin.
 
-> **Note:** During the snapshotting, the data ingestion for the other tables associated with
-> the source is temporarily blocked. As before, you can monitor progress for the
-> snapshot operation on the overview page for the source in the Materialize
-> console.
+> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
+> source is temporarily blocked. As such, if possible, you can resize the cluster
+> to speed up the snapshotting process and once the process finishes, resize the
+> cluster for steady-state. You can monitor the snapshot progress on the overview
+> page for the source in the Materialize console.
 
 ## Create a view on top of the table.
 
@@ -139,10 +140,11 @@ CREATE TABLE v2.T
 The [snapshotting](/ingest-data/#snapshotting) of table `v2.T` will begin.
 `v2.T` will include columns `A` and `B`.
 
-> **Note:** During the snapshotting, the data ingestion for the other tables associated with
-> the source is temporarily blocked. As before, you can monitor progress for the
-> snapshot operation on the overview page for the source in the Materialize
-> console.
+> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
+> source is temporarily blocked. As such, if possible, you can resize the cluster
+> to speed up the snapshotting process and once the process finishes, resize the
+> cluster for steady-state. You can monitor the snapshot progress on the overview
+> page for the source in the Materialize console.
 
 When the new `v2.T` table has finished snapshotting, create a new materialized
 view `matview` in the new schema.  Since the new `v2.matview` is referencing the
@@ -169,10 +171,11 @@ CREATE TABLE v3.T
     FROM SOURCE my_source(REFERENCE public.T) WITH (EXCLUDE COLUMNS (B));
 ```
 
-> **Note:** During the snapshotting, the data ingestion for the other tables associated with
-> the source is temporarily blocked. As before, you can monitor progress for the
-> snapshot operation on the overview page for the source in the Materialize
-> console.
+> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
+> source is temporarily blocked. As such, if possible, you can resize the cluster
+> to speed up the snapshotting process and once the process finishes, resize the
+> cluster for steady-state. You can monitor the snapshot progress on the overview
+> page for the source in the Materialize console.
 
 ### B. Drop a column in your upstream PostgreSQL database
 

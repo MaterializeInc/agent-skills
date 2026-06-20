@@ -6,21 +6,19 @@ The "first value in each group" query pattern returns the first value, according
 to some ordering, in each group.
 
 > ### Materialize and window functions
-> For [window functions](/sql/functions/#window-functions), when an input record
-> in a partition (as determined by the `PARTITION BY` clause of your window
-> function) is added/removed/changed, Materialize recomputes the results for the
-> entire window partition. This means that when a new batch of input data arrives
-> (that is, every second), **the amount of computation performed is proportional
-> to the total size of the touched partitions**.
-> For example, assume that in a given second, 20 input records change, and these
-> records belong to **10** different partitions, where the average size of each
-> partition is **100**. Then, amount of work to perform is proportional to
-> computing the window function results for **10\*100=1000** rows.
+> For indexed views and materialized views that contain [window
+> functions](/sql/functions/#window-functions) (including aggregate functions used
+> with an `OVER` clause), when an input record in a partition is
+> added/removed/changed, Materialize **recomputes the results from scratch** for
+> that partition (instead of using incremental computation).
+> The `PARTITION BY` clause of your window function determines your partitions. If
+> `PARTITION BY` is omitted, all records belong to a single partition (i.e., any
+> record change results in a recomputation from scratch over the whole input).
 > To avoid performance issues that may arise as the number of records grows,
-> consider rewriting your query to use idiomatic Materialize SQL instead of window
-> functions. If your query cannot be rewritten without the window functions and
-> the performance of window functions is insufficient for your use case, please
-> [contact our team](/support/).
+> consider rewriting your indexed views and materialized views to use idiomatic
+> Materialize SQL instead of window functions. If your view definitions cannot be
+> rewritten without the window functions and the performance of window functions
+> is insufficient for your use case, please [contact our team](/support/).
 
 ## Idiomatic Materialize SQL
 
@@ -40,23 +38,18 @@ in a subquery.
 <td><blue>Materialize SQL</blue></td>
 <td class="copyableCode">
 
-Use a subquery that uses the [MIN()](/sql/functions/#min) or
-[MAX()](/sql/functions/#max) aggregate function.
-
-<br>
-<div style="background-color: var(--code-block)">
-
-```mzsql
-SELECT tableA.fieldA, tableA.fieldB, minmax.Z
- FROM tableA,
- (SELECT fieldA,
-    MIN(fieldZ),
-    MAX(fieldZ)
- FROM tableA
- GROUP BY fieldA) minmax
-WHERE tableA.fieldA = minmax.fieldA
-ORDER BY fieldA ... ;
-```
+<p>Use a subquery that uses the <a href="/sql/functions/#min" >MIN()</a> or
+<a href="/sql/functions/#max" >MAX()</a> aggregate function.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldB</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">Z</span>
+</span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"> <span class="p">(</span><span class="k">SELECT</span> <span class="n">fieldA</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="n">MIN</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="k">MAX</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span>
+</span></span><span class="line"><span class="cl"> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">)</span> <span class="n">minmax</span>
+</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">fieldA</span>
+</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span> <span class="mf">...</span> <span class="p">;</span>
+</span></span></code></pre></div>
 
 </td>
 </tr>
@@ -65,23 +58,17 @@ ORDER BY fieldA ... ;
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<red>Avoid the use of [`FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)`
-window function](/sql/functions/#first_value) for first value within groups
-queries.</red>
-
-<br>
-<div style="background-color: var(--code-block)">
-
-```nofmt
--- Anti-pattern. Avoid. --
+<p><red>Avoid the use of <a href="/sql/functions/#first_value" ><code>FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)</code>
+window function</a> for first value within groups
+queries.</red></p>
+<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
 SELECT fieldA, fieldB,
  FIRST_VALUE(fieldZ) OVER (PARTITION BY fieldA ORDER BY ...),
  FIRST_VALUE(fieldZ) OVER (PARTITION BY fieldA ORDER BY ... DESC)
 FROM tableA
 ORDER BY fieldA, ...;
-```
+</code></pre>
 
-</div>
 </td>
 </tr>
 
@@ -136,17 +123,16 @@ value if ordered by ascending price values).
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-```mzsql
-SELECT o.order_id, minmax.lowest_price, o.item, o.price,
-  o.price - minmax.lowest_price AS diff_lowest_price
-FROM orders_view o,
-      (SELECT order_id,
-         MIN(price) AS lowest_price
-      FROM orders_view
-      GROUP BY order_id) minmax
-WHERE o.order_id = minmax.order_id
-ORDER BY o.order_id, o.item;
-```
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span> <span class="k">AS</span> <span class="n">diff_lowest_price</span>
+</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">      <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">         <span class="n">MIN</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">lowest_price</span>
+</span></span><span class="line"><span class="cl">      <span class="k">FROM</span> <span class="n">orders_view</span>
+</span></span><span class="line"><span class="cl">      <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
+</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
+</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
+</span></span></code></pre></div>
 
 </td>
 </tr>
@@ -154,14 +140,9 @@ ORDER BY o.order_id, o.item;
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<red>Avoid the use of [`FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)`
-window function](/sql/functions/#first_value) for first value within groups queries.</red>
-
-<br>
-<div style="background-color: var(--code-block)">
-
-```nofmt
--- Anti-pattern --
+<p><red>Avoid the use of <a href="/sql/functions/#first_value" ><code>FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)</code>
+window function</a> for first value within groups queries.</red></p>
+<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern --
 SELECT order_id,
   FIRST_VALUE(price)
     OVER (PARTITION BY order_id ORDER BY price) AS lowest_price,
@@ -171,9 +152,8 @@ SELECT order_id,
     OVER (PARTITION BY order_id ORDER BY price) AS diff_lowest_price
 FROM orders_view
 ORDER BY order_id, item;
-```
+</code></pre>
 
-</div>
 </td>
 </tr>
 </tbody>
@@ -199,17 +179,16 @@ value if ordered by descending price values).
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-```mzsql
-SELECT o.order_id, minmax.highest_price, o.item, o.price,
-  o.price - minmax.highest_price AS diff_highest_price
-FROM orders_view o,
-      (SELECT order_id,
-         MAX(price) AS highest_price
-      FROM orders_view
-      GROUP BY order_id) minmax
-WHERE o.order_id = minmax.order_id
-ORDER BY o.order_id, o.item;
-```
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span> <span class="k">AS</span> <span class="n">diff_highest_price</span>
+</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">      <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">         <span class="k">MAX</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">highest_price</span>
+</span></span><span class="line"><span class="cl">      <span class="k">FROM</span> <span class="n">orders_view</span>
+</span></span><span class="line"><span class="cl">      <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
+</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
+</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
+</span></span></code></pre></div>
 
 </td>
 </tr>
@@ -217,15 +196,10 @@ ORDER BY o.order_id, o.item;
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<red>Avoid the use of [`FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)`
-window function](/sql/functions/#first_value) for first value within groups
-queries.</red>
-
-<br>
-<div style="background-color: var(--code-block)">
-
-```nofmt
--- Anti-pattern --
+<p><red>Avoid the use of <a href="/sql/functions/#first_value" ><code>FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)</code>
+window function</a> for first value within groups
+queries.</red></p>
+<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern --
 SELECT order_id,
   FIRST_VALUE(price)
     OVER (PARTITION BY order_id ORDER BY price DESC) AS highest_price,
@@ -235,12 +209,10 @@ SELECT order_id,
     OVER (PARTITION BY order_id ORDER BY price DESC) AS diff_highest_price
 FROM orders_view
 ORDER BY order_id, item;
-```
+</code></pre>
 
-</div>
 </td>
 </tr>
-
 </tbody>
 </table>
 
@@ -252,7 +224,7 @@ in the order and these prices. The example uses a subquery that groups by the
 `order_id` and selects `MIN(price)` as the lowest price (i.e., first
 value if ordered by price values) and `MAX(price)` as the
 highest price (i.e., first
-value if ordered by descending price values)
+value if ordered by descending price values).
 
 <table>
 <thead>
@@ -266,19 +238,18 @@ value if ordered by descending price values)
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-```mzsql
-SELECT o.order_id, minmax.lowest_price, minmax.highest_price, o.item, o.price,
-  o.price - minmax.lowest_price AS diff_lowest_price,
-  o.price - minmax.highest_price AS diff_highest_price
-FROM orders_view o,
-      (SELECT order_id,
-         MIN(price) AS lowest_price,
-         MAX(price) AS highest_price
-      FROM orders_view
-      GROUP BY order_id) minmax
-WHERE o.order_id = minmax.order_id
-ORDER BY o.order_id, o.item;
-```
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span> <span class="k">AS</span> <span class="n">diff_lowest_price</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span> <span class="k">AS</span> <span class="n">diff_highest_price</span>
+</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">      <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">         <span class="n">MIN</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">lowest_price</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">         <span class="k">MAX</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">highest_price</span>
+</span></span><span class="line"><span class="cl">      <span class="k">FROM</span> <span class="n">orders_view</span>
+</span></span><span class="line"><span class="cl">      <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
+</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
+</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
+</span></span></code></pre></div>
 
 </td>
 </tr>
@@ -286,15 +257,10 @@ ORDER BY o.order_id, o.item;
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<red>Avoid the use of [`FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)`
-window function](/sql/functions/#first_value) for first value within groups
-queries.</red>
-
-<br>
-<div style="background-color: var(--code-block)">
-
-```nofmt
--- Anti-pattern --
+<p><red>Avoid the use of <a href="/sql/functions/#first_value" ><code>FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)</code>
+window function</a> for first value within groups
+queries.</red></p>
+<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern --
 SELECT order_id,
   FIRST_VALUE(price)
     OVER (PARTITION BY order_id ORDER BY price) AS lowest_price,
@@ -308,8 +274,8 @@ SELECT order_id,
     OVER (PARTITION BY order_id ORDER BY price DESC) AS diff_highest_price
 FROM orders_view
 ORDER BY order_id, item;
-```
-</div>
+</code></pre>
+
 </td>
 </tr>
 </tbody>

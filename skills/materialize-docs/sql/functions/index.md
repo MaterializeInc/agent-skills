@@ -379,7 +379,14 @@ Extracts separated values from a column containing a CSV file formatted as a str
 
 <code>true</code> if <code>s</code> returns zero rows.#### `expression NOT IN(s: Query) -> bool`
 
-<code>s</code> must return exactly one column; <code>true</code> for each value in <code>expression</code> if it does not match any elements of <code>s</code>.#### `expression bool_op SOME(s: Query) -> bool`
+<p><code>s</code> must return exactly one column; <code>true</code> for each value in <code>expression</code>
+if it does not match any elements of <code>s</code>.</p>
+> **Note:** When evaluating a `WHERE fieldX NOT IN (<subquery>)` predicate involving
+> possible `NULL` values for `fieldX` or `<subquery>`, Materialize performs a
+> cross join between the outer relation and the subquery to preserve SQL
+> `NULL` semantics, which can significantly increase memory usage. If
+> possible, rewrite using [idiomatic Materialize
+> SQL](/transform-data/idiomatic-materialize-sql/not-in/).#### `expression bool_op SOME(s: Query) -> bool`
 
 <code>s</code> must return exactly one column; <code>true</code> if applying <a href="#boolean-operators" >bool_op</a> to <code>expression</code> and any value of <code>s</code> evaluates to <code>true</code>.### Date and time functionsTime functions take or produce a time-like type, e.g. <a href="../types/date" ><code>date</code></a>, <a href="../types/timestamp" ><code>timestamp</code></a>, <a href="../types/timestamptz" ><code>timestamp with time zone</code></a>.#### `age(timestamp, timestamp) -> interval`
 
@@ -567,21 +574,19 @@ but supports only the following frame modes:</p>
 <p>the default frame, which is <code>RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW</code>.</p>
 </li>
 </ul>
-> **Note:** For [window functions](/sql/functions/#window-functions), when an input record
-> in a partition (as determined by the `PARTITION BY` clause of your window
-> function) is added/removed/changed, Materialize recomputes the results for the
-> entire window partition. This means that when a new batch of input data arrives
-> (that is, every second), **the amount of computation performed is proportional
-> to the total size of the touched partitions**.
-> For example, assume that in a given second, 20 input records change, and these
-> records belong to **10** different partitions, where the average size of each
-> partition is **100**. Then, amount of work to perform is proportional to
-> computing the window function results for **10\*100=1000** rows.
+> **Note:** For indexed views and materialized views that contain [window
+> functions](/sql/functions/#window-functions) (including aggregate functions used
+> with an `OVER` clause), when an input record in a partition is
+> added/removed/changed, Materialize **recomputes the results from scratch** for
+> that partition (instead of using incremental computation).
+> The `PARTITION BY` clause of your window function determines your partitions. If
+> `PARTITION BY` is omitted, all records belong to a single partition (i.e., any
+> record change results in a recomputation from scratch over the whole input).
 > To avoid performance issues that may arise as the number of records grows,
-> consider rewriting your query to use idiomatic Materialize SQL instead of window
-> functions. If your query cannot be rewritten without the window functions and
-> the performance of window functions is insufficient for your use case, please
-> [contact our team](/support/).
+> consider rewriting your indexed views and materialized views to use idiomatic
+> Materialize SQL instead of window functions. If your view definitions cannot be
+> rewritten without the window functions and the performance of window functions
+> is insufficient for your use case, please [contact our team](/support/).
 > See [Idiomatic Materialize SQL](/transform-data/idiomatic-materialize-sql/)
 > for examples of rewriting window functions.
 
@@ -2526,21 +2531,22 @@ The typical uses of `now()` and `mz_now()` are:
 
 ### Logical timestamp selection
 
-When using the [serializable](/get-started/isolation-level#serializable)
+When using the [serializable](/reference/isolation-level#serializable)
 isolation level, the logical timestamp may be arbitrarily ahead of or behind the
 system clock. For example, at a wall clock time of 9pm, Materialize may choose
 to execute a serializable query as of logical time 8:30pm, perhaps because data
 for 8:30–9pm has not yet arrived. In this scenario, `now()` would return 9pm,
 while `mz_now()` would return 8:30pm.
 
-When using the [strict serializable](/get-started/isolation-level#strict-serializable)
-isolation level, Materialize attempts to keep the logical timestamp reasonably
-close to wall clock time. In most cases, the logical timestamp of a query will
-be within a few seconds of the wall clock time. For example, when executing
-a strict serializable query at a wall clock time of 9pm, Materialize will choose
-a logical timestamp within a few seconds of 9pm, even if data for 8:30–9pm has
-not yet arrived and the query will need to block until the data for 9pm arrives.
-In this scenario, both `now()` and `mz_now()` would return 9pm.
+When using the [strict
+serializable](/reference/isolation-level#strict-serializable) isolation level,
+Materialize attempts to keep the logical timestamp reasonably close to wall
+clock time. In most cases, the logical timestamp of a query will be within a few
+seconds of the wall clock time. For example, when executing a strict
+serializable query at a wall clock time of 9pm, Materialize will choose a
+logical timestamp within a few seconds of 9pm, even if data for 8:30–9pm has not
+yet arrived and the query will need to block until the data for 9pm arrives. In
+this scenario, both `now()` and `mz_now()` would return 9pm.
 
 ### Limitations
 

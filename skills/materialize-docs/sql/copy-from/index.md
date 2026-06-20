@@ -90,6 +90,8 @@ Supported PARQUET compression formats
 - zstd
 - lz4
 
+[//]: # "TODO: - Text can be imported as text or JSON/JSONB or a map.. do we document casting rules/make a whole section for casting?"
+
 | [Arrow type](https://github.com/apache/arrow/blob/main/format/Schema.fbs) | [Parquet primitive type](https://parquet.apache.org/docs/file-format/types/) | [Parquet logical type](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md) | Materialize type                                                                  |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | `bool`                                                                    | `BOOLEAN`                                                                    |                                                                                              | [`boolean`](/sql/types/boolean/)                                                  |

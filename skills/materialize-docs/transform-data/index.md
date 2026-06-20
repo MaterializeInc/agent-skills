@@ -2,8 +2,28 @@
 
 Learn how to efficiently transform data using Materialize SQL.
 
-With Materialize, you can use SQL to transform, deliver, and act on
-fast-changing data.
+With Materialize, you use SQL to transform your fast-changing data into **live
+data products**: the business objects (e.g., a customer, an order, a store) that
+your applications, services, dashboards, and AI agents read.
+
+## From SQL to live data products
+
+You use [views](/concepts/views/) and [materialized
+views](/concepts/views/#materialized-views) to define your business objects in
+SQL. Materialize keeps the results of **indexed views** and **materialized
+views** up to date as it ingests your data.
+
+Structuring your transformations as views gives you:
+
+- **Reuse:** define a query once, then reference it from multiple places.
+- **Readability:** save complex logic under a clear, meaningful name.
+- **Composability:** break complex logic into stacked view definitions, building
+  richer business objects on top of simpler ones.
+- **Efficiency:** project only the columns you need, filter out unnecessary
+  rows, and convert values to more [compact data types](/sql/types/) where
+  possible.
+
+## SQL in Materialize
 
 <p>Materialize follows the SQL standard (SQL-92) implementation and aims for
 compatibility with the PostgreSQL dialect. It <strong>does not</strong> aim for
@@ -16,96 +36,46 @@ engine based on <a href="/get-started/#incremental-updates" >Timely and Differen
 <p>If you need specific syntax or features that are not currently supported in
 Materialize, please submit a <a href="/support/#share-your-feedback" >feature request</a>.</p>
 
-### SELECT statement
+## Explore this section
 
-To build your transformations, you can [`SELECT`](/sql/select/) from
-[sources](/concepts/sources/), tables, [views](/concepts/views/#views), and
-[materialized views](/concepts/views/#materialized-views).
+<div class="multilinkbox">
+<div class="linkbox ">
+  <div class="title">
+    Write idiomatic SQL
+  </div>
+  <ul>
+<li><a href="/transform-data/idiomatic-materialize-sql/" >Idiomatic Materialize SQL</a></li>
+<li><a href="/transform-data/patterns/" >Common query patterns</a></li>
+</ul>
 
-```mzsql
-SELECT [ ALL | DISTINCT [ ON ( col_ref [, ...] ) ] ]
-    [ { * | projection_expr [ [ AS ] output_name ] } [, ...] ]
-    [ FROM table_expr [ join_expr | , ] ... ]
-    [ WHERE condition_expr ]
-    [ GROUP BY grouping_expr [, ...] ]
-    [ OPTIONS ( option = val[, ...] ) ]
-    [ HAVING having_expr ]
-    [ ORDER BY projection_expr [ ASC | DESC ] [ NULLS FIRST | NULLS LAST ] [, ...] ]
-    [ LIMIT { integer  } [ OFFSET { integer } ] ]
-    [ { UNION | INTERSECT | EXCEPT } [ ALL | DISTINCT ] { SELECT ...} ]
-```
+</div>
 
-In Materialize, the [`SELECT`](/sql/select/) statement supports (among others):
+<div class="linkbox ">
+  <div class="title">
+    Optimize and operate
+  </div>
+  <ul>
+<li><a href="/transform-data/optimization/" >Query optimization</a></li>
+<li><a href="/transform-data/updating-materialized-views/" >Updating materialized views</a></li>
+<li><a href="/concepts/indexes/#best-practices" >Indexes: best practices</a></li>
+</ul>
 
-- [JOINS (inner, left outer, right outer, full outer,
-  cross)](/sql/select/join/) and [lateral
-  subqueries](/sql/select/join/#lateral-subqueries)
+</div>
 
-- [Common Table Expressions (CTEs)](/sql/select/#common-table-expressions-ctes)
-  and [Recursive CTEs](/sql/select/recursive-ctes/)
+<div class="linkbox ">
+  <div class="title">
+    Troubleshoot
+  </div>
+  <ul>
+<li><a href="/transform-data/troubleshooting/" >Troubleshooting</a></li>
+<li><a href="/transform-data/freshness-troubleshooting/" >Freshness troubleshooting</a></li>
+<li><a href="/transform-data/dataflow-troubleshooting/" >Dataflow troubleshooting</a></li>
+<li><a href="/transform-data/faq/" >FAQ: Indexes</a></li>
+</ul>
 
-- [Query hints (`AGGREGATE INPUT GROUP SIZE`, `DISTINCT ON INPUT GROUP SIZE`,
-  `LIMIT INPUT GROUP SIZE`)](/sql/select/#query-hints)
+</div>
 
-- [SQL functions](/sql/functions/) and [operators](/sql/functions/#operators)
-
-For more information, see:
-
-- [`SELECT` reference page](/sql/select/)
-
-- [Query optimization](/transform-data/optimization/)
-
-### Views and materialized views
-
-A view represent queries that are saved under a name for reference.
-
-```mzsql
-CREATE VIEW my_view_name AS
-SELECT ...   ;
-```
-
-In Materialize, you can create [indexes](/concepts/indexes/#indexes-on-views) on
-views. When you to create an index on a view, the underlying query is executed
-and the results are stored in memory within the [cluster](/concepts/clusters/)
-you create the index. As new data arrives, Materialize incrementally updates the
-view results.
-
-```mzsql
-CREATE INDEX idx_on_my_view ON my_view_name(...) ;
-```
-
-You can also create materialized views. A materialized view is a view whose
-results are persisted in durable storage. As new data arrives, Materialize
-incrementally updates the view results.
-
-```mzsql
-CREATE MATERIALIZED VIEW my_mat_view_name AS
-SELECT ...  ;
-```
-
-You can also create an index on a materialized view to make the results
-available in memory within the cluster you create the index.
-
-For more information, see:
-
-- [Views](/concepts/views/)
-- [Indexes](/concepts/indexes/)
-- [Indexed views vs materialized
-  views](/concepts/views/#indexed-views-vs-materialized-views)
-
-### Indexes
-
-In Materialize, [indexes](/concepts/indexes/) represent query results stored in
-memory within a cluster. By making up-to-date view results available in memory,
-indexes can help improve performance within the cluster. Indexes can also help
-[optimize query performance](/transform-data/optimization/).
-
-For more information, see:
-
-- [Indexes](/concepts/indexes)
-- [Indexed views vs materialized
-  views](/concepts/indexes/#indexes-on-views-vs-materialized-views)
-- [Indexes: Best practices](/concepts/indexes/#best-practices)
+</div>
 
 ---
 
@@ -1262,12 +1232,82 @@ performance.
 | Query Pattern | Idiomatic Materialize |
 | --- | --- |
 | <a href="/transform-data/idiomatic-materialize-sql/any/" >ANY() Equi-join condition</a> | <a href="/transform-data/idiomatic-materialize-sql/any/" >Use <code>UNNEST()</code> or <code>DISTINCT UNNEST()</code> to expand the values and join</a>. |
+| <a href="/transform-data/idiomatic-materialize-sql/not-in/" ><code>NOT IN (&lt;subquery&gt;)</code> predicate</a> | <a href="/transform-data/idiomatic-materialize-sql/not-in/" >Rewrite to <code>NOT EXISTS</code>, or filter out <code>NULL</code>s on both sides of the <code>NOT IN</code></a>. |
 | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#mz_now-expressions-to-calculate-past-or-future-timestamp" ><code>mz_now()</code> with date/time operators</a> | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#mz_now-expressions-to-calculate-past-or-future-timestamp" >Move the operation to the other side of the comparison</a>: |
 | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#disjunctions-or" ><code>mz_now()</code> with disjunctions (<code>OR</code>) in materialized/indexed view definitions and <code>SUBSCRIBE</code> statements</a>: | <a href="/transform-data/idiomatic-materialize-sql/mz_now/#disjunctions-or" >Rewrite using <code>UNION ALL</code> or <code>UNION</code> (deduplicating as necessary) expression</a> |
 
 ---
 
 ## Optimization
+
+## Reduce the size of the data
+
+With view definitions, you can project only the columns you need, filter out
+unnecessary rows, and convert values to more [compact data
+types](/sql/types/) where possible.
+
+For stacked view definitions, apply these strategies as early as possible to
+reduce the size of data.
+
+### Project only the columns you need
+
+Instead of using `SELECT *` in your view definition, select only the columns
+your downstream queries actually reference. For example:
+
+```mzsql
+-- Project only the columns downstream queries reference.
+CREATE VIEW order_totals AS
+  SELECT id, customer_id, total
+  FROM orders;
+```
+
+### Filter out unnecessary rows
+
+Specify conditions to filter out unnecessary rows. Filter as close to the source
+as possible such that downstream joins and aggregations process fewer rows.
+
+```mzsql
+CREATE VIEW active_orders AS
+  SELECT id, customer_id, total
+  FROM orders
+  WHERE status = 'active';
+```
+
+### Use compact data types
+
+When applicable, choose a more compact representation of a view's column to
+reduce the size of each row, especially for views over large collections of
+data:
+
+- If a column is of type `text` but its values can accurately be represented as
+  a more compact type, cast to that type. For example, a column containing only
+  the strings `'true'` or `'false'` can be represented as `boolean`.
+
+- If a column holds one of a small, fixed set of string values (e.g., days of
+  the week, or status values), represent each value as a small integer code
+  instead.
+
+For example, assume the `events` table includes:
+
+- an `id` field of type `text` whose values are `UUID`s as text; and
+
+- an `event_ts` field of type `timestamp`, from which you only need the day of
+  the week.
+
+You can create a view that uses more compact representations of these
+columns:
+
+```mzsql
+CREATE VIEW events_compact AS
+  SELECT
+    id::uuid AS id,                                       -- cast to type UUID
+    EXTRACT(dow FROM event_ts)::smallint AS day_of_week   -- encode day-of-week
+  FROM events;
+```
+
+> **Note:** For integers, the actual number of bytes written depends on the actual
+> value. For example, a `bigint` value of `3` takes 2 bytes total (1 payload
+> byte plus 1 tag byte). As such, casting to a smaller integer type does not necessarily reduce storage.
 
 ## Indexes
 
@@ -1790,7 +1830,7 @@ Other options to consider:
 
 * If you've gone through the dataflow troubleshooting and do not want to make
   any changes to your query, consider [sizing up your cluster](/sql/create-cluster/#available-sizes).
-* You can also consider changing your [isolation level](/get-started/isolation-level/),
+* You can also consider changing your [isolation level](/reference/isolation-level/),
   depending on the consistency guarantees that you need. With a lower isolation
   level, you may be able to query stale results out of lagging indexes and
   materialized views.

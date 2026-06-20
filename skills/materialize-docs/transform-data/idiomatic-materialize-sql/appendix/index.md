@@ -117,481 +117,59 @@ performance.
 
 ### Query Patterns
 
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Idiomatic Materialize SQL Pattern</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>ANY()</code> Equi-join condition</td>
-<td class="copyableCode">
-
-***If no duplicates in the unnested field***
-
-```mzsql
-WITH my_expanded_values AS
-(SELECT UNNEST(array|list|map) AS fieldZ FROM tableB)
-SELECT a.fieldA, ...
-FROM tableA a
-JOIN my_expanded_values t ON a.fieldZ = t.fieldZ
-;
-```
-
-***If duplicates exist in the unnested field***
-```mzsql
-WITH my_expanded_values AS
-(SELECT DISTINCT UNNEST(array|list|map) AS fieldZ FROM tableB)
-SELECT a.fieldA, ...
-FROM tableA a
-JOIN my_expanded_values t ON a.fieldZ = t.fieldZ
-;
-```
-
-</td>
-</tr>
-<tr>
-<td><code>mz_now()</code> cannot be used with date/time operators</td>
-<td>
-Rewrite the query expression; specifically, move the operation to the other side of the comparison.
-</td>
-</tr>
-<tr>
-<td><code>mz_now()</code> cannot be used with <code>OR</code>s in materialized/indexed view definitions and <code>SUBSCRIBE</code> statements</td>
-<td>
-Rewrite as <code>UNION ALL</code> or <code>UNION</code>, deduplicating as
-necessary:
-
-<ul>
-<li>In some cases, you may need to modify the conditions to deduplicate results
-when using <code>UNION ALL</code>. For example, you might add the negation of
-one input's condition to the other as a conjunction.</li>
-
-<li>In some cases, using <code>UNION</code> instead of <code>UNION ALL</code>
-may suffice if the inputs do not contain other duplicates that need to be
-retained.</li>
-
-</ul>
-
-</td>
-</tr>
-</tbody>
-</table>
+|   | Idiomatic Materialize SQL Pattern |
+| --- | --- |
+| <a href="/transform-data/idiomatic-materialize-sql/any/" ><code>ANY()</code> Equi-join condition</a> | <p><strong>If no duplicates exist in the unnested field:</strong> Use a Common Table Expression (CTE) to <a href="/sql/functions/#unnest" ><code>UNNEST()</code></a> the array of values and perform the equi-join on the unnested values.</p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- array_field contains no duplicates.-- </span></span></span><span class="line"><span class="cl"><span class="c1"></span> </span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">my_expanded_values</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">UNNEST</span><span class="p">(</span><span class="n">array_field</span><span class="p">)</span> <span class="k">AS</span> <span class="n">fieldZ</span> <span class="k">FROM</span> <span class="n">tableB</span><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="mf">...</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">a</span> </span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">my_expanded_values</span> <span class="n">t</span> <span class="k">ON</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldZ</span> <span class="o">=</span> <span class="n">t</span><span class="mf">.</span><span class="n">fieldZ</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div><p><strong>Duplicates may exist in the unnested field:</strong> Use a Common Table Expression (CTE) to <a href="/sql/select/#select-distinct" ><code>DISTINCT</code></a> <a href="/sql/functions/#unnest" ><code>UNNEST()</code></a> the array of values and perform the equi-join on the unnested values.</p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- array_field may contain duplicates.-- </span></span></span><span class="line"><span class="cl"><span class="c1"></span> </span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">my_expanded_values</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">UNNEST</span><span class="p">(</span><span class="n">array_field</span><span class="p">)</span> <span class="k">AS</span> <span class="n">fieldZ</span> <span class="k">FROM</span> <span class="n">tableB</span><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="mf">...</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">a</span> </span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">my_expanded_values</span> <span class="n">t</span> <span class="k">ON</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldZ</span> <span class="o">=</span> <span class="n">t</span><span class="mf">.</span><span class="n">fieldZ</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/not-in/" ><code>NOT IN (&lt;subquery&gt;)</code> predicate</a> | <p><strong>Rewrite to <code>NOT EXISTS</code> with a correlated subquery.</strong></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="o">*</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">t1</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="p">(</span><span class="k">SELECT</span> <span class="mf">1</span> <span class="k">FROM</span> <span class="n">t2</span> <span class="k">WHERE</span> <span class="n">t2</span><span class="mf">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">t1</span><span class="mf">.</span><span class="n">a</span><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div><p><strong>Filter out <code>NULL</code>s on both sides of the <code>NOT IN</code>.</strong></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="o">*</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">t1</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">t1</span><span class="mf">.</span><span class="n">a</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span> </span></span><span class="line"><span class="cl">  <span class="k">AND</span> <span class="n">t1</span><span class="mf">.</span><span class="n">a</span> <span class="k">NOT</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="n">t2</span><span class="mf">.</span><span class="n">a</span> <span class="k">FROM</span> <span class="n">t2</span> <span class="k">WHERE</span> <span class="n">t2</span><span class="mf">.</span><span class="n">a</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/mz_now/#mz_now-expressions-to-calculate-past-or-future-timestamp" ><code>mz_now()</code> with date/time operators</a> | Rewrite the query expression; specifically, move the operation to the other side of the comparison. |
+| <a href="/transform-data/idiomatic-materialize-sql/mz_now/#disjunctions-or" ><code>mz_now()</code> with disjunctions (<code>OR</code>) in materialized/indexed view definitions and <code>SUBSCRIBE</code> statements</a> | <p>Rewrite as <code>UNION ALL</code> or <code>UNION</code>, deduplicating as necessary:</p> <ul> <li> <p>In some cases, you may need to modify the conditions to deduplicate results when using <code>UNION ALL</code>. For example, you might add the negation of one input&rsquo;s condition to the other as a conjunction.</p> </li> <li> <p>In some cases, using <code>UNION</code> instead of <code>UNION ALL</code> may suffice if the inputs do not contain other duplicates that need to be retained.</p> </li> </ul>  |
 
 ### Examples
 
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Idiomatic Materialize SQL</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>ANY()</code> Equi-join condition</td>
-<td class="copyableCode">
-
-***If no duplicates in the unnested field***
-
-```mzsql
--- sales_items.items contains no duplicates. --
-
-WITH individual_sales_items AS
-(SELECT unnest(items) as item, week_of FROM sales_items)
-SELECT s.week_of, o.order_id, o.item, o.quantity
-FROM orders o
-JOIN individual_sales_items s ON o.item = s.item
-WHERE date_trunc('week', o.order_date) = s.week_of;
-```
-
-***If duplicates exist in the unnested field***
-
-```mzsql
--- sales_items.items may contains duplicates --
-
-WITH individual_sales_items AS
-(SELECT DISTINCT unnest(items) as item, week_of FROM sales_items)
-SELECT s.week_of, o.order_id, o.item, o.quantity
-FROM orders o
-JOIN individual_sales_items s ON o.item = s.item
-WHERE date_trunc('week', o.order_date) = s.week_of
-ORDER BY s.week_of, o.order_id, o.item, o.quantity
-;
-```
-
-</td>
-</tr>
-<tr>
-<td><code>mz_now()</code> cannot be used with date/time operators</td>
-<td class="copyableCode">
-
-```mzsql
-SELECT * from orders
-WHERE mz_now() > order_date + INTERVAL '5min'
-;
-```
-
-</td>
-</tr>
-<tr>
-<td><code>mz_now()</code> cannot be used with <code>OR</code>s in materialized/indexed view definitions and <code>SUBSCRIBE</code> statements</td>
-<td class="copyableCode">
-
-**Rewrite as `UNION ALL` with possible duplicates**
-
-```mzsql
-CREATE MATERIALIZED VIEW forecast_completed_orders_duplicates_possible AS
-SELECT item, quantity, status from orders
-WHERE status = 'Shipped'
-UNION ALL
-SELECT item, quantity, status from orders
-WHERE order_date + interval '30' minutes >= mz_now()
-;
-```
-
-**Rewrite as UNION ALL that avoids duplicates across queries**
-
-```mzsql
-CREATE MATERIALIZED VIEW forecast_completed_orders_deduplicated_union_all AS
-SELECT item, quantity, status from orders
-WHERE status = 'Shipped'
-UNION ALL
-SELECT item, quantity, status from orders
-WHERE order_date + interval '30' minutes >= mz_now()
-AND status != 'Shipped' -- Deduplicate by excluding those with status 'Shipped'
-;
-```
-
-**Rewrite as UNION to deduplicate any and all duplicated results**
-
-```mzsql
-CREATE MATERIALIZED VIEW forecast_completed_orders_deduplicated_results AS
-SELECT item, quantity, status from orders
-WHERE status = 'Shipped'
-UNION
-SELECT item, quantity, status from orders
-WHERE order_date + interval '30' minutes >= mz_now()
-;
-```
-
-</td>
-</tr>
-
-</tbody>
-</table>
+|   | Example |
+| --- | --- |
+| <a href="/transform-data/idiomatic-materialize-sql/any/" ><code>ANY()</code> Equi-join condition</a> | <p><em><strong>If no duplicates in the unnested field</strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- sales_items.items contains no duplicates. -- </span></span></span><span class="line"><span class="cl"><span class="c1"></span> </span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">individual_sales_items</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">as</span> <span class="n">item</span><span class="p">,</span> <span class="n">week_of</span> <span class="k">FROM</span> <span class="n">sales_items</span><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders</span> <span class="n">o</span> </span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">individual_sales_items</span> <span class="n">s</span> <span class="k">ON</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">item</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_date</span><span class="p">)</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div><p><em><strong>To omit duplicates that may exist in the unnested field</strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- sales_items.items may contains duplicates -- </span></span></span><span class="line"><span class="cl"><span class="c1"></span> </span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">individual_sales_items</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">as</span> <span class="n">item</span><span class="p">,</span> <span class="n">week_of</span> <span class="k">FROM</span> <span class="n">sales_items</span><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders</span> <span class="n">o</span> </span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">individual_sales_items</span> <span class="n">s</span> <span class="k">ON</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">item</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_date</span><span class="p">)</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/not-in/" ><code>NOT IN (&lt;subquery&gt;)</code> predicate</a> | <p>Because the subquery uses <a href="/sql/functions/#unnest" ><code>UNNEST()</code></a> on a column of the outer-correlated row, factor the <code>UNNEST()</code> into an uncorrelated <a href="/sql/select/#common-table-expressions-ctes" >Common Table Expression (CTE)</a> first.</p> <p><em><strong>Rewrite to <code>NOT EXISTS</code> with a CTE for the <code>UNNEST()</code></strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">this_weeks_sales</span> <span class="k">AS</span> <span class="p">(</span> </span></span><span class="line"><span class="cl">  <span class="k">SELECT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">AS</span> <span class="n">sale_item</span> </span></span><span class="line"><span class="cl">  <span class="k">FROM</span> <span class="n">sales_items</span> </span></span><span class="line"><span class="cl">  <span class="k">WHERE</span> <span class="n">week_of</span> <span class="o">=</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">current_timestamp</span><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">i</span><span class="mf">.</span><span class="n">price</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">items</span> <span class="n">i</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="p">(</span> </span></span><span class="line"><span class="cl">  <span class="k">SELECT</span> <span class="mf">1</span> <span class="k">FROM</span> <span class="n">this_weeks_sales</span> <span class="n">s</span> <span class="k">WHERE</span> <span class="n">s</span><span class="mf">.</span><span class="n">sale_item</span> <span class="o">=</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span> </span></span><span class="line"><span class="cl"><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div><p><em><strong>Filter out <code>NULL</code>s with a CTE for the <code>UNNEST()</code></strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">this_weeks_sales</span> <span class="k">AS</span> <span class="p">(</span> </span></span><span class="line"><span class="cl">  <span class="k">SELECT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">AS</span> <span class="n">sale_item</span> </span></span><span class="line"><span class="cl">  <span class="k">FROM</span> <span class="n">sales_items</span> </span></span><span class="line"><span class="cl">  <span class="k">WHERE</span> <span class="n">week_of</span> <span class="o">=</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">current_timestamp</span><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">i</span><span class="mf">.</span><span class="n">price</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">items</span> <span class="n">i</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span> </span></span><span class="line"><span class="cl">  <span class="k">AND</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span> <span class="k">NOT</span> <span class="k">IN</span> <span class="p">(</span> </span></span><span class="line"><span class="cl">    <span class="k">SELECT</span> <span class="n">sale_item</span> <span class="k">FROM</span> <span class="n">this_weeks_sales</span> <span class="k">WHERE</span> <span class="n">sale_item</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span> </span></span><span class="line"><span class="cl">  <span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/mz_now/#mz_now-expressions-to-calculate-past-or-future-timestamp" ><code>mz_now()</code> with date/time operators</a> | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">mz_now</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">INTERVAL</span> <span class="s1">&#39;5min&#39;</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/mz_now/#disjunctions-or" ><code>mz_now()</code> with disjunctions (<code>OR</code>) in materialized/indexed view definitions and <code>SUBSCRIBE</code> statements</a> | <p><strong>Rewrite as <code>UNION ALL</code> with possible duplicates</strong></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders_duplicates_possible</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">UNION</span> <span class="k">ALL</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;30&#39;</span> <span class="k">minutes</span> <span class="o">&gt;=</span> <span class="n">mz_now</span><span class="p">()</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div><p><strong>Rewrite as <code>UNION ALL</code> that avoids duplicates across queries</strong></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders_deduplicated_union_all</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">UNION</span> <span class="k">ALL</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;30&#39;</span> <span class="k">minutes</span> <span class="o">&gt;=</span> <span class="n">mz_now</span><span class="p">()</span> </span></span><span class="line"><span class="cl"><span class="k">AND</span> <span class="n">status</span> <span class="o">!=</span> <span class="s1">&#39;Shipped&#39;</span> <span class="c1">-- Deduplicate by excluding those with status &#39;Shipped&#39; </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">;</span> </span></span></code></pre></div><p><strong>Rewrite as <code>UNION</code> to deduplicate any and all duplicated results</strong></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">MATERIALIZED</span> <span class="k">VIEW</span> <span class="n">forecast_completed_orders_deduplicated_results</span> <span class="k">AS</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;Shipped&#39;</span> </span></span><span class="line"><span class="cl"><span class="k">UNION</span> </span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">quantity</span><span class="p">,</span> <span class="n">status</span> <span class="k">from</span> <span class="n">orders</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">order_date</span> <span class="o">+</span> <span class="nb">interval</span> <span class="s1">&#39;30&#39;</span> <span class="k">minutes</span> <span class="o">&gt;=</span> <span class="n">mz_now</span><span class="p">()</span> </span></span><span class="line"><span class="cl"><span class="p">;</span> </span></span></code></pre></div> |
 
 ## Window Functions
 > ### Materialize and window functions
-> For [window functions](/sql/functions/#window-functions), when an input record
-> in a partition (as determined by the `PARTITION BY` clause of your window
-> function) is added/removed/changed, Materialize recomputes the results for the
-> entire window partition. This means that when a new batch of input data arrives
-> (that is, every second), **the amount of computation performed is proportional
-> to the total size of the touched partitions**.
-> For example, assume that in a given second, 20 input records change, and these
-> records belong to **10** different partitions, where the average size of each
-> partition is **100**. Then, amount of work to perform is proportional to
-> computing the window function results for **10\*100=1000** rows.
+> For indexed views and materialized views that contain [window
+> functions](/sql/functions/#window-functions) (including aggregate functions used
+> with an `OVER` clause), when an input record in a partition is
+> added/removed/changed, Materialize **recomputes the results from scratch** for
+> that partition (instead of using incremental computation).
+> The `PARTITION BY` clause of your window function determines your partitions. If
+> `PARTITION BY` is omitted, all records belong to a single partition (i.e., any
+> record change results in a recomputation from scratch over the whole input).
 > To avoid performance issues that may arise as the number of records grows,
-> consider rewriting your query to use idiomatic Materialize SQL instead of window
-> functions. If your query cannot be rewritten without the window functions and
-> the performance of window functions is insufficient for your use case, please
-> [contact our team](/support/).
+> consider rewriting your indexed views and materialized views to use idiomatic
+> Materialize SQL instead of window functions. If your view definitions cannot be
+> rewritten without the window functions and the performance of window functions
+> is insufficient for your use case, please [contact our team](/support/).
 
 ### Query Patterns
 
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Idiomatic Materialize SQL Pattern</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Top-K over partition<br>(K >= 1)</td>
-<td class="copyableCode">
-
-```mzsql
-SELECT fieldA, fieldB, ...
-FROM (SELECT DISTINCT fieldA FROM tableA) grp,
-      LATERAL (SELECT fieldB, ... , fieldZ FROM tableA
-         WHERE fieldA = grp.fieldA
-         ORDER BY fieldZ ... LIMIT K)   -- K is a number >= 1
-ORDER BY fieldA, fieldZ ... ;
-```
-
-</td>
-</tr>
-<tr>
-<td>Top-K over partition<br>(K = 1)</td>
-<td class="copyableCode">
-
-```mzsql
-SELECT DISTINCT ON(fieldA) fieldA, fieldB, ...
-FROM tableA
-ORDER BY fieldA, fieldZ ...  -- Top-K where K is 1;
-```
-
-</td>
-</tr>
-
-<tr>
-<td>First value over partition<br>order by ... </td>
-<td class="copyableCode">
-
-```mzsql
-SELECT tableA.fieldA, tableA.fieldB, minmax.Z
-   FROM tableA,
-   (SELECT fieldA,
-      MIN(fieldZ)      -- Or MAX()
-   FROM tableA
-   GROUP BY fieldA) minmax
-WHERE tableA.fieldA = minmax.fieldA
-ORDER BY fieldA ... ;
-```
-
-</td>
-</tr>
-
-<tr>
-<td>Last value over partition<br>order by ...  <br>range between unbounded preceding<br>and unbounded following</td>
-<td class="copyableCode">
-
-```mzsql
-SELECT tableA.fieldA, tableA.fieldB, minmax.Z
-   FROM tableA,
-   (SELECT fieldA,
-      MAX(fieldZ)      -- Or MIN()
-   FROM tableA
-   GROUP BY fieldA) minmax
-WHERE tableA.fieldA = minmax.fieldA
-ORDER BY fieldA ... ;
-```
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-Lag over (order by) whose ordering can be represented by some equality
-condition.
-
-</td>
-<td class="copyableCode">
-
-***To exclude the first row since it has no previous row***
-
-```mzsql
-SELECT t1.fieldA, t2.fieldB
-FROM tableA t1, tableA t2
-WHERE t1.fieldA = t2.fieldA +  ...
-ORDER BY fieldA;
-```
-
-***To include the first row***
-
-```mzsql
-SELECT t1.fieldA, t2.fieldB
-FROM tableA t1
-LEFT JOIN tableA t2
-ON t1.fieldA = t2.fieldA +  ...
-ORDER BY fieldA;
-```
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-Lead over (order by) whose ordering can be represented by some equality
-condition.
-
-</td>
-<td class="copyableCode">
-
-***To exclude the last row since it has no next row***
-
-```mzsql
-SELECT t1.fieldA, t2.fieldB
-FROM tableA t1, tableA t2
-WHERE t1.fieldA = t2.fieldA - ...
-ORDER BY fieldA;
-```
-
-***To include the last row***
-
-```mzsql
-SELECT t1.fieldA, t2.fieldB
-FROM tableA t1
-LEFT JOIN tableA t2
-ON t1.fieldA = t2.fieldA -  ...
-ORDER BY fieldA;
-```
-
-</td>
-</tr>
-
-</tbody>
-</table>
+|   | Idiomatic Materialize SQL Pattern |
+| --- | --- |
+| <a href="/transform-data/idiomatic-materialize-sql/top-k/#for-k--1" >Top-K over partition<br>(K &gt;= 1)</a> | <p>Use a subquery to <a href="/sql/select/#select-distinct" >SELECT DISTINCT</a> on the grouping key (e.g., <code>fieldA</code>), and perform a <a href="/sql/select/join/#lateral-subqueries" >LATERAL</a> join (by the grouping key <code>fieldA</code>) with another subquery that specifies the ordering (e.g., <code>fieldZ [ASC\|DESC]</code>) and the limit K.</p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldB</span><span class="p">,</span> <span class="mf">...</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="n">fieldA</span> <span class="k">FROM</span> <span class="n">tableA</span><span class="p">)</span> <span class="n">grp</span><span class="p">,</span> </span></span><span class="line"><span class="cl">     <span class="k">LATERAL</span> <span class="p">(</span><span class="k">SELECT</span> <span class="n">fieldB</span><span class="p">,</span> <span class="mf">...</span> <span class="p">,</span> <span class="n">fieldZ</span> <span class="k">FROM</span> <span class="n">tableA</span> </span></span><span class="line"><span class="cl">        <span class="k">WHERE</span> <span class="n">fieldA</span> <span class="o">=</span> <span class="n">grp</span><span class="mf">.</span><span class="n">fieldA</span> </span></span><span class="line"><span class="cl">        <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldZ</span> <span class="mf">...</span> <span class="k">LIMIT</span> <span class="n">K</span><span class="p">)</span>   <span class="c1">-- K is a number &gt;= 1 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldZ</span> <span class="mf">...</span> <span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/top-k/#for-k--1-1" >Top-K over partition<br>(K = 1)</a> | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">ON</span><span class="p">(</span><span class="n">fieldA</span><span class="p">)</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldB</span><span class="p">,</span> <span class="mf">...</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldZ</span> <span class="mf">...</span> <span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/first-value/" >First value over partition<br>order by &hellip;</a> | <p>Use a subquery that uses the <a href="/sql/functions/#min" >MIN()</a> or <a href="/sql/functions/#max" >MAX()</a> aggregate function.</p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldB</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">Z</span> </span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span><span class="p">,</span> </span></span><span class="line"><span class="cl"> <span class="p">(</span><span class="k">SELECT</span> <span class="n">fieldA</span><span class="p">,</span> </span></span><span class="line"><span class="cl">    <span class="n">MIN</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">),</span> </span></span><span class="line"><span class="cl">    <span class="k">MAX</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">)</span> </span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span> </span></span><span class="line"><span class="cl"> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">)</span> <span class="n">minmax</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">fieldA</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span> <span class="mf">...</span> <span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/last-value/" >Last value over partition<br>order by &hellip;<br>range between unbounded preceding<br>and unbounded following</a> | <p>Use a subquery that uses the <a href="/sql/functions/#min" >MIN()</a> or <a href="/sql/functions/#max" >MAX()</a> aggregate function.</p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldB</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">Z</span> </span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span><span class="p">,</span> </span></span><span class="line"><span class="cl"> <span class="p">(</span><span class="k">SELECT</span> <span class="n">fieldA</span><span class="p">,</span> </span></span><span class="line"><span class="cl">    <span class="k">MAX</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">),</span> </span></span><span class="line"><span class="cl">    <span class="n">MIN</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">)</span> </span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span> </span></span><span class="line"><span class="cl"> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">)</span> <span class="n">minmax</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">fieldA</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span> <span class="mf">...</span> <span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/lag/" >Lag over (order by) whose ordering can be represented by some equality condition.</a> | <p><em><strong>To exclude the first row since it has no previous row</strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- Excludes the first row in the results -- </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldB</span> <span class="k">as</span> <span class="n">previous_row_value</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">t1</span><span class="p">,</span> <span class="n">tableA</span> <span class="n">t2</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">+</span> <span class="mf">...</span> <span class="c1">-- or some other operand </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">;</span> </span></span></code></pre></div><p><em><strong>To include the first row</strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- Includes the first row in the results -- </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldB</span> <span class="k">as</span> <span class="n">previous_row_value</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">t1</span> </span></span><span class="line"><span class="cl"><span class="k">LEFT</span> <span class="k">JOIN</span> <span class="n">tableA</span> <span class="n">t2</span> </span></span><span class="line"><span class="cl"><span class="k">ON</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">+</span> <span class="mf">...</span> <span class="c1">-- or some other operand </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/lead/" >Lead over (order by) whose ordering can be represented by some equality condition.</a> | <p><em><strong>To exclude the last row since it has no next row</strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- Excludes the last row in the results -- </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldB</span> <span class="k">as</span> <span class="n">next_row_value</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">t1</span><span class="p">,</span> <span class="n">tableA</span> <span class="n">t2</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">-</span> <span class="mf">...</span> <span class="c1">-- or some other operand </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">;</span> </span></span></code></pre></div><p><em><strong>To include the last row</strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- Includes the last row in the results -- </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldB</span> <span class="k">as</span> <span class="n">next_row_value</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">t1</span> </span></span><span class="line"><span class="cl"><span class="k">LEFT</span> <span class="k">JOIN</span> <span class="n">tableA</span> <span class="n">t2</span> </span></span><span class="line"><span class="cl"><span class="k">ON</span> <span class="n">t1</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">t2</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">-</span> <span class="mf">...</span> <span class="c1">-- or some other operand </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">;</span> </span></span></code></pre></div> |
 
 ### Examples
 
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Idiomatic Materialize SQL</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Top-K over partition<br>(K >= 1)</td>
-<td class="copyableCode">
-
-```mzsql
-SELECT order_id, item, subtotal
-FROM (SELECT DISTINCT order_id FROM orders_view) grp,
-        LATERAL (SELECT item, subtotal FROM orders_view
-        WHERE order_id = grp.order_id
-        ORDER BY subtotal DESC LIMIT 3) -- For Top 3
-ORDER BY order_id, subtotal DESC;
-```
-
-</td>
-</tr>
-<tr>
-<td>Top-K over partition<br>(K = 1)</td>
-<td class="copyableCode">
-
-```mzsql
-SELECT DISTINCT ON(order_id) order_id, item, subtotal
-FROM orders_view
-ORDER BY order_id, subtotal DESC;  -- For Top 1
-```
-
-</td>
-</tr>
-
-<tr>
-<td>First value over partition<br>order by ...</td>
-<td class="copyableCode">
-
-```mzsql
-SELECT o.order_id, minmax.lowest_price, minmax.highest_price,
-    o.item,
-    o.price,
-    o.price - minmax.lowest_price AS diff_lowest_price,
-    o.price - minmax.highest_price AS diff_highest_price
-FROM orders_view o,
-        (SELECT order_id,
-            MIN(price) AS lowest_price,
-            MAX(price) AS highest_price
-        FROM orders_view
-        GROUP BY order_id) minmax
-WHERE o.order_id = minmax.order_id
-ORDER BY o.order_id, o.item;
-```
-
-</td>
-</tr>
-
-<tr>
-<td>Last value over partition<br>order by...<br>range between unbounded preceding<br>and unbounded following</td>
-<td class="copyableCode">
-
-```mzsql
-SELECT o.order_id, minmax.lowest_price, minmax.highest_price,
-    o.item,
-    o.price,
-    o.price - minmax.lowest_price AS diff_lowest_price,
-    o.price - minmax.highest_price AS diff_highest_price
-FROM orders_view o,
-        (SELECT order_id,
-            MIN(price) AS lowest_price,
-            MAX(price) AS highest_price
-        FROM orders_view
-        GROUP BY order_id) minmax
-WHERE o.order_id = minmax.order_id
-ORDER BY o.order_id, o.item;
-```
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-Lag over (order by) whose ordering can be represented by some equality
-condition.
-
-</td>
-<td class="copyableCode">
-
-***If suppressing the first row since it has no previous row***
-
-```mzsql
-SELECT o1.order_date, o1.daily_total,
-    o2.daily_total as previous_daily_total
-FROM orders_daily_totals o1, orders_daily_totals o2
-WHERE o1.order_date = o2.order_date + INTERVAL '1' DAY
-ORDER BY order_date;
-```
-
-***To include the first row***
-
-```mzsql
-SELECT o1.order_date, o1.daily_total,
-    o2.daily_total as previous_daily_total
-FROM orders_daily_totals o1
-LEFT JOIN orders_daily_totals o2
-ON o1.order_date = o2.order_date + INTERVAL '1' DAY
-ORDER BY order_date;
-```
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-Lead over (order by) whose ordering can be represented by some equality
-condition.
-
-</td>
-<td class="copyableCode">
-
-***To suppress the last row since it has no next row***
-
-  ```mzsql
-  SELECT o1.order_date, o1.daily_total,
-      o2.daily_total as previous_daily_total
-  FROM orders_daily_totals o1, orders_daily_totals o2
-  WHERE o1.order_date = o2.order_date - INTERVAL '1' DAY
-  ORDER BY order_date;
-  ```
-
-  ***To include the last row***
-
-  ```mzsql
-  SELECT o1.order_date, o1.daily_total,
-      o2.daily_total as previous_daily_total
-  FROM orders_daily_totals o1
-  LEFT JOIN orders_daily_totals o2
-  ON o1.order_date = o2.order_date - INTERVAL '1' DAY
-  ORDER BY order_date;
-  ```
-
-</td>
-</tr>
-
-</tbody>
-</table>
+|   | Example |
+| --- | --- |
+| <a href="/transform-data/idiomatic-materialize-sql/top-k/#for-k--1" >Top-K over partition<br>(K &gt;= 1)</a> | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">subtotal</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="n">order_id</span> <span class="k">FROM</span> <span class="n">orders_view</span><span class="p">)</span> <span class="n">grp</span><span class="p">,</span> </span></span><span class="line"><span class="cl">     <span class="k">LATERAL</span> <span class="p">(</span><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">subtotal</span> <span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl">        <span class="k">WHERE</span> <span class="n">order_id</span> <span class="o">=</span> <span class="n">grp</span><span class="mf">.</span><span class="n">order_id</span> </span></span><span class="line"><span class="cl">        <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">subtotal</span> <span class="k">DESC</span> <span class="k">LIMIT</span> <span class="mf">3</span><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">subtotal</span> <span class="k">DESC</span><span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/top-k/#for-k--1-1" >Top-K over partition<br>(K = 1)</a> | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">ON</span><span class="p">(</span><span class="n">order_id</span><span class="p">)</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">subtotal</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">subtotal</span> <span class="k">DESC</span><span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/first-value/" >First value over partition<br>order by &hellip;</a> | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span> </span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span> <span class="k">AS</span> <span class="n">diff_lowest_price</span><span class="p">,</span> </span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span> <span class="k">AS</span> <span class="n">diff_highest_price</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span> </span></span><span class="line"><span class="cl">      <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span> </span></span><span class="line"><span class="cl">         <span class="n">MIN</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">lowest_price</span><span class="p">,</span> </span></span><span class="line"><span class="cl">         <span class="k">MAX</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">highest_price</span> </span></span><span class="line"><span class="cl">      <span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl">      <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/last-value/" >Last value over partition<br>order by &hellip;<br>range between unbounded preceding<br>and unbounded following</a> | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span> </span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span> <span class="k">AS</span> <span class="n">diff_lowest_price</span><span class="p">,</span> </span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span> <span class="k">AS</span> <span class="n">diff_highest_price</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span> </span></span><span class="line"><span class="cl">      <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span> </span></span><span class="line"><span class="cl">         <span class="n">MIN</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">lowest_price</span><span class="p">,</span> </span></span><span class="line"><span class="cl">         <span class="k">MAX</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">highest_price</span> </span></span><span class="line"><span class="cl">      <span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl">      <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/lag/" >Lag over (order by) whose ordering can be represented by some equality condition.</a> | <p><em><strong>To exclude the first row since it has no previous row</strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span><span class="p">,</span> <span class="n">o1</span><span class="mf">.</span><span class="n">daily_total</span><span class="p">,</span> </span></span><span class="line"><span class="cl">    <span class="n">o2</span><span class="mf">.</span><span class="n">daily_total</span> <span class="k">as</span> <span class="n">previous_daily_total</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_daily_totals</span> <span class="n">o1</span><span class="p">,</span> <span class="n">orders_daily_totals</span> <span class="n">o2</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">=</span> <span class="n">o2</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">+</span> <span class="nb">INTERVAL</span> <span class="s1">&#39;1&#39;</span> <span class="k">DAY</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_date</span><span class="p">;</span> </span></span></code></pre></div><p><em><strong>To include the first row</strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span><span class="p">,</span> <span class="n">o1</span><span class="mf">.</span><span class="n">daily_total</span><span class="p">,</span> </span></span><span class="line"><span class="cl">    <span class="n">o2</span><span class="mf">.</span><span class="n">daily_total</span> <span class="k">as</span> <span class="n">previous_daily_total</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_daily_totals</span> <span class="n">o1</span> </span></span><span class="line"><span class="cl"><span class="k">LEFT</span> <span class="k">JOIN</span> <span class="n">orders_daily_totals</span> <span class="n">o2</span> </span></span><span class="line"><span class="cl"><span class="k">ON</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">=</span> <span class="n">o2</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">+</span> <span class="nb">INTERVAL</span> <span class="s1">&#39;1&#39;</span> <span class="k">DAY</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_date</span><span class="p">;</span> </span></span></code></pre></div> |
+| <a href="/transform-data/idiomatic-materialize-sql/lead/" >Lead over (order by) whose ordering can be represented by some equality condition.</a> | <p><em><strong>To exclude the last row since it has no next row</strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span><span class="p">,</span> <span class="n">o1</span><span class="mf">.</span><span class="n">daily_total</span><span class="p">,</span> </span></span><span class="line"><span class="cl">    <span class="n">o2</span><span class="mf">.</span><span class="n">daily_total</span> <span class="k">as</span> <span class="n">next_daily_total</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_daily_totals</span> <span class="n">o1</span><span class="p">,</span> <span class="n">orders_daily_totals</span> <span class="n">o2</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">=</span> <span class="n">o2</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">-</span> <span class="nb">INTERVAL</span> <span class="s1">&#39;1&#39;</span> <span class="k">DAY</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_date</span><span class="p">;</span> </span></span></code></pre></div><p><em><strong>To include the last row</strong></em></p> <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span><span class="p">,</span> <span class="n">o1</span><span class="mf">.</span><span class="n">daily_total</span><span class="p">,</span> </span></span><span class="line"><span class="cl">    <span class="n">o2</span><span class="mf">.</span><span class="n">daily_total</span> <span class="k">as</span> <span class="n">next_daily_total</span> </span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_daily_totals</span> <span class="n">o1</span> </span></span><span class="line"><span class="cl"><span class="k">LEFT</span> <span class="k">JOIN</span> <span class="n">orders_daily_totals</span> <span class="n">o2</span> </span></span><span class="line"><span class="cl"><span class="k">ON</span> <span class="n">o1</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">=</span> <span class="n">o2</span><span class="mf">.</span><span class="n">order_date</span> <span class="o">-</span> <span class="nb">INTERVAL</span> <span class="s1">&#39;1&#39;</span> <span class="k">DAY</span> </span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_date</span><span class="p">;</span> </span></span></code></pre></div> |
 
 ## See also
 
@@ -615,21 +193,19 @@ own idiomatic query patterns that do <red>not</red> use the window functions and
 can provide better performance.
 
 > ### Materialize and window functions
-> For [window functions](/sql/functions/#window-functions), when an input record
-> in a partition (as determined by the `PARTITION BY` clause of your window
-> function) is added/removed/changed, Materialize recomputes the results for the
-> entire window partition. This means that when a new batch of input data arrives
-> (that is, every second), **the amount of computation performed is proportional
-> to the total size of the touched partitions**.
-> For example, assume that in a given second, 20 input records change, and these
-> records belong to **10** different partitions, where the average size of each
-> partition is **100**. Then, amount of work to perform is proportional to
-> computing the window function results for **10\*100=1000** rows.
+> For indexed views and materialized views that contain [window
+> functions](/sql/functions/#window-functions) (including aggregate functions used
+> with an `OVER` clause), when an input record in a partition is
+> added/removed/changed, Materialize **recomputes the results from scratch** for
+> that partition (instead of using incremental computation).
+> The `PARTITION BY` clause of your window function determines your partitions. If
+> `PARTITION BY` is omitted, all records belong to a single partition (i.e., any
+> record change results in a recomputation from scratch over the whole input).
 > To avoid performance issues that may arise as the number of records grows,
-> consider rewriting your query to use idiomatic Materialize SQL instead of window
-> functions. If your query cannot be rewritten without the window functions and
-> the performance of window functions is insufficient for your use case, please
-> [contact our team](/support/).
+> consider rewriting your indexed views and materialized views to use idiomatic
+> Materialize SQL instead of window functions. If your view definitions cannot be
+> rewritten without the window functions and the performance of window functions
+> is insufficient for your use case, please [contact our team](/support/).
 
 <table>
 <thead>

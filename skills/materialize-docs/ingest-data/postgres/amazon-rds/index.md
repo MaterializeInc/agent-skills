@@ -497,10 +497,11 @@ CONNECTION`](/sql/create-connection/#aws-privatelink) command to create an
 
    To connect to an AWS PrivateLink endpoint service in a **different region**
    to the one where your Materialize environment is deployed:   ```mzsql
-      CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK ( SERVICE
-      NAME 'com.amazonaws.vpce.us-west-1.vpce-svc-<endpoint_service_id>', -- For
-      now, the AVAILABILITY ZONES clause **is** required, but will be -- made
-      optional in a future release. AVAILABILITY ZONES () );
+      CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
+          SERVICE NAME 'com.amazonaws.vpce.us-west-1.  vpce-svc-<endpoint_service_id>',
+          -- For now, the AVAILABILITY ZONES clause **is** required, but will be
+          -- made optional in a future release.
+          AVAILABILITY ZONES () );
 
       ```
 

@@ -1,11 +1,13 @@
-# CREATE SOURCE: MySQL
+# CREATE SOURCE: MySQL (Legacy syntax)
 Connecting Materialize to a MySQL database for Change Data Capture (CDC).
-[`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
+> **Disambiguation:** This page reflects the legacy syntax, which requires downtime to handle upstream DDL changes. For the new syntax which can handle adding or dropping columns to the upstream tables without downtime, see the [new reference page](/sql/create-source/mysql-v2).
 
-Materialize supports MySQL (5.7+) as a real-time data source. To connect to a
-MySQL database, you first need to tweak its configuration to enable
-[GTID-based binary log (binlog) replication](#change-data-capture), and then
-[create a connection](#creating-a-connection) in Materialize that specifies
+Creates a new source from MySQL. Materialize supports creating sources from
+MySQL (8.0.1+).
+
+To connect to a MySQL database, you first need to update its configuration to
+enable [GTID-based binary log (binlog) replication](#change-data-capture), and
+then [create a connection](#creating-a-connection) in Materialize that specifies
 access and authentication parameters.
 
 > **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
@@ -27,7 +29,7 @@ FROM MYSQL CONNECTION <connection_name> [
 ]
 <FOR ALL TABLES | FOR SCHEMAS ( <schema1> [, ...] ) | FOR TABLES ( <table1> [AS <subsrc_name>] [, ...] )>
 [EXPOSE PROGRESS AS <progress_subsource_name>]
-[WITH (RETAIN HISTORY FOR <retention_period>)]
+[WITH ( <with_option> [, ...] )]
 
 ```
 
@@ -41,14 +43,14 @@ FROM MYSQL CONNECTION <connection_name> [
 | **EXCLUDE COLUMNS** ( `<col1>` [, ...] ) | Optional. Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.  |
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables in all schemas upstream. The [`mysql` system schema](https://dev.mysql.com/doc/refman/8.3/en/system-schema.html) is ignored. \| \| `SCHEMAS ( <schema1> [, ...] )` \| Create subsources for specific schemas upstream. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables upstream. Requires fully-qualified table names (`<schema1>.<table1>`). \|  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 ### `CONNECTION` options
 
-Field             | Value                           | Description
-------------------|---------------------------------|-------------------------------------
-`EXCLUDE COLUMNS` | A list of fully-qualified names | Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.
-`TEXT COLUMNS`    | A list of fully-qualified names | Decode data as `text` for specific columns that contain MySQL types that are [unsupported in Materialize](#supported-types).
+| Field             | Value                           | Description                                                                                                                  |
+| ----------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `EXCLUDE COLUMNS` | A list of fully-qualified names | Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.          |
+| `TEXT COLUMNS`    | A list of fully-qualified names | Decode data as `text` for specific columns that contain MySQL types that are [unsupported in Materialize](#supported-types). |
 
 ## Features
 
@@ -109,22 +111,6 @@ database has been configured for GTID-based binlog replication:
 <tr>
 
 <td>
-<code>binlog_format</code>
-</td>
-
-<td>
-<code>ROW</code>
-</td>
-
-<td>
-<a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
-</td>
-
-</tr>
-
-<tr>
-
-<td>
 <code>binlog_row_image</code>
 </td>
 
@@ -134,6 +120,44 @@ database has been configured for GTID-based binlog replication:
 
 <td>
 
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>binlog_row_metadata</code>
+</td>
+
+<td>
+<code>FULL</code>
+</td>
+
+<td>
+<ul>
+<li><strong>Required</strong> to use <a href="/sql/create-source/mysql-v2/" ><code>CREATE SOURCE</code> (New
+syntax)</a>.</li>
+<li>Highly recommended for use with the <a href="/sql/create-source/mysql/" ><code>CREATE SOURCE</code> (Legacy
+syntax)</a>.</li>
+</ul>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>binlog_format</code>
+</td>
+
+<td>
+<code>ROW</code>
+</td>
+
+<td>
+<a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
 </td>
 
 </tr>
@@ -276,11 +300,11 @@ AS` clause; otherwise, it will be named `<src_name>_progress`.
 
 The following metadata is available for each source as a progress subsource:
 
-Field              | Type                                                    | Details
--------------------|---------------------------------------------------------|--------------
-`source_id_lower`  | [`uuid`](/sql/types/uuid/)  | The lower-bound GTID `source_id` of the GTIDs covered by this range.
-`source_id_upper`  | [`uuid`](/sql/types/uuid/)  | The upper-bound GTID `source_id` of the GTIDs covered by this range.
-`transaction_id`   | [`uint8`](/sql/types/uint/#uint8-info)                  | The `transaction_id` of the next GTID possible from the GTID `source_id`s covered by this range.
+| Field             | Type                                   | Details                                                                                          |
+| ----------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `source_id_lower` | [`uuid`](/sql/types/uuid/)             | The lower-bound GTID `source_id` of the GTIDs covered by this range.                             |
+| `source_id_upper` | [`uuid`](/sql/types/uuid/)             | The upper-bound GTID `source_id` of the GTIDs covered by this range.                             |
+| `transaction_id`  | [`uint8`](/sql/types/uint/#uint8-info) | The `transaction_id` of the next GTID possible from the GTID `source_id`s covered by this range. |
 
 And can be queried using:
 
@@ -300,13 +324,16 @@ debugging related issues, see [Troubleshooting](/ops/troubleshooting/).
 
 ### Schema changes
 
-> **Note:** Work to more smoothly support ddl changes to upstream tables is currently in
-> progress. The work introduces the ability to re-ingest the same upstream table
-> under a new schema and switch over without downtime.
-
 Materialize supports schema changes in the upstream database as follows:
 
-#### Compatible schema changes
+#### Compatible schema changes (Legacy syntax)
+
+> **Note:** This section refer to the legacy [`CREATE SOURCE ... FOR
+> ...`](/sql/create-source/mysql/) that creates subsources as part of the `CREATE
+> SOURCE` operation.  To be able to handle the upstream column additions and
+> drops, use [`CREATE SOURCE (New Syntax)`](/sql/create-source/mysql-v2/) and
+> [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
+> [MySQL: Source versioning guide](/ingest-data/mysql/source-versioning/).
 
 <ul>
 <li>
@@ -468,6 +495,7 @@ configuring an AWS PrivateLink service to accept connections from Materialize,
 check [this guide](/ops/network-security/privatelink/).
 
 **SSH tunnel:**
+
 ```mzsql
 CREATE CONNECTION ssh_connection TO SSH TUNNEL (
     HOST 'bastion-host',
@@ -570,8 +598,8 @@ ALTER SOURCE mz_source ADD SUBSOURCE table_1;
 - [`CREATE CONNECTION`](/sql/create-connection)
 - [`CREATE SOURCE`](../)
 - MySQL integration guides:
-  - [Amazon RDS](/ingest-data/mysql/amazon-rds/)
-  - [Amazon Aurora](/ingest-data/mysql/amazon-aurora/)
-  - [Azure DB](/ingest-data/mysql/azure-db/)
-  - [Google Cloud SQL](/ingest-data/mysql/google-cloud-sql/)
-  - [Self-hosted](/ingest-data/mysql/self-hosted/)
+    - [Amazon RDS](/ingest-data/mysql/amazon-rds/)
+    - [Amazon Aurora](/ingest-data/mysql/amazon-aurora/)
+    - [Azure DB](/ingest-data/mysql/azure-db/)
+    - [Google Cloud SQL](/ingest-data/mysql/google-cloud-sql/)
+    - [Self-hosted](/ingest-data/mysql/self-hosted/)

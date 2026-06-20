@@ -277,6 +277,33 @@ generation rollout is automatically triggered.</p>
 <p><strong>Default:</strong> <code>00000000-0000-0000-0000-000000000000</code></p></td>
 </tr>
 <tr>
+<td><code>rolloutRequestTimeout</code></td>
+<td></td>
+<td>
+<em><strong>RolloutRequestTimeout</strong></em>
+
+<p><p>The maximum amount of time a rollout may remain in progress before
+it is automatically cancelled.</p>
+<p>While a rollout is in progress, the new generation of <code>environmentd</code>
+runs in a read-only, un-promoted state and holds back compaction via
+read holds. Leaving it in this state for too long can cause
+incident-inducing load when it is eventually promoted, so the
+operator cancels the rollout once this timeout is exceeded: the new
+generation is torn down and the previously-active generation
+continues serving. A new rollout can then be triggered by setting
+<code>requestRollout</code> to a new value.</p>
+<p>This does not apply to the <code>ImmediatelyPromoteCausingDowntime</code>
+rollout strategy or to force-promoted rollouts, since by the time
+those are in progress the old generation may already be gone.</p>
+<p>The value is parsed as a human-readable duration, e.g. <code>24h</code>,
+<code>90m</code>, or <code>1h 30m</code>. Defaults to [<code>DEFAULT_ROLLOUT_REQUEST_TIMEOUT</code>]
+when omitted (the API server fills it in); an unparseable value also
+falls back to that default.</p>
+</p>
+
+<p><strong>Default:</strong> <code>24h</code></p></td>
+</tr>
+<tr>
 <td><code>rolloutStrategy</code></td>
 <td></td>
 <td>
@@ -306,6 +333,9 @@ status of the Materialize Resource. If the condition&rsquo;s reason is
 >   cancelled, those read holds are released. If left unpromoted for an extended time, this
 >   data can build up, and can cause extreme deletion load on the metadata backend database
 >   when finally promoted or cancelled.
+>   To guard against this, a rollout that remains in progress longer
+>   than `rolloutRequestTimeout` (default 24h) is automatically
+>   cancelled.
 
 </li>
 <li>

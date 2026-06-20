@@ -41,13 +41,13 @@ Best practices for ingesting data into Materialize from external systems.
 - **AWS PrivateLink connections (Cloud-only)**: `ingest-data/network-security/privatelink/index.md`
 - **CockroachDB CDC using Kafka and Changefeeds**: `ingest-data/cdc-cockroachdb/index.md`
 - **Debezium**: `ingest-data/debezium/index.md`
-- **Fivetran**: `ingest-data/fivetran/index.md`
 - **HubSpot**: `ingest-data/webhooks/hubspot/index.md`
 - **Kafka**: `ingest-data/kafka/index.md`
 - **MongoDB**: `ingest-data/mongodb/index.md`
 - **Monitoring data ingestion**: `ingest-data/monitoring-data-ingestion/index.md`
 - **MySQL**: `ingest-data/mysql/index.md`
-- _(and 12 more files in this section)_
+- **PostgreSQL**: `ingest-data/postgres/index.md`
+- _(and 11 more files in this section)_
 
 ### Manage Materialize
 
@@ -86,6 +86,7 @@ Learn how to efficiently transform data using Materialize SQL.
 ### References
 
 - **Explain plan operators**: `reference/explain-plan-operators/index.md`
+- **Isolation levels**: `reference/isolation-level/index.md`
 - **M.1 to cc size mapping**: `reference/m1-cc-mapping/index.md`
 - **System catalog**: `reference/system-catalog/index.md`
 - **System clusters**: `reference/system-clusters/index.md`
@@ -136,13 +137,13 @@ SQL commands reference.
 ### Tools and integrations
 Get details about third-party tools and integrations supported by Materialize
 
+- **Agent Skills**: `integrations/coding-agent-skills/index.md`
 - **Client libraries**: `integrations/client-libraries/index.md`
-- **Coding Agent Skills**: `integrations/coding-agent-skills/index.md`
 - **Connect to Materialize via HTTP**: `integrations/http-api/index.md`
 - **Connect to Materialize via WebSocket**: `integrations/websocket-api/index.md`
 - **Connection Pooling**: `integrations/connection-pooling/index.md`
 - **Foreign data wrapper (FDW) **: `integrations/fdw/index.md`
-- **MCP Server**: `integrations/mcp-server/index.md`
+- **MCP Servers and agent skills**: `integrations/mcp-server/index.md`
 - **mz - Materialize CLI**: `integrations/cli/index.md`
 - **mz-debug**: `integrations/mz-debug/index.md`
 - **SQL clients**: `integrations/sql-clients/index.md`

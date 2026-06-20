@@ -1,5 +1,7 @@
-# CREATE SOURCE: SQL Server
+# CREATE SOURCE: SQL Server (Legacy Syntax)
 Connecting Materialize to a SQL Server database for Change Data Capture (CDC).
+> **Disambiguation:** This page reflects the legacy syntax, which requires downtime to handle upstream DDL changes. For the new syntax which can handle adding or dropping columns to the upstream tables without downtime, see the [new reference page](/sql/create-source/sql-server-v2).
+
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
 
 Materialize supports SQL Server (2016+) as a real-time data source. To connect to a
@@ -18,7 +20,7 @@ FROM SQL SERVER CONNECTION <connection_name>
   [ ( EXCLUDE COLUMNS (<col1> [, ...]) ) ]
   [ ( TEXT COLUMNS (<col1> [, ...]) ) ]
 <FOR ALL TABLES | FOR TABLES ( <table1> [AS <subsrc_name>] [, ...] )>
-[WITH (RETAIN HISTORY FOR <retention_period>)]
+[WITH ( <with_option> [, ...] )]
 
 ```
 
@@ -31,7 +33,7 @@ FROM SQL SERVER CONNECTION <connection_name>
 | **EXCLUDE COLUMNS** ( `<col1>` [, ...] ) | Optional. Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.  |
 | **TEXT COLUMNS** ( `<col1>` [, ...] ) | Optional. If specified, decode data from the specified columns in the subsource(s) as `text` for the listed column(s), such as for unsupported data types.  |
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables with CDC enabled in all schemas upstream. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables upstream. Requires fully-qualified table names (`<schema1>.<table1>`). \|  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 ## Creating a source
 

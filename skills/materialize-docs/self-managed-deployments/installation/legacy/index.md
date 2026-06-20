@@ -3,8 +3,10 @@
 Install Self-Managed Materialize using legacy Terraform modules
 
 <h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
-> **Tip:** The Terraform modules are provided as examples. They are not required for
-> installing Materialize.
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
 
 <table>
   <thead>
@@ -160,20 +162,20 @@ components:
    MY_ORGANIZATION=<enter-your-organization>
    ```
 
-1. Clone your forked repo and checkout the `v0.8.27` tag. For example,
+1. Clone your forked repo and checkout the `v0.8.34` tag. For example,
 
    - If cloning via SSH (replace `YOUR_ORGANIZATION` with your organization's
      name):
 
      ```bash
-     git clone --depth 1 -b v0.8.27 git@github.com:${MY_ORGANIZATION}/terraform-aws-materialize.git
+     git clone --depth 1 -b v0.8.34 git@github.com:${MY_ORGANIZATION}/terraform-aws-materialize.git
      ```
 
    - If cloning via HTTPS (replace `YOUR_ORGANIZATION` with your
      organization's name):
 
      ```bash
-     git clone --depth 1 -b v0.8.27 https://github.com/${MY_ORGANIZATION}/terraform-aws-materialize.git
+     git clone --depth 1 -b v0.8.34 https://github.com/${MY_ORGANIZATION}/terraform-aws-materialize.git
      ```
 
 1. Go to the `examples/simple` folder in the Materialize Terraform repo
@@ -753,20 +755,20 @@ deploys a sample infrastructure on Azure with the following components:
    MY_ORGANIZATION=<enter-your-organization>
    ```
 
-1. Clone your forked repo and checkout the `v0.8.27` tag. For example,
+1. Clone your forked repo and checkout the `v0.8.34` tag. For example,
 
    - If cloning via SSH (substitute `YOUR_ORGANIZATION` with your organization's
      name):
 
      ```bash
-     git clone --depth 1 -b v0.8.27 git@github.com:${MY_ORGANIZATION}/terraform-azurerm-materialize.git
+     git clone --depth 1 -b v0.8.34 git@github.com:${MY_ORGANIZATION}/terraform-azurerm-materialize.git
      ```
 
    - If cloning via HTTPS (substitute `YOUR_ORGANIZATION` with your
      organization's name):
 
      ```bash
-     git clone --depth 1 -b v0.8.27 https://github.com/${MY_ORGANIZATION}/terraform-azurerm-materialize.git
+     git clone --depth 1 -b v0.8.34 https://github.com/${MY_ORGANIZATION}/terraform-azurerm-materialize.git
      ```
 
 1. Go to the `examples/simple` folder in the Materialize Terraform repo
@@ -1416,18 +1418,18 @@ components:
    MY_ORGANIZATION=<enter-your-organization>
    ```
 
-1. Clone your forked repo and checkout the `v0.8.28` tag. For example,
+1. Clone your forked repo and checkout the `v0.8.35` tag. For example,
 
    - If cloning via SSH:
 
      ```bash
-     git clone --depth 1 -b v0.8.28 git@github.com:${MY_ORGANIZATION}/terraform-google-materialize.git
+     git clone --depth 1 -b v0.8.35 git@github.com:${MY_ORGANIZATION}/terraform-google-materialize.git
      ```
 
    - If cloning via HTTPS:
 
      ```bash
-     git clone --depth 1 -b v0.8.28 https://github.com/${MY_ORGANIZATION}/terraform-google-materialize.git
+     git clone --depth 1 -b v0.8.35 https://github.com/${MY_ORGANIZATION}/terraform-google-materialize.git
      ```
 
 1. Go to the `examples/simple` folder in the Materialize Terraform repo
