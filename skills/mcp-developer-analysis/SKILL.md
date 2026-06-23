@@ -188,6 +188,25 @@ pressure or configuration issues.
 - `mz_internal.mz_cluster_replica_metrics` for raw memory metrics
 - `mz_internal.mz_index_advice` to identify which MVs/indexes can be optimized
 
+### Worker Skew (CPU imbalance across workers)
+
+Use `WITH SKEW` to find operators where one worker does disproportionate CPU/memory work.
+
+**Cluster-level:**
+
+```sql
+EXPLAIN ANALYZE CLUSTER CPU WITH SKEW;
+```
+
+**Object-level (run for both the MV and its indexes):**
+
+```sql
+EXPLAIN ANALYZE CPU WITH SKEW FOR MATERIALIZED VIEW <schema>.<mv_name>;
+EXPLAIN ANALYZE CPU WITH SKEW FOR INDEX <schema>.<index_name>;
+```
+
+If skew is present: identify the skewed operator (often TopK/window/agg/join/distinct), then inspect definitions (`SHOW CREATE ...`) and recommend a concrete SQL change (remove/adjust hints, refactor keys/partitioning, or rewrite the MV).
+
 ### Index Advice
 Query `mz_internal.mz_index_advice` — Materialize's built-in advisor. Hint types:
 - **"keep"** — the MV/index is needed as-is
@@ -231,6 +250,7 @@ Produce a structured markdown report:
 ### Freshness
 ### Hydration
 ### Cluster Utilization
+### Worker Skew
 
 ## Cost Analysis (if requested)
 
