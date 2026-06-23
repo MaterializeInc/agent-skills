@@ -207,8 +207,6 @@ EXPLAIN ANALYZE CPU WITH SKEW FOR INDEX <schema>.<index_name>;
 
 If skew is present: identify the skewed operator (often TopK/window/agg/join/distinct), then inspect definitions (`SHOW CREATE ...`) and recommend a concrete SQL change (remove/adjust hints, refactor keys/partitioning, or rewrite the MV).
 
-###
-
 ### Index Advice
 Query `mz_internal.mz_index_advice` — Materialize's built-in advisor. Hint types:
 - **"keep"** — the MV/index is needed as-is
