@@ -15,7 +15,7 @@ If the user is asking how to **configure**, **connect**, or **set up** an MCP
 client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop)
 to talk to the `materialize-developer` server — including how to control which
 user or role the connection uses, or how to switch between identities — see
-[`mcp-client-connect.md`](mcp-client-connect.md). It covers the Emulator,
+`mcp-client-connect.md`. It covers the Emulator,
 Materialize Cloud, and self-managed deployments, with per-client snippets,
 authentication patterns, and verification recipes.
 
@@ -36,13 +36,14 @@ SHOW TABLES FROM mz_ontology
 Use it to discover the correct tables, columns, join paths, and ID types:
 
 | Table | What it tells you |
-|-------|-------------------|
+| --- | --- |
 | `mz_ontology.mz_ontology_entity_types` | What catalog entities exist and which `mz_*` table they map to. |
 | `mz_ontology.mz_ontology_link_types` | Relationships between entities (foreign keys, metrics, etc.). |
 | `mz_ontology.mz_ontology_properties` | Column names, types, and descriptions for each entity. |
 | `mz_ontology.mz_ontology_semantic_types` | Typed ID domains (CatalogItemId, ReplicaId, etc.). |
 
 Example queries:
+
 ```sql
 -- Find the right table for an entity
 SELECT name, relation, description
@@ -72,7 +73,7 @@ Refer to the Critical Rules below for known pitfalls.
 Even with the ontology, be aware of these common mistakes:
 
 | Wrong | Correct | Table |
-|-------|---------|-------|
+| --- | --- | --- |
 | `updated_at` | `last_status_change_at` | `mz_source_statuses`, `mz_sink_statuses` |
 | `cluster_name` | Must JOIN through `replica_id` to `mz_cluster_replicas` then `mz_clusters` | `mz_cluster_replica_utilization` |
 
@@ -84,11 +85,12 @@ When unsure, run `SHOW COLUMNS FROM <schema>.<table>` to verify.
 fails for two reasons:
 
 1. **Cluster-scoped**: Only returns data for the session's current cluster,
-   and the MCP tool does not support `SET cluster = ...` to switch clusters.
+and the MCP tool does not support `SET cluster = ...` to switch clusters.
 2. **Type mismatch**: Its `id` column is `uint8`, not `text` like
-   `mz_catalog.mz_objects.id`. JOINs fail with `operator does not exist: uint8 = text`.
+`mz_catalog.mz_objects.id`. JOINs fail with `operator does not exist: uint8 = text`.
 
 Instead, use:
+
 - `mz_internal.mz_cluster_replica_utilization` — memory/CPU/disk percentage
 - `mz_internal.mz_cluster_replica_metrics` — raw memory bytes
 - `mz_internal.mz_index_advice` — find MVs/indexes that can be removed
@@ -103,9 +105,10 @@ to JOIN with `mz_catalog`.
 ### Discovering tables without the ontology
 
 If `mz_ontology` is not available, use these fallbacks:
+
 - `SHOW COLUMNS FROM <schema>.<table>` to check a table's columns
 - **Do NOT use `SHOW TABLES FROM mz_internal LIKE '...'`** — this only shows
-  tables, not views. Most system catalog objects are views.
+tables, not views. Most system catalog objects are views.
 
 ## Workflow Overview
 
@@ -123,6 +126,7 @@ query_system_catalog: SELECT mz_version()
 ```
 
 If this fails, check:
+
 - The MCP server is configured in `.mcp.json`
 - The `enable_mcp_developer` feature flag is enabled on the environment
 - Your authentication credentials are valid
@@ -130,6 +134,7 @@ If this fails, check:
 ### Running Queries
 
 All queries are run via the `query_system_catalog` MCP tool. Constraints:
+
 - One statement per call (no semicolons)
 - Read-only: SELECT, SHOW, EXPLAIN only
 - System tables only: no access to user tables
@@ -144,11 +149,13 @@ Run the discovery queries to understand what is deployed. See
 `references/queries.md` for the full query set. The discovery phase covers:
 
 ### Environment Overview
+
 - Materialize version (`SELECT mz_version()`)
 - Clusters and replicas — names, sizes, and replica counts
 - Schemas in use
 
 ### Deployed Objects Inventory
+
 - **Sources**: type (Kafka, Postgres, MySQL, Webhook, etc.), cluster assignment, status
 - **Materialized Views**: cluster assignment, indexes, dependencies
 - **Views**: (non-materialized) and their usage patterns
@@ -164,6 +171,7 @@ transformed (views/MVs), and where it goes out (sinks).
 Retrieve SQL definitions for materialized views, views, indexes, and sources
 using `references/queries.md`. This is critical for optimization analysis —
 the SQL definitions tell you *how* things are computed:
+
 - Join patterns and join order
 - Filter predicates (or lack thereof — missing temporal filters are a common issue)
 - Aggregation strategies
@@ -172,6 +180,7 @@ the SQL definitions tell you *how* things are computed:
 ## Step 3: Analyze — Performance and Resource Metrics
 
 ### Freshness (Lag Analysis)
+
 Query `mz_internal.mz_materialization_lag` for per-object lag.
 
 **Important**: The `write_frontier` column is of type `mz_timestamp` (a uint8),
@@ -179,17 +188,42 @@ not a standard timestamp. You cannot subtract it from `now()` directly. Cast to
 get a human-readable time: `to_timestamp(write_frontier::bigint / 1000)`.
 
 ### Hydration Status
+
 Query `mz_internal.mz_hydration_statuses` to check whether all dataflows are
 hydrated. Non-hydrated objects after initial startup may indicate resource
 pressure or configuration issues.
 
 ### Memory and Resource Consumption
+
 - `mz_internal.mz_cluster_replica_utilization` for memory/CPU percentage per replica
 - `mz_internal.mz_cluster_replica_metrics` for raw memory metrics
 - `mz_internal.mz_index_advice` to identify which MVs/indexes can be optimized
 
+### Worker Skew (CPU imbalance across workers)
+
+Worker skew is when one or a few workers do disproportionately more work than the rest, leading to poor freshness and high latency even when cluster-wide CPU looks "fine".
+
+**Cluster-level check (quick scan):**
+
+```sql
+EXPLAIN ANALYZE CLUSTER CPU WITH SKEW;
+```
+
+**Object-level check (pinpoint the culprit):**
+
+```sql
+EXPLAIN ANALYZE CPU WITH SKEW FOR INDEX <schema>.<index_name>;
+```
+
+If skew is detected:
+
+- Identify the skewed operator(s) and look for hot keys, window functions, non-incremental operators (e.g., TopK), or overly-aggressive hints (like `expected_group_size`).
+- Recommend concrete SQL changes (e.g., remove/adjust hints, change partitioning keys, refactor the view), plus whether scaling up helps vs only masking the issue.
+
 ### Index Advice
+
 Query `mz_internal.mz_index_advice` — Materialize's built-in advisor. Hint types:
+
 - **"keep"** — the MV/index is needed as-is
 - **"drop unless queried directly"** — no structural dependencies; only useful for direct SELECT queries
 - **"convert to a view"** — MV can be dematerialized entirely, saving all arrangement memory
@@ -197,12 +231,14 @@ Query `mz_internal.mz_index_advice` — Materialize's built-in advisor. Hint typ
 - **"add index"** — object would benefit from an index
 
 ### Cost Analysis (optional)
+
 Query `mz_catalog.mz_cluster_replica_sizes` to get credit rates per cluster
 size, then calculate: `credits_per_hour * replication_factor * 730 hours/month`.
 
 When writing recommendations, **always quantify the credit impact**.
 
 ### Object Dependencies
+
 Query `mz_internal.mz_object_dependencies` to understand the dependency graph.
 
 ## Step 4: Report — Generate the Analysis
@@ -231,6 +267,7 @@ Produce a structured markdown report:
 ### Freshness
 ### Hydration
 ### Cluster Utilization
+### Worker Skew
 
 ## Cost Analysis (if requested)
 
@@ -249,15 +286,21 @@ Produce a structured markdown report:
 **Always include specific SQL commands.** For example:
 
 Good:
+
 > **Recommendation:** Dematerialize `my_schema.unused_mv` to save memory.
+> 
+> 
 > ```sql
 > SHOW CREATE MATERIALIZED VIEW my_schema.unused_mv;
 > DROP MATERIALIZED VIEW my_schema.unused_mv;
 > CREATE VIEW my_schema.unused_mv AS <definition>;
 > ```
+> 
 
 Bad:
+
 > **Recommendation:** Consider dematerializing `my_schema.unused_mv`.
+> 
 
 ## Troubleshooting Runbooks
 
@@ -267,6 +310,7 @@ For focused troubleshooting, use these diagnostic paths.
 ### "Why is my materialized view stale?"
 
 **Diagnostic steps:**
+
 1. Check `mz_internal.mz_materialization_lag` for the MV's lag
 2. Check `mz_internal.mz_hydration_statuses` — is it hydrated?
 3. Check `mz_internal.mz_cluster_replica_statuses` — is the replica healthy?
@@ -276,6 +320,7 @@ For focused troubleshooting, use these diagnostic paths.
 **Common fixes:**
 
 *If the cluster is overloaded (high memory/CPU):*
+
 ```sql
 -- Option A: Scale up the cluster
 ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>');
@@ -291,16 +336,19 @@ Hydration will complete on its own once the cluster stabilizes. If it persists,
 the cluster likely needs more memory.
 
 *If an upstream source has errors:*
+
 ```sql
 SELECT name, status, error, last_status_change_at
 FROM mz_internal.mz_source_statuses
 WHERE status != 'running'
 ```
+
 Fix the upstream source issue first — MV freshness depends on source health.
 
 ### "Why is my cluster running out of memory?"
 
 **Diagnostic steps:**
+
 1. Check `mz_internal.mz_cluster_replica_utilization` for memory percentage
 2. Check `mz_internal.mz_index_advice` for MVs that can be dematerialized
 3. Check MV definitions for missing temporal filters
@@ -309,6 +357,7 @@ Fix the upstream source issue first — MV freshness depends on source health.
 **Common fixes:**
 
 *Dematerialize MVs that don't need to be materialized:*
+
 ```sql
 SELECT o.name, o.type, sc.name AS schema_name, ia.hint, ia.details
 FROM mz_internal.mz_index_advice ia
@@ -323,6 +372,7 @@ CREATE VIEW <schema>.<mv_name> AS <definition>;
 ```
 
 *Drop unused indexes:*
+
 ```sql
 SELECT o.name, o.type, sc.name AS schema_name, ia.hint, ia.details
 FROM mz_internal.mz_index_advice ia
@@ -335,6 +385,7 @@ DROP INDEX <schema>.<index_name>;
 ```
 
 *Scale up the cluster:*
+
 ```sql
 ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>');
 ```
@@ -342,6 +393,7 @@ ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>');
 ### "Are my sources healthy? / Has my source finished snapshotting?"
 
 **Diagnostic steps:**
+
 1. Check `mz_internal.mz_source_statuses` for source errors
 2. Check `mz_internal.mz_source_statistics` for ingestion progress
 3. Check `mz_internal.mz_materialization_lag` for end-to-end lag
@@ -349,6 +401,7 @@ ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>');
 **Common fixes:**
 
 *If a source is stalled or erroring:*
+
 ```sql
 SELECT name, status, error
 FROM mz_internal.mz_source_statuses
@@ -364,6 +417,7 @@ snapshot. This is normal for large sources — wait for it to complete.
 ### "What's the health of my environment?"
 
 Run these checks in order:
+
 1. `mz_internal.mz_cluster_replica_statuses` — all replicas ready?
 2. `mz_internal.mz_source_statuses` — all sources running?
 3. `mz_internal.mz_sink_statuses` — all sinks running?
