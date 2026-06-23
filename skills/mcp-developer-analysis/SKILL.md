@@ -190,23 +190,22 @@ pressure or configuration issues.
 
 ### Worker Skew (CPU imbalance across workers)
 
-Worker skew is when one or a few workers do disproportionately more work than the rest, leading to poor freshness and high latency even when cluster-wide CPU looks "fine".
+Use `WITH SKEW` to find operators where one worker does disproportionate CPU/memory work.
 
-**Cluster-level check (quick scan):**
+**Cluster-level:**
 
 ```sql
 EXPLAIN ANALYZE CLUSTER CPU WITH SKEW;
 ```
 
-**Object-level check (pinpoint the culprit):**
+**Object-level (run for both the MV and its indexes):**
 
 ```sql
+EXPLAIN ANALYZE CPU WITH SKEW FOR MATERIALIZED VIEW <schema>.<mv_name>;
 EXPLAIN ANALYZE CPU WITH SKEW FOR INDEX <schema>.<index_name>;
 ```
 
-If skew is detected:
-- Identify the skewed operator(s) and look for hot keys, window functions, non-incremental operators (e.g., TopK), or overly-aggressive hints (like `expected_group_size`).
-- Recommend concrete SQL changes (e.g., remove/adjust hints, change partitioning keys, refactor the view), plus whether scaling up helps vs only masking the issue.
+If skew is present: identify the skewed operator (often TopK/window/agg/join/distinct), then inspect definitions (`SHOW CREATE ...`) and recommend a concrete SQL change (remove/adjust hints, refactor keys/partitioning, or rewrite the MV).
 
 ###
 
