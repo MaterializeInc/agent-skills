@@ -1,12 +1,12 @@
 # Regenerates the `materialize-docs` skill from upstream Materialize docs.
 #
 # Generator: https://github.com/MaterializeInc/materialize/blob/main/bin/gen-claude-skill
-# Target:    https://github.com/MaterializeInc/agent-skills/tree/main/skills/materialize-docs
+# Target:    https://github.com/MaterializeInc/agent-skills/tree/main/.agents/skills/materialize-docs
 #
 # The generator uses `hugo --cleanDestinationDir`, so it wipes the output
 # directory on each run. Hand-maintained files (the skill's top-level README
 # and references/README) are stashed before generation and restored after.
-# If new hand-maintained files are added under `skills/materialize-docs/`,
+# If new hand-maintained files are added under `.agents/skills/materialize-docs/`,
 # update the "Stash" and "Restore" steps below.
 
 name: update-materialize-docs-skill
@@ -91,19 +91,19 @@ jobs:
           # output directory. Preserve hand-maintained files here and restore
           # them after generation. Add new entries as needed.
           mkdir -p ../preserved/references
-          cp skills/materialize-docs/README.md ../preserved/README.md
-          cp skills/materialize-docs/references/README.md ../preserved/references/README.md
+          cp .agents/skills/materialize-docs/README.md ../preserved/README.md
+          cp .agents/skills/materialize-docs/references/README.md ../preserved/references/README.md
 
       - name: Generate skill
         working-directory: materialize
-        run: bin/gen-claude-skill ../agent-skills/skills/materialize-docs
+        run: bin/gen-claude-skill ../agent-skills/.agents/skills/materialize-docs
 
       - name: Restore hand-maintained files
         working-directory: agent-skills
         run: |
-          mkdir -p skills/materialize-docs/references
-          cp ../preserved/README.md skills/materialize-docs/README.md
-          cp ../preserved/references/README.md skills/materialize-docs/references/README.md
+          mkdir -p .agents/skills/materialize-docs/references
+          cp ../preserved/README.md .agents/skills/materialize-docs/README.md
+          cp ../preserved/references/README.md .agents/skills/materialize-docs/references/README.md
 
       - name: Check for changes
         id: changes
@@ -119,7 +119,7 @@ jobs:
         if: steps.changes.outputs.has_changes == 'true'
         working-directory: agent-skills
         run: |
-          git add skills/materialize-docs
+          git add .agents/skills/materialize-docs
           git commit -m "Update materialize-docs skill from materialize@${MZ_REF}"
           git push origin "$BRANCH"
 
@@ -134,7 +134,7 @@ jobs:
             --head "$BRANCH" \
             --title "Update materialize-docs skill from materialize@${MZ_REF}" \
             --body "$(cat <<EOF
-          Regenerates \`skills/materialize-docs/\` by running [\`bin/gen-claude-skill\`](https://github.com/MaterializeInc/materialize/blob/main/bin/gen-claude-skill) from MaterializeInc/materialize.
+          Regenerates \`.agents/skills/materialize-docs/\` by running [\`bin/gen-claude-skill\`](https://github.com/MaterializeInc/materialize/blob/main/bin/gen-claude-skill) from MaterializeInc/materialize.
 
           **Source ref:** \`${MZ_REF}\`
 
