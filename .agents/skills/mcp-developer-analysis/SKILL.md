@@ -1,13 +1,25 @@
 ---
 name: mcp-developer-analysis
-description: 'Analyze a Materialize environment via the MCP Developer endpoint, and/or configure an MCP client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to connect to the materialize-developer server. For analysis: check environment health, investigate performance, troubleshoot stale materialized views, diagnose memory pressure, audit resource utilization, get optimization recommendations. For client connection: configure/connect/set-up an MCP client to materialize-developer (Emulator, Cloud, or self-managed), control which user/role is used, switch between identities. Trigger even if user just says "check my environment", "why is my MV stale", "why is my cluster slow", "what can I optimize", "how do I connect Claude Code to materialize-developer", or "configure Cursor for the Materialize MCP".'
+description: 'Analyze a Materialize environment via the MCP Developer endpoint, and/or configure an MCP client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to connect to the materialize-developer server. For analysis: check environment health, investigate performance, troubleshoot stale materialized views, diagnose memory pressure, audit resource utilization, run EXPLAIN ANALYZE on user objects, get optimization recommendations. For client connection: configure/connect/set-up an MCP client to materialize-developer (Emulator, Cloud, or self-managed), control which user/role is used, switch between identities. Trigger even if user just says "check my environment", "why is my MV stale", "why is my cluster slow", "what can I optimize", "explain analyze my materialized view", "how do I connect Claude Code to materialize-developer", or "configure Cursor for the Materialize MCP".'
 ---
 
 # Materialize Developer Analysis
 
-Analyze a Materialize environment by querying system catalog tables via the MCP
-Developer endpoint (`query_system_catalog` tool), and produce a structured
-report with health status, performance findings, and optimization recommendations.
+Analyze a Materialize environment via the MCP Developer endpoint and produce a
+structured report with health status, performance findings, and optimization
+recommendations.
+
+The developer endpoint exposes two read-only tools:
+
+- **`query_system_catalog`** — `SELECT`/`SHOW`/`EXPLAIN` restricted to system
+  catalog tables (`mz_*`, `pg_catalog`, `information_schema`). Does not take a
+  cluster argument; runs on the catalog server cluster (`mz_catalog_server`).
+  Use for most catalog lookups.
+- **`query`** (added in Materialize v26.30) — `SELECT`/`SHOW`/`EXPLAIN` against
+  any object the role can access, including user objects on a named cluster.
+  Required for `EXPLAIN ANALYZE` (it must run on the MV/index's cluster) and
+  for reading user data directly. May be hidden when the operator has disabled
+  `enable_mcp_developer_query_tool`.
 
 ## Connecting an MCP client to `materialize-developer`
 
@@ -122,18 +134,34 @@ Confirm you have access to the `query_system_catalog` tool. Run a quick test:
 query_system_catalog: SELECT mz_version()
 ```
 
-If this fails, check:
+Check `tools/list` for `query` as well. If it's there, you can also run
+`EXPLAIN ANALYZE` and queries against user objects on a named cluster. If
+it's not listed (operator has disabled it, or the environment is on a
+pre-v26.30 build), fall back to `query_system_catalog` for everything that
+fits.
+
+If `query_system_catalog` fails, check:
 - The MCP server is configured in `.mcp.json`
 - The `enable_mcp_developer` feature flag is enabled on the environment
 - Your authentication credentials are valid
 
 ### Running Queries
 
-All queries are run via the `query_system_catalog` MCP tool. Constraints:
-- One statement per call (no semicolons)
-- Read-only: SELECT, SHOW, EXPLAIN only
-- System tables only: no access to user tables
-- No `SET` statements
+Both tools accept a single read-only statement per call (no semicolons; no
+`SET`).
+
+**`query_system_catalog`** — preferred for catalog work:
+- `SELECT`, `SHOW`, `EXPLAIN` only
+- System tables only: `mz_*`, `pg_catalog`, `information_schema` (no user
+  tables)
+- No cluster argument; runs on `mz_catalog_server`
+
+**`query`** — required for cluster-bound operations:
+- Same `SELECT`/`SHOW`/`EXPLAIN` allowlist
+- Takes a required `cluster` argument
+- Can reach user objects in addition to the system catalog
+- Use for `EXPLAIN ANALYZE` (it runs on the specified cluster) and for reading
+  user data while debugging
 
 When filtering out system schemas, always exclude: `mz_catalog`, `mz_internal`,
 `pg_catalog`, `information_schema`, and `mz_introspection`.
@@ -190,9 +218,16 @@ pressure or configuration issues.
 
 ### Worker Skew (CPU imbalance across workers)
 
-Use `WITH SKEW` to find operators where one worker does disproportionate CPU/memory work.
+Use `WITH SKEW` to find operators where one worker does disproportionate
+CPU/memory work.
 
-**Cluster-level:**
+**Run these through the `query` tool**, not `query_system_catalog`:
+`EXPLAIN ANALYZE` executes on the cluster you pass as the `cluster` argument
+— for the object-level commands, that must be the cluster the MV/index lives
+on, otherwise the introspection sources are empty. If `query` is not
+available, this section is not actionable on the current environment.
+
+**Cluster-level (run on the cluster you want to inspect):**
 
 ```sql
 EXPLAIN ANALYZE CLUSTER CPU WITH SKEW;
@@ -292,6 +327,10 @@ For focused troubleshooting, use these diagnostic paths.
 3. Check `mz_internal.mz_cluster_replica_statuses` — is the replica healthy?
 4. Check `mz_internal.mz_cluster_replica_utilization` — memory pressure causing restarts?
 5. Check `mz_internal.mz_source_statuses` — upstream source errors?
+6. If the `query` tool is available, run
+   `EXPLAIN ANALYZE MEMORY FOR MATERIALIZED VIEW <schema>.<mv>` on the MV's
+   cluster to see per-operator memory and spot expensive shapes (large
+   arrangements, joins without indexes, missing temporal filters).
 
 **Common fixes:**
 
@@ -325,6 +364,11 @@ Fix the upstream source issue first — MV freshness depends on source health.
 2. Check `mz_internal.mz_index_advice` for MVs that can be dematerialized
 3. Check MV definitions for missing temporal filters
 4. Check for redundant indexes
+5. If the `query` tool is available, run
+   `EXPLAIN ANALYZE MEMORY FOR MATERIALIZED VIEW <schema>.<mv>` (or
+   `FOR INDEX <name>`) on the suspect object's cluster to see which operators
+   hold the most memory — the most direct way to confirm which arrangement is
+   responsible.
 
 **Common fixes:**
 
