@@ -29,7 +29,7 @@ The `dbt-materialize` adapter lets you manage Materialize streaming pipelines us
 4. **User asks about indexes, clusters, or config**: See Configuration Options.
 5. **User hits an error or unexpected behavior**: See Gotchas at the end.
 
-For adapter source code, read files under `misc/dbt-materialize/dbt/` in the main Materialize repo. For user-facing docs, read files under `doc/user/content/manage/dbt/`.
+For adapter source code, look in the main Materialize repo at `misc/dbt-materialize/dbt/` (github.com/MaterializeInc/materialize). For user-facing docs, see `doc/user/content/manage/dbt/` in the same repo.
 
 ## Installation
 
