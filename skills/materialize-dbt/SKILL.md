@@ -23,13 +23,15 @@ The `dbt-materialize` adapter lets you manage Materialize streaming pipelines us
 
 ## How to Use This Skill
 
+This skill is self-contained. Everything needed to help users write dbt models, configure profiles, run deployments, and troubleshoot is documented below. No access to the dbt-materialize source code or Materialize monorepo is required.
+
 1. **User wants to set up dbt with Materialize**: See Profile Configuration below.
 2. **User asks about a specific materialization**: See the Materializations section.
 3. **User wants blue/green deployments**: See the Blue/Green Deployment section.
-4. **User asks about indexes, clusters, or config**: See Configuration Options.
+4. **User asks about indexes, clusters, or config**: See the Indexes, Strict Mode, or Cluster Management sections.
 5. **User hits an error or unexpected behavior**: See Gotchas at the end.
 
-For adapter source code, look in the main Materialize repo at `misc/dbt-materialize/dbt/` (github.com/MaterializeInc/materialize). For user-facing docs, see `doc/user/content/manage/dbt/` in the same repo.
+For deeper adapter internals (rarely needed), the source lives in `misc/dbt-materialize/` in the MaterializeInc/materialize repo on GitHub. The official user-facing docs are at https://materialize.com/docs/manage/dbt/.
 
 ## Installation
 
