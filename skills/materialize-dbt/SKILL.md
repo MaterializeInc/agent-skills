@@ -232,9 +232,9 @@ The role running dbt must own the schemas and clusters being deployed. Sinks mus
 ```bash
 dbt run-operation deploy_init
 ```
-Creates `<schema>_dbt_deploy` and `<cluster>_dbt_deploy` by cloning config and permissions from production. Use `--args '{ignore_existing_objects: True}'` to skip errors if deploy objects already exist.
+Creates `<schema>_dbt_deploy` and `<cluster>_dbt_deploy` by cloning configuration, grants, and default privileges from production. Validates that production schemas and clusters exist, that they contain no sinks, and that the executing role has ownership. Use `--args '{ignore_existing_objects: True}'` to skip errors if deploy objects already exist.
 
-For managed clusters, creates new clusters with the same size and replication factor. For unmanaged clusters, clones replicas including size and availability zone.
+For managed clusters, creates new clusters with the same size, replication factor, and schedule. For unmanaged clusters, clones replicas including size and availability zone.
 
 **2. Build into the green environment:**
 ```bash
@@ -242,27 +242,42 @@ dbt run --vars 'deploy: True' --exclude config.materialized:source config.materi
 ```
 Models are transparently routed to `_dbt_deploy` schemas and clusters. Always exclude sources and sinks.
 
+If you get `String 'deploy:' is not valid YAML` (common on Windows/PowerShell), use `--vars "{\"deploy\": true}"` instead.
+
 **3. Wait for hydration (recommended):**
 ```bash
 dbt run-operation deploy_await
 ```
-Polls cluster readiness with a consolidated query. Default: polls every 15 seconds, waits for lag under 1 second. Configure with `--args '{poll_interval: 30, lag_threshold: "5s"}'`.
+Polls cluster readiness with a single consolidated query (reduces catalog server load). Default: polls every 15 seconds, waits for lag under 1 second. Configure with `--args '{poll_interval: 30, lag_threshold: "5s"}'`.
 
-Detects replica health issues (OOM), hydration status, and lag threshold violations.
+Readiness checks evaluate three things in order:
+- **Replica health**: Flags clusters where all replicas have 3+ OOM kills in the last 24 hours
+- **Hydration status**: Counts hydrated vs total objects per cluster
+- **Lag threshold**: Checks wallclock global lag is below the threshold
 
 **4. Promote to production:**
 ```bash
 dbt run-operation deploy_promote
 ```
-Performs atomic `ALTER SCHEMA ... SWAP WITH` and `ALTER CLUSTER ... SWAP WITH` in a single transaction. Retries automatically on concurrent DDL conflicts (SQLSTATE 40001, up to 3 retries by default).
+Performs atomic `ALTER SCHEMA ... SWAP WITH` and `ALTER CLUSTER ... SWAP WITH` in a single transaction. Schemas are swapped before clusters to avoid stranding object references. Retries automatically on concurrent DDL conflicts (SQLSTATE 40001, up to 3 retries by default).
 
-Use `--args '{dry_run: true}'` to validate without swapping. Use `--args '{wait: true}'` to wait for hydration before promoting.
+After swapping, the macro discovers sinks whose upstream dependencies changed and runs `ALTER SINK ... SET FROM` to cut them over to the new upstream definitions. It also tags deployed schemas with a comment containing the deploying user, timestamp, and git commit SHA.
+
+| Argument | Default | Purpose |
+|----------|---------|---------|
+| `dry_run` | `false` | Print swap commands without executing |
+| `wait` | `false` | Wait for hydration before swapping |
+| `poll_interval` | `15` | Seconds between readiness checks (when `wait` is true) |
+| `lag_threshold` | `"1s"` | Max lag for readiness (when `wait` is true) |
+| `max_retries` | `3` | Retry count for concurrent DDL conflicts |
 
 **5. Cleanup:**
 ```bash
 dbt run-operation deploy_cleanup
 ```
-Drops the `_dbt_deploy` schemas and clusters.
+Drops the `_dbt_deploy` schemas and clusters (CASCADE).
+
+Any active `SUBSCRIBE` commands on the swapped clusters will break. On retry, clients reconnect to the newly deployed cluster automatically.
 
 ## Cluster Management Macros
 
