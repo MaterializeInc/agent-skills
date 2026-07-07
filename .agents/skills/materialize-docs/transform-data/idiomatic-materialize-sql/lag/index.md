@@ -73,13 +73,15 @@ row.</p>
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG(fieldZ) OVER (ORDER BY ...)</code></a>
-window function when the order by field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of [`LAG(fieldZ) OVER (ORDER BY ...)`](/sql/functions/#lag)
+window function when the order by field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, ...
     LAG(fieldZ) OVER (ORDER BY fieldA) as previous_row_value
 FROM tableA;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -133,13 +135,15 @@ query <em>includes</em> the first row, returning <code>null</code> as its lag va
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG(fieldZ) OVER (ORDER BY ...)</code></a>
-window function when the order by field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of [`LAG(fieldZ) OVER (ORDER BY ...)`](/sql/functions/#lag)
+window function when the order by field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, ...
     LAG(fieldZ) OVER (ORDER BY fieldA) as previous_row_value
 FROM tableA;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -191,14 +195,16 @@ previous row.
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG() OVER (ORDER BY ...)</code> window
-function</a> to access previous row&rsquo;s value if the order by
-field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Includes the first row&#39;s value. --
+<red>Avoid the use of [`LAG() OVER (ORDER BY ...)` window
+function](/sql/functions/#lag) to access previous row's value if the order by
+field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Includes the first row's value. --
 SELECT order_date, daily_total,
     LAG(daily_total) OVER (ORDER BY order_date) as previous_daily_total
 FROM orders_daily_totals;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -245,14 +251,16 @@ query includes the first row in the results, using `null` as the previous value.
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG() OVER (ORDER BY ...)</code> window
-function</a> to access previous row&rsquo;s value if the order by
-field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Includes the first row&#39;s value. --
+<red>Avoid the use of [`LAG() OVER (ORDER BY ...)` window
+function](/sql/functions/#lag) to access previous row's value if the order by
+field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Includes the first row's value. --
 SELECT order_date, daily_total,
     LAG(daily_total) OVER (ORDER BY order_date) as previous_daily_total
 FROM orders_daily_totals;
-</code></pre>
+```
 
 </td>
 </tr>

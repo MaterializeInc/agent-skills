@@ -57,21 +57,17 @@ In production, if possible, use a dedicated cluster for
 [sources](/concepts/sources/); i.e., avoid putting sources on the same cluster
 that hosts compute objects, sinks, and/or serves queries.
 
-<p>In addition, for upsert sources:</p>
-<ul>
-<li>
-<p>Consider separating upsert sources from your other sources. Upsert sources
-have higher resource requirements (since, for upsert sources, Materialize
-maintains each key and associated last value for the key as well as to perform
-deduplication). As such, if possible, use a separate source cluster for upsert
-sources.</p>
-</li>
-<li>
-<p>Consider using a larger cluster size during snapshotting for upsert sources.
-Once the snapshotting operation is complete, you can downsize the cluster to
-align with the steady-state ingestion.</p>
-</li>
-</ul>
+In addition, for upsert sources:
+
+- Consider separating upsert sources from your other sources. Upsert sources
+  have higher resource requirements (since, for upsert sources, Materialize
+  maintains each key and associated last value for the key as well as to perform
+  deduplication). As such, if possible, use a separate source cluster for upsert
+  sources.
+
+- Consider using a larger cluster size during snapshotting for upsert sources.
+  Once the snapshotting operation is complete, you can downsize the cluster to
+  align with the steady-state ingestion.
 
 See also [Production cluster architecture](#three-tier-architecture).
 

@@ -25,16 +25,17 @@ Structuring your transformations as views gives you:
 
 ## SQL in Materialize
 
-<p>Materialize follows the SQL standard (SQL-92) implementation and aims for
-compatibility with the PostgreSQL dialect. It <strong>does not</strong> aim for
+Materialize follows the SQL standard (SQL-92) implementation and aims for
+compatibility with the PostgreSQL dialect. It **does not** aim for
 compatibility with a specific version of PostgreSQL. This means that
 Materialize might support syntax from any released PostgreSQL version, but does
 not provide full coverage of the PostgreSQL dialect. The implementation and
-performance of specific features (like <a href="/transform-data/idiomatic-materialize-sql/appendix/window-function-to-materialize" >window functions</a>)
+performance of specific features (like [window functions](/transform-data/idiomatic-materialize-sql/appendix/window-function-to-materialize))
 might also differ, because Materialize uses an entirely different database
-engine based on <a href="/get-started/#incremental-updates" >Timely and Differential Dataflow</a>.</p>
-<p>If you need specific syntax or features that are not currently supported in
-Materialize, please submit a <a href="/support/#share-your-feedback" >feature request</a>.</p>
+engine based on [Timely and Differential Dataflow](/get-started/#incremental-updates).
+
+If you need specific syntax or features that are not currently supported in
+Materialize, please submit a [feature request](/support/#share-your-feedback).
 
 ## Explore this section
 

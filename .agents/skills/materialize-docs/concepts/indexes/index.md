@@ -226,42 +226,22 @@ As such, indexes in Materialize currently do not provide optimizations for:
 
 ### Indexes on views vs. materialized views
 
-In Materialize, both <a href="/concepts/indexes" >indexes</a> on views and <a href="/concepts/views/#materialized-views" >materialized
-views</a> incrementally update the view
+In Materialize, both [indexes](/concepts/indexes) on views and [materialized
+views](/concepts/views/#materialized-views) incrementally update the view
 results when Materialize ingests new data. Whereas materialized views persist
 the view results in durable storage and can be accessed across clusters, indexes
-on views compute and store view results in memory within a <strong>single</strong> cluster.
-<p>Some general guidelines for usage patterns include:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Usage Pattern</th>
-          <th>General Guideline</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture.</td>
-          <td>View with an <a href="/sql/create-index" >index</a></td>
-      </tr>
-      <tr>
-          <td>View used as a building block for stacked views; i.e., views not used to serve results.</td>
-          <td>View</td>
-      </tr>
-      <tr>
-          <td>View results are accessed across <a href="/concepts/clusters" >clusters</a>;<br>such as in a 3-cluster architecture.</td>
-          <td>Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster)</td>
-      </tr>
-      <tr>
-          <td>Use with a <a href="/serve-results/sink/" >sink</a> or a <a href="/sql/subscribe" ><code>SUBSCRIBE</code></a> operation</td>
-          <td>Materialized view</td>
-      </tr>
-      <tr>
-          <td>Use with <a href="/transform-data/patterns/temporal-filters/" >temporal filters</a></td>
-          <td>Materialized view</td>
-      </tr>
-  </tbody>
-</table>
+on views compute and store view results in memory within a **single** cluster.
+
+Some general guidelines for usage patterns include:
+
+| Usage Pattern | General Guideline |
+|--------------------------------------------------------------------------------|--------------------|
+| View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture. | View with an [index](/sql/create-index) |
+| View used as a building block for stacked views; i.e., views not used to serve results. | View |
+| View results are accessed across [clusters](/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
+| Use with a [sink](/serve-results/sink/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
+| Use with [temporal filters](/transform-data/patterns/temporal-filters/) | Materialized view  |
+
 <p>For example:</p>
 
 **3-tier architecture:**
@@ -336,44 +316,35 @@ query performance](/transform-data/optimization/), such as:
 - Provide fast random access for lookup queries (i.e., selecting individual
   keys).
 
-<p>Specific instances where indexes can be useful to improve performance include:</p>
-<ul>
-<li>
-<p>When used in ad-hoc queries.</p>
-</li>
-<li>
-<p>When used by multiple queries within the same cluster.</p>
-</li>
-<li>
-<p>When used to enable <a href="/transform-data/optimization/#optimize-multi-way-joins-with-delta-joins" >delta
-joins</a>.</p>
-</li>
-</ul>
-<p>For more information, see <a href="/transform-data/optimization" >Optimization</a>.</p>
+Specific instances where indexes can be useful to improve performance include:
+
+- When used in ad-hoc queries.
+
+- When used by multiple queries within the same cluster.
+
+- When used to enable [delta
+  joins](/transform-data/optimization/#optimize-multi-way-joins-with-delta-joins).
+
+For more information, see [Optimization](/transform-data/optimization).
 
 ### Best practices
 
-<p>Before creating an index, consider the following:</p>
-<ul>
-<li>
-<p>If you create stacked views (i.e., views that depend on other views) to
-reduce SQL complexity, we recommend that you create an index <strong>only</strong> on the
-view that will serve results, taking into account the expected data access
-patterns.</p>
-</li>
-<li>
-<p>Materialize can reuse indexes across queries that concurrently access the same
-data in memory, which reduces redundancy and resource utilization per query.
-In particular, this means that joins do <strong>not</strong> need to store data in memory
-multiple times.</p>
-</li>
-<li>
-<p>For queries that have no supporting indexes, Materialize uses the same
-mechanics used by indexes to optimize computations. However, since this
-underlying work is discarded after each query run, take into account the
-expected data access patterns to determine if you need to index or not.</p>
-</li>
-</ul>
+Before creating an index, consider the following:
+
+- If you create stacked views (i.e., views that depend on other views) to
+  reduce SQL complexity, we recommend that you create an index **only** on the
+  view that will serve results, taking into account the expected data access
+  patterns.
+
+- Materialize can reuse indexes across queries that concurrently access the same
+  data in memory, which reduces redundancy and resource utilization per query.
+  In particular, this means that joins do **not** need to store data in memory
+  multiple times.
+
+- For queries that have no supporting indexes, Materialize uses the same
+  mechanics used by indexes to optimize computations. However, since this
+  underlying work is discarded after each query run, take into account the
+  expected data access patterns to determine if you need to index or not.
 
 ## Related pages
 

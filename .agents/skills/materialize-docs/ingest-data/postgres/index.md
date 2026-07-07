@@ -148,8 +148,7 @@ produce any data until it is recreated.</p>
 <p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
 the upstream table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
-<h3 id="inherited-tables">Inherited tables</h3>
+</span></span></code></pre></div><h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
 also present in the inherited table. However, both PostgreSQL&rsquo;s logical
@@ -162,7 +161,7 @@ table, i.e. in Materialize, the data will not be returned when serving
 <ul>
 <li>
 <p>If using legacy syntax <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a>:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -171,7 +170,7 @@ create a new view (materialized or non-) that unions the new table.</p>
 </li>
 <li>
 <p>If using new <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> syntax:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -232,7 +231,8 @@ sources in Materialize. For general ingestion questions/troubleshooting, see:
 ## For my trial/POC, what if I cannot use `REPLICA IDENTITY FULL`?
 
 Materialize requires `REPLICA IDENTITY FULL` on PostgreSQL tables to capture all
-column values in change events. If for your trial/POC (Proof-of-concept) you cannot modify your existing tables, here are two common alternatives:
+column values in change events. If for your trial/POC (Proof-of-concept) you
+cannot modify your existing tables, here are some common alternatives:
 
 - **Outbox Pattern (shadow tables)**
 
@@ -249,27 +249,54 @@ column values in change events. If for your trial/POC (Proof-of-concept) you can
 
   With the Sidecar pattern, you create a separate PostgreSQL instance as an
   integration layer. That is, in the sidecar instance, you recreate the tables
-  you want to replicate, setting these tableswith `REPLICA IDENTITY FULL`. You
-  can then use the sidecar for Materialiez instead of your primary database.
+  you want to replicate, setting these tables with `REPLICA IDENTITY FULL`. You
+  can then use the sidecar for Materialize instead of your primary database.
+
+- **Debezium + Kafka**
+
+  With [Debezium + Kafka](/ingest-data/postgres/postgres-debezium/), if the
+  tables to replicate each have a **primary key** defined, you can use the
+  default replica identity. However, without `REPLICA IDENTITY FULL`, you cannot
+  ingest unchanged
+  [TOASTed](https://www.postgresql.org/docs/current/storage-toast.html) values.
+
+  > **Note:** - We **strongly recommend** using the native
+>     [PostgreSQL](/sql/create-source/postgres-v2/) source connector with `REPLICA
+>     IDENTITY FULL` instead.
+>   - [Contact Support](/support/) to discuss strategies for enabling `REPLICA
+>     IDENTITY FULL`.
+
+## For production, what if I cannot use `REPLICA IDENTITY FULL`?
+
+With [Debezium + Kafka](/ingest-data/postgres/postgres-debezium/), if the tables
+to replicate each have a **primary key** defined, you can use the default
+replica identity. However, without `REPLICA IDENTITY FULL`, you cannot ingest
+unchanged [TOASTed](https://www.postgresql.org/docs/current/storage-toast.html)
+values.
+
+> **Note:** - We **strongly recommend** using the native
+>   [PostgreSQL](/sql/create-source/postgres-v2/) source connector with `REPLICA
+>   IDENTITY FULL` instead.
+> - [Contact Support](/support/) to discuss strategies for enabling `REPLICA
+>   IDENTITY FULL`.
 
 ## What if my table contains data types that are unsupported in Materialize?
 
-<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
-possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
-treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
-features. For example:</p>
-<ul>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-enum.html" ><code>enum</code></a>: When decoded as <code>text</code>, the implicit ordering of the original
-PostgreSQL <code>enum</code> type is not preserved; instead, Materialize will sort values
-as <code>text</code>.</p>
-</li>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-money.html" ><code>money</code></a>: When decoded as <code>text</code>, resulting <code>text</code> value cannot be cast
-back to <code>numeric</code>, since PostgreSQL adds typical currency formatting to the
-output.</p>
-</li>
-</ul>
+Replicating tables that contain **unsupported [data types](/sql/types/)** is
+possible via the `TEXT COLUMNS` option. The specified columns will be
+treated as `text`; i.e., will not have the expected PostgreSQL type
+features. For example:
+
+* [`enum`]: When decoded as `text`, the implicit ordering of the original
+  PostgreSQL `enum` type is not preserved; instead, Materialize will sort values
+  as `text`.
+
+* [`money`]: When decoded as `text`, resulting `text` value cannot be cast
+back to `numeric`, since PostgreSQL adds typical currency formatting to the
+output.
+
+[`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
+[`money`]: https://www.postgresql.org/docs/current/datatype-money.html
 
 See also: [PostgreSQL considerations](/ingest-data/postgres/#considerations).
 
@@ -310,28 +337,19 @@ INSERT INTO T (A) VALUES
 
 ### Connect your source database to Materialize
 
-<p>To create a source from PostgreSQL 11+, you must first:</p>
-<ul>
-<li><strong>Configure upstream PostgreSQL instance</strong>
-<ul>
-<li>Set up logical replication.</li>
-<li>Create a publication.</li>
-<li>Create a replication user and password for Materialize to use to connect.</li>
-</ul>
-</li>
-<li><strong>Configure network security</strong>
-<ul>
-<li>Ensure Materialize can connect to your PostgreSQL instance.</li>
-</ul>
-</li>
-<li><strong>Create a connection to PostgreSQL in Materialize</strong>
-<ul>
-<li>The connection setup depends on the network security configuration.</li>
-</ul>
-</li>
-</ul>
-<p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
-guides</a>.</p>
+To create a source from PostgreSQL 11+, you must first:
+
+- **Configure upstream PostgreSQL instance**
+  - Set up logical replication.
+  - Create a publication.
+  - Create a replication user and password for Materialize to use to connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your PostgreSQL instance.
+- **Create a connection to PostgreSQL in Materialize**
+  - The connection setup depends on the network security configuration.
+
+For details, see the [PostgreSQL integration
+guides](/ingest-data/postgres/#integration-guides).
 
 ## Create a source using the new syntax
 
@@ -479,15 +497,10 @@ to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 
 ## Before you begin
 
-<ul>
-<li>
-<p>Make sure you are running PostgreSQL 11 or higher.</p>
-</li>
-<li>
-<p>Make sure you have access to your PostgreSQL instance via <a href="https://www.postgresql.org/docs/current/app-psql.html" ><code>psql</code></a>,
-or your preferred SQL client.</p>
-</li>
-</ul>
+- Make sure you are running PostgreSQL 11 or higher.
+
+- Make sure you have access to your PostgreSQL instance via [`psql`](https://www.postgresql.org/docs/current/app-psql.html),
+  or your preferred SQL client.
 
 If you don't already have an AlloyDB instance, creating one involves several
 steps, including configuring your cluster and setting up network connections.
@@ -505,58 +518,91 @@ To enable logical replication in AlloyDB, see the
 
 ### 2. Create a publication and a replication user
 
-<p>Once logical replication is enabled, the next step is to create a publication
-with the tables that you want to replicate to Materialize. You&rsquo;ll also need a
-user for Materialize with sufficient privileges to manage replication.</p>
-<ol>
-<li>
-<p>For each table that you want to replicate to Materialize, set the
-<a href="https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY" >replica identity</a>
-to <code>FULL</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><p><code>REPLICA IDENTITY FULL</code> ensures that the replication stream includes the
-previous data of changed rows, in the case of <code>UPDATE</code> and <code>DELETE</code>
-operations. This setting enables Materialize to ingest PostgreSQL data with
-minimal in-memory state. However, you should expect increased disk usage in
-your PostgreSQL database.</p>
-</li>
-<li>
-<p>Create a <a href="https://www.postgresql.org/docs/current/logical-replication-publication.html" >publication</a>
-with the tables you want to replicate:</p>
-<p><em>For specific tables:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span><span class="p">;</span>
-</span></span></code></pre></div><p><em>For all tables in the database:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">ALL</span> <span class="k">TABLES</span><span class="p">;</span>
-</span></span></code></pre></div><p>The <code>mz_source</code> publication will contain the set of change events generated
-from the specified tables, and will later be used to ingest the replication
-stream.</p>
-<p>Be sure to include only the tables you need. If the publication includes
-additional tables, Materialize will waste resources on ingesting and then
-immediately discarding the data.</p>
-</li>
-<li>
-<p>Create a user for Materialize, if you don&rsquo;t already have one:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">USER</span> <span class="n">materialize</span> <span class="k">PASSWORD</span> <span class="s1">&#39;&lt;password&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user permission to manage replication:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">ROLE</span> <span class="n">materialize</span> <span class="k">WITH</span> <span class="n">REPLICATION</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user the required permissions on the tables you want to replicate:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">CONNECT</span> <span class="k">ON</span> <span class="k">DATABASE</span> <span class="o">&lt;</span><span class="n">dbname</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">USAGE</span> <span class="k">ON</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><p>Once connected to your database, Materialize will take an initial snapshot
-of the tables in your publication. <code>SELECT</code> privileges are required for
-this initial snapshot.</p>
-<p>If you expect to add tables to your publication, you can grant <code>SELECT</code> on
-all tables in the schema instead of naming the specific tables:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="k">ALL</span> <span class="k">TABLES</span> <span class="k">IN</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-</ol>
+Once logical replication is enabled, the next step is to create a publication
+with the tables that you want to replicate to Materialize. You'll also need a
+user for Materialize with sufficient privileges to manage replication.
+
+1. For each table that you want to replicate to Materialize, set the
+   [replica identity](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY)
+   to `FULL`:
+
+    ```postgres
+    ALTER TABLE <table1> REPLICA IDENTITY FULL;
+    ```
+
+    ```postgres
+    ALTER TABLE <table2> REPLICA IDENTITY FULL;
+    ```
+
+    `REPLICA IDENTITY FULL` ensures that the replication stream includes the
+    previous data of changed rows, in the case of `UPDATE` and `DELETE`
+    operations. This setting enables Materialize to ingest PostgreSQL data with
+    minimal in-memory state. However, you should expect increased disk usage in
+    your PostgreSQL database.
+
+1. Create a [publication](https://www.postgresql.org/docs/current/logical-replication-publication.html)
+   with the tables you want to replicate:
+
+    _For specific tables:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR TABLE <table1>, <table2>;
+    ```
+
+    _For all tables in the database:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR ALL TABLES;
+    ```
+
+    The `mz_source` publication will contain the set of change events generated
+    from the specified tables, and will later be used to ingest the replication
+    stream.
+
+    Be sure to include only the tables you need. If the publication includes
+    additional tables, Materialize will waste resources on ingesting and then
+    immediately discarding the data.
+
+1. Create a user for Materialize, if you don't already have one:
+
+    ```postgres
+    CREATE USER materialize PASSWORD '<password>';
+    ```
+
+1. Grant the user permission to manage replication:
+
+    ```postgres
+    ALTER ROLE materialize WITH REPLICATION;
+    ```
+
+1. Grant the user the required permissions on the tables you want to replicate:
+
+    ```postgres
+    GRANT CONNECT ON DATABASE <dbname> TO materialize;
+    ```
+
+    ```postgres
+    GRANT USAGE ON SCHEMA <schema> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table1> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table2> TO materialize;
+    ```
+
+    Once connected to your database, Materialize will take an initial snapshot
+    of the tables in your publication. `SELECT` privileges are required for
+    this initial snapshot.
+
+    If you expect to add tables to your publication, you can grant `SELECT` on
+    all tables in the schema instead of naming the specific tables:
+
+    ```postgres
+    GRANT SELECT ON ALL TABLES IN SCHEMA <schema> TO materialize;
+    ```
 
 ## B. (Optional) Configure network security
 
@@ -693,31 +739,36 @@ network to allow traffic from the bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-<p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
+In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
 always-up-to-date query results, serving results to external clients, or a
-combination.</p>
-<p>In this step, you&rsquo;ll create a dedicated cluster for ingesting source data from
-your PostgreSQL database.</p>
-<ol>
-<li>
-<p>In the <a href="/console/" >SQL Shell</a>, or your preferred SQL
-client connected to Materialize, use the <a href="/sql/create-cluster/" ><code>CREATE CLUSTER</code></a>
-command to create the new cluster:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
-accommodate multiple PostgreSQL sources, depending on the source
-characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
-or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
-memory-intensive) and the upstream traffic patterns. You can readjust the
-size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>ALTER CLUSTER</code></a> command:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="o">&lt;</span><span class="n">cluster_name</span><span class="o">&gt;</span> <span class="k">SET</span> <span class="p">(</span> <span class="k">SIZE</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">new_size</span><span class="o">&gt;</span> <span class="p">);</span>
-</span></span></code></pre></div></li>
-</ol>
+combination.
+
+In this step, you'll create a dedicated cluster for ingesting source data from
+your PostgreSQL database.
+
+1. In the [SQL Shell](/console/), or your preferred SQL
+   client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
+   command to create the new cluster:
+
+    ```mzsql
+    CREATE CLUSTER ingest_postgres (SIZE = '50cc');
+
+    SET CLUSTER = ingest_postgres;
+    ```
+
+    A cluster of [size](/sql/create-cluster/#available-sizes) `50cc` should be enough to
+    accommodate multiple PostgreSQL sources, depending on the source
+    characteristics (e.g., sources with [`ENVELOPE UPSERT`](/sql/create-source/kafka/#upsert-envelope)
+    or [`ENVELOPE DEBEZIUM`](/sql/create-source/kafka/#debezium-envelope) will be more
+    memory-intensive) and the upstream traffic patterns. You can readjust the
+    size of the cluster at any time using the [`ALTER CLUSTER`](/sql/alter-cluster) command:
+
+    ```mzsql
+    ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
+    ```
 
 ### 2. Create a connection
 
@@ -852,155 +903,165 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 
 ### 4. Monitor the ingestion status
 
-<p>Before it starts consuming the replication stream, Materialize takes a snapshot
+Before it starts consuming the replication stream, Materialize takes a snapshot
 of the relevant tables in your publication. Until this snapshot is complete,
-Materialize won&rsquo;t have the same view of your data as your PostgreSQL database.</p>
-<p>In this step, you&rsquo;ll first verify that the source is running and then check the
-status of the snapshotting process.</p>
-<ol>
-<li>
-<p>Back in the SQL client connected to Materialize, use the
-<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
-table to check the overall status of your source:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statuses</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statuses</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div><p>For each <code>subsource</code>, make sure the <code>status</code> is <code>running</code>. If you see
-<code>stalled</code> or <code>failed</code>, there&rsquo;s likely a configuration issue for you to fix.
-Check the <code>error</code> field for details and fix the issue before moving on.
-Also, if the <code>status</code> of any subsource is <code>starting</code> for more than a few
-minutes, <a href="/support/" >contact our team</a>.</p>
-</li>
-<li>
-<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
-table to check the status of the initial snapshot:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span> <span class="k">AS</span> <span class="k">id</span><span class="p">,</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">name</span><span class="p">,</span> <span class="n">snapshot_committed</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statistics</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span><span class="p">,</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statistics</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_sources</span> <span class="k">ON</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">object_id | snapshot_committed
-----------|------------------
- u144     | t
-(1 row)
-</code></pre><p>Once <code>snapshot_commited</code> is <code>t</code>, move on to the next step. Snapshotting can
-take between a few minutes to several hours, depending on the size of your
-dataset and the size of the cluster the source is running in.</p>
-</li>
-</ol>
+Materialize won't have the same view of your data as your PostgreSQL database.
+
+In this step, you'll first verify that the source is running and then check the
+status of the snapshotting process.
+
+1. Back in the SQL client connected to Materialize, use the
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   table to check the overall status of your source:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT *
+    FROM
+      mz_internal.mz_source_statuses
+        JOIN
+          (
+            SELECT referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statuses.id = sources.referenced_object_id;
+    ```
+
+    For each `subsource`, make sure the `status` is `running`. If you see
+    `stalled` or `failed`, there's likely a configuration issue for you to fix.
+    Check the `error` field for details and fix the issue before moving on.
+    Also, if the `status` of any subsource is `starting` for more than a few
+    minutes, [contact our team](/support/).
+
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+   table to check the status of the initial snapshot:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT sources.referenced_object_id AS id, mz_sources.name, snapshot_committed
+    FROM
+      mz_internal.mz_source_statistics
+        JOIN
+          (
+            SELECT object_id, referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id, id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statistics.id = sources.referenced_object_id
+        JOIN mz_sources ON mz_sources.id = sources.referenced_object_id;
+    ```
+    <p></p>
+
+    ```nofmt
+    object_id | snapshot_committed
+    ----------|------------------
+     u144     | t
+    (1 row)
+    ```
+
+    Once `snapshot_commited` is `t`, move on to the next step. Snapshotting can
+    take between a few minutes to several hours, depending on the size of your
+    dataset and the size of the cluster the source is running in.
 
 ### 5. Right-size the cluster
 
-<p>After the snapshotting phase, Materialize starts ingesting change events from
+After the snapshotting phase, Materialize starts ingesting change events from
 the PostgreSQL replication stream. For this work, Materialize generally
-performs well with an <code>100cc</code> replica, so you can resize the cluster
-accordingly.</p>
-<ol>
-<li>
-<p>Still in a SQL client connected to Materialize, use the <a href="/sql/alter-cluster/" ><code>ALTER CLUSTER</code></a>
-command to downsize the cluster to <code>100cc</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="k">SET</span> <span class="p">(</span><span class="k">SIZE</span> <span class="s1">&#39;100cc&#39;</span><span class="p">);</span>
-</span></span></code></pre></div><p>Behind the scenes, this command adds a new <code>100cc</code> replica and removes the
-<code>50cc</code> replica.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/show-cluster-replicas/" ><code>SHOW CLUSTER REPLICAS</code></a> command to
-check the status of the new replica:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SHOW</span> <span class="k">CLUSTER</span> <span class="k">REPLICAS</span> <span class="k">WHERE</span> <span class="k">cluster</span> <span class="o">=</span> <span class="s1">&#39;ingest_postgres&#39;</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">     cluster     | replica |  size  | ready
------------------+---------+--------+-------
- ingest_postgres | r1      | 100cc  | t
-(1 row)
-</code></pre></li>
-<li>
-<p>Going forward, you can verify that your new cluster size is sufficient as
-follows:</p>
-<ol>
-<li>
-<p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
-table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">n</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">schema_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">s</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">source_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pgs</span><span class="mf">.</span><span class="n">replication_slot</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">    <span class="n">mz_sources</span> <span class="k">AS</span> <span class="n">s</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_postgres_sources</span> <span class="k">AS</span> <span class="n">pgs</span> <span class="k">ON</span> <span class="n">s</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">pgs</span><span class="mf">.</span><span class="k">id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_schemas</span> <span class="k">AS</span> <span class="n">n</span> <span class="k">ON</span> <span class="n">n</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">schema_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_databases</span> <span class="k">AS</span> <span class="n">d</span> <span class="k">ON</span> <span class="n">d</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">n</span><span class="mf">.</span><span class="n">database_id</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>In PostgreSQL, check the replication slot lag, using the replication slot
-name from the previous step:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pg_size_pretty</span><span class="p">(</span><span class="n">pg_current_wal_lsn</span><span class="p">()</span> <span class="o">-</span> <span class="n">confirmed_flush_lsn</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">    <span class="k">AS</span> <span class="n">replication_lag_bytes</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">pg_replication_slots</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">slot_name</span> <span class="o">=</span> <span class="s1">&#39;&lt;slot_name&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div><p>The result of this query is the amount of data your PostgreSQL cluster
-must retain in its replication log because of this replication slot.
-Typically, this means Materialize has not yet communicated back to
-PostgreSQL that it has committed this data. A high value can indicate
-that the source has fallen behind and that you might need to scale up
-your ingestion cluster.</p>
-</li>
-</ol>
-</li>
-</ol>
+performs well with an `100cc` replica, so you can resize the cluster
+accordingly.
+
+1. Still in a SQL client connected to Materialize, use the [`ALTER CLUSTER`](/sql/alter-cluster/)
+   command to downsize the cluster to `100cc`:
+
+    ```mzsql
+    ALTER CLUSTER ingest_postgres SET (SIZE '100cc');
+    ```
+
+    Behind the scenes, this command adds a new `100cc` replica and removes the
+    `50cc` replica.
+
+1. Use the [`SHOW CLUSTER REPLICAS`](/sql/show-cluster-replicas/) command to
+   check the status of the new replica:
+
+    ```mzsql
+    SHOW CLUSTER REPLICAS WHERE cluster = 'ingest_postgres';
+    ```
+    <p></p>
+
+    ```nofmt
+         cluster     | replica |  size  | ready
+    -----------------+---------+--------+-------
+     ingest_postgres | r1      | 100cc  | t
+    (1 row)
+    ```
+
+1. Going forward, you can verify that your new cluster size is sufficient as
+follows:
+
+    1. In Materialize, get the replication slot name associated with your
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    table:
+
+        ```mzsql
+        SELECT
+            d.name AS database_name,
+            n.name AS schema_name,
+            s.name AS source_name,
+            pgs.replication_slot
+        FROM
+            mz_sources AS s
+            JOIN mz_internal.mz_postgres_sources AS pgs ON s.id = pgs.id
+            JOIN mz_schemas AS n ON n.id = s.schema_id
+            JOIN mz_databases AS d ON d.id = n.database_id;
+        ```
+
+    1. In PostgreSQL, check the replication slot lag, using the replication slot
+       name from the previous step:
+
+        ```postgres
+        SELECT
+            pg_size_pretty(pg_current_wal_lsn() - confirmed_flush_lsn)
+            AS replication_lag_bytes
+        FROM pg_replication_slots
+        WHERE slot_name = '<slot_name>';
+        ```
+
+        The result of this query is the amount of data your PostgreSQL cluster
+        must retain in its replication log because of this replication slot.
+        Typically, this means Materialize has not yet communicated back to
+        PostgreSQL that it has committed this data. A high value can indicate
+        that the source has fallen behind and that you might need to scale up
+        your ingestion cluster.
 
 ## D. Explore your data
 
-<p>With Materialize ingesting your PostgreSQL data into durable storage, you can
+With Materialize ingesting your PostgreSQL data into durable storage, you can
 start exploring the data, computing real-time results that stay up-to-date as
-new data arrives, and serving results efficiently.</p>
-<ul>
-<li>
-<p>Explore your data with <a href="/sql/show-sources" ><code>SHOW SOURCES</code></a> and <a href="/sql/select/" ><code>SELECT</code></a>.</p>
-</li>
-<li>
-<p>Compute real-time results in memory with <a href="/sql/create-view/" ><code>CREATE VIEW</code></a>
-and <a href="/sql/create-index/" ><code>CREATE INDEX</code></a> or in durable
-storage with <a href="/sql/create-materialized-view/" ><code>CREATE MATERIALIZED VIEW</code></a>.</p>
-</li>
-<li>
-<p>Serve results to a PostgreSQL-compatible SQL client or driver with <a href="/sql/select/" ><code>SELECT</code></a>
-or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external message broker with
-<a href="/sql/create-sink/" ><code>CREATE SINK</code></a>.</p>
-</li>
-<li>
-<p>Check out the <a href="/integrations/" >tools and integrations</a> supported by
-Materialize.</p>
-</li>
-</ul>
+new data arrives, and serving results efficiently.
+
+- Explore your data with [`SHOW SOURCES`](/sql/show-sources) and [`SELECT`](/sql/select/).
+
+- Compute real-time results in memory with [`CREATE VIEW`](/sql/create-view/)
+  and [`CREATE INDEX`](/sql/create-index/) or in durable
+  storage with [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view/).
+
+- Serve results to a PostgreSQL-compatible SQL client or driver with [`SELECT`](/sql/select/)
+  or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
+  [`CREATE SINK`](/sql/create-sink/).
+
+- Check out the [tools and integrations](/integrations/) supported by
+  Materialize.
 
 ## Considerations
 
@@ -1105,8 +1166,7 @@ produce any data until it is recreated.</p>
 <p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
 the upstream table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
-<h3 id="inherited-tables">Inherited tables</h3>
+</span></span></code></pre></div><h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
 also present in the inherited table. However, both PostgreSQL&rsquo;s logical
@@ -1119,7 +1179,7 @@ table, i.e. in Materialize, the data will not be returned when serving
 <ul>
 <li>
 <p>If using legacy syntax <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a>:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -1128,7 +1188,7 @@ create a new view (materialized or non-) that unions the new table.</p>
 </li>
 <li>
 <p>If using new <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> syntax:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -1189,15 +1249,10 @@ to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 
 ## Before you begin
 
-<ul>
-<li>
-<p>Make sure you are running PostgreSQL 11 or higher.</p>
-</li>
-<li>
-<p>Make sure you have access to your PostgreSQL instance via <a href="https://www.postgresql.org/docs/current/app-psql.html" ><code>psql</code></a>,
-or your preferred SQL client.</p>
-</li>
-</ul>
+- Make sure you are running PostgreSQL 11 or higher.
+
+- Make sure you have access to your PostgreSQL instance via [`psql`](https://www.postgresql.org/docs/current/app-psql.html),
+  or your preferred SQL client.
 
 > **Warning:** There is a known issue with Aurora PostgreSQL 16.1 that can cause logical replication to fail with the following error:
 > - `postgres: sql client error: db error: ERROR: could not map filenumber "base/16402/3147867235" to relation OID`
@@ -1220,62 +1275,94 @@ To enable logical replication in Aurora, see the
 
 ### 2. Create a publication and a replication user
 
-<p>Once logical replication is enabled, create a publication with the tables that
-you want to replicate to Materialize. You&rsquo;ll also need a user for Materialize
-with sufficient privileges to manage replication.</p>
-<ol>
-<li>
-<p>As a <em>superuser</em>, use <code>psql</code> (or your preferred SQL client) to connect to
-your database.</p>
-</li>
-<li>
-<p>For each table that you want to replicate to Materialize, set the
-<a href="https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY" >replica identity</a>
-to <code>FULL</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><p><code>REPLICA IDENTITY FULL</code> ensures that the replication stream includes the
-previous data of changed rows, in the case of <code>UPDATE</code> and <code>DELETE</code>
-operations. This setting enables Materialize to ingest PostgreSQL data with
-minimal in-memory state. However, you should expect increased disk usage in
-your PostgreSQL database.</p>
-</li>
-<li>
-<p>Create a <a href="https://www.postgresql.org/docs/current/logical-replication-publication.html" >publication</a>
-with the tables you want to replicate:</p>
-<p><em>For specific tables:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span><span class="p">;</span>
-</span></span></code></pre></div><p><em>For all tables in the database:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">ALL</span> <span class="k">TABLES</span><span class="p">;</span>
-</span></span></code></pre></div><p>The <code>mz_source</code> publication will contain the set of change events generated
-from the specified tables, and will later be used to ingest the replication
-stream.</p>
-<p>Be sure to include only the tables you need. If the publication includes
-additional tables, Materialize will waste resources on ingesting and then
-immediately discarding the data.</p>
-</li>
-<li>
-<p>Create a user for Materialize, if you don&rsquo;t already have one:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">USER</span> <span class="n">materialize</span> <span class="k">PASSWORD</span> <span class="s1">&#39;&lt;password&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user permission to manage replication:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">rds_replication</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user the required permissions on the tables you want to replicate:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">CONNECT</span> <span class="k">ON</span> <span class="k">DATABASE</span> <span class="o">&lt;</span><span class="n">dbname</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">USAGE</span> <span class="k">ON</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><p>Once connected to your database, Materialize will take an initial snapshot
-of the tables in your publication. <code>SELECT</code> privileges are required for
-this initial snapshot.</p>
-<p>If you expect to add tables to your publication, you can grant <code>SELECT</code> on
-all tables in the schema instead of naming the specific tables:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="k">ALL</span> <span class="k">TABLES</span> <span class="k">IN</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-</ol>
+Once logical replication is enabled, create a publication with the tables that
+you want to replicate to Materialize. You'll also need a user for Materialize
+with sufficient privileges to manage replication.
+
+1. As a _superuser_, use `psql` (or your preferred SQL client) to connect to
+   your database.
+
+1. For each table that you want to replicate to Materialize, set the
+   [replica identity](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY)
+   to `FULL`:
+
+    ```postgres
+    ALTER TABLE <table1> REPLICA IDENTITY FULL;
+    ```
+
+    ```postgres
+    ALTER TABLE <table2> REPLICA IDENTITY FULL;
+    ```
+
+    `REPLICA IDENTITY FULL` ensures that the replication stream includes the
+    previous data of changed rows, in the case of `UPDATE` and `DELETE`
+    operations. This setting enables Materialize to ingest PostgreSQL data with
+    minimal in-memory state. However, you should expect increased disk usage in
+    your PostgreSQL database.
+
+1. Create a [publication](https://www.postgresql.org/docs/current/logical-replication-publication.html)
+   with the tables you want to replicate:
+
+    _For specific tables:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR TABLE <table1>, <table2>;
+    ```
+
+    _For all tables in the database:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR ALL TABLES;
+    ```
+
+    The `mz_source` publication will contain the set of change events generated
+    from the specified tables, and will later be used to ingest the replication
+    stream.
+
+    Be sure to include only the tables you need. If the publication includes
+    additional tables, Materialize will waste resources on ingesting and then
+    immediately discarding the data.
+
+1. Create a user for Materialize, if you don't already have one:
+
+    ```postgres
+    CREATE USER materialize PASSWORD '<password>';
+    ```
+
+1. Grant the user permission to manage replication:
+
+    ```postgres
+    GRANT rds_replication TO materialize;
+    ```
+
+1. Grant the user the required permissions on the tables you want to replicate:
+
+    ```postgres
+    GRANT CONNECT ON DATABASE <dbname> TO materialize;
+    ```
+
+    ```postgres
+    GRANT USAGE ON SCHEMA <schema> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table1> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table2> TO materialize;
+    ```
+
+    Once connected to your database, Materialize will take an initial snapshot
+    of the tables in your publication. `SELECT` privileges are required for
+    this initial snapshot.
+
+    If you expect to add tables to your publication, you can grant `SELECT` on
+    all tables in the schema instead of naming the specific tables:
+
+    ```postgres
+    GRANT SELECT ON ALL TABLES IN SCHEMA <schema> TO materialize;
+    ```
 
 ## B. (Optional) Configure network security
 
@@ -1330,17 +1417,18 @@ Aurora via the network load balancer.
 > configuration of AWS resources for a PrivateLink connection. For more details,
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
 
-1. Get the IP address of your Aurora instance.
+1. Get the IP address of your Aurora instance. You'll need this address to register
+   your Aurora instance as the target for the network load balancer in the next
+   step.
 
-    You'll need this address to register your Aurora instance as the target for
-    the network load balancer in the next step.
+    To get the IP address of your Aurora instance:
 
-    To get the IP address of your database instance:
+    1. Select your database in the RDS Console.
 
-    1. In the AWS Management Console, select your database.
     1. Find your Aurora endpoint under **Connectivity & security**.
-    1. Use the `dig` or `nslooklup` command
-    to find the IP address that the endpoint resolves to:
+
+    1. Use the `dig` or `nslookup` command to find the IP address that the
+    endpoint resolves to:
 
        ```sh
        dig +short <AURORA_ENDPOINT>
@@ -1352,32 +1440,31 @@ Aurora via the network load balancer.
 
     - Set the protocol and port to **TCP** and **5432**.
 
-    - Choose the same VPC as your RDS instance.
+    - Choose the same VPC as your Aurora instance.
 
-    - Use the IP address from the previous step to register your Aurora instance
-      as the target.
+    - Use the IP address from the previous step to register your Aurora instance as
+      the target.
 
-    **Warning:** The IP address of your Aurora instance can change without
-      notice. For this reason, it's best to set up automation to regularly
-      check the IP of the instance and update your target group accordingly.
-      You can use a lambda function to automate this process - see
-      Materialize's [Terraform module for AWS PrivateLink](https://github.com/MaterializeInc/terraform-aws-rds-privatelink/blob/main/lambda_function.py)
+    **Warning:** The IP address of your Aurora instance can change without notice.
+      For this reason, it's best to set up automation to regularly check the IP
+      of the instance and update your target group accordingly. You can use a
+      lambda function to automate this process - see Materialize's
+      [Terraform module for AWS PrivateLink](https://github.com/MaterializeInc/terraform-aws-rds-privatelink/blob/main/lambda_function.py)
       for an example. Another approach is to [configure an EC2 instance as an
       RDS router](https://aws.amazon.com/blogs/database/how-to-use-amazon-rds-and-amazon-aurora-with-a-static-ip-address/)
       for your network load balancer.
 
 1. [Create a network load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html).
 
-    - For **Network mapping**, choose the same VPC as your RDS instance and
-      select all of the availability zones and subnets that you RDS instance is
+    - For **Network mapping**, choose the same VPC as your Aurora instance and
+      select all of the availability zones and subnets that your Aurora instance is
       in.
 
     - For **Listeners and routing**, set the protocol and port to **TCP**
       and **5432** and select the target group you created in the previous
       step.
 
-1. In the security group of your Aurora instance, [allow traffic from the the
-   network load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
+1. In the security group of your Aurora instance, [allow traffic from the network load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
 
     If [client IP preservation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/load-balancer-target-groups.html#client-ip-preservation)
     is disabled, the easiest approach is to add an inbound rule with the VPC
@@ -1385,9 +1472,8 @@ Aurora via the network load balancer.
     entire VPC CIDR, you can add inbound rules for the private IP addresses of
     the load balancer subnets.
 
-    - To find the VPC CIDR, go to the network load balancer and look
+    - To find the VPC CIDR, go to your network load balancer and look
       under **Network mapping**.
-
     - To find the private IP addresses of the load balancer subnets, go
       to **Network Interfaces**, search for the name of the network load
       balancer, and look on the **Details** tab for each matching network
@@ -1401,9 +1487,9 @@ Aurora via the network load balancer.
     - After creating the VPC endpoint service, note its **Service name**. You'll
       use this service name when connecting Materialize later.
 
-    **Remarks** By disabling [Acceptance Required](https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#accept-reject-connection-requests),
+    **Remarks**: By disabling [Acceptance Required](https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#accept-reject-connection-requests),
       while still strictly managing who can view your endpoint via IAM,
-      Materialze will be able to seamlessly recreate and migrate endpoints as
+      Materialize will be able to seamlessly recreate and migrate endpoints as
       we work to stabilize this feature.
 
 1. Go back to the target group you created for the network load balancer and
@@ -1532,31 +1618,36 @@ network to allow traffic from the bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-<p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
+In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
 always-up-to-date query results, serving results to external clients, or a
-combination.</p>
-<p>In this step, you&rsquo;ll create a dedicated cluster for ingesting source data from
-your PostgreSQL database.</p>
-<ol>
-<li>
-<p>In the <a href="/console/" >SQL Shell</a>, or your preferred SQL
-client connected to Materialize, use the <a href="/sql/create-cluster/" ><code>CREATE CLUSTER</code></a>
-command to create the new cluster:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
-accommodate multiple PostgreSQL sources, depending on the source
-characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
-or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
-memory-intensive) and the upstream traffic patterns. You can readjust the
-size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>ALTER CLUSTER</code></a> command:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="o">&lt;</span><span class="n">cluster_name</span><span class="o">&gt;</span> <span class="k">SET</span> <span class="p">(</span> <span class="k">SIZE</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">new_size</span><span class="o">&gt;</span> <span class="p">);</span>
-</span></span></code></pre></div></li>
-</ol>
+combination.
+
+In this step, you'll create a dedicated cluster for ingesting source data from
+your PostgreSQL database.
+
+1. In the [SQL Shell](/console/), or your preferred SQL
+   client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
+   command to create the new cluster:
+
+    ```mzsql
+    CREATE CLUSTER ingest_postgres (SIZE = '50cc');
+
+    SET CLUSTER = ingest_postgres;
+    ```
+
+    A cluster of [size](/sql/create-cluster/#available-sizes) `50cc` should be enough to
+    accommodate multiple PostgreSQL sources, depending on the source
+    characteristics (e.g., sources with [`ENVELOPE UPSERT`](/sql/create-source/kafka/#upsert-envelope)
+    or [`ENVELOPE DEBEZIUM`](/sql/create-source/kafka/#debezium-envelope) will be more
+    memory-intensive) and the upstream traffic patterns. You can readjust the
+    size of the cluster at any time using the [`ALTER CLUSTER`](/sql/alter-cluster) command:
+
+    ```mzsql
+    ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
+    ```
 
 ### 2. Create a connection
 
@@ -1792,155 +1883,165 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 
 ### 4. Monitor the ingestion status
 
-<p>Before it starts consuming the replication stream, Materialize takes a snapshot
+Before it starts consuming the replication stream, Materialize takes a snapshot
 of the relevant tables in your publication. Until this snapshot is complete,
-Materialize won&rsquo;t have the same view of your data as your PostgreSQL database.</p>
-<p>In this step, you&rsquo;ll first verify that the source is running and then check the
-status of the snapshotting process.</p>
-<ol>
-<li>
-<p>Back in the SQL client connected to Materialize, use the
-<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
-table to check the overall status of your source:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statuses</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statuses</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div><p>For each <code>subsource</code>, make sure the <code>status</code> is <code>running</code>. If you see
-<code>stalled</code> or <code>failed</code>, there&rsquo;s likely a configuration issue for you to fix.
-Check the <code>error</code> field for details and fix the issue before moving on.
-Also, if the <code>status</code> of any subsource is <code>starting</code> for more than a few
-minutes, <a href="/support/" >contact our team</a>.</p>
-</li>
-<li>
-<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
-table to check the status of the initial snapshot:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span> <span class="k">AS</span> <span class="k">id</span><span class="p">,</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">name</span><span class="p">,</span> <span class="n">snapshot_committed</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statistics</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span><span class="p">,</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statistics</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_sources</span> <span class="k">ON</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">object_id | snapshot_committed
-----------|------------------
- u144     | t
-(1 row)
-</code></pre><p>Once <code>snapshot_commited</code> is <code>t</code>, move on to the next step. Snapshotting can
-take between a few minutes to several hours, depending on the size of your
-dataset and the size of the cluster the source is running in.</p>
-</li>
-</ol>
+Materialize won't have the same view of your data as your PostgreSQL database.
+
+In this step, you'll first verify that the source is running and then check the
+status of the snapshotting process.
+
+1. Back in the SQL client connected to Materialize, use the
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   table to check the overall status of your source:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT *
+    FROM
+      mz_internal.mz_source_statuses
+        JOIN
+          (
+            SELECT referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statuses.id = sources.referenced_object_id;
+    ```
+
+    For each `subsource`, make sure the `status` is `running`. If you see
+    `stalled` or `failed`, there's likely a configuration issue for you to fix.
+    Check the `error` field for details and fix the issue before moving on.
+    Also, if the `status` of any subsource is `starting` for more than a few
+    minutes, [contact our team](/support/).
+
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+   table to check the status of the initial snapshot:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT sources.referenced_object_id AS id, mz_sources.name, snapshot_committed
+    FROM
+      mz_internal.mz_source_statistics
+        JOIN
+          (
+            SELECT object_id, referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id, id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statistics.id = sources.referenced_object_id
+        JOIN mz_sources ON mz_sources.id = sources.referenced_object_id;
+    ```
+    <p></p>
+
+    ```nofmt
+    object_id | snapshot_committed
+    ----------|------------------
+     u144     | t
+    (1 row)
+    ```
+
+    Once `snapshot_commited` is `t`, move on to the next step. Snapshotting can
+    take between a few minutes to several hours, depending on the size of your
+    dataset and the size of the cluster the source is running in.
 
 ### 5. Right-size the cluster
 
-<p>After the snapshotting phase, Materialize starts ingesting change events from
+After the snapshotting phase, Materialize starts ingesting change events from
 the PostgreSQL replication stream. For this work, Materialize generally
-performs well with an <code>100cc</code> replica, so you can resize the cluster
-accordingly.</p>
-<ol>
-<li>
-<p>Still in a SQL client connected to Materialize, use the <a href="/sql/alter-cluster/" ><code>ALTER CLUSTER</code></a>
-command to downsize the cluster to <code>100cc</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="k">SET</span> <span class="p">(</span><span class="k">SIZE</span> <span class="s1">&#39;100cc&#39;</span><span class="p">);</span>
-</span></span></code></pre></div><p>Behind the scenes, this command adds a new <code>100cc</code> replica and removes the
-<code>50cc</code> replica.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/show-cluster-replicas/" ><code>SHOW CLUSTER REPLICAS</code></a> command to
-check the status of the new replica:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SHOW</span> <span class="k">CLUSTER</span> <span class="k">REPLICAS</span> <span class="k">WHERE</span> <span class="k">cluster</span> <span class="o">=</span> <span class="s1">&#39;ingest_postgres&#39;</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">     cluster     | replica |  size  | ready
------------------+---------+--------+-------
- ingest_postgres | r1      | 100cc  | t
-(1 row)
-</code></pre></li>
-<li>
-<p>Going forward, you can verify that your new cluster size is sufficient as
-follows:</p>
-<ol>
-<li>
-<p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
-table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">n</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">schema_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">s</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">source_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pgs</span><span class="mf">.</span><span class="n">replication_slot</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">    <span class="n">mz_sources</span> <span class="k">AS</span> <span class="n">s</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_postgres_sources</span> <span class="k">AS</span> <span class="n">pgs</span> <span class="k">ON</span> <span class="n">s</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">pgs</span><span class="mf">.</span><span class="k">id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_schemas</span> <span class="k">AS</span> <span class="n">n</span> <span class="k">ON</span> <span class="n">n</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">schema_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_databases</span> <span class="k">AS</span> <span class="n">d</span> <span class="k">ON</span> <span class="n">d</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">n</span><span class="mf">.</span><span class="n">database_id</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>In PostgreSQL, check the replication slot lag, using the replication slot
-name from the previous step:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pg_size_pretty</span><span class="p">(</span><span class="n">pg_current_wal_lsn</span><span class="p">()</span> <span class="o">-</span> <span class="n">confirmed_flush_lsn</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">    <span class="k">AS</span> <span class="n">replication_lag_bytes</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">pg_replication_slots</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">slot_name</span> <span class="o">=</span> <span class="s1">&#39;&lt;slot_name&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div><p>The result of this query is the amount of data your PostgreSQL cluster
-must retain in its replication log because of this replication slot.
-Typically, this means Materialize has not yet communicated back to
-PostgreSQL that it has committed this data. A high value can indicate
-that the source has fallen behind and that you might need to scale up
-your ingestion cluster.</p>
-</li>
-</ol>
-</li>
-</ol>
+performs well with an `100cc` replica, so you can resize the cluster
+accordingly.
+
+1. Still in a SQL client connected to Materialize, use the [`ALTER CLUSTER`](/sql/alter-cluster/)
+   command to downsize the cluster to `100cc`:
+
+    ```mzsql
+    ALTER CLUSTER ingest_postgres SET (SIZE '100cc');
+    ```
+
+    Behind the scenes, this command adds a new `100cc` replica and removes the
+    `50cc` replica.
+
+1. Use the [`SHOW CLUSTER REPLICAS`](/sql/show-cluster-replicas/) command to
+   check the status of the new replica:
+
+    ```mzsql
+    SHOW CLUSTER REPLICAS WHERE cluster = 'ingest_postgres';
+    ```
+    <p></p>
+
+    ```nofmt
+         cluster     | replica |  size  | ready
+    -----------------+---------+--------+-------
+     ingest_postgres | r1      | 100cc  | t
+    (1 row)
+    ```
+
+1. Going forward, you can verify that your new cluster size is sufficient as
+follows:
+
+    1. In Materialize, get the replication slot name associated with your
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    table:
+
+        ```mzsql
+        SELECT
+            d.name AS database_name,
+            n.name AS schema_name,
+            s.name AS source_name,
+            pgs.replication_slot
+        FROM
+            mz_sources AS s
+            JOIN mz_internal.mz_postgres_sources AS pgs ON s.id = pgs.id
+            JOIN mz_schemas AS n ON n.id = s.schema_id
+            JOIN mz_databases AS d ON d.id = n.database_id;
+        ```
+
+    1. In PostgreSQL, check the replication slot lag, using the replication slot
+       name from the previous step:
+
+        ```postgres
+        SELECT
+            pg_size_pretty(pg_current_wal_lsn() - confirmed_flush_lsn)
+            AS replication_lag_bytes
+        FROM pg_replication_slots
+        WHERE slot_name = '<slot_name>';
+        ```
+
+        The result of this query is the amount of data your PostgreSQL cluster
+        must retain in its replication log because of this replication slot.
+        Typically, this means Materialize has not yet communicated back to
+        PostgreSQL that it has committed this data. A high value can indicate
+        that the source has fallen behind and that you might need to scale up
+        your ingestion cluster.
 
 ## D. Explore your data
 
-<p>With Materialize ingesting your PostgreSQL data into durable storage, you can
+With Materialize ingesting your PostgreSQL data into durable storage, you can
 start exploring the data, computing real-time results that stay up-to-date as
-new data arrives, and serving results efficiently.</p>
-<ul>
-<li>
-<p>Explore your data with <a href="/sql/show-sources" ><code>SHOW SOURCES</code></a> and <a href="/sql/select/" ><code>SELECT</code></a>.</p>
-</li>
-<li>
-<p>Compute real-time results in memory with <a href="/sql/create-view/" ><code>CREATE VIEW</code></a>
-and <a href="/sql/create-index/" ><code>CREATE INDEX</code></a> or in durable
-storage with <a href="/sql/create-materialized-view/" ><code>CREATE MATERIALIZED VIEW</code></a>.</p>
-</li>
-<li>
-<p>Serve results to a PostgreSQL-compatible SQL client or driver with <a href="/sql/select/" ><code>SELECT</code></a>
-or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external message broker with
-<a href="/sql/create-sink/" ><code>CREATE SINK</code></a>.</p>
-</li>
-<li>
-<p>Check out the <a href="/integrations/" >tools and integrations</a> supported by
-Materialize.</p>
-</li>
-</ul>
+new data arrives, and serving results efficiently.
+
+- Explore your data with [`SHOW SOURCES`](/sql/show-sources) and [`SELECT`](/sql/select/).
+
+- Compute real-time results in memory with [`CREATE VIEW`](/sql/create-view/)
+  and [`CREATE INDEX`](/sql/create-index/) or in durable
+  storage with [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view/).
+
+- Serve results to a PostgreSQL-compatible SQL client or driver with [`SELECT`](/sql/select/)
+  or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
+  [`CREATE SINK`](/sql/create-sink/).
+
+- Check out the [tools and integrations](/integrations/) supported by
+  Materialize.
 
 ## Considerations
 
@@ -2045,8 +2146,7 @@ produce any data until it is recreated.</p>
 <p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
 the upstream table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
-<h3 id="inherited-tables">Inherited tables</h3>
+</span></span></code></pre></div><h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
 also present in the inherited table. However, both PostgreSQL&rsquo;s logical
@@ -2059,7 +2159,7 @@ table, i.e. in Materialize, the data will not be returned when serving
 <ul>
 <li>
 <p>If using legacy syntax <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a>:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -2068,7 +2168,7 @@ create a new view (materialized or non-) that unions the new table.</p>
 </li>
 <li>
 <p>If using new <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> syntax:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -2129,15 +2229,10 @@ to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 
 ## Before you begin
 
-<ul>
-<li>
-<p>Make sure you are running PostgreSQL 11 or higher.</p>
-</li>
-<li>
-<p>Make sure you have access to your PostgreSQL instance via <a href="https://www.postgresql.org/docs/current/app-psql.html" ><code>psql</code></a>,
-or your preferred SQL client.</p>
-</li>
-</ul>
+- Make sure you are running PostgreSQL 11 or higher.
+
+- Make sure you have access to your PostgreSQL instance via [`psql`](https://www.postgresql.org/docs/current/app-psql.html),
+  or your preferred SQL client.
 
 ## A. Configure Amazon RDS
 
@@ -2211,62 +2306,94 @@ As a first step, you need to make sure logical replication is enabled.
 
 ### 2. Create a publication and a replication user
 
-<p>Once logical replication is enabled, create a publication with the tables that
-you want to replicate to Materialize. You&rsquo;ll also need a user for Materialize
-with sufficient privileges to manage replication.</p>
-<ol>
-<li>
-<p>As a <em>superuser</em>, use <code>psql</code> (or your preferred SQL client) to connect to
-your database.</p>
-</li>
-<li>
-<p>For each table that you want to replicate to Materialize, set the
-<a href="https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY" >replica identity</a>
-to <code>FULL</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><p><code>REPLICA IDENTITY FULL</code> ensures that the replication stream includes the
-previous data of changed rows, in the case of <code>UPDATE</code> and <code>DELETE</code>
-operations. This setting enables Materialize to ingest PostgreSQL data with
-minimal in-memory state. However, you should expect increased disk usage in
-your PostgreSQL database.</p>
-</li>
-<li>
-<p>Create a <a href="https://www.postgresql.org/docs/current/logical-replication-publication.html" >publication</a>
-with the tables you want to replicate:</p>
-<p><em>For specific tables:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span><span class="p">;</span>
-</span></span></code></pre></div><p><em>For all tables in the database:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">ALL</span> <span class="k">TABLES</span><span class="p">;</span>
-</span></span></code></pre></div><p>The <code>mz_source</code> publication will contain the set of change events generated
-from the specified tables, and will later be used to ingest the replication
-stream.</p>
-<p>Be sure to include only the tables you need. If the publication includes
-additional tables, Materialize will waste resources on ingesting and then
-immediately discarding the data.</p>
-</li>
-<li>
-<p>Create a user for Materialize, if you don&rsquo;t already have one:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">USER</span> <span class="n">materialize</span> <span class="k">PASSWORD</span> <span class="s1">&#39;&lt;password&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user permission to manage replication:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">rds_replication</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user the required permissions on the tables you want to replicate:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">CONNECT</span> <span class="k">ON</span> <span class="k">DATABASE</span> <span class="o">&lt;</span><span class="n">dbname</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">USAGE</span> <span class="k">ON</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><p>Once connected to your database, Materialize will take an initial snapshot
-of the tables in your publication. <code>SELECT</code> privileges are required for
-this initial snapshot.</p>
-<p>If you expect to add tables to your publication, you can grant <code>SELECT</code> on
-all tables in the schema instead of naming the specific tables:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="k">ALL</span> <span class="k">TABLES</span> <span class="k">IN</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-</ol>
+Once logical replication is enabled, create a publication with the tables that
+you want to replicate to Materialize. You'll also need a user for Materialize
+with sufficient privileges to manage replication.
+
+1. As a _superuser_, use `psql` (or your preferred SQL client) to connect to
+   your database.
+
+1. For each table that you want to replicate to Materialize, set the
+   [replica identity](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY)
+   to `FULL`:
+
+    ```postgres
+    ALTER TABLE <table1> REPLICA IDENTITY FULL;
+    ```
+
+    ```postgres
+    ALTER TABLE <table2> REPLICA IDENTITY FULL;
+    ```
+
+    `REPLICA IDENTITY FULL` ensures that the replication stream includes the
+    previous data of changed rows, in the case of `UPDATE` and `DELETE`
+    operations. This setting enables Materialize to ingest PostgreSQL data with
+    minimal in-memory state. However, you should expect increased disk usage in
+    your PostgreSQL database.
+
+1. Create a [publication](https://www.postgresql.org/docs/current/logical-replication-publication.html)
+   with the tables you want to replicate:
+
+    _For specific tables:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR TABLE <table1>, <table2>;
+    ```
+
+    _For all tables in the database:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR ALL TABLES;
+    ```
+
+    The `mz_source` publication will contain the set of change events generated
+    from the specified tables, and will later be used to ingest the replication
+    stream.
+
+    Be sure to include only the tables you need. If the publication includes
+    additional tables, Materialize will waste resources on ingesting and then
+    immediately discarding the data.
+
+1. Create a user for Materialize, if you don't already have one:
+
+    ```postgres
+    CREATE USER materialize PASSWORD '<password>';
+    ```
+
+1. Grant the user permission to manage replication:
+
+    ```postgres
+    GRANT rds_replication TO materialize;
+    ```
+
+1. Grant the user the required permissions on the tables you want to replicate:
+
+    ```postgres
+    GRANT CONNECT ON DATABASE <dbname> TO materialize;
+    ```
+
+    ```postgres
+    GRANT USAGE ON SCHEMA <schema> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table1> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table2> TO materialize;
+    ```
+
+    Once connected to your database, Materialize will take an initial snapshot
+    of the tables in your publication. `SELECT` privileges are required for
+    this initial snapshot.
+
+    If you expect to add tables to your publication, you can grant `SELECT` on
+    all tables in the schema instead of naming the specific tables:
+
+    ```postgres
+    GRANT SELECT ON ALL TABLES IN SCHEMA <schema> TO materialize;
+    ```
 
 ## B. (Optional) Configure network security
 
@@ -2331,7 +2458,7 @@ RDS via the network load balancer.
 
     1. Find your RDS endpoint under **Connectivity & security**.
 
-    1. Use the `dig` or `nslooklup` command to find the IP address that the
+    1. Use the `dig` or `nslookup` command to find the IP address that the
     endpoint resolves to:
 
        ```sh
@@ -2361,7 +2488,7 @@ RDS via the network load balancer.
 1. [Create a network load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html).
 
     - For **Network mapping**, choose the same VPC as your RDS instance and
-      select all of the availability zones and subnets that you RDS instance is
+      select all of the availability zones and subnets that your RDS instance is
       in.
 
     - For **Listeners and routing**, set the protocol and port to **TCP**
@@ -2393,7 +2520,7 @@ RDS via the network load balancer.
 
     **Remarks**: By disabling [Acceptance Required](https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#accept-reject-connection-requests),
       while still strictly managing who can view your endpoint via IAM,
-      Materialze will be able to seamlessly recreate and migrate endpoints as
+      Materialize will be able to seamlessly recreate and migrate endpoints as
       we work to stabilize this feature.
 
 1. Go back to the target group you created for the network load balancer and
@@ -2522,31 +2649,36 @@ network to allow traffic from the bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-<p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
+In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
 always-up-to-date query results, serving results to external clients, or a
-combination.</p>
-<p>In this step, you&rsquo;ll create a dedicated cluster for ingesting source data from
-your PostgreSQL database.</p>
-<ol>
-<li>
-<p>In the <a href="/console/" >SQL Shell</a>, or your preferred SQL
-client connected to Materialize, use the <a href="/sql/create-cluster/" ><code>CREATE CLUSTER</code></a>
-command to create the new cluster:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
-accommodate multiple PostgreSQL sources, depending on the source
-characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
-or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
-memory-intensive) and the upstream traffic patterns. You can readjust the
-size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>ALTER CLUSTER</code></a> command:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="o">&lt;</span><span class="n">cluster_name</span><span class="o">&gt;</span> <span class="k">SET</span> <span class="p">(</span> <span class="k">SIZE</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">new_size</span><span class="o">&gt;</span> <span class="p">);</span>
-</span></span></code></pre></div></li>
-</ol>
+combination.
+
+In this step, you'll create a dedicated cluster for ingesting source data from
+your PostgreSQL database.
+
+1. In the [SQL Shell](/console/), or your preferred SQL
+   client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
+   command to create the new cluster:
+
+    ```mzsql
+    CREATE CLUSTER ingest_postgres (SIZE = '50cc');
+
+    SET CLUSTER = ingest_postgres;
+    ```
+
+    A cluster of [size](/sql/create-cluster/#available-sizes) `50cc` should be enough to
+    accommodate multiple PostgreSQL sources, depending on the source
+    characteristics (e.g., sources with [`ENVELOPE UPSERT`](/sql/create-source/kafka/#upsert-envelope)
+    or [`ENVELOPE DEBEZIUM`](/sql/create-source/kafka/#debezium-envelope) will be more
+    memory-intensive) and the upstream traffic patterns. You can readjust the
+    size of the cluster at any time using the [`ALTER CLUSTER`](/sql/alter-cluster) command:
+
+    ```mzsql
+    ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
+    ```
 
 ### 2. Create a connection
 
@@ -2799,155 +2931,165 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 
 ### 4. Monitor the ingestion status
 
-<p>Before it starts consuming the replication stream, Materialize takes a snapshot
+Before it starts consuming the replication stream, Materialize takes a snapshot
 of the relevant tables in your publication. Until this snapshot is complete,
-Materialize won&rsquo;t have the same view of your data as your PostgreSQL database.</p>
-<p>In this step, you&rsquo;ll first verify that the source is running and then check the
-status of the snapshotting process.</p>
-<ol>
-<li>
-<p>Back in the SQL client connected to Materialize, use the
-<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
-table to check the overall status of your source:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statuses</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statuses</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div><p>For each <code>subsource</code>, make sure the <code>status</code> is <code>running</code>. If you see
-<code>stalled</code> or <code>failed</code>, there&rsquo;s likely a configuration issue for you to fix.
-Check the <code>error</code> field for details and fix the issue before moving on.
-Also, if the <code>status</code> of any subsource is <code>starting</code> for more than a few
-minutes, <a href="/support/" >contact our team</a>.</p>
-</li>
-<li>
-<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
-table to check the status of the initial snapshot:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span> <span class="k">AS</span> <span class="k">id</span><span class="p">,</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">name</span><span class="p">,</span> <span class="n">snapshot_committed</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statistics</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span><span class="p">,</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statistics</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_sources</span> <span class="k">ON</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">object_id | snapshot_committed
-----------|------------------
- u144     | t
-(1 row)
-</code></pre><p>Once <code>snapshot_commited</code> is <code>t</code>, move on to the next step. Snapshotting can
-take between a few minutes to several hours, depending on the size of your
-dataset and the size of the cluster the source is running in.</p>
-</li>
-</ol>
+Materialize won't have the same view of your data as your PostgreSQL database.
+
+In this step, you'll first verify that the source is running and then check the
+status of the snapshotting process.
+
+1. Back in the SQL client connected to Materialize, use the
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   table to check the overall status of your source:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT *
+    FROM
+      mz_internal.mz_source_statuses
+        JOIN
+          (
+            SELECT referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statuses.id = sources.referenced_object_id;
+    ```
+
+    For each `subsource`, make sure the `status` is `running`. If you see
+    `stalled` or `failed`, there's likely a configuration issue for you to fix.
+    Check the `error` field for details and fix the issue before moving on.
+    Also, if the `status` of any subsource is `starting` for more than a few
+    minutes, [contact our team](/support/).
+
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+   table to check the status of the initial snapshot:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT sources.referenced_object_id AS id, mz_sources.name, snapshot_committed
+    FROM
+      mz_internal.mz_source_statistics
+        JOIN
+          (
+            SELECT object_id, referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id, id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statistics.id = sources.referenced_object_id
+        JOIN mz_sources ON mz_sources.id = sources.referenced_object_id;
+    ```
+    <p></p>
+
+    ```nofmt
+    object_id | snapshot_committed
+    ----------|------------------
+     u144     | t
+    (1 row)
+    ```
+
+    Once `snapshot_commited` is `t`, move on to the next step. Snapshotting can
+    take between a few minutes to several hours, depending on the size of your
+    dataset and the size of the cluster the source is running in.
 
 ### 5. Right-size the cluster
 
-<p>After the snapshotting phase, Materialize starts ingesting change events from
+After the snapshotting phase, Materialize starts ingesting change events from
 the PostgreSQL replication stream. For this work, Materialize generally
-performs well with an <code>100cc</code> replica, so you can resize the cluster
-accordingly.</p>
-<ol>
-<li>
-<p>Still in a SQL client connected to Materialize, use the <a href="/sql/alter-cluster/" ><code>ALTER CLUSTER</code></a>
-command to downsize the cluster to <code>100cc</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="k">SET</span> <span class="p">(</span><span class="k">SIZE</span> <span class="s1">&#39;100cc&#39;</span><span class="p">);</span>
-</span></span></code></pre></div><p>Behind the scenes, this command adds a new <code>100cc</code> replica and removes the
-<code>50cc</code> replica.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/show-cluster-replicas/" ><code>SHOW CLUSTER REPLICAS</code></a> command to
-check the status of the new replica:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SHOW</span> <span class="k">CLUSTER</span> <span class="k">REPLICAS</span> <span class="k">WHERE</span> <span class="k">cluster</span> <span class="o">=</span> <span class="s1">&#39;ingest_postgres&#39;</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">     cluster     | replica |  size  | ready
------------------+---------+--------+-------
- ingest_postgres | r1      | 100cc  | t
-(1 row)
-</code></pre></li>
-<li>
-<p>Going forward, you can verify that your new cluster size is sufficient as
-follows:</p>
-<ol>
-<li>
-<p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
-table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">n</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">schema_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">s</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">source_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pgs</span><span class="mf">.</span><span class="n">replication_slot</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">    <span class="n">mz_sources</span> <span class="k">AS</span> <span class="n">s</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_postgres_sources</span> <span class="k">AS</span> <span class="n">pgs</span> <span class="k">ON</span> <span class="n">s</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">pgs</span><span class="mf">.</span><span class="k">id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_schemas</span> <span class="k">AS</span> <span class="n">n</span> <span class="k">ON</span> <span class="n">n</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">schema_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_databases</span> <span class="k">AS</span> <span class="n">d</span> <span class="k">ON</span> <span class="n">d</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">n</span><span class="mf">.</span><span class="n">database_id</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>In PostgreSQL, check the replication slot lag, using the replication slot
-name from the previous step:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pg_size_pretty</span><span class="p">(</span><span class="n">pg_current_wal_lsn</span><span class="p">()</span> <span class="o">-</span> <span class="n">confirmed_flush_lsn</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">    <span class="k">AS</span> <span class="n">replication_lag_bytes</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">pg_replication_slots</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">slot_name</span> <span class="o">=</span> <span class="s1">&#39;&lt;slot_name&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div><p>The result of this query is the amount of data your PostgreSQL cluster
-must retain in its replication log because of this replication slot.
-Typically, this means Materialize has not yet communicated back to
-PostgreSQL that it has committed this data. A high value can indicate
-that the source has fallen behind and that you might need to scale up
-your ingestion cluster.</p>
-</li>
-</ol>
-</li>
-</ol>
+performs well with an `100cc` replica, so you can resize the cluster
+accordingly.
+
+1. Still in a SQL client connected to Materialize, use the [`ALTER CLUSTER`](/sql/alter-cluster/)
+   command to downsize the cluster to `100cc`:
+
+    ```mzsql
+    ALTER CLUSTER ingest_postgres SET (SIZE '100cc');
+    ```
+
+    Behind the scenes, this command adds a new `100cc` replica and removes the
+    `50cc` replica.
+
+1. Use the [`SHOW CLUSTER REPLICAS`](/sql/show-cluster-replicas/) command to
+   check the status of the new replica:
+
+    ```mzsql
+    SHOW CLUSTER REPLICAS WHERE cluster = 'ingest_postgres';
+    ```
+    <p></p>
+
+    ```nofmt
+         cluster     | replica |  size  | ready
+    -----------------+---------+--------+-------
+     ingest_postgres | r1      | 100cc  | t
+    (1 row)
+    ```
+
+1. Going forward, you can verify that your new cluster size is sufficient as
+follows:
+
+    1. In Materialize, get the replication slot name associated with your
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    table:
+
+        ```mzsql
+        SELECT
+            d.name AS database_name,
+            n.name AS schema_name,
+            s.name AS source_name,
+            pgs.replication_slot
+        FROM
+            mz_sources AS s
+            JOIN mz_internal.mz_postgres_sources AS pgs ON s.id = pgs.id
+            JOIN mz_schemas AS n ON n.id = s.schema_id
+            JOIN mz_databases AS d ON d.id = n.database_id;
+        ```
+
+    1. In PostgreSQL, check the replication slot lag, using the replication slot
+       name from the previous step:
+
+        ```postgres
+        SELECT
+            pg_size_pretty(pg_current_wal_lsn() - confirmed_flush_lsn)
+            AS replication_lag_bytes
+        FROM pg_replication_slots
+        WHERE slot_name = '<slot_name>';
+        ```
+
+        The result of this query is the amount of data your PostgreSQL cluster
+        must retain in its replication log because of this replication slot.
+        Typically, this means Materialize has not yet communicated back to
+        PostgreSQL that it has committed this data. A high value can indicate
+        that the source has fallen behind and that you might need to scale up
+        your ingestion cluster.
 
 ## D. Explore your data
 
-<p>With Materialize ingesting your PostgreSQL data into durable storage, you can
+With Materialize ingesting your PostgreSQL data into durable storage, you can
 start exploring the data, computing real-time results that stay up-to-date as
-new data arrives, and serving results efficiently.</p>
-<ul>
-<li>
-<p>Explore your data with <a href="/sql/show-sources" ><code>SHOW SOURCES</code></a> and <a href="/sql/select/" ><code>SELECT</code></a>.</p>
-</li>
-<li>
-<p>Compute real-time results in memory with <a href="/sql/create-view/" ><code>CREATE VIEW</code></a>
-and <a href="/sql/create-index/" ><code>CREATE INDEX</code></a> or in durable
-storage with <a href="/sql/create-materialized-view/" ><code>CREATE MATERIALIZED VIEW</code></a>.</p>
-</li>
-<li>
-<p>Serve results to a PostgreSQL-compatible SQL client or driver with <a href="/sql/select/" ><code>SELECT</code></a>
-or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external message broker with
-<a href="/sql/create-sink/" ><code>CREATE SINK</code></a>.</p>
-</li>
-<li>
-<p>Check out the <a href="/integrations/" >tools and integrations</a> supported by
-Materialize.</p>
-</li>
-</ul>
+new data arrives, and serving results efficiently.
+
+- Explore your data with [`SHOW SOURCES`](/sql/show-sources) and [`SELECT`](/sql/select/).
+
+- Compute real-time results in memory with [`CREATE VIEW`](/sql/create-view/)
+  and [`CREATE INDEX`](/sql/create-index/) or in durable
+  storage with [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view/).
+
+- Serve results to a PostgreSQL-compatible SQL client or driver with [`SELECT`](/sql/select/)
+  or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
+  [`CREATE SINK`](/sql/create-sink/).
+
+- Check out the [tools and integrations](/integrations/) supported by
+  Materialize.
 
 ## Considerations
 
@@ -3052,8 +3194,7 @@ produce any data until it is recreated.</p>
 <p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
 the upstream table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
-<h3 id="inherited-tables">Inherited tables</h3>
+</span></span></code></pre></div><h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
 also present in the inherited table. However, both PostgreSQL&rsquo;s logical
@@ -3066,7 +3207,7 @@ table, i.e. in Materialize, the data will not be returned when serving
 <ul>
 <li>
 <p>If using legacy syntax <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a>:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -3075,7 +3216,7 @@ create a new view (materialized or non-) that unions the new table.</p>
 </li>
 <li>
 <p>If using new <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> syntax:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -3136,15 +3277,10 @@ to Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 
 ## Before you begin
 
-<ul>
-<li>
-<p>Make sure you are running PostgreSQL 11 or higher.</p>
-</li>
-<li>
-<p>Make sure you have access to your PostgreSQL instance via <a href="https://www.postgresql.org/docs/current/app-psql.html" ><code>psql</code></a>,
-or your preferred SQL client.</p>
-</li>
-</ul>
+- Make sure you are running PostgreSQL 11 or higher.
+
+- Make sure you have access to your PostgreSQL instance via [`psql`](https://www.postgresql.org/docs/current/app-psql.html),
+  or your preferred SQL client.
 
 ## A. Configure Azure DB
 
@@ -3158,58 +3294,91 @@ To enable logical replication in Azure DB, see the
 
 ### 2. Create a publication and a replication user
 
-<p>Once logical replication is enabled, the next step is to create a publication
-with the tables that you want to replicate to Materialize. You&rsquo;ll also need a
-user for Materialize with sufficient privileges to manage replication.</p>
-<ol>
-<li>
-<p>For each table that you want to replicate to Materialize, set the
-<a href="https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY" >replica identity</a>
-to <code>FULL</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><p><code>REPLICA IDENTITY FULL</code> ensures that the replication stream includes the
-previous data of changed rows, in the case of <code>UPDATE</code> and <code>DELETE</code>
-operations. This setting enables Materialize to ingest PostgreSQL data with
-minimal in-memory state. However, you should expect increased disk usage in
-your PostgreSQL database.</p>
-</li>
-<li>
-<p>Create a <a href="https://www.postgresql.org/docs/current/logical-replication-publication.html" >publication</a>
-with the tables you want to replicate:</p>
-<p><em>For specific tables:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span><span class="p">;</span>
-</span></span></code></pre></div><p><em>For all tables in the database:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">ALL</span> <span class="k">TABLES</span><span class="p">;</span>
-</span></span></code></pre></div><p>The <code>mz_source</code> publication will contain the set of change events generated
-from the specified tables, and will later be used to ingest the replication
-stream.</p>
-<p>Be sure to include only the tables you need. If the publication includes
-additional tables, Materialize will waste resources on ingesting and then
-immediately discarding the data.</p>
-</li>
-<li>
-<p>Create a user for Materialize, if you don&rsquo;t already have one:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">USER</span> <span class="n">materialize</span> <span class="k">PASSWORD</span> <span class="s1">&#39;&lt;password&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user permission to manage replication:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">ROLE</span> <span class="n">materialize</span> <span class="k">WITH</span> <span class="n">REPLICATION</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user the required permissions on the tables you want to replicate:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">CONNECT</span> <span class="k">ON</span> <span class="k">DATABASE</span> <span class="o">&lt;</span><span class="n">dbname</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">USAGE</span> <span class="k">ON</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><p>Once connected to your database, Materialize will take an initial snapshot
-of the tables in your publication. <code>SELECT</code> privileges are required for
-this initial snapshot.</p>
-<p>If you expect to add tables to your publication, you can grant <code>SELECT</code> on
-all tables in the schema instead of naming the specific tables:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="k">ALL</span> <span class="k">TABLES</span> <span class="k">IN</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-</ol>
+Once logical replication is enabled, the next step is to create a publication
+with the tables that you want to replicate to Materialize. You'll also need a
+user for Materialize with sufficient privileges to manage replication.
+
+1. For each table that you want to replicate to Materialize, set the
+   [replica identity](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY)
+   to `FULL`:
+
+    ```postgres
+    ALTER TABLE <table1> REPLICA IDENTITY FULL;
+    ```
+
+    ```postgres
+    ALTER TABLE <table2> REPLICA IDENTITY FULL;
+    ```
+
+    `REPLICA IDENTITY FULL` ensures that the replication stream includes the
+    previous data of changed rows, in the case of `UPDATE` and `DELETE`
+    operations. This setting enables Materialize to ingest PostgreSQL data with
+    minimal in-memory state. However, you should expect increased disk usage in
+    your PostgreSQL database.
+
+1. Create a [publication](https://www.postgresql.org/docs/current/logical-replication-publication.html)
+   with the tables you want to replicate:
+
+    _For specific tables:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR TABLE <table1>, <table2>;
+    ```
+
+    _For all tables in the database:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR ALL TABLES;
+    ```
+
+    The `mz_source` publication will contain the set of change events generated
+    from the specified tables, and will later be used to ingest the replication
+    stream.
+
+    Be sure to include only the tables you need. If the publication includes
+    additional tables, Materialize will waste resources on ingesting and then
+    immediately discarding the data.
+
+1. Create a user for Materialize, if you don't already have one:
+
+    ```postgres
+    CREATE USER materialize PASSWORD '<password>';
+    ```
+
+1. Grant the user permission to manage replication:
+
+    ```postgres
+    ALTER ROLE materialize WITH REPLICATION;
+    ```
+
+1. Grant the user the required permissions on the tables you want to replicate:
+
+    ```postgres
+    GRANT CONNECT ON DATABASE <dbname> TO materialize;
+    ```
+
+    ```postgres
+    GRANT USAGE ON SCHEMA <schema> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table1> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table2> TO materialize;
+    ```
+
+    Once connected to your database, Materialize will take an initial snapshot
+    of the tables in your publication. `SELECT` privileges are required for
+    this initial snapshot.
+
+    If you expect to add tables to your publication, you can grant `SELECT` on
+    all tables in the schema instead of naming the specific tables:
+
+    ```postgres
+    GRANT SELECT ON ALL TABLES IN SCHEMA <schema> TO materialize;
+    ```
 
 ## B. (Optional) Configure network security
 
@@ -3335,31 +3504,36 @@ to serve as your SSH bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-<p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
+In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
 always-up-to-date query results, serving results to external clients, or a
-combination.</p>
-<p>In this step, you&rsquo;ll create a dedicated cluster for ingesting source data from
-your PostgreSQL database.</p>
-<ol>
-<li>
-<p>In the <a href="/console/" >SQL Shell</a>, or your preferred SQL
-client connected to Materialize, use the <a href="/sql/create-cluster/" ><code>CREATE CLUSTER</code></a>
-command to create the new cluster:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
-accommodate multiple PostgreSQL sources, depending on the source
-characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
-or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
-memory-intensive) and the upstream traffic patterns. You can readjust the
-size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>ALTER CLUSTER</code></a> command:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="o">&lt;</span><span class="n">cluster_name</span><span class="o">&gt;</span> <span class="k">SET</span> <span class="p">(</span> <span class="k">SIZE</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">new_size</span><span class="o">&gt;</span> <span class="p">);</span>
-</span></span></code></pre></div></li>
-</ol>
+combination.
+
+In this step, you'll create a dedicated cluster for ingesting source data from
+your PostgreSQL database.
+
+1. In the [SQL Shell](/console/), or your preferred SQL
+   client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
+   command to create the new cluster:
+
+    ```mzsql
+    CREATE CLUSTER ingest_postgres (SIZE = '50cc');
+
+    SET CLUSTER = ingest_postgres;
+    ```
+
+    A cluster of [size](/sql/create-cluster/#available-sizes) `50cc` should be enough to
+    accommodate multiple PostgreSQL sources, depending on the source
+    characteristics (e.g., sources with [`ENVELOPE UPSERT`](/sql/create-source/kafka/#upsert-envelope)
+    or [`ENVELOPE DEBEZIUM`](/sql/create-source/kafka/#debezium-envelope) will be more
+    memory-intensive) and the upstream traffic patterns. You can readjust the
+    size of the cluster at any time using the [`ALTER CLUSTER`](/sql/alter-cluster) command:
+
+    ```mzsql
+    ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
+    ```
 
 ### 2. Create a connection
 
@@ -3494,155 +3668,165 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 
 ### 4. Monitor the ingestion status
 
-<p>Before it starts consuming the replication stream, Materialize takes a snapshot
+Before it starts consuming the replication stream, Materialize takes a snapshot
 of the relevant tables in your publication. Until this snapshot is complete,
-Materialize won&rsquo;t have the same view of your data as your PostgreSQL database.</p>
-<p>In this step, you&rsquo;ll first verify that the source is running and then check the
-status of the snapshotting process.</p>
-<ol>
-<li>
-<p>Back in the SQL client connected to Materialize, use the
-<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
-table to check the overall status of your source:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statuses</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statuses</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div><p>For each <code>subsource</code>, make sure the <code>status</code> is <code>running</code>. If you see
-<code>stalled</code> or <code>failed</code>, there&rsquo;s likely a configuration issue for you to fix.
-Check the <code>error</code> field for details and fix the issue before moving on.
-Also, if the <code>status</code> of any subsource is <code>starting</code> for more than a few
-minutes, <a href="/support/" >contact our team</a>.</p>
-</li>
-<li>
-<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
-table to check the status of the initial snapshot:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span> <span class="k">AS</span> <span class="k">id</span><span class="p">,</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">name</span><span class="p">,</span> <span class="n">snapshot_committed</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statistics</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span><span class="p">,</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statistics</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_sources</span> <span class="k">ON</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">object_id | snapshot_committed
-----------|------------------
- u144     | t
-(1 row)
-</code></pre><p>Once <code>snapshot_commited</code> is <code>t</code>, move on to the next step. Snapshotting can
-take between a few minutes to several hours, depending on the size of your
-dataset and the size of the cluster the source is running in.</p>
-</li>
-</ol>
+Materialize won't have the same view of your data as your PostgreSQL database.
+
+In this step, you'll first verify that the source is running and then check the
+status of the snapshotting process.
+
+1. Back in the SQL client connected to Materialize, use the
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   table to check the overall status of your source:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT *
+    FROM
+      mz_internal.mz_source_statuses
+        JOIN
+          (
+            SELECT referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statuses.id = sources.referenced_object_id;
+    ```
+
+    For each `subsource`, make sure the `status` is `running`. If you see
+    `stalled` or `failed`, there's likely a configuration issue for you to fix.
+    Check the `error` field for details and fix the issue before moving on.
+    Also, if the `status` of any subsource is `starting` for more than a few
+    minutes, [contact our team](/support/).
+
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+   table to check the status of the initial snapshot:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT sources.referenced_object_id AS id, mz_sources.name, snapshot_committed
+    FROM
+      mz_internal.mz_source_statistics
+        JOIN
+          (
+            SELECT object_id, referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id, id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statistics.id = sources.referenced_object_id
+        JOIN mz_sources ON mz_sources.id = sources.referenced_object_id;
+    ```
+    <p></p>
+
+    ```nofmt
+    object_id | snapshot_committed
+    ----------|------------------
+     u144     | t
+    (1 row)
+    ```
+
+    Once `snapshot_commited` is `t`, move on to the next step. Snapshotting can
+    take between a few minutes to several hours, depending on the size of your
+    dataset and the size of the cluster the source is running in.
 
 ### 5. Right-size the cluster
 
-<p>After the snapshotting phase, Materialize starts ingesting change events from
+After the snapshotting phase, Materialize starts ingesting change events from
 the PostgreSQL replication stream. For this work, Materialize generally
-performs well with an <code>100cc</code> replica, so you can resize the cluster
-accordingly.</p>
-<ol>
-<li>
-<p>Still in a SQL client connected to Materialize, use the <a href="/sql/alter-cluster/" ><code>ALTER CLUSTER</code></a>
-command to downsize the cluster to <code>100cc</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="k">SET</span> <span class="p">(</span><span class="k">SIZE</span> <span class="s1">&#39;100cc&#39;</span><span class="p">);</span>
-</span></span></code></pre></div><p>Behind the scenes, this command adds a new <code>100cc</code> replica and removes the
-<code>50cc</code> replica.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/show-cluster-replicas/" ><code>SHOW CLUSTER REPLICAS</code></a> command to
-check the status of the new replica:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SHOW</span> <span class="k">CLUSTER</span> <span class="k">REPLICAS</span> <span class="k">WHERE</span> <span class="k">cluster</span> <span class="o">=</span> <span class="s1">&#39;ingest_postgres&#39;</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">     cluster     | replica |  size  | ready
------------------+---------+--------+-------
- ingest_postgres | r1      | 100cc  | t
-(1 row)
-</code></pre></li>
-<li>
-<p>Going forward, you can verify that your new cluster size is sufficient as
-follows:</p>
-<ol>
-<li>
-<p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
-table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">n</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">schema_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">s</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">source_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pgs</span><span class="mf">.</span><span class="n">replication_slot</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">    <span class="n">mz_sources</span> <span class="k">AS</span> <span class="n">s</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_postgres_sources</span> <span class="k">AS</span> <span class="n">pgs</span> <span class="k">ON</span> <span class="n">s</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">pgs</span><span class="mf">.</span><span class="k">id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_schemas</span> <span class="k">AS</span> <span class="n">n</span> <span class="k">ON</span> <span class="n">n</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">schema_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_databases</span> <span class="k">AS</span> <span class="n">d</span> <span class="k">ON</span> <span class="n">d</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">n</span><span class="mf">.</span><span class="n">database_id</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>In PostgreSQL, check the replication slot lag, using the replication slot
-name from the previous step:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pg_size_pretty</span><span class="p">(</span><span class="n">pg_current_wal_lsn</span><span class="p">()</span> <span class="o">-</span> <span class="n">confirmed_flush_lsn</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">    <span class="k">AS</span> <span class="n">replication_lag_bytes</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">pg_replication_slots</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">slot_name</span> <span class="o">=</span> <span class="s1">&#39;&lt;slot_name&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div><p>The result of this query is the amount of data your PostgreSQL cluster
-must retain in its replication log because of this replication slot.
-Typically, this means Materialize has not yet communicated back to
-PostgreSQL that it has committed this data. A high value can indicate
-that the source has fallen behind and that you might need to scale up
-your ingestion cluster.</p>
-</li>
-</ol>
-</li>
-</ol>
+performs well with an `100cc` replica, so you can resize the cluster
+accordingly.
+
+1. Still in a SQL client connected to Materialize, use the [`ALTER CLUSTER`](/sql/alter-cluster/)
+   command to downsize the cluster to `100cc`:
+
+    ```mzsql
+    ALTER CLUSTER ingest_postgres SET (SIZE '100cc');
+    ```
+
+    Behind the scenes, this command adds a new `100cc` replica and removes the
+    `50cc` replica.
+
+1. Use the [`SHOW CLUSTER REPLICAS`](/sql/show-cluster-replicas/) command to
+   check the status of the new replica:
+
+    ```mzsql
+    SHOW CLUSTER REPLICAS WHERE cluster = 'ingest_postgres';
+    ```
+    <p></p>
+
+    ```nofmt
+         cluster     | replica |  size  | ready
+    -----------------+---------+--------+-------
+     ingest_postgres | r1      | 100cc  | t
+    (1 row)
+    ```
+
+1. Going forward, you can verify that your new cluster size is sufficient as
+follows:
+
+    1. In Materialize, get the replication slot name associated with your
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    table:
+
+        ```mzsql
+        SELECT
+            d.name AS database_name,
+            n.name AS schema_name,
+            s.name AS source_name,
+            pgs.replication_slot
+        FROM
+            mz_sources AS s
+            JOIN mz_internal.mz_postgres_sources AS pgs ON s.id = pgs.id
+            JOIN mz_schemas AS n ON n.id = s.schema_id
+            JOIN mz_databases AS d ON d.id = n.database_id;
+        ```
+
+    1. In PostgreSQL, check the replication slot lag, using the replication slot
+       name from the previous step:
+
+        ```postgres
+        SELECT
+            pg_size_pretty(pg_current_wal_lsn() - confirmed_flush_lsn)
+            AS replication_lag_bytes
+        FROM pg_replication_slots
+        WHERE slot_name = '<slot_name>';
+        ```
+
+        The result of this query is the amount of data your PostgreSQL cluster
+        must retain in its replication log because of this replication slot.
+        Typically, this means Materialize has not yet communicated back to
+        PostgreSQL that it has committed this data. A high value can indicate
+        that the source has fallen behind and that you might need to scale up
+        your ingestion cluster.
 
 ## D. Explore your data
 
-<p>With Materialize ingesting your PostgreSQL data into durable storage, you can
+With Materialize ingesting your PostgreSQL data into durable storage, you can
 start exploring the data, computing real-time results that stay up-to-date as
-new data arrives, and serving results efficiently.</p>
-<ul>
-<li>
-<p>Explore your data with <a href="/sql/show-sources" ><code>SHOW SOURCES</code></a> and <a href="/sql/select/" ><code>SELECT</code></a>.</p>
-</li>
-<li>
-<p>Compute real-time results in memory with <a href="/sql/create-view/" ><code>CREATE VIEW</code></a>
-and <a href="/sql/create-index/" ><code>CREATE INDEX</code></a> or in durable
-storage with <a href="/sql/create-materialized-view/" ><code>CREATE MATERIALIZED VIEW</code></a>.</p>
-</li>
-<li>
-<p>Serve results to a PostgreSQL-compatible SQL client or driver with <a href="/sql/select/" ><code>SELECT</code></a>
-or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external message broker with
-<a href="/sql/create-sink/" ><code>CREATE SINK</code></a>.</p>
-</li>
-<li>
-<p>Check out the <a href="/integrations/" >tools and integrations</a> supported by
-Materialize.</p>
-</li>
-</ul>
+new data arrives, and serving results efficiently.
+
+- Explore your data with [`SHOW SOURCES`](/sql/show-sources) and [`SELECT`](/sql/select/).
+
+- Compute real-time results in memory with [`CREATE VIEW`](/sql/create-view/)
+  and [`CREATE INDEX`](/sql/create-index/) or in durable
+  storage with [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view/).
+
+- Serve results to a PostgreSQL-compatible SQL client or driver with [`SELECT`](/sql/select/)
+  or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
+  [`CREATE SINK`](/sql/create-sink/).
+
+- Check out the [tools and integrations](/integrations/) supported by
+  Materialize.
 
 ## Considerations
 
@@ -3747,8 +3931,7 @@ produce any data until it is recreated.</p>
 <p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
 the upstream table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
-<h3 id="inherited-tables">Inherited tables</h3>
+</span></span></code></pre></div><h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
 also present in the inherited table. However, both PostgreSQL&rsquo;s logical
@@ -3761,7 +3944,7 @@ table, i.e. in Materialize, the data will not be returned when serving
 <ul>
 <li>
 <p>If using legacy syntax <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a>:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -3770,7 +3953,7 @@ create a new view (materialized or non-) that unions the new table.</p>
 </li>
 <li>
 <p>If using new <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> syntax:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -3831,15 +4014,10 @@ to Materialize using the[PostgreSQL source](/sql/create-source/postgres/).
 
 ## Before you begin
 
-<ul>
-<li>
-<p>Make sure you are running PostgreSQL 11 or higher.</p>
-</li>
-<li>
-<p>Make sure you have access to your PostgreSQL instance via <a href="https://www.postgresql.org/docs/current/app-psql.html" ><code>psql</code></a>,
-or your preferred SQL client.</p>
-</li>
-</ul>
+- Make sure you are running PostgreSQL 11 or higher.
+
+- Make sure you have access to your PostgreSQL instance via [`psql`](https://www.postgresql.org/docs/current/app-psql.html),
+  or your preferred SQL client.
 
 ## A. Configure Google Cloud SQL
 
@@ -3853,58 +4031,91 @@ documentation](https://cloud.google.com/sql/docs/postgres/replication/configure-
 
 ### 2. Create a publication and a replication user
 
-<p>Once logical replication is enabled, the next step is to create a publication
-with the tables that you want to replicate to Materialize. You&rsquo;ll also need a
-user for Materialize with sufficient privileges to manage replication.</p>
-<ol>
-<li>
-<p>For each table that you want to replicate to Materialize, set the
-<a href="https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY" >replica identity</a>
-to <code>FULL</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><p><code>REPLICA IDENTITY FULL</code> ensures that the replication stream includes the
-previous data of changed rows, in the case of <code>UPDATE</code> and <code>DELETE</code>
-operations. This setting enables Materialize to ingest PostgreSQL data with
-minimal in-memory state. However, you should expect increased disk usage in
-your PostgreSQL database.</p>
-</li>
-<li>
-<p>Create a <a href="https://www.postgresql.org/docs/current/logical-replication-publication.html" >publication</a>
-with the tables you want to replicate:</p>
-<p><em>For specific tables:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span><span class="p">;</span>
-</span></span></code></pre></div><p><em>For all tables in the database:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">ALL</span> <span class="k">TABLES</span><span class="p">;</span>
-</span></span></code></pre></div><p>The <code>mz_source</code> publication will contain the set of change events generated
-from the specified tables, and will later be used to ingest the replication
-stream.</p>
-<p>Be sure to include only the tables you need. If the publication includes
-additional tables, Materialize will waste resources on ingesting and then
-immediately discarding the data.</p>
-</li>
-<li>
-<p>Create a user for Materialize, if you don&rsquo;t already have one:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">USER</span> <span class="n">materialize</span> <span class="k">PASSWORD</span> <span class="s1">&#39;&lt;password&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user permission to manage replication:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">ROLE</span> <span class="n">materialize</span> <span class="k">WITH</span> <span class="n">REPLICATION</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user the required permissions on the tables you want to replicate:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">CONNECT</span> <span class="k">ON</span> <span class="k">DATABASE</span> <span class="o">&lt;</span><span class="n">dbname</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">USAGE</span> <span class="k">ON</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><p>Once connected to your database, Materialize will take an initial snapshot
-of the tables in your publication. <code>SELECT</code> privileges are required for
-this initial snapshot.</p>
-<p>If you expect to add tables to your publication, you can grant <code>SELECT</code> on
-all tables in the schema instead of naming the specific tables:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="k">ALL</span> <span class="k">TABLES</span> <span class="k">IN</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-</ol>
+Once logical replication is enabled, the next step is to create a publication
+with the tables that you want to replicate to Materialize. You'll also need a
+user for Materialize with sufficient privileges to manage replication.
+
+1. For each table that you want to replicate to Materialize, set the
+   [replica identity](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY)
+   to `FULL`:
+
+    ```postgres
+    ALTER TABLE <table1> REPLICA IDENTITY FULL;
+    ```
+
+    ```postgres
+    ALTER TABLE <table2> REPLICA IDENTITY FULL;
+    ```
+
+    `REPLICA IDENTITY FULL` ensures that the replication stream includes the
+    previous data of changed rows, in the case of `UPDATE` and `DELETE`
+    operations. This setting enables Materialize to ingest PostgreSQL data with
+    minimal in-memory state. However, you should expect increased disk usage in
+    your PostgreSQL database.
+
+1. Create a [publication](https://www.postgresql.org/docs/current/logical-replication-publication.html)
+   with the tables you want to replicate:
+
+    _For specific tables:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR TABLE <table1>, <table2>;
+    ```
+
+    _For all tables in the database:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR ALL TABLES;
+    ```
+
+    The `mz_source` publication will contain the set of change events generated
+    from the specified tables, and will later be used to ingest the replication
+    stream.
+
+    Be sure to include only the tables you need. If the publication includes
+    additional tables, Materialize will waste resources on ingesting and then
+    immediately discarding the data.
+
+1. Create a user for Materialize, if you don't already have one:
+
+    ```postgres
+    CREATE USER materialize PASSWORD '<password>';
+    ```
+
+1. Grant the user permission to manage replication:
+
+    ```postgres
+    ALTER ROLE materialize WITH REPLICATION;
+    ```
+
+1. Grant the user the required permissions on the tables you want to replicate:
+
+    ```postgres
+    GRANT CONNECT ON DATABASE <dbname> TO materialize;
+    ```
+
+    ```postgres
+    GRANT USAGE ON SCHEMA <schema> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table1> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table2> TO materialize;
+    ```
+
+    Once connected to your database, Materialize will take an initial snapshot
+    of the tables in your publication. `SELECT` privileges are required for
+    this initial snapshot.
+
+    If you expect to add tables to your publication, you can grant `SELECT` on
+    all tables in the schema instead of naming the specific tables:
+
+    ```postgres
+    GRANT SELECT ON ALL TABLES IN SCHEMA <schema> TO materialize;
+    ```
 
 ## B. (Optional) Configure network security
 
@@ -4030,31 +4241,36 @@ bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-<p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
+In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
 always-up-to-date query results, serving results to external clients, or a
-combination.</p>
-<p>In this step, you&rsquo;ll create a dedicated cluster for ingesting source data from
-your PostgreSQL database.</p>
-<ol>
-<li>
-<p>In the <a href="/console/" >SQL Shell</a>, or your preferred SQL
-client connected to Materialize, use the <a href="/sql/create-cluster/" ><code>CREATE CLUSTER</code></a>
-command to create the new cluster:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
-accommodate multiple PostgreSQL sources, depending on the source
-characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
-or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
-memory-intensive) and the upstream traffic patterns. You can readjust the
-size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>ALTER CLUSTER</code></a> command:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="o">&lt;</span><span class="n">cluster_name</span><span class="o">&gt;</span> <span class="k">SET</span> <span class="p">(</span> <span class="k">SIZE</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">new_size</span><span class="o">&gt;</span> <span class="p">);</span>
-</span></span></code></pre></div></li>
-</ol>
+combination.
+
+In this step, you'll create a dedicated cluster for ingesting source data from
+your PostgreSQL database.
+
+1. In the [SQL Shell](/console/), or your preferred SQL
+   client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
+   command to create the new cluster:
+
+    ```mzsql
+    CREATE CLUSTER ingest_postgres (SIZE = '50cc');
+
+    SET CLUSTER = ingest_postgres;
+    ```
+
+    A cluster of [size](/sql/create-cluster/#available-sizes) `50cc` should be enough to
+    accommodate multiple PostgreSQL sources, depending on the source
+    characteristics (e.g., sources with [`ENVELOPE UPSERT`](/sql/create-source/kafka/#upsert-envelope)
+    or [`ENVELOPE DEBEZIUM`](/sql/create-source/kafka/#debezium-envelope) will be more
+    memory-intensive) and the upstream traffic patterns. You can readjust the
+    size of the cluster at any time using the [`ALTER CLUSTER`](/sql/alter-cluster) command:
+
+    ```mzsql
+    ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
+    ```
 
 ### 2. Create a connection
 
@@ -4188,155 +4404,165 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 
 ### 4. Monitor the ingestion status
 
-<p>Before it starts consuming the replication stream, Materialize takes a snapshot
+Before it starts consuming the replication stream, Materialize takes a snapshot
 of the relevant tables in your publication. Until this snapshot is complete,
-Materialize won&rsquo;t have the same view of your data as your PostgreSQL database.</p>
-<p>In this step, you&rsquo;ll first verify that the source is running and then check the
-status of the snapshotting process.</p>
-<ol>
-<li>
-<p>Back in the SQL client connected to Materialize, use the
-<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
-table to check the overall status of your source:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statuses</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statuses</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div><p>For each <code>subsource</code>, make sure the <code>status</code> is <code>running</code>. If you see
-<code>stalled</code> or <code>failed</code>, there&rsquo;s likely a configuration issue for you to fix.
-Check the <code>error</code> field for details and fix the issue before moving on.
-Also, if the <code>status</code> of any subsource is <code>starting</code> for more than a few
-minutes, <a href="/support/" >contact our team</a>.</p>
-</li>
-<li>
-<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
-table to check the status of the initial snapshot:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span> <span class="k">AS</span> <span class="k">id</span><span class="p">,</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">name</span><span class="p">,</span> <span class="n">snapshot_committed</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statistics</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span><span class="p">,</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statistics</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_sources</span> <span class="k">ON</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">object_id | snapshot_committed
-----------|------------------
- u144     | t
-(1 row)
-</code></pre><p>Once <code>snapshot_commited</code> is <code>t</code>, move on to the next step. Snapshotting can
-take between a few minutes to several hours, depending on the size of your
-dataset and the size of the cluster the source is running in.</p>
-</li>
-</ol>
+Materialize won't have the same view of your data as your PostgreSQL database.
+
+In this step, you'll first verify that the source is running and then check the
+status of the snapshotting process.
+
+1. Back in the SQL client connected to Materialize, use the
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   table to check the overall status of your source:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT *
+    FROM
+      mz_internal.mz_source_statuses
+        JOIN
+          (
+            SELECT referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statuses.id = sources.referenced_object_id;
+    ```
+
+    For each `subsource`, make sure the `status` is `running`. If you see
+    `stalled` or `failed`, there's likely a configuration issue for you to fix.
+    Check the `error` field for details and fix the issue before moving on.
+    Also, if the `status` of any subsource is `starting` for more than a few
+    minutes, [contact our team](/support/).
+
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+   table to check the status of the initial snapshot:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT sources.referenced_object_id AS id, mz_sources.name, snapshot_committed
+    FROM
+      mz_internal.mz_source_statistics
+        JOIN
+          (
+            SELECT object_id, referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id, id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statistics.id = sources.referenced_object_id
+        JOIN mz_sources ON mz_sources.id = sources.referenced_object_id;
+    ```
+    <p></p>
+
+    ```nofmt
+    object_id | snapshot_committed
+    ----------|------------------
+     u144     | t
+    (1 row)
+    ```
+
+    Once `snapshot_commited` is `t`, move on to the next step. Snapshotting can
+    take between a few minutes to several hours, depending on the size of your
+    dataset and the size of the cluster the source is running in.
 
 ### 5. Right-size the cluster
 
-<p>After the snapshotting phase, Materialize starts ingesting change events from
+After the snapshotting phase, Materialize starts ingesting change events from
 the PostgreSQL replication stream. For this work, Materialize generally
-performs well with an <code>100cc</code> replica, so you can resize the cluster
-accordingly.</p>
-<ol>
-<li>
-<p>Still in a SQL client connected to Materialize, use the <a href="/sql/alter-cluster/" ><code>ALTER CLUSTER</code></a>
-command to downsize the cluster to <code>100cc</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="k">SET</span> <span class="p">(</span><span class="k">SIZE</span> <span class="s1">&#39;100cc&#39;</span><span class="p">);</span>
-</span></span></code></pre></div><p>Behind the scenes, this command adds a new <code>100cc</code> replica and removes the
-<code>50cc</code> replica.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/show-cluster-replicas/" ><code>SHOW CLUSTER REPLICAS</code></a> command to
-check the status of the new replica:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SHOW</span> <span class="k">CLUSTER</span> <span class="k">REPLICAS</span> <span class="k">WHERE</span> <span class="k">cluster</span> <span class="o">=</span> <span class="s1">&#39;ingest_postgres&#39;</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">     cluster     | replica |  size  | ready
------------------+---------+--------+-------
- ingest_postgres | r1      | 100cc  | t
-(1 row)
-</code></pre></li>
-<li>
-<p>Going forward, you can verify that your new cluster size is sufficient as
-follows:</p>
-<ol>
-<li>
-<p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
-table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">n</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">schema_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">s</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">source_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pgs</span><span class="mf">.</span><span class="n">replication_slot</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">    <span class="n">mz_sources</span> <span class="k">AS</span> <span class="n">s</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_postgres_sources</span> <span class="k">AS</span> <span class="n">pgs</span> <span class="k">ON</span> <span class="n">s</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">pgs</span><span class="mf">.</span><span class="k">id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_schemas</span> <span class="k">AS</span> <span class="n">n</span> <span class="k">ON</span> <span class="n">n</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">schema_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_databases</span> <span class="k">AS</span> <span class="n">d</span> <span class="k">ON</span> <span class="n">d</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">n</span><span class="mf">.</span><span class="n">database_id</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>In PostgreSQL, check the replication slot lag, using the replication slot
-name from the previous step:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pg_size_pretty</span><span class="p">(</span><span class="n">pg_current_wal_lsn</span><span class="p">()</span> <span class="o">-</span> <span class="n">confirmed_flush_lsn</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">    <span class="k">AS</span> <span class="n">replication_lag_bytes</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">pg_replication_slots</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">slot_name</span> <span class="o">=</span> <span class="s1">&#39;&lt;slot_name&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div><p>The result of this query is the amount of data your PostgreSQL cluster
-must retain in its replication log because of this replication slot.
-Typically, this means Materialize has not yet communicated back to
-PostgreSQL that it has committed this data. A high value can indicate
-that the source has fallen behind and that you might need to scale up
-your ingestion cluster.</p>
-</li>
-</ol>
-</li>
-</ol>
+performs well with an `100cc` replica, so you can resize the cluster
+accordingly.
+
+1. Still in a SQL client connected to Materialize, use the [`ALTER CLUSTER`](/sql/alter-cluster/)
+   command to downsize the cluster to `100cc`:
+
+    ```mzsql
+    ALTER CLUSTER ingest_postgres SET (SIZE '100cc');
+    ```
+
+    Behind the scenes, this command adds a new `100cc` replica and removes the
+    `50cc` replica.
+
+1. Use the [`SHOW CLUSTER REPLICAS`](/sql/show-cluster-replicas/) command to
+   check the status of the new replica:
+
+    ```mzsql
+    SHOW CLUSTER REPLICAS WHERE cluster = 'ingest_postgres';
+    ```
+    <p></p>
+
+    ```nofmt
+         cluster     | replica |  size  | ready
+    -----------------+---------+--------+-------
+     ingest_postgres | r1      | 100cc  | t
+    (1 row)
+    ```
+
+1. Going forward, you can verify that your new cluster size is sufficient as
+follows:
+
+    1. In Materialize, get the replication slot name associated with your
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    table:
+
+        ```mzsql
+        SELECT
+            d.name AS database_name,
+            n.name AS schema_name,
+            s.name AS source_name,
+            pgs.replication_slot
+        FROM
+            mz_sources AS s
+            JOIN mz_internal.mz_postgres_sources AS pgs ON s.id = pgs.id
+            JOIN mz_schemas AS n ON n.id = s.schema_id
+            JOIN mz_databases AS d ON d.id = n.database_id;
+        ```
+
+    1. In PostgreSQL, check the replication slot lag, using the replication slot
+       name from the previous step:
+
+        ```postgres
+        SELECT
+            pg_size_pretty(pg_current_wal_lsn() - confirmed_flush_lsn)
+            AS replication_lag_bytes
+        FROM pg_replication_slots
+        WHERE slot_name = '<slot_name>';
+        ```
+
+        The result of this query is the amount of data your PostgreSQL cluster
+        must retain in its replication log because of this replication slot.
+        Typically, this means Materialize has not yet communicated back to
+        PostgreSQL that it has committed this data. A high value can indicate
+        that the source has fallen behind and that you might need to scale up
+        your ingestion cluster.
 
 ## D. Explore your data
 
-<p>With Materialize ingesting your PostgreSQL data into durable storage, you can
+With Materialize ingesting your PostgreSQL data into durable storage, you can
 start exploring the data, computing real-time results that stay up-to-date as
-new data arrives, and serving results efficiently.</p>
-<ul>
-<li>
-<p>Explore your data with <a href="/sql/show-sources" ><code>SHOW SOURCES</code></a> and <a href="/sql/select/" ><code>SELECT</code></a>.</p>
-</li>
-<li>
-<p>Compute real-time results in memory with <a href="/sql/create-view/" ><code>CREATE VIEW</code></a>
-and <a href="/sql/create-index/" ><code>CREATE INDEX</code></a> or in durable
-storage with <a href="/sql/create-materialized-view/" ><code>CREATE MATERIALIZED VIEW</code></a>.</p>
-</li>
-<li>
-<p>Serve results to a PostgreSQL-compatible SQL client or driver with <a href="/sql/select/" ><code>SELECT</code></a>
-or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external message broker with
-<a href="/sql/create-sink/" ><code>CREATE SINK</code></a>.</p>
-</li>
-<li>
-<p>Check out the <a href="/integrations/" >tools and integrations</a> supported by
-Materialize.</p>
-</li>
-</ul>
+new data arrives, and serving results efficiently.
+
+- Explore your data with [`SHOW SOURCES`](/sql/show-sources) and [`SELECT`](/sql/select/).
+
+- Compute real-time results in memory with [`CREATE VIEW`](/sql/create-view/)
+  and [`CREATE INDEX`](/sql/create-index/) or in durable
+  storage with [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view/).
+
+- Serve results to a PostgreSQL-compatible SQL client or driver with [`SELECT`](/sql/select/)
+  or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
+  [`CREATE SINK`](/sql/create-sink/).
+
+- Check out the [tools and integrations](/integrations/) supported by
+  Materialize.
 
 ## Considerations
 
@@ -4441,8 +4667,7 @@ produce any data until it is recreated.</p>
 <p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
 the upstream table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
-<h3 id="inherited-tables">Inherited tables</h3>
+</span></span></code></pre></div><h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
 also present in the inherited table. However, both PostgreSQL&rsquo;s logical
@@ -4455,7 +4680,7 @@ table, i.e. in Materialize, the data will not be returned when serving
 <ul>
 <li>
 <p>If using legacy syntax <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a>:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -4464,7 +4689,7 @@ create a new view (materialized or non-) that unions the new table.</p>
 </li>
 <li>
 <p>If using new <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> syntax:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -4738,31 +4963,36 @@ preferred SQL client connected to Materialize.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-<p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
+In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
 always-up-to-date query results, serving results to external clients, or a
-combination.</p>
-<p>In this step, you&rsquo;ll create a dedicated cluster for ingesting source data from
-your PostgreSQL database.</p>
-<ol>
-<li>
-<p>In the <a href="/console/" >SQL Shell</a>, or your preferred SQL
-client connected to Materialize, use the <a href="/sql/create-cluster/" ><code>CREATE CLUSTER</code></a>
-command to create the new cluster:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
-accommodate multiple PostgreSQL sources, depending on the source
-characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
-or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
-memory-intensive) and the upstream traffic patterns. You can readjust the
-size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>ALTER CLUSTER</code></a> command:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="o">&lt;</span><span class="n">cluster_name</span><span class="o">&gt;</span> <span class="k">SET</span> <span class="p">(</span> <span class="k">SIZE</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">new_size</span><span class="o">&gt;</span> <span class="p">);</span>
-</span></span></code></pre></div></li>
-</ol>
+combination.
+
+In this step, you'll create a dedicated cluster for ingesting source data from
+your PostgreSQL database.
+
+1. In the [SQL Shell](/console/), or your preferred SQL
+   client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
+   command to create the new cluster:
+
+    ```mzsql
+    CREATE CLUSTER ingest_postgres (SIZE = '50cc');
+
+    SET CLUSTER = ingest_postgres;
+    ```
+
+    A cluster of [size](/sql/create-cluster/#available-sizes) `50cc` should be enough to
+    accommodate multiple PostgreSQL sources, depending on the source
+    characteristics (e.g., sources with [`ENVELOPE UPSERT`](/sql/create-source/kafka/#upsert-envelope)
+    or [`ENVELOPE DEBEZIUM`](/sql/create-source/kafka/#debezium-envelope) will be more
+    memory-intensive) and the upstream traffic patterns. You can readjust the
+    size of the cluster at any time using the [`ALTER CLUSTER`](/sql/alter-cluster) command:
+
+    ```mzsql
+    ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
+    ```
 
 ### 2. Create a connection
 
@@ -4836,155 +5066,165 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 
 ### 4. Monitor the ingestion status
 
-<p>Before it starts consuming the replication stream, Materialize takes a snapshot
+Before it starts consuming the replication stream, Materialize takes a snapshot
 of the relevant tables in your publication. Until this snapshot is complete,
-Materialize won&rsquo;t have the same view of your data as your PostgreSQL database.</p>
-<p>In this step, you&rsquo;ll first verify that the source is running and then check the
-status of the snapshotting process.</p>
-<ol>
-<li>
-<p>Back in the SQL client connected to Materialize, use the
-<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
-table to check the overall status of your source:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statuses</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statuses</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div><p>For each <code>subsource</code>, make sure the <code>status</code> is <code>running</code>. If you see
-<code>stalled</code> or <code>failed</code>, there&rsquo;s likely a configuration issue for you to fix.
-Check the <code>error</code> field for details and fix the issue before moving on.
-Also, if the <code>status</code> of any subsource is <code>starting</code> for more than a few
-minutes, <a href="/support/" >contact our team</a>.</p>
-</li>
-<li>
-<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
-table to check the status of the initial snapshot:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span> <span class="k">AS</span> <span class="k">id</span><span class="p">,</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">name</span><span class="p">,</span> <span class="n">snapshot_committed</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statistics</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span><span class="p">,</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statistics</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_sources</span> <span class="k">ON</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">object_id | snapshot_committed
-----------|------------------
- u144     | t
-(1 row)
-</code></pre><p>Once <code>snapshot_commited</code> is <code>t</code>, move on to the next step. Snapshotting can
-take between a few minutes to several hours, depending on the size of your
-dataset and the size of the cluster the source is running in.</p>
-</li>
-</ol>
+Materialize won't have the same view of your data as your PostgreSQL database.
+
+In this step, you'll first verify that the source is running and then check the
+status of the snapshotting process.
+
+1. Back in the SQL client connected to Materialize, use the
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   table to check the overall status of your source:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT *
+    FROM
+      mz_internal.mz_source_statuses
+        JOIN
+          (
+            SELECT referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statuses.id = sources.referenced_object_id;
+    ```
+
+    For each `subsource`, make sure the `status` is `running`. If you see
+    `stalled` or `failed`, there's likely a configuration issue for you to fix.
+    Check the `error` field for details and fix the issue before moving on.
+    Also, if the `status` of any subsource is `starting` for more than a few
+    minutes, [contact our team](/support/).
+
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+   table to check the status of the initial snapshot:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT sources.referenced_object_id AS id, mz_sources.name, snapshot_committed
+    FROM
+      mz_internal.mz_source_statistics
+        JOIN
+          (
+            SELECT object_id, referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id, id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statistics.id = sources.referenced_object_id
+        JOIN mz_sources ON mz_sources.id = sources.referenced_object_id;
+    ```
+    <p></p>
+
+    ```nofmt
+    object_id | snapshot_committed
+    ----------|------------------
+     u144     | t
+    (1 row)
+    ```
+
+    Once `snapshot_commited` is `t`, move on to the next step. Snapshotting can
+    take between a few minutes to several hours, depending on the size of your
+    dataset and the size of the cluster the source is running in.
 
 ### 5. Right-size the cluster
 
-<p>After the snapshotting phase, Materialize starts ingesting change events from
+After the snapshotting phase, Materialize starts ingesting change events from
 the PostgreSQL replication stream. For this work, Materialize generally
-performs well with an <code>100cc</code> replica, so you can resize the cluster
-accordingly.</p>
-<ol>
-<li>
-<p>Still in a SQL client connected to Materialize, use the <a href="/sql/alter-cluster/" ><code>ALTER CLUSTER</code></a>
-command to downsize the cluster to <code>100cc</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="k">SET</span> <span class="p">(</span><span class="k">SIZE</span> <span class="s1">&#39;100cc&#39;</span><span class="p">);</span>
-</span></span></code></pre></div><p>Behind the scenes, this command adds a new <code>100cc</code> replica and removes the
-<code>50cc</code> replica.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/show-cluster-replicas/" ><code>SHOW CLUSTER REPLICAS</code></a> command to
-check the status of the new replica:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SHOW</span> <span class="k">CLUSTER</span> <span class="k">REPLICAS</span> <span class="k">WHERE</span> <span class="k">cluster</span> <span class="o">=</span> <span class="s1">&#39;ingest_postgres&#39;</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">     cluster     | replica |  size  | ready
------------------+---------+--------+-------
- ingest_postgres | r1      | 100cc  | t
-(1 row)
-</code></pre></li>
-<li>
-<p>Going forward, you can verify that your new cluster size is sufficient as
-follows:</p>
-<ol>
-<li>
-<p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
-table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">n</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">schema_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">s</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">source_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pgs</span><span class="mf">.</span><span class="n">replication_slot</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">    <span class="n">mz_sources</span> <span class="k">AS</span> <span class="n">s</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_postgres_sources</span> <span class="k">AS</span> <span class="n">pgs</span> <span class="k">ON</span> <span class="n">s</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">pgs</span><span class="mf">.</span><span class="k">id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_schemas</span> <span class="k">AS</span> <span class="n">n</span> <span class="k">ON</span> <span class="n">n</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">schema_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_databases</span> <span class="k">AS</span> <span class="n">d</span> <span class="k">ON</span> <span class="n">d</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">n</span><span class="mf">.</span><span class="n">database_id</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>In PostgreSQL, check the replication slot lag, using the replication slot
-name from the previous step:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pg_size_pretty</span><span class="p">(</span><span class="n">pg_current_wal_lsn</span><span class="p">()</span> <span class="o">-</span> <span class="n">confirmed_flush_lsn</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">    <span class="k">AS</span> <span class="n">replication_lag_bytes</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">pg_replication_slots</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">slot_name</span> <span class="o">=</span> <span class="s1">&#39;&lt;slot_name&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div><p>The result of this query is the amount of data your PostgreSQL cluster
-must retain in its replication log because of this replication slot.
-Typically, this means Materialize has not yet communicated back to
-PostgreSQL that it has committed this data. A high value can indicate
-that the source has fallen behind and that you might need to scale up
-your ingestion cluster.</p>
-</li>
-</ol>
-</li>
-</ol>
+performs well with an `100cc` replica, so you can resize the cluster
+accordingly.
+
+1. Still in a SQL client connected to Materialize, use the [`ALTER CLUSTER`](/sql/alter-cluster/)
+   command to downsize the cluster to `100cc`:
+
+    ```mzsql
+    ALTER CLUSTER ingest_postgres SET (SIZE '100cc');
+    ```
+
+    Behind the scenes, this command adds a new `100cc` replica and removes the
+    `50cc` replica.
+
+1. Use the [`SHOW CLUSTER REPLICAS`](/sql/show-cluster-replicas/) command to
+   check the status of the new replica:
+
+    ```mzsql
+    SHOW CLUSTER REPLICAS WHERE cluster = 'ingest_postgres';
+    ```
+    <p></p>
+
+    ```nofmt
+         cluster     | replica |  size  | ready
+    -----------------+---------+--------+-------
+     ingest_postgres | r1      | 100cc  | t
+    (1 row)
+    ```
+
+1. Going forward, you can verify that your new cluster size is sufficient as
+follows:
+
+    1. In Materialize, get the replication slot name associated with your
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    table:
+
+        ```mzsql
+        SELECT
+            d.name AS database_name,
+            n.name AS schema_name,
+            s.name AS source_name,
+            pgs.replication_slot
+        FROM
+            mz_sources AS s
+            JOIN mz_internal.mz_postgres_sources AS pgs ON s.id = pgs.id
+            JOIN mz_schemas AS n ON n.id = s.schema_id
+            JOIN mz_databases AS d ON d.id = n.database_id;
+        ```
+
+    1. In PostgreSQL, check the replication slot lag, using the replication slot
+       name from the previous step:
+
+        ```postgres
+        SELECT
+            pg_size_pretty(pg_current_wal_lsn() - confirmed_flush_lsn)
+            AS replication_lag_bytes
+        FROM pg_replication_slots
+        WHERE slot_name = '<slot_name>';
+        ```
+
+        The result of this query is the amount of data your PostgreSQL cluster
+        must retain in its replication log because of this replication slot.
+        Typically, this means Materialize has not yet communicated back to
+        PostgreSQL that it has committed this data. A high value can indicate
+        that the source has fallen behind and that you might need to scale up
+        your ingestion cluster.
 
 ## D. Explore your data
 
-<p>With Materialize ingesting your PostgreSQL data into durable storage, you can
+With Materialize ingesting your PostgreSQL data into durable storage, you can
 start exploring the data, computing real-time results that stay up-to-date as
-new data arrives, and serving results efficiently.</p>
-<ul>
-<li>
-<p>Explore your data with <a href="/sql/show-sources" ><code>SHOW SOURCES</code></a> and <a href="/sql/select/" ><code>SELECT</code></a>.</p>
-</li>
-<li>
-<p>Compute real-time results in memory with <a href="/sql/create-view/" ><code>CREATE VIEW</code></a>
-and <a href="/sql/create-index/" ><code>CREATE INDEX</code></a> or in durable
-storage with <a href="/sql/create-materialized-view/" ><code>CREATE MATERIALIZED VIEW</code></a>.</p>
-</li>
-<li>
-<p>Serve results to a PostgreSQL-compatible SQL client or driver with <a href="/sql/select/" ><code>SELECT</code></a>
-or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external message broker with
-<a href="/sql/create-sink/" ><code>CREATE SINK</code></a>.</p>
-</li>
-<li>
-<p>Check out the <a href="/integrations/" >tools and integrations</a> supported by
-Materialize.</p>
-</li>
-</ul>
+new data arrives, and serving results efficiently.
+
+- Explore your data with [`SHOW SOURCES`](/sql/show-sources) and [`SELECT`](/sql/select/).
+
+- Compute real-time results in memory with [`CREATE VIEW`](/sql/create-view/)
+  and [`CREATE INDEX`](/sql/create-index/) or in durable
+  storage with [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view/).
+
+- Serve results to a PostgreSQL-compatible SQL client or driver with [`SELECT`](/sql/select/)
+  or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
+  [`CREATE SINK`](/sql/create-sink/).
+
+- Check out the [tools and integrations](/integrations/) supported by
+  Materialize.
 
 ## Considerations
 
@@ -5089,8 +5329,7 @@ produce any data until it is recreated.</p>
 <p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
 the upstream table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
-<h3 id="inherited-tables">Inherited tables</h3>
+</span></span></code></pre></div><h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
 also present in the inherited table. However, both PostgreSQL&rsquo;s logical
@@ -5103,7 +5342,7 @@ table, i.e. in Materialize, the data will not be returned when serving
 <ul>
 <li>
 <p>If using legacy syntax <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a>:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -5112,7 +5351,7 @@ create a new view (materialized or non-) that unions the new table.</p>
 </li>
 <li>
 <p>If using new <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> syntax:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -5173,15 +5412,10 @@ Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 
 ## Before you begin
 
-<ul>
-<li>
-<p>Make sure you are running PostgreSQL 11 or higher.</p>
-</li>
-<li>
-<p>Make sure you have access to your PostgreSQL instance via <a href="https://www.postgresql.org/docs/current/app-psql.html" ><code>psql</code></a>,
-or your preferred SQL client.</p>
-</li>
-</ul>
+- Make sure you are running PostgreSQL 11 or higher.
+
+- Make sure you have access to your PostgreSQL instance via [`psql`](https://www.postgresql.org/docs/current/app-psql.html),
+  or your preferred SQL client.
 
 ## A. Configure PostgreSQL
 
@@ -5219,58 +5453,91 @@ Enable your PostgreSQL's logical replication.
 
 ### 2. Create a publication and a replication user
 
-<p>Once logical replication is enabled, the next step is to create a publication
-with the tables that you want to replicate to Materialize. You&rsquo;ll also need a
-user for Materialize with sufficient privileges to manage replication.</p>
-<ol>
-<li>
-<p>For each table that you want to replicate to Materialize, set the
-<a href="https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY" >replica identity</a>
-to <code>FULL</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">REPLICA</span> <span class="k">IDENTITY</span> <span class="k">FULL</span><span class="p">;</span>
-</span></span></code></pre></div><p><code>REPLICA IDENTITY FULL</code> ensures that the replication stream includes the
-previous data of changed rows, in the case of <code>UPDATE</code> and <code>DELETE</code>
-operations. This setting enables Materialize to ingest PostgreSQL data with
-minimal in-memory state. However, you should expect increased disk usage in
-your PostgreSQL database.</p>
-</li>
-<li>
-<p>Create a <a href="https://www.postgresql.org/docs/current/logical-replication-publication.html" >publication</a>
-with the tables you want to replicate:</p>
-<p><em>For specific tables:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">TABLE</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span><span class="p">;</span>
-</span></span></code></pre></div><p><em>For all tables in the database:</em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="n">PUBLICATION</span> <span class="n">mz_source</span> <span class="k">FOR</span> <span class="k">ALL</span> <span class="k">TABLES</span><span class="p">;</span>
-</span></span></code></pre></div><p>The <code>mz_source</code> publication will contain the set of change events generated
-from the specified tables, and will later be used to ingest the replication
-stream.</p>
-<p>Be sure to include only the tables you need. If the publication includes
-additional tables, Materialize will waste resources on ingesting and then
-immediately discarding the data.</p>
-</li>
-<li>
-<p>Create a user for Materialize, if you don&rsquo;t already have one:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">USER</span> <span class="n">materialize</span> <span class="k">PASSWORD</span> <span class="s1">&#39;&lt;password&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user permission to manage replication:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">ROLE</span> <span class="n">materialize</span> <span class="k">WITH</span> <span class="n">REPLICATION</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Grant the user the required permissions on the tables you want to replicate:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">CONNECT</span> <span class="k">ON</span> <span class="k">DATABASE</span> <span class="o">&lt;</span><span class="n">dbname</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="n">USAGE</span> <span class="k">ON</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table1</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="o">&lt;</span><span class="n">table2</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div><p>Once connected to your database, Materialize will take an initial snapshot
-of the tables in your publication. <code>SELECT</code> privileges are required for
-this initial snapshot.</p>
-<p>If you expect to add tables to your publication, you can grant <code>SELECT</code> on
-all tables in the schema instead of naming the specific tables:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">GRANT</span> <span class="k">SELECT</span> <span class="k">ON</span> <span class="k">ALL</span> <span class="k">TABLES</span> <span class="k">IN</span> <span class="k">SCHEMA</span> <span class="o">&lt;</span><span class="k">schema</span><span class="o">&gt;</span> <span class="k">TO</span> <span class="n">materialize</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-</ol>
+Once logical replication is enabled, the next step is to create a publication
+with the tables that you want to replicate to Materialize. You'll also need a
+user for Materialize with sufficient privileges to manage replication.
+
+1. For each table that you want to replicate to Materialize, set the
+   [replica identity](https://www.postgresql.org/docs/current/sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY)
+   to `FULL`:
+
+    ```postgres
+    ALTER TABLE <table1> REPLICA IDENTITY FULL;
+    ```
+
+    ```postgres
+    ALTER TABLE <table2> REPLICA IDENTITY FULL;
+    ```
+
+    `REPLICA IDENTITY FULL` ensures that the replication stream includes the
+    previous data of changed rows, in the case of `UPDATE` and `DELETE`
+    operations. This setting enables Materialize to ingest PostgreSQL data with
+    minimal in-memory state. However, you should expect increased disk usage in
+    your PostgreSQL database.
+
+1. Create a [publication](https://www.postgresql.org/docs/current/logical-replication-publication.html)
+   with the tables you want to replicate:
+
+    _For specific tables:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR TABLE <table1>, <table2>;
+    ```
+
+    _For all tables in the database:_
+
+    ```postgres
+    CREATE PUBLICATION mz_source FOR ALL TABLES;
+    ```
+
+    The `mz_source` publication will contain the set of change events generated
+    from the specified tables, and will later be used to ingest the replication
+    stream.
+
+    Be sure to include only the tables you need. If the publication includes
+    additional tables, Materialize will waste resources on ingesting and then
+    immediately discarding the data.
+
+1. Create a user for Materialize, if you don't already have one:
+
+    ```postgres
+    CREATE USER materialize PASSWORD '<password>';
+    ```
+
+1. Grant the user permission to manage replication:
+
+    ```postgres
+    ALTER ROLE materialize WITH REPLICATION;
+    ```
+
+1. Grant the user the required permissions on the tables you want to replicate:
+
+    ```postgres
+    GRANT CONNECT ON DATABASE <dbname> TO materialize;
+    ```
+
+    ```postgres
+    GRANT USAGE ON SCHEMA <schema> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table1> TO materialize;
+    ```
+
+    ```postgres
+    GRANT SELECT ON <table2> TO materialize;
+    ```
+
+    Once connected to your database, Materialize will take an initial snapshot
+    of the tables in your publication. `SELECT` privileges are required for
+    this initial snapshot.
+
+    If you expect to add tables to your publication, you can grant `SELECT` on
+    all tables in the schema instead of naming the specific tables:
+
+    ```postgres
+    GRANT SELECT ON ALL TABLES IN SCHEMA <schema> TO materialize;
+    ```
 
 ## B. (Optional) Configure network security
 
@@ -5345,14 +5612,39 @@ option.
 
     **Remarks**:
 
-    a. Network Load Balancers do not have associated security groups. Therefore,
-    the security groups for your targets must use IP addresses to allow
-    traffic.
+    - By default, Network Load Balancers do not have associated security
+      groups. In addition, target security groups cannot use client security
+      groups as a traffic source. Therefore, the security groups for your
+      targets must allow traffic using IP address ranges rather than security
+      group references. For more information, see the [AWS
+      documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
 
-    b. You can't use the security groups for the clients as a source in the
-    security groups for the targets. Therefore, the security groups for your
-    targets must use the IP addresses of the clients to allow traffic. For more
-    details, check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
+    - If you use [network ACLs
+      (NACLs)](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html)
+      and traffic between the NLB and its targets crosses subnet boundaries,
+      the NACLs must allow both the application port and the ephemeral port
+      range (1024–65535) for return traffic. This can occur when cross-zone
+      load balancing is enabled, or when the NLB and its targets reside in
+      different subnets, even within the same Availability Zone.
+
+      For example, if a target application listens on port 9098, the target
+      subnet must allow ingress on port 9098 from the NLB's IP ranges and
+      egress on the ephemeral port range (1024–65535) to those ranges
+      for return traffic. Likewise, the NLB subnet must allow egress on
+      port 9098 to the target IP ranges and ingress on the ephemeral port
+      range from them.
+
+    - If you have associated a security group with your Network Load Balancer
+      and enabled **Enforce inbound rules on PrivateLink traffic**, the
+      security group's inbound rules also apply to traffic from Materialize's
+      VPC endpoint. Any traffic not explicitly permitted, including
+      Materialize's, will be silently blocked.
+
+      To resolve this, either:
+      - Add inbound rules to the NLB's security group that permit the listener
+        port and the health check port from a source covering Materialize's
+        VPC endpoint traffic, or
+      - Disable **Enforce inbound rules on PrivateLink traffic**.
 
 1. Create a VPC [endpoint
     service](https://docs.aws.amazon.com/vpc/latest/privatelink/create-endpoint-service.html)
@@ -5499,31 +5791,36 @@ traffic from the bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-<p>In Materialize, a <a href="/concepts/clusters/" >cluster</a> is an isolated environment,
+In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
 always-up-to-date query results, serving results to external clients, or a
-combination.</p>
-<p>In this step, you&rsquo;ll create a dedicated cluster for ingesting source data from
-your PostgreSQL database.</p>
-<ol>
-<li>
-<p>In the <a href="/console/" >SQL Shell</a>, or your preferred SQL
-client connected to Materialize, use the <a href="/sql/create-cluster/" ><code>CREATE CLUSTER</code></a>
-command to create the new cluster:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="p">(</span><span class="k">SIZE</span> <span class="o">=</span> <span class="s1">&#39;50cc&#39;</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="k">SET</span> <span class="k">CLUSTER</span> <span class="o">=</span> <span class="n">ingest_postgres</span><span class="p">;</span>
-</span></span></code></pre></div><p>A cluster of <a href="/sql/create-cluster/#available-sizes" >size</a> <code>50cc</code> should be enough to
-accommodate multiple PostgreSQL sources, depending on the source
-characteristics (e.g., sources with <a href="/sql/create-source/kafka/#upsert-envelope" ><code>ENVELOPE UPSERT</code></a>
-or <a href="/sql/create-source/kafka/#debezium-envelope" ><code>ENVELOPE DEBEZIUM</code></a> will be more
-memory-intensive) and the upstream traffic patterns. You can readjust the
-size of the cluster at any time using the <a href="/sql/alter-cluster" ><code>ALTER CLUSTER</code></a> command:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="o">&lt;</span><span class="n">cluster_name</span><span class="o">&gt;</span> <span class="k">SET</span> <span class="p">(</span> <span class="k">SIZE</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">new_size</span><span class="o">&gt;</span> <span class="p">);</span>
-</span></span></code></pre></div></li>
-</ol>
+combination.
+
+In this step, you'll create a dedicated cluster for ingesting source data from
+your PostgreSQL database.
+
+1. In the [SQL Shell](/console/), or your preferred SQL
+   client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
+   command to create the new cluster:
+
+    ```mzsql
+    CREATE CLUSTER ingest_postgres (SIZE = '50cc');
+
+    SET CLUSTER = ingest_postgres;
+    ```
+
+    A cluster of [size](/sql/create-cluster/#available-sizes) `50cc` should be enough to
+    accommodate multiple PostgreSQL sources, depending on the source
+    characteristics (e.g., sources with [`ENVELOPE UPSERT`](/sql/create-source/kafka/#upsert-envelope)
+    or [`ENVELOPE DEBEZIUM`](/sql/create-source/kafka/#debezium-envelope) will be more
+    memory-intensive) and the upstream traffic patterns. You can readjust the
+    size of the cluster at any time using the [`ALTER CLUSTER`](/sql/alter-cluster) command:
+
+    ```mzsql
+    ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
+    ```
 
 ### 2. Create a connection
 
@@ -5696,155 +5993,165 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 
 ### 4. Monitor the ingestion status
 
-<p>Before it starts consuming the replication stream, Materialize takes a snapshot
+Before it starts consuming the replication stream, Materialize takes a snapshot
 of the relevant tables in your publication. Until this snapshot is complete,
-Materialize won&rsquo;t have the same view of your data as your PostgreSQL database.</p>
-<p>In this step, you&rsquo;ll first verify that the source is running and then check the
-status of the snapshotting process.</p>
-<ol>
-<li>
-<p>Back in the SQL client connected to Materialize, use the
-<a href="/reference/system-catalog/mz_internal/#mz_source_statuses" ><code>mz_source_statuses</code></a>
-table to check the overall status of your source:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statuses</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statuses</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div><p>For each <code>subsource</code>, make sure the <code>status</code> is <code>running</code>. If you see
-<code>stalled</code> or <code>failed</code>, there&rsquo;s likely a configuration issue for you to fix.
-Check the <code>error</code> field for details and fix the issue before moving on.
-Also, if the <code>status</code> of any subsource is <code>starting</code> for more than a few
-minutes, <a href="/support/" >contact our team</a>.</p>
-</li>
-<li>
-<p>Once the source is running, use the <a href="/reference/system-catalog/mz_internal/#mz_source_statistics" ><code>mz_source_statistics</code></a>
-table to check the status of the initial snapshot:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span>
-</span></span><span class="line"><span class="cl">  <span class="n">source_ids</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl">  <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">mz_sources</span> <span class="k">WHERE</span> <span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;mz_source&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span> <span class="k">AS</span> <span class="k">id</span><span class="p">,</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">name</span><span class="p">,</span> <span class="n">snapshot_committed</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">  <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_source_statistics</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span>
-</span></span><span class="line"><span class="cl">        <span class="k">SELECT</span> <span class="n">object_id</span><span class="p">,</span> <span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">FROM</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_object_dependencies</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span>
-</span></span><span class="line"><span class="cl">          <span class="n">object_id</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">        <span class="k">UNION</span> <span class="k">SELECT</span> <span class="k">id</span><span class="p">,</span> <span class="k">id</span> <span class="k">FROM</span> <span class="n">source_ids</span>
-</span></span><span class="line"><span class="cl">      <span class="p">)</span>
-</span></span><span class="line"><span class="cl">      <span class="k">AS</span> <span class="k">sources</span>
-</span></span><span class="line"><span class="cl">    <span class="k">ON</span> <span class="n">mz_source_statistics</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_sources</span> <span class="k">ON</span> <span class="n">mz_sources</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="k">sources</span><span class="mf">.</span><span class="n">referenced_object_id</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">object_id | snapshot_committed
-----------|------------------
- u144     | t
-(1 row)
-</code></pre><p>Once <code>snapshot_commited</code> is <code>t</code>, move on to the next step. Snapshotting can
-take between a few minutes to several hours, depending on the size of your
-dataset and the size of the cluster the source is running in.</p>
-</li>
-</ol>
+Materialize won't have the same view of your data as your PostgreSQL database.
+
+In this step, you'll first verify that the source is running and then check the
+status of the snapshotting process.
+
+1. Back in the SQL client connected to Materialize, use the
+   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   table to check the overall status of your source:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT *
+    FROM
+      mz_internal.mz_source_statuses
+        JOIN
+          (
+            SELECT referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statuses.id = sources.referenced_object_id;
+    ```
+
+    For each `subsource`, make sure the `status` is `running`. If you see
+    `stalled` or `failed`, there's likely a configuration issue for you to fix.
+    Check the `error` field for details and fix the issue before moving on.
+    Also, if the `status` of any subsource is `starting` for more than a few
+    minutes, [contact our team](/support/).
+
+2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+   table to check the status of the initial snapshot:
+
+    ```mzsql
+    WITH
+      source_ids AS
+      (SELECT id FROM mz_sources WHERE name = 'mz_source')
+    SELECT sources.referenced_object_id AS id, mz_sources.name, snapshot_committed
+    FROM
+      mz_internal.mz_source_statistics
+        JOIN
+          (
+            SELECT object_id, referenced_object_id
+            FROM mz_internal.mz_object_dependencies
+            WHERE
+              object_id IN (SELECT id FROM source_ids)
+            UNION SELECT id, id FROM source_ids
+          )
+          AS sources
+        ON mz_source_statistics.id = sources.referenced_object_id
+        JOIN mz_sources ON mz_sources.id = sources.referenced_object_id;
+    ```
+    <p></p>
+
+    ```nofmt
+    object_id | snapshot_committed
+    ----------|------------------
+     u144     | t
+    (1 row)
+    ```
+
+    Once `snapshot_commited` is `t`, move on to the next step. Snapshotting can
+    take between a few minutes to several hours, depending on the size of your
+    dataset and the size of the cluster the source is running in.
 
 ### 5. Right-size the cluster
 
-<p>After the snapshotting phase, Materialize starts ingesting change events from
+After the snapshotting phase, Materialize starts ingesting change events from
 the PostgreSQL replication stream. For this work, Materialize generally
-performs well with an <code>100cc</code> replica, so you can resize the cluster
-accordingly.</p>
-<ol>
-<li>
-<p>Still in a SQL client connected to Materialize, use the <a href="/sql/alter-cluster/" ><code>ALTER CLUSTER</code></a>
-command to downsize the cluster to <code>100cc</code>:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">ALTER</span> <span class="k">CLUSTER</span> <span class="n">ingest_postgres</span> <span class="k">SET</span> <span class="p">(</span><span class="k">SIZE</span> <span class="s1">&#39;100cc&#39;</span><span class="p">);</span>
-</span></span></code></pre></div><p>Behind the scenes, this command adds a new <code>100cc</code> replica and removes the
-<code>50cc</code> replica.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/show-cluster-replicas/" ><code>SHOW CLUSTER REPLICAS</code></a> command to
-check the status of the new replica:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SHOW</span> <span class="k">CLUSTER</span> <span class="k">REPLICAS</span> <span class="k">WHERE</span> <span class="k">cluster</span> <span class="o">=</span> <span class="s1">&#39;ingest_postgres&#39;</span><span class="p">;</span>
-</span></span></code></pre></div> <p></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">     cluster     | replica |  size  | ready
------------------+---------+--------+-------
- ingest_postgres | r1      | 100cc  | t
-(1 row)
-</code></pre></li>
-<li>
-<p>Going forward, you can verify that your new cluster size is sufficient as
-follows:</p>
-<ol>
-<li>
-<p>In Materialize, get the replication slot name associated with your
-PostgreSQL source from the <a href="/reference/system-catalog/mz_internal/#mz_postgres_sources" ><code>mz_internal.mz_postgres_sources</code></a>
-table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">d</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">database_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">n</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">schema_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">s</span><span class="mf">.</span><span class="k">name</span> <span class="k">AS</span> <span class="n">source_name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pgs</span><span class="mf">.</span><span class="n">replication_slot</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span>
-</span></span><span class="line"><span class="cl">    <span class="n">mz_sources</span> <span class="k">AS</span> <span class="n">s</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_postgres_sources</span> <span class="k">AS</span> <span class="n">pgs</span> <span class="k">ON</span> <span class="n">s</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">pgs</span><span class="mf">.</span><span class="k">id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_schemas</span> <span class="k">AS</span> <span class="n">n</span> <span class="k">ON</span> <span class="n">n</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">schema_id</span>
-</span></span><span class="line"><span class="cl">    <span class="k">JOIN</span> <span class="n">mz_databases</span> <span class="k">AS</span> <span class="n">d</span> <span class="k">ON</span> <span class="n">d</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">n</span><span class="mf">.</span><span class="n">database_id</span><span class="p">;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>In PostgreSQL, check the replication slot lag, using the replication slot
-name from the previous step:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-postgres" data-lang="postgres"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">    <span class="n">pg_size_pretty</span><span class="p">(</span><span class="n">pg_current_wal_lsn</span><span class="p">()</span> <span class="o">-</span> <span class="n">confirmed_flush_lsn</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl">    <span class="k">AS</span> <span class="n">replication_lag_bytes</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">pg_replication_slots</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">slot_name</span> <span class="o">=</span> <span class="s1">&#39;&lt;slot_name&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div><p>The result of this query is the amount of data your PostgreSQL cluster
-must retain in its replication log because of this replication slot.
-Typically, this means Materialize has not yet communicated back to
-PostgreSQL that it has committed this data. A high value can indicate
-that the source has fallen behind and that you might need to scale up
-your ingestion cluster.</p>
-</li>
-</ol>
-</li>
-</ol>
+performs well with an `100cc` replica, so you can resize the cluster
+accordingly.
+
+1. Still in a SQL client connected to Materialize, use the [`ALTER CLUSTER`](/sql/alter-cluster/)
+   command to downsize the cluster to `100cc`:
+
+    ```mzsql
+    ALTER CLUSTER ingest_postgres SET (SIZE '100cc');
+    ```
+
+    Behind the scenes, this command adds a new `100cc` replica and removes the
+    `50cc` replica.
+
+1. Use the [`SHOW CLUSTER REPLICAS`](/sql/show-cluster-replicas/) command to
+   check the status of the new replica:
+
+    ```mzsql
+    SHOW CLUSTER REPLICAS WHERE cluster = 'ingest_postgres';
+    ```
+    <p></p>
+
+    ```nofmt
+         cluster     | replica |  size  | ready
+    -----------------+---------+--------+-------
+     ingest_postgres | r1      | 100cc  | t
+    (1 row)
+    ```
+
+1. Going forward, you can verify that your new cluster size is sufficient as
+follows:
+
+    1. In Materialize, get the replication slot name associated with your
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    table:
+
+        ```mzsql
+        SELECT
+            d.name AS database_name,
+            n.name AS schema_name,
+            s.name AS source_name,
+            pgs.replication_slot
+        FROM
+            mz_sources AS s
+            JOIN mz_internal.mz_postgres_sources AS pgs ON s.id = pgs.id
+            JOIN mz_schemas AS n ON n.id = s.schema_id
+            JOIN mz_databases AS d ON d.id = n.database_id;
+        ```
+
+    1. In PostgreSQL, check the replication slot lag, using the replication slot
+       name from the previous step:
+
+        ```postgres
+        SELECT
+            pg_size_pretty(pg_current_wal_lsn() - confirmed_flush_lsn)
+            AS replication_lag_bytes
+        FROM pg_replication_slots
+        WHERE slot_name = '<slot_name>';
+        ```
+
+        The result of this query is the amount of data your PostgreSQL cluster
+        must retain in its replication log because of this replication slot.
+        Typically, this means Materialize has not yet communicated back to
+        PostgreSQL that it has committed this data. A high value can indicate
+        that the source has fallen behind and that you might need to scale up
+        your ingestion cluster.
 
 ## D. Explore your data
 
-<p>With Materialize ingesting your PostgreSQL data into durable storage, you can
+With Materialize ingesting your PostgreSQL data into durable storage, you can
 start exploring the data, computing real-time results that stay up-to-date as
-new data arrives, and serving results efficiently.</p>
-<ul>
-<li>
-<p>Explore your data with <a href="/sql/show-sources" ><code>SHOW SOURCES</code></a> and <a href="/sql/select/" ><code>SELECT</code></a>.</p>
-</li>
-<li>
-<p>Compute real-time results in memory with <a href="/sql/create-view/" ><code>CREATE VIEW</code></a>
-and <a href="/sql/create-index/" ><code>CREATE INDEX</code></a> or in durable
-storage with <a href="/sql/create-materialized-view/" ><code>CREATE MATERIALIZED VIEW</code></a>.</p>
-</li>
-<li>
-<p>Serve results to a PostgreSQL-compatible SQL client or driver with <a href="/sql/select/" ><code>SELECT</code></a>
-or <a href="/sql/subscribe/" ><code>SUBSCRIBE</code></a> or to an external message broker with
-<a href="/sql/create-sink/" ><code>CREATE SINK</code></a>.</p>
-</li>
-<li>
-<p>Check out the <a href="/integrations/" >tools and integrations</a> supported by
-Materialize.</p>
-</li>
-</ul>
+new data arrives, and serving results efficiently.
+
+- Explore your data with [`SHOW SOURCES`](/sql/show-sources) and [`SELECT`](/sql/select/).
+
+- Compute real-time results in memory with [`CREATE VIEW`](/sql/create-view/)
+  and [`CREATE INDEX`](/sql/create-index/) or in durable
+  storage with [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view/).
+
+- Serve results to a PostgreSQL-compatible SQL client or driver with [`SELECT`](/sql/select/)
+  or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
+  [`CREATE SINK`](/sql/create-sink/).
+
+- Check out the [tools and integrations](/integrations/) supported by
+  Materialize.
 
 ## Considerations
 
@@ -5949,8 +6256,7 @@ produce any data until it is recreated.</p>
 <p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
 the upstream table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
-<h3 id="inherited-tables">Inherited tables</h3>
+</span></span></code></pre></div><h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
 also present in the inherited table. However, both PostgreSQL&rsquo;s logical
@@ -5963,7 +6269,7 @@ table, i.e. in Materialize, the data will not be returned when serving
 <ul>
 <li>
 <p>If using legacy syntax <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a>:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -5972,7 +6278,7 @@ create a new view (materialized or non-) that unions the new table.</p>
 </li>
 <li>
 <p>If using new <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> syntax:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -6163,22 +6469,27 @@ Once logical replication is enabled:
    specific privileges will depend on how much control you want to give to the
    replication user, so we recommend following the [Debezium documentation](https://debezium.io/documentation/reference/connectors/postgresql.html#postgresql-replication-user-privileges).
 
-1. If a table that you want to replicate has a **primary key** defined, you can
-   use your default replica identity value. If a table you want to replicate
-   has **no primary key** defined, you must set the replica identity value to
-   `FULL`:
+1. Specify the `REPLICA IDENTITY` value:
 
-    ```postgres
-    ALTER TABLE repl_table REPLICA IDENTITY FULL;
-    ```
+   - If a table that you want to replicate has a **primary key** defined, you
+    can use your default replica identity value.  However, without `REPLICA
+    IDENTITY FULL`, you cannot ingest unchanged
+    [TOASTed](https://www.postgresql.org/docs/current/storage-toast.html)
+    values.
 
-    This setting determines the amount of information that is written to the WAL
-    in `UPDATE` and `DELETE` operations. Setting it to `FULL` will include the
-    previous values of all the table’s columns in the change events.
+   - If a table you want to replicate has **no primary key** defined, you must
+     set the replica identity value to `FULL`:
 
-    As a heads up, you should expect a performance hit in the database from
-    increased CPU usage. For more information, see the
-    [PostgreSQL documentation](https://www.postgresql.org/docs/current/logical-replication-publication.html).
+     ```postgres
+     ALTER TABLE repl_table REPLICA IDENTITY FULL;
+     ```
+
+   This setting determines the amount of information that is written to the WAL
+   in `UPDATE` and `DELETE` operations. Setting it to `FULL` will include the
+   previous values of all the table’s columns in the change events.
+   As a heads up, you should expect a performance hit in the database from
+   increased CPU usage. For more information, see the
+   [PostgreSQL documentation](https://www.postgresql.org/docs/current/logical-replication-publication.html).
 
 ### B. Deploy Debezium
 

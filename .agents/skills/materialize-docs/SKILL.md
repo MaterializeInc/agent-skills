@@ -41,13 +41,13 @@ Best practices for ingesting data into Materialize from external systems.
 - **AWS PrivateLink connections (Cloud-only)**: `ingest-data/network-security/privatelink/index.md`
 - **CockroachDB CDC using Kafka and Changefeeds**: `ingest-data/cdc-cockroachdb/index.md`
 - **Debezium**: `ingest-data/debezium/index.md`
+- **Fivetran**: `ingest-data/fivetran/index.md`
 - **HubSpot**: `ingest-data/webhooks/hubspot/index.md`
 - **Kafka**: `ingest-data/kafka/index.md`
 - **MongoDB**: `ingest-data/mongodb/index.md`
 - **Monitoring data ingestion**: `ingest-data/monitoring-data-ingestion/index.md`
 - **MySQL**: `ingest-data/mysql/index.md`
-- **PostgreSQL**: `ingest-data/postgres/index.md`
-- _(and 11 more files in this section)_
+- _(and 12 more files in this section)_
 
 ### Manage Materialize
 
@@ -56,6 +56,7 @@ Best practices for ingesting data into Materialize from external systems.
 - **Monitoring and alerting**: `manage/monitor/index.md`
 - **Operational guidelines**: `manage/operational-guidelines/index.md`
 - **Use dbt to manage Materialize**: `manage/dbt/index.md`
+- **Use mz-deploy to manage Materialize**: `manage/mz-deploy/index.md`
 - **Use Terraform to manage Materialize**: `manage/terraform/index.md`
 
 ### Materialize console
@@ -132,7 +133,7 @@ SQL commands reference.
 - **ALTER MATERIALIZED VIEW**: `sql/alter-materialized-view/index.md`
 - **ALTER NETWORK POLICY (Cloud)**: `sql/alter-network-policy/index.md`
 - **ALTER ROLE**: `sql/alter-role/index.md`
-- _(and 108 more files in this section)_
+- _(and 109 more files in this section)_
 
 ### Tools and integrations
 Get details about third-party tools and integrations supported by Materialize

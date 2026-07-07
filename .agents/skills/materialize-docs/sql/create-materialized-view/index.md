@@ -83,42 +83,21 @@ views](#creating-replacement-materialized-views).
 
 ### Usage pattern
 
-In Materialize, both <a href="/concepts/indexes" >indexes</a> on views and <a href="/concepts/views/#materialized-views" >materialized
-views</a> incrementally update the view
+In Materialize, both [indexes](/concepts/indexes) on views and [materialized
+views](/concepts/views/#materialized-views) incrementally update the view
 results when Materialize ingests new data. Whereas materialized views persist
 the view results in durable storage and can be accessed across clusters, indexes
-on views compute and store view results in memory within a <strong>single</strong> cluster.
-<p>Some general guidelines for usage patterns include:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Usage Pattern</th>
-          <th>General Guideline</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture.</td>
-          <td>View with an <a href="/sql/create-index" >index</a></td>
-      </tr>
-      <tr>
-          <td>View used as a building block for stacked views; i.e., views not used to serve results.</td>
-          <td>View</td>
-      </tr>
-      <tr>
-          <td>View results are accessed across <a href="/concepts/clusters" >clusters</a>;<br>such as in a 3-cluster architecture.</td>
-          <td>Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster)</td>
-      </tr>
-      <tr>
-          <td>Use with a <a href="/serve-results/sink/" >sink</a> or a <a href="/sql/subscribe" ><code>SUBSCRIBE</code></a> operation</td>
-          <td>Materialized view</td>
-      </tr>
-      <tr>
-          <td>Use with <a href="/transform-data/patterns/temporal-filters/" >temporal filters</a></td>
-          <td>Materialized view</td>
-      </tr>
-  </tbody>
-</table>
+on views compute and store view results in memory within a **single** cluster.
+
+Some general guidelines for usage patterns include:
+
+| Usage Pattern | General Guideline |
+|--------------------------------------------------------------------------------|--------------------|
+| View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture. | View with an [index](/sql/create-index) |
+| View used as a building block for stacked views; i.e., views not used to serve results. | View |
+| View results are accessed across [clusters](/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
+| Use with a [sink](/serve-results/sink/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
+| Use with [temporal filters](/transform-data/patterns/temporal-filters/) | Materialized view  |
 
 ### Indexing materialized views
 
@@ -159,13 +138,12 @@ VIEW`](/sql/create-materialized-view/) with [`ALTER MATERIALIZED VIEW ... APPLY
 REPLACEMENT`](/sql/alter-materialized-view) to replace materialized views
 in-place without recreating dependent objects or incurring downtime.
 
-<p>To create a replacement materialized view, you must:</p>
-<ul>
-<li>Specify the target materialized view.</li>
-<li>Specify a <code>SELECT</code> statement for the replacement view that produces the
-same output schema (including column order and keys) as the target view.</li>
-</ul>
-<p>Upon creation, the replacement view starts hydrating in the background.</p>
+To create a replacement materialized view, you must:
+- Specify the target materialized view.
+- Specify a `SELECT` statement for the replacement view that produces the
+  same output schema (including column order and keys) as the target view.
+
+Upon creation, the replacement view starts hydrating in the background.
 
 Before applying the replacement view, verify that the replacement view is
 hydrated to avoid downtime:

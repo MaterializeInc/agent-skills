@@ -44,18 +44,24 @@ the following rewrites are available:
 <td><blue>Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<p><strong>Rewrite to <code>NOT EXISTS</code> with a correlated subquery.</strong></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">t1</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="p">(</span><span class="k">SELECT</span> <span class="mf">1</span> <span class="k">FROM</span> <span class="n">t2</span> <span class="k">WHERE</span> <span class="n">t2</span><span class="mf">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">t1</span><span class="mf">.</span><span class="n">a</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div><p><strong>Filter out <code>NULL</code>s on both sides of the <code>NOT IN</code>.</strong></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">t1</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">t1</span><span class="mf">.</span><span class="n">a</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span>
-</span></span><span class="line"><span class="cl">  <span class="k">AND</span> <span class="n">t1</span><span class="mf">.</span><span class="n">a</span> <span class="k">NOT</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="n">t2</span><span class="mf">.</span><span class="n">a</span> <span class="k">FROM</span> <span class="n">t2</span> <span class="k">WHERE</span> <span class="n">t2</span><span class="mf">.</span><span class="n">a</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div>
+**Rewrite to `NOT EXISTS` with a correlated subquery.**
+
+```mzsql
+SELECT t1.*
+FROM t1
+WHERE NOT EXISTS (SELECT 1 FROM t2 WHERE t2.a = t1.a)
+;
+```
+
+**Filter out `NULL`s on both sides of the `NOT IN`.**
+
+```mzsql
+SELECT t1.*
+FROM t1
+WHERE t1.a IS NOT NULL
+  AND t1.a NOT IN (SELECT t2.a FROM t2 WHERE t2.a IS NOT NULL)
+;
+```
 
 </td>
 </tr>
@@ -63,14 +69,16 @@ the following rewrites are available:
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid <code>NOT IN (&lt;subquery&gt;)</code> predicates, which force a cross join
-between the outer relation and the subquery.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid `NOT IN (<subquery>)` predicates, which force a cross join
+between the outer relation and the subquery.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT t1.*
 FROM t1
 WHERE t1.a NOT IN (SELECT t2.a FROM t2) -- Anti-pattern. Avoid.
 ;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -118,38 +126,45 @@ value depends on the outer row:
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<p>Because the subquery uses <a href="/sql/functions/#unnest" ><code>UNNEST()</code></a> on a column
-of the outer-correlated row, factor the <code>UNNEST()</code> into an uncorrelated
-<a href="/sql/select/#common-table-expressions-ctes" >Common Table Expression
-(CTE)</a> first.</p>
-<p><em><strong>Rewrite to <code>NOT EXISTS</code> with a CTE for the <code>UNNEST()</code></strong></em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">this_weeks_sales</span> <span class="k">AS</span> <span class="p">(</span>
-</span></span><span class="line"><span class="cl">  <span class="k">SELECT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">AS</span> <span class="n">sale_item</span>
-</span></span><span class="line"><span class="cl">  <span class="k">FROM</span> <span class="n">sales_items</span>
-</span></span><span class="line"><span class="cl">  <span class="k">WHERE</span> <span class="n">week_of</span> <span class="o">=</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">current_timestamp</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">i</span><span class="mf">.</span><span class="n">price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">items</span> <span class="n">i</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="p">(</span>
-</span></span><span class="line"><span class="cl">  <span class="k">SELECT</span> <span class="mf">1</span> <span class="k">FROM</span> <span class="n">this_weeks_sales</span> <span class="n">s</span> <span class="k">WHERE</span> <span class="n">s</span><span class="mf">.</span><span class="n">sale_item</span> <span class="o">=</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span>
-</span></span><span class="line"><span class="cl"><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div><p><em><strong>Filter out <code>NULL</code>s with a CTE for the <code>UNNEST()</code></strong></em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">this_weeks_sales</span> <span class="k">AS</span> <span class="p">(</span>
-</span></span><span class="line"><span class="cl">  <span class="k">SELECT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">AS</span> <span class="n">sale_item</span>
-</span></span><span class="line"><span class="cl">  <span class="k">FROM</span> <span class="n">sales_items</span>
-</span></span><span class="line"><span class="cl">  <span class="k">WHERE</span> <span class="n">week_of</span> <span class="o">=</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">current_timestamp</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">i</span><span class="mf">.</span><span class="n">price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">items</span> <span class="n">i</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span>
-</span></span><span class="line"><span class="cl">  <span class="k">AND</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span> <span class="k">NOT</span> <span class="k">IN</span> <span class="p">(</span>
-</span></span><span class="line"><span class="cl">    <span class="k">SELECT</span> <span class="n">sale_item</span> <span class="k">FROM</span> <span class="n">this_weeks_sales</span> <span class="k">WHERE</span> <span class="n">sale_item</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span>
-</span></span><span class="line"><span class="cl">  <span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div>
+Because the subquery uses [`UNNEST()`](/sql/functions/#unnest) on a column
+of the outer-correlated row, factor the `UNNEST()` into an uncorrelated
+[Common Table Expression
+(CTE)](/sql/select/#common-table-expressions-ctes) first.
+
+***Rewrite to `NOT EXISTS` with a CTE for the `UNNEST()`***
+
+```mzsql
+WITH this_weeks_sales AS (
+  SELECT unnest(items) AS sale_item
+  FROM sales_items
+  WHERE week_of = date_trunc('week', current_timestamp)
+)
+SELECT i.item, i.price
+FROM items i
+WHERE NOT EXISTS (
+  SELECT 1 FROM this_weeks_sales s WHERE s.sale_item = i.item
+)
+ORDER BY i.item
+;
+```
+
+***Filter out `NULL`s with a CTE for the `UNNEST()`***
+
+```mzsql
+WITH this_weeks_sales AS (
+  SELECT unnest(items) AS sale_item
+  FROM sales_items
+  WHERE week_of = date_trunc('week', current_timestamp)
+)
+SELECT i.item, i.price
+FROM items i
+WHERE i.item IS NOT NULL
+  AND i.item NOT IN (
+    SELECT sale_item FROM this_weeks_sales WHERE sale_item IS NOT NULL
+  )
+ORDER BY i.item
+;
+```
 
 </td>
 </tr>
@@ -158,17 +173,19 @@ of the outer-correlated row, factor the <code>UNNEST()</code> into an uncorrelat
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid <code>NOT IN (&lt;subquery&gt;)</code>, which forces a cross join.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid `NOT IN (<subquery>)`, which forces a cross join.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT i.item, i.price
 FROM items i
 WHERE i.item NOT IN (
   SELECT unnest(items) FROM sales_items
-  WHERE week_of = date_trunc(&#39;week&#39;, current_timestamp)
+  WHERE week_of = date_trunc('week', current_timestamp)
 )
 ORDER BY i.item
 ;
-</code></pre>
+```
 
 </td>
 </tr>

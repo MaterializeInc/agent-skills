@@ -210,8 +210,9 @@ timestamp), you are not able to query the table until snapshotting is complete.<
 **PostgreSQL:**
 #### PostgreSQL types
 
-<p>Materialize natively supports the following PostgreSQL types (including the
-array type for each of the types):</p>
+Materialize natively supports the following PostgreSQL types (including the
+array type for each of the types):
+
 <ul style="column-count: 3">
 <li><code>bool</code></li>
 <li><code>bpchar</code></li>
@@ -243,27 +244,27 @@ array type for each of the types):</p>
 <li><code>varchar</code></li>
 </ul>
 
-<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
-possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
-treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
-features. For example:</p>
-<ul>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-enum.html" ><code>enum</code></a>: When decoded as <code>text</code>, the implicit ordering of the original
-PostgreSQL <code>enum</code> type is not preserved; instead, Materialize will sort values
-as <code>text</code>.</p>
-</li>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-money.html" ><code>money</code></a>: When decoded as <code>text</code>, resulting <code>text</code> value cannot be cast
-back to <code>numeric</code>, since PostgreSQL adds typical currency formatting to the
-output.</p>
-</li>
-</ul>
+Replicating tables that contain **unsupported [data types](/sql/types/)** is
+possible via the `TEXT COLUMNS` option. The specified columns will be
+treated as `text`; i.e., will not have the expected PostgreSQL type
+features. For example:
+
+* [`enum`]: When decoded as `text`, the implicit ordering of the original
+  PostgreSQL `enum` type is not preserved; instead, Materialize will sort values
+  as `text`.
+
+* [`money`]: When decoded as `text`, resulting `text` value cannot be cast
+back to `numeric`, since PostgreSQL adds typical currency formatting to the
+output.
+
+[`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
+[`money`]: https://www.postgresql.org/docs/current/datatype-money.html
 
 **MySQL:**
 #### MySQL types
 
-<p>Materialize natively supports the following MySQL types:</p>
+Materialize natively supports the following MySQL types:
+
 <ul style="column-count: 3">
 <li><code>bigint</code></li>
 <li><code>binary</code></li>
@@ -296,25 +297,35 @@ output.</p>
 <li><code>varchar</code></li>
 </ul>
 
-<p>When replicating tables that contain the <strong>unsupported <a href="/sql/types/" >data
-types</a></strong>, you can:</p>
-<ul>
-<li>
-<p>Use <a href="/sql/create-source/mysql/#handling-unsupported-types" ><code>TEXT COLUMNS</code>
-option</a> for the
-following unsupported  MySQL types:</p>
-<ul>
-<li><code>enum</code></li>
-<li><code>year</code></li>
-</ul>
-<p>The specified columns will be treated as <code>text</code> and will not offer the
-expected MySQL type features.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/create-source/mysql/#excluding-columns" ><code>EXCLUDE COLUMNS</code></a>
-option to exclude any columns that contain unsupported data types.</p>
-</li>
-</ul>
+When replicating tables that contain the **unsupported [data
+types](/sql/types/)**, you can:
+
+- Use [`TEXT COLUMNS`
+  option](/sql/create-source/mysql/#handling-unsupported-types) for the
+  following unsupported  MySQL types:
+
+  - `enum`
+  - `year`
+
+  The specified columns will be treated as `text` and will not offer the
+  expected MySQL type features.
+
+- Use the [`EXCLUDE COLUMNS`](/sql/create-source/mysql/#excluding-columns)
+option to exclude any columns that contain unsupported data types.
+
+#### Zero values for `date`, `datetime`, and `timestamp`
+
+MySQL allows the special "zero" values `0000-00-00`, `0000-00-00
+00:00:00` in `date`, `datetime`, and `timestamp` columns when the server
+`sql_mode` does not include `NO_ZERO_DATE` or `NO_ZERO_IN_DATE`. These
+values are not representable in Materialize's corresponding native types,
+so they will cause ingestion to fail for the affected column.
+
+To ingest columns that contain zero values, use [`TEXT
+COLUMNS`](/sql/create-source/mysql/#handling-unsupported-types) to
+decode the affected columns as `text`. The zero values for `date`,
+`datetime`, `timestamp`, and `year` are preserved verbatim as strings
+(e.g. `"0000-00-00 00:00:00"`, `"0000"`).
 
 **SQL Server:**
 #### SQL Server types
@@ -402,40 +413,47 @@ downtime](/ingest-data/sql-server/source-versioning/)
 
 #### Incompatible schema changes
 
-<p>All other schema changes to upstream tables will set the corresponding
-Materialize tables into an error state, preventing reads from these tables.</p>
-<p>To handle <a href="#incompatible-schema-changes" >incompatible schema changes</a>, drop
-the affected table <a href="/sql/drop-table/" ><code>DROP TABLE</code></a> , and then, <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> to recreate the table with the
-updated schema.</p>
+All other schema changes to upstream tables will set the corresponding
+Materialize tables into an error state, preventing reads from these tables.
+
+To handle [incompatible schema changes](#incompatible-schema-changes), drop
+the affected table [`DROP TABLE`](/sql/drop-table/) , and then, [`CREATE
+TABLE FROM SOURCE`](/sql/create-table/) to recreate the table with the
+updated schema.
 
 ### Upstream table truncation restrictions
 
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
+Avoid truncating upstream tables that are being replicated into Materialize.
 If a replicated upstream table is truncated, the corresponding
 subsource(s)/table(s) in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
+produce any data until it is recreated.
+
+Instead of truncating, use an unqualified `DELETE` to remove all rows from
+the upstream table:
+
+```mzsql
+DELETE FROM t;
+```
 
 ### Inherited tables
 
-<p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
-PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
-also present in the inherited table. However, both PostgreSQL&rsquo;s logical
-replication and <code>COPY</code> only present data written to the tables themselves,
-i.e. the inheriting data is <em>not</em> treated as part of the inherited table.</p>
-<p>PostgreSQL sources use logical replication and <code>COPY</code> to ingest table data,
-so inheriting tables&rsquo; data will only be ingested as part of the inheriting
-table, i.e. in Materialize, the data will not be returned when serving
-<code>SELECT</code>s from the inherited table.</p>
+When using [PostgreSQL table inheritance](https://www.postgresql.org/docs/current/tutorial-inheritance.html),
+PostgreSQL serves data from `SELECT`s as if the inheriting tables' data is
+also present in the inherited table. However, both PostgreSQL's logical
+replication and `COPY` only present data written to the tables themselves,
+i.e. the inheriting data is _not_ treated as part of the inherited table.
 
-You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
+PostgreSQL sources use logical replication and `COPY` to ingest table data,
+so inheriting tables' data will only be ingested as part of the inheriting
+table, i.e. in Materialize, the data will not be returned when serving
+`SELECT`s from the inherited table.
+
+You can mimic PostgreSQL's `SELECT` behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
-inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
+inheriting tables (using `UNION ALL`). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
-view. You will need to add the inheriting tables via <code>CREATE TABLE .. FROM SOURCE</code> and create a new view (materialized or non-) that unions the new
+view. You will need to add the inheriting tables via `CREATE TABLE .. FROM
+SOURCE` and create a new view (materialized or non-) that unions the new
 table.
 
 ## Privileges

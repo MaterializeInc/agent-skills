@@ -23,21 +23,11 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 <h2 id="installation-guides">Installation guides</h2>
 <p>The following installation guides are available to help you get started:</p>
 
-<h3 id="install-using-helm-commands">Install using Helm Commands</h3>
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/install-on-local-kind/" >Install locally on Kind</a></td>
-          <td>Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.</td>
-      </tr>
-  </tbody>
-</table>
+### Install using Helm Commands
+
+|  Guide         | Description  |
+| ------------- | -------|
+| [Install locally on Kind](/self-managed-deployments/installation/install-on-local-kind/) | Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.
 
 <h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
 > **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
@@ -236,12 +226,28 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    kubectl get nodes --show-labels
    ```
 
+1. Recommended: Install cert-manager
+
+   Cert-manager is used for generating TLS certificates needed by the materialize operator
+   for CRD conversion webhooks. It is currently only required if you enable the v1
+   version of the Materialize CRD by setting `operator.args.installV1CRD=true`
+   when installing the operator, but certificates will become required in a
+   future version of Materialize.
+
+   ```shell
+   helm install cert-manager oci://quay.io/jetstack/charts/cert-manager \
+       --version v1.19.2 \
+       --namespace cert-manager \
+       --create-namespace \
+       --set crds.enabled=true
+   ```
+
 1. To help you get started for local evaluation/testing, Materialize provides
    some sample configuration files. Download the sample configuration files from
    the Materialize repo:
 
    ```shell
-   mz_version=v26.27.0
+   mz_version=v26.29.0
 
    curl -o sample-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
    curl -o sample-postgres.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/postgres.yaml
@@ -306,7 +312,7 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
       ```shell
       helm install my-materialize-operator materialize/materialize-operator \
           --namespace=materialize --create-namespace \
-          --version v26.27.0 \
+          --version v26.29.0 \
           --set observability.podMetrics.enabled=true \
           -f sample-values.yaml
       ```

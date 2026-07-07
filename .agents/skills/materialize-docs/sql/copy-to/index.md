@@ -59,274 +59,79 @@ WITH (
 
 #### Writer settings
 
-<p>For <code>'csv'</code> format, Materialize writes CSV files using the following
-writer settings:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Setting</th>
-          <th>Value</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>delimiter</td>
-          <td><code>,</code></td>
-      </tr>
-      <tr>
-          <td>quote</td>
-          <td><code>&quot;</code></td>
-      </tr>
-      <tr>
-          <td>escape</td>
-          <td><code>&quot;</code></td>
-      </tr>
-      <tr>
-          <td>header</td>
-          <td><code>false</code></td>
-      </tr>
-  </tbody>
-</table>
+For `'csv'` format, Materialize writes CSV files using the following
+writer settings:
+
+| Setting | Value |
+|---------|-------|
+| delimiter | `,` |
+| quote | `"` |
+| escape | `"` |
+| header | `false` |
 
 ### Copy to S3: Parquet {#copy-to-s3-parquet}
 
 #### Writer settings
 
-<p>For <code>'parquet'</code> format, Materialize writes Parquet files that aim for
+For `'parquet'` format, Materialize writes Parquet files that aim for
 maximum compatibility with downstream systems. The following Parquet
-writer settings are used:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Setting</th>
-          <th>Value</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Writer version</td>
-          <td>1.0</td>
-      </tr>
-      <tr>
-          <td>Compression</td>
-          <td><code>snappy</code></td>
-      </tr>
-      <tr>
-          <td>Default column encoding</td>
-          <td>Dictionary</td>
-      </tr>
-      <tr>
-          <td>Fallback column encoding</td>
-          <td>Plain</td>
-      </tr>
-      <tr>
-          <td>Dictionary page encoding</td>
-          <td>Plain</td>
-      </tr>
-      <tr>
-          <td>Dictionary data page encoding</td>
-          <td><code>RLE_DICTIONARY</code></td>
-      </tr>
-  </tbody>
-</table>
-<p>If you encounter issues trying to ingest Parquet files produced by
-Materialize into your downstream systems, please <a href="/support/" >contact our
-team</a>.</p>
+writer settings are used:
+
+| Setting | Value |
+|---------|-------|
+| Writer version | 1.0 |
+| Compression | `snappy` |
+| Default column encoding | Dictionary |
+| Fallback column encoding | Plain |
+| Dictionary page encoding | Plain |
+| Dictionary data page encoding | `RLE_DICTIONARY` |
+
+If you encounter issues trying to ingest Parquet files produced by
+Materialize into your downstream systems, please [contact our
+team](/support/).
 
 #### Parquet data types
 
-<p>When using the <code>parquet</code> format, Materialize converts the values in the
-result set to <a href="https://arrow.apache.org/docs/index.html" >Apache Arrow</a>,
+When using the `parquet` format, Materialize converts the values in the
+result set to [Apache Arrow](https://arrow.apache.org/docs/index.html),
 and then serializes this Arrow representation to Parquet. The Arrow schema is
 embedded in the Parquet file metadata and allows reconstructing the Arrow
-representation using a compatible reader.</p>
-<p>Materialize also includes <a href="https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#metadata" >Parquet <code>LogicalType</code> annotations</a>
-where possible. However, many newer <code>LogicalType</code> annotations are not supported
-in the 1.0 writer version.</p>
-<p>Materialize also embeds its own type information into the Apache Arrow schema.
-The field metadata in the schema contains an <code>ARROW:extension:name</code> annotation
-to indicate the Materialize native type the field originated from.</p>
-<table>
-  <thead>
-      <tr>
-          <th>Materialize type</th>
-          <th>Arrow extension name</th>
-          <th><a href="https://github.com/apache/arrow/blob/main/format/Schema.fbs" >Arrow type</a></th>
-          <th><a href="https://parquet.apache.org/docs/file-format/types/" >Parquet primitive type</a></th>
-          <th><a href="https://github.com/apache/parquet-format/blob/master/LogicalTypes.md" >Parquet logical type</a></th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/sql/types/integer/#bigint-info" ><code>bigint</code></a></td>
-          <td><code>materialize.v1.bigint</code></td>
-          <td><code>int64</code></td>
-          <td><code>INT64</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/boolean/" ><code>boolean</code></a></td>
-          <td><code>materialize.v1.boolean</code></td>
-          <td><code>bool</code></td>
-          <td><code>BOOLEAN</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/bytea/" ><code>bytea</code></a></td>
-          <td><code>materialize.v1.bytea</code></td>
-          <td><code>large_binary</code></td>
-          <td><code>BYTE_ARRAY</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/date/" ><code>date</code></a></td>
-          <td><code>materialize.v1.date</code></td>
-          <td><code>date32</code></td>
-          <td><code>INT32</code></td>
-          <td><code>DATE</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/float/#double-precision-info" ><code>double precision</code></a></td>
-          <td><code>materialize.v1.double</code></td>
-          <td><code>float64</code></td>
-          <td><code>DOUBLE</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/integer/#integer-info" ><code>integer</code></a></td>
-          <td><code>materialize.v1.integer</code></td>
-          <td><code>int32</code></td>
-          <td><code>INT32</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/jsonb/" ><code>jsonb</code></a></td>
-          <td><code>materialize.v1.jsonb</code></td>
-          <td><code>large_utf8</code></td>
-          <td><code>BYTE_ARRAY</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/map/" ><code>map</code></a></td>
-          <td><code>materialize.v1.map</code></td>
-          <td><code>map</code> (<code>struct</code> with fields <code>keys</code> and <code>values</code>)</td>
-          <td>Nested</td>
-          <td><code>MAP</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/list/" ><code>list</code></a></td>
-          <td><code>materialize.v1.list</code></td>
-          <td><code>list</code></td>
-          <td>Nested</td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/numeric/" ><code>numeric</code></a></td>
-          <td><code>materialize.v1.numeric</code></td>
-          <td><code>decimal128[38, 10 or max-scale]</code></td>
-          <td><code>FIXED_LEN_BYTE_ARRAY</code></td>
-          <td><code>DECIMAL</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/float/#real-info" ><code>real</code></a></td>
-          <td><code>materialize.v1.real</code></td>
-          <td><code>float32</code></td>
-          <td><code>FLOAT</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/integer/#smallint-info" ><code>smallint</code></a></td>
-          <td><code>materialize.v1.smallint</code></td>
-          <td><code>int16</code></td>
-          <td><code>INT32</code></td>
-          <td><code>INT(16, true)</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/text/" ><code>text</code></a></td>
-          <td><code>materialize.v1.text</code></td>
-          <td><code>utf8</code> or <code>large_utf8</code></td>
-          <td><code>BYTE_ARRAY</code></td>
-          <td><code>STRING</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/time/" ><code>time</code></a></td>
-          <td><code>materialize.v1.time</code></td>
-          <td><code>time64[nanosecond]</code></td>
-          <td><code>INT64</code></td>
-          <td><code>TIME[isAdjustedToUTC = false, unit = NANOS]</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/uint/#uint2-info" ><code>uint2</code></a></td>
-          <td><code>materialize.v1.uint2</code></td>
-          <td><code>uint16</code></td>
-          <td><code>INT32</code></td>
-          <td><code>INT(16, false)</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/uint/#uint4-info" ><code>uint4</code></a></td>
-          <td><code>materialize.v1.uint4</code></td>
-          <td><code>uint32</code></td>
-          <td><code>INT32</code></td>
-          <td><code>INT(32, false)</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/uint/#uint8-info" ><code>uint8</code></a></td>
-          <td><code>materialize.v1.uint8</code></td>
-          <td><code>uint64</code></td>
-          <td><code>INT64</code></td>
-          <td><code>INT(64, false)</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/timestamp/#timestamp-info" ><code>timestamp</code></a></td>
-          <td><code>materialize.v1.timestamp</code></td>
-          <td><code>time64[microsecond]</code></td>
-          <td><code>INT64</code></td>
-          <td><code>TIMESTAMP[isAdjustedToUTC = false, unit = MICROS]</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/timestamp/#timestamp-with-time-zone-info" ><code>timestamp with time zone</code></a></td>
-          <td><code>materialize.v1.timestampz</code></td>
-          <td><code>time64[microsecond]</code></td>
-          <td><code>INT64</code></td>
-          <td><code>TIMESTAMP[isAdjustedToUTC = true, unit = MICROS]</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/array/" >Arrays</a> (<code>[]</code>)</td>
-          <td><code>materialize.v1.array</code></td>
-          <td><code>struct</code> with <code>list</code> field <code>items</code> and <code>uint8</code> field <code>dimensions</code></td>
-          <td>Nested</td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/uuid/" ><code>uuid</code></a></td>
-          <td><code>materialize.v1.uuid</code></td>
-          <td><code>fixed_size_binary(16)</code></td>
-          <td><code>FIXED_LEN_BYTE_ARRAY</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/oid/" ><code>oid</code></a></td>
-          <td>Unsupported</td>
-          <td></td>
-          <td></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/interval/" ><code>interval</code></a></td>
-          <td>Unsupported</td>
-          <td></td>
-          <td></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/record/" ><code>record</code></a></td>
-          <td>Unsupported</td>
-          <td></td>
-          <td></td>
-          <td></td>
-      </tr>
-  </tbody>
-</table>
+representation using a compatible reader.
+
+Materialize also includes [Parquet `LogicalType` annotations](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#metadata)
+where possible. However, many newer `LogicalType` annotations are not supported
+in the 1.0 writer version.
+
+Materialize also embeds its own type information into the Apache Arrow schema.
+The field metadata in the schema contains an `ARROW:extension:name` annotation
+to indicate the Materialize native type the field originated from.
+
+Materialize type | Arrow extension name | [Arrow type](https://github.com/apache/arrow/blob/main/format/Schema.fbs) | [Parquet primitive type](https://parquet.apache.org/docs/file-format/types/) | [Parquet logical type](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md)
+----------------------------------|----------------------------|------------|-------------------|--------------
+[`bigint`](/sql/types/integer/#bigint-info)         | `materialize.v1.bigint`    | `int64` | `INT64`
+[`boolean`](/sql/types/boolean/)        | `materialize.v1.boolean`   | `bool` | `BOOLEAN`
+[`bytea`](/sql/types/bytea/)            | `materialize.v1.bytea`     | `large_binary` | `BYTE_ARRAY`
+[`date`](/sql/types/date/)              | `materialize.v1.date`      | `date32` | `INT32` | `DATE`
+[`double precision`](/sql/types/float/#double-precision-info) | `materialize.v1.double`    | `float64` | `DOUBLE`
+[`integer`](/sql/types/integer/#integer-info)        | `materialize.v1.integer`   | `int32` | `INT32`
+[`jsonb`](/sql/types/jsonb/)            | `materialize.v1.jsonb`     | `large_utf8` | `BYTE_ARRAY`
+[`map`](/sql/types/map/)                | `materialize.v1.map`       | `map` (`struct` with fields `keys` and `values`) | Nested | `MAP`
+[`list`](/sql/types/list/)              | `materialize.v1.list`      | `list` | Nested
+[`numeric`](/sql/types/numeric/)        | `materialize.v1.numeric`   | `decimal128[38, 10 or max-scale]` | `FIXED_LEN_BYTE_ARRAY`             | `DECIMAL`
+[`real`](/sql/types/float/#real-info)             | `materialize.v1.real`      | `float32` | `FLOAT`
+[`smallint`](/sql/types/integer/#smallint-info)       | `materialize.v1.smallint`  | `int16` | `INT32` | `INT(16, true)`
+[`text`](/sql/types/text/)              | `materialize.v1.text`      | `utf8` or `large_utf8` | `BYTE_ARRAY` | `STRING`
+[`time`](/sql/types/time/)              | `materialize.v1.time`      | `time64[nanosecond]` | `INT64` | `TIME[isAdjustedToUTC = false, unit = NANOS]`
+[`uint2`](/sql/types/uint/#uint2-info)             | `materialize.v1.uint2`     | `uint16` | `INT32` | `INT(16, false)`
+[`uint4`](/sql/types/uint/#uint4-info)             | `materialize.v1.uint4`     | `uint32` | `INT32` | `INT(32, false)`
+[`uint8`](/sql/types/uint/#uint8-info)             | `materialize.v1.uint8`     | `uint64` | `INT64` | `INT(64, false)`
+[`timestamp`](/sql/types/timestamp/#timestamp-info)    | `materialize.v1.timestamp` | `time64[microsecond]` | `INT64` | `TIMESTAMP[isAdjustedToUTC = false, unit = MICROS]`
+[`timestamp with time zone`](/sql/types/timestamp/#timestamp-with-time-zone-info) | `materialize.v1.timestampz` | `time64[microsecond]` | `INT64` | `TIMESTAMP[isAdjustedToUTC = true, unit = MICROS]`
+[Arrays](/sql/types/array/) (`[]`)      | `materialize.v1.array`     | `struct` with `list` field `items` and `uint8` field `dimensions` | Nested
+[`uuid`](/sql/types/uuid/)              | `materialize.v1.uuid`      | `fixed_size_binary(16)` | `FIXED_LEN_BYTE_ARRAY`
+[`oid`](/sql/types/oid/)                      | Unsupported
+[`interval`](/sql/types/interval/)            | Unsupported
+[`record`](/sql/types/record/)                | Unsupported
 
 ## Privileges
 
@@ -360,46 +165,22 @@ WITH (
   );
 ```
 
-<p>For <code>'parquet'</code> format, Materialize writes Parquet files that aim for
+For `'parquet'` format, Materialize writes Parquet files that aim for
 maximum compatibility with downstream systems. The following Parquet
-writer settings are used:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Setting</th>
-          <th>Value</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Writer version</td>
-          <td>1.0</td>
-      </tr>
-      <tr>
-          <td>Compression</td>
-          <td><code>snappy</code></td>
-      </tr>
-      <tr>
-          <td>Default column encoding</td>
-          <td>Dictionary</td>
-      </tr>
-      <tr>
-          <td>Fallback column encoding</td>
-          <td>Plain</td>
-      </tr>
-      <tr>
-          <td>Dictionary page encoding</td>
-          <td>Plain</td>
-      </tr>
-      <tr>
-          <td>Dictionary data page encoding</td>
-          <td><code>RLE_DICTIONARY</code></td>
-      </tr>
-  </tbody>
-</table>
-<p>If you encounter issues trying to ingest Parquet files produced by
-Materialize into your downstream systems, please <a href="/support/" >contact our
-team</a>.</p>
+writer settings are used:
+
+| Setting | Value |
+|---------|-------|
+| Writer version | 1.0 |
+| Compression | `snappy` |
+| Default column encoding | Dictionary |
+| Fallback column encoding | Plain |
+| Dictionary page encoding | Plain |
+| Dictionary data page encoding | `RLE_DICTIONARY` |
+
+If you encounter issues trying to ingest Parquet files produced by
+Materialize into your downstream systems, please [contact our
+team](/support/).
 
 See also [Copy to S3: Parquet Data Types](#parquet-data-types).
 
@@ -413,34 +194,15 @@ WITH (
   );
 ```
 
-<p>For <code>'csv'</code> format, Materialize writes CSV files using the following
-writer settings:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Setting</th>
-          <th>Value</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>delimiter</td>
-          <td><code>,</code></td>
-      </tr>
-      <tr>
-          <td>quote</td>
-          <td><code>&quot;</code></td>
-      </tr>
-      <tr>
-          <td>escape</td>
-          <td><code>&quot;</code></td>
-      </tr>
-      <tr>
-          <td>header</td>
-          <td><code>false</code></td>
-      </tr>
-  </tbody>
-</table>
+For `'csv'` format, Materialize writes CSV files using the following
+writer settings:
+
+| Setting | Value |
+|---------|-------|
+| delimiter | `,` |
+| quote | `"` |
+| escape | `"` |
+| header | `false` |
 
 ## Related pages
 

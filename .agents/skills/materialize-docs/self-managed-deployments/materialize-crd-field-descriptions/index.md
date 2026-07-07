@@ -199,14 +199,14 @@ the CREATE CONNECTION feature.</p>
 <td><code>forcePromote</code></td>
 <td></td>
 <td>
-<em><strong>Uuid</strong></em>
+<em><strong>String</strong></em>
 
 <p>If <code>forcePromote</code> is set to the same value as <code>requestRollout</code>, the
 current rollout will skip waiting for clusters in the new
 generation to rehydrate before promoting the new environmentd to
 leader.</p>
 
-<p><strong>Default:</strong> <code>00000000-0000-0000-0000-000000000000</code></p></td>
+</td>
 </tr>
 <tr>
 <td><code>forceRollout</code></td>

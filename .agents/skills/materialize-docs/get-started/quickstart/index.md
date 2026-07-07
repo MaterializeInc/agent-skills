@@ -544,37 +544,15 @@ views incrementally update the view results. Materialized views persist the
 query results in durable storage and is available across clusters while indexes
 maintain the view results in memory within a single cluster.
 
-<p>Some general guidelines for usage patterns include:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Usage Pattern</th>
-          <th>General Guideline</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture.</td>
-          <td>View with an <a href="/sql/create-index" >index</a></td>
-      </tr>
-      <tr>
-          <td>View used as a building block for stacked views; i.e., views not used to serve results.</td>
-          <td>View</td>
-      </tr>
-      <tr>
-          <td>View results are accessed across <a href="/concepts/clusters" >clusters</a>;<br>such as in a 3-cluster architecture.</td>
-          <td>Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster)</td>
-      </tr>
-      <tr>
-          <td>Use with a <a href="/serve-results/sink/" >sink</a> or a <a href="/sql/subscribe" ><code>SUBSCRIBE</code></a> operation</td>
-          <td>Materialized view</td>
-      </tr>
-      <tr>
-          <td>Use with <a href="/transform-data/patterns/temporal-filters/" >temporal filters</a></td>
-          <td>Materialized view</td>
-      </tr>
-  </tbody>
-</table>
+Some general guidelines for usage patterns include:
+
+| Usage Pattern | General Guideline |
+|--------------------------------------------------------------------------------|--------------------|
+| View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture. | View with an [index](/sql/create-index) |
+| View used as a building block for stacked views; i.e., views not used to serve results. | View |
+| View results are accessed across [clusters](/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
+| Use with a [sink](/serve-results/sink/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
+| Use with [temporal filters](/transform-data/patterns/temporal-filters/) | Materialized view  |
 
 The quickstart used an index since:
 

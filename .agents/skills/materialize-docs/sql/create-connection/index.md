@@ -166,7 +166,7 @@ CREATE CONNECTION aws_credentials TO AWS (
 ```
 
 ### S3 compatible object storage
-You can use an AWS connection to perform bulk exports and bulk imports with any S3 compatible object
+You can use an AWS connection to perform bulk exports ([`COPY TO`](/sql/copy-to)) and bulk imports ([`COPY FROM`](/sql/copy-from)) with any S3 compatible object
 storage service, such as Google Cloud Storage, Cloudflare R2, or MinIO. While connecting to S3
 compatible object storage, you need to provide static access key credentials, specify the endpoint,
 and the region.
@@ -182,6 +182,45 @@ CREATE CONNECTION gcs_connection TO AWS (
     REGION = 'us'
 );
 ```
+
+If you are exporting to Google Cloud Storage using [Iceberg sinks](/sql/create-sink/iceberg), use a [GCP connection](#gcp).
+
+### GCP
+
+You can use a GCP connection to export data to
+[Lakehouse/BigLake](https://docs.cloud.google.com/lakehouse/docs/lakehouse-iceberg-rest-catalog)
+via [Iceberg sinks](/sql/create-sink/iceberg).
+
+The GCP connection uses a [GCP service account key
+(JSON)](https://docs.cloud.google.com/iam/docs/keys-create-delete) to
+authenticate. Create a [GCP service
+account](https://docs.cloud.google.com/iam/docs/service-account-overview) for
+Materialize to use and generate a [service account
+key](https://docs.cloud.google.com/iam/docs/keys-create-delete) in JSON format.
+Base64-encode the entire JSON key (e.g., `base64 < sa_key.json`) and decode it
+in the `CREATE SECRET` statement, as shown below. This avoids escaping quotes
+and newlines in the SQL string literal.
+
+#### Syntax {#gcp-syntax}
+
+```mzsql
+-- Create the secret with the service account key.
+-- Base64-encode the entire JSON service account key (e.g., base64 < sa_key.json)
+-- And decode it in the CREATE SECRET statement.
+CREATE SECRET <secret_name> AS decode('<sa_key_json_base64>', 'base64');
+
+CREATE CONNECTION <connection_name> TO GCP (
+    SERVICE ACCOUNT KEY = SECRET <secret_name>
+)
+[WITH (<with_options>)];
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<connection_name>` | A name for the connection.  |
+| `SECRET <secret_name>` | Secret containing the [GCP service account key](https://docs.cloud.google.com/iam/docs/keys-create-delete) (JSON).  To create the secret, first base64-encode the entire JSON service account key and then decode it in the `CREATE SECRET` statement. This avoids escaping quotes and newlines in the SQL string literal.  |
+| `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `false`. \|  |
 
 ### Kafka
 
@@ -996,13 +1035,23 @@ CREATE CONNECTION sqlserver_connection TO SQL SERVER (
 An Iceberg catalog connection establishes a link to an [Apache Iceberg](https://iceberg.apache.org/)
 catalog. You can use Iceberg catalog connections to create [Iceberg sinks](/sql/create-sink/iceberg).
 
+Materialize supports two catalog types:
+
+| Catalog type | Destination | Authentication |
+| --- | --- | --- |
+| `'s3tablesrest'` | [AWS S3 Tables](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables.html) | [AWS connection](#aws) |
+| `'rest'` | [Google Cloud BigLake](https://docs.cloud.google.com/lakehouse/docs/lakehouse-iceberg-rest-catalog) <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
+ | [GCP connection](#gcp) |
+
 #### Syntax {#iceberg-catalog-syntax}
+
+**AWS S3 Tables:**
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
     CATALOG TYPE = 's3tablesrest',
     URL = '<catalog_url>',
-    WAREHOUSE = '<warehouse_arn>',
+    WAREHOUSE = '<warehouse>',
     AWS CONNECTION = <aws_connection>
 );
 
@@ -1011,25 +1060,70 @@ CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
 | Syntax element | Description |
 | --- | --- |
 | `<connection_name>` | A name for the connection.  |
-| `CATALOG TYPE` | *Value:* `text`. Required.  The type of Iceberg catalog. Currently only `'s3tablesrest'` (AWS S3 Tables) is supported.  |
-| `URL` | *Value:* `text`. Required.  The URL of the Iceberg catalog endpoint. For AWS S3 Tables, use `https://s3tables.<region>.amazonaws.com/iceberg`.  |
-| `WAREHOUSE` | *Value:* `text`. Required.  The ARN of the S3 Tables bucket: `arn:aws:s3tables:<region>:<account-id>:bucket/<bucket-name>`.  |
+| `URL` | *Value:* `text`. Required.  S3 Tables Iceberg catalog URL: `https://s3tables.<region>.amazonaws.com/iceberg`  |
+| `WAREHOUSE` | *Value:* `text`. Required.  S3 Tables bucket ARN: `arn:aws:s3tables:<region>:<account-id>:bucket/<bucket-name>`  |
 | `AWS CONNECTION` | *Value:* object name. Required.  The name of an [AWS connection](#aws) to use for authentication.  |
 
-#### Example {#iceberg-catalog-example}
+**GCP BigLake:**
 
+```mzsql
+CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
+    CATALOG TYPE = 'rest',
+    URL = '<catalog_url>',
+    WAREHOUSE = '<warehouse>',
+    GCP CONNECTION = <gcp_connection>
+);
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<connection_name>` | A name for the connection.  |
+| `URL` | *Value:* `text`. Required.  GCP BigLake Iceberg catalog URL: `https://biglake.googleapis.com/iceberg/v1/restcatalog`  |
+| `WAREHOUSE` | *Value:* `text`. Required.  GCS bucket URI: `gs://<bucket>`  |
+| `GCP CONNECTION` | *Value:* object name. Required.  The name of a [GCP connection](#gcp) to use for authentication.  |
+
+#### Examples {#iceberg-catalog-examples}
+
+**AWS S3 Tables:**
+
+The following example creates an [AWS connection](/sql/create-connection/#aws) and an [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) for AWS S3 Tables:
 ```mzsql
 -- First, create an AWS connection for authentication
 CREATE CONNECTION aws_connection
   TO AWS (ASSUME ROLE ARN = 'arn:aws:iam::123456789012:role/MaterializeIceberg');
 
--- Create the Iceberg catalog connection
-CREATE CONNECTION iceberg_catalog TO ICEBERG CATALOG (
+-- Create the Iceberg catalog connection pointing to S3 Tables
+CREATE CONNECTION iceberg_catalog_connection TO ICEBERG CATALOG (
     CATALOG TYPE = 's3tablesrest',
     URL = 'https://s3tables.us-east-1.amazonaws.com/iceberg',
     WAREHOUSE = 'arn:aws:s3tables:us-east-1:123456789012:bucket/my-table-bucket',
     AWS CONNECTION = aws_connection
 );
+
+```
+
+**GCP BigLake:**
+
+The following example creates a [GCP connection](/sql/create-connection/#gcp) and an [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) for Google Cloud BigLake:
+```mzsql
+-- Using the base64-encoded service account key (e.g. base64 < sa_key.json)
+CREATE SECRET gcp_service_account_key
+  AS decode('<base64-encoded service account key JSON>', 'base64');
+
+-- Create a GCP connection that uses the service-account key.
+CREATE CONNECTION gcp_connection TO GCP (
+    SERVICE ACCOUNT KEY = SECRET gcp_service_account_key
+);
+
+-- Create the Iceberg catalog connection pointing to BigLake.
+CREATE CONNECTION iceberg_catalog_connection TO ICEBERG CATALOG (
+    CATALOG TYPE = 'rest',
+    URL = 'https://biglake.googleapis.com/iceberg/v1/restcatalog',
+    WAREHOUSE = 'gs://<bucket>',
+    GCP CONNECTION = gcp_connection
+);
+
 ```
 
 For more information about using Iceberg sinks, see the [Iceberg sink documentation](/serve-results/sink/iceberg/).

@@ -299,7 +299,7 @@ RDS via the network load balancer.
 
     1. Find your RDS endpoint under **Connectivity & security**.
 
-    1. Use the `dig` or `nslooklup` command to find the IP address that the
+    1. Use the `dig` or `nslookup` command to find the IP address that the
     endpoint resolves to:
 
        ```sh
@@ -329,7 +329,7 @@ RDS via the network load balancer.
 1. [Create a network load balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html).
 
     - For **Network mapping**, choose the same VPC as your RDS instance and
-      select all of the availability zones and subnets that you RDS instance is
+      select all of the availability zones and subnets that your RDS instance is
       in.
 
     - For **Listeners and routing**, set the protocol and port to **TCP**
@@ -361,7 +361,7 @@ RDS via the network load balancer.
 
     **Remarks**: By disabling [Acceptance Required](https://docs.aws.amazon.com/vpc/latest/privatelink/configure-endpoint-service.html#accept-reject-connection-requests),
       while still strictly managing who can view your endpoint via IAM,
-      Materialze will be able to seamlessly recreate and migrate endpoints as
+      Materialize will be able to seamlessly recreate and migrate endpoints as
       we work to stabilize this feature.
 
 1. Go back to the target group you created for the network load balancer and
@@ -888,36 +888,33 @@ Materialize supports schema changes in the upstream database as follows:
 > [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
 > [MySQL: Source versioning guide](/ingest-data/mysql/source-versioning/).
 
-<ul>
-<li>
-<p>Adding columns to tables. Materialize will <strong>not ingest</strong> new columns
-added upstream unless you use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> to
+- Adding columns to tables. Materialize will **not ingest** new columns
+added upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to
 first drop the affected subsource, and then add the table back to the source
-using <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a>.</p>
-</li>
-<li>
-<p>Dropping columns that were added after the source was created. These
-columns are never ingested, so you can drop them without issue.</p>
-</li>
-<li>
-<p>Adding or removing <code>NOT NULL</code> constraints to tables that were nullable
-when the source was created.</p>
-</li>
-</ul>
+using [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/).
+
+- Dropping columns that were added after the source was created. These
+columns are never ingested, so you can drop them without issue.
+
+- Adding or removing `NOT NULL` constraints to tables that were nullable
+when the source was created.
 
 #### Incompatible schema changes
 
-<p>All other schema changes to upstream tables will set the corresponding
+All other schema changes to upstream tables will set the corresponding
 subsource into an error state, which prevents you from reading from the
-subsource.</p>
-<p>To handle incompatible <a href="#schema-changes" >schema changes</a>, use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> to first drop the affected subsource,
-and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
+subsource.
+
+To handle incompatible [schema changes](#schema-changes), use [`DROP
+SOURCE`](/sql/alter-source/#context) to first drop the affected subsource,
+and then [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to add the
 subsource back to the source. When you add the subsource, it will have the
-updated schema from the corresponding upstream table.</p>
+updated schema from the corresponding upstream table.
 
 ### Supported types
 
-<p>Materialize natively supports the following MySQL types:</p>
+Materialize natively supports the following MySQL types:
+
 <ul style="column-count: 3">
 <li><code>bigint</code></li>
 <li><code>binary</code></li>
@@ -950,36 +947,49 @@ updated schema from the corresponding upstream table.</p>
 <li><code>varchar</code></li>
 </ul>
 
-<p>When replicating tables that contain the <strong>unsupported <a href="/sql/types/" >data
-types</a></strong>, you can:</p>
-<ul>
-<li>
-<p>Use <a href="/sql/create-source/mysql/#handling-unsupported-types" ><code>TEXT COLUMNS</code>
-option</a> for the
-following unsupported  MySQL types:</p>
-<ul>
-<li><code>enum</code></li>
-<li><code>year</code></li>
-</ul>
-<p>The specified columns will be treated as <code>text</code> and will not offer the
-expected MySQL type features.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/create-source/mysql/#excluding-columns" ><code>EXCLUDE COLUMNS</code></a>
-option to exclude any columns that contain unsupported data types.</p>
-</li>
-</ul>
+When replicating tables that contain the **unsupported [data
+types](/sql/types/)**, you can:
+
+- Use [`TEXT COLUMNS`
+  option](/sql/create-source/mysql/#handling-unsupported-types) for the
+  following unsupported  MySQL types:
+
+  - `enum`
+  - `year`
+
+  The specified columns will be treated as `text` and will not offer the
+  expected MySQL type features.
+
+- Use the [`EXCLUDE COLUMNS`](/sql/create-source/mysql/#excluding-columns)
+option to exclude any columns that contain unsupported data types.
+
+#### Zero values for `date`, `datetime`, and `timestamp`
+
+MySQL allows the special "zero" values `0000-00-00`, `0000-00-00
+00:00:00` in `date`, `datetime`, and `timestamp` columns when the server
+`sql_mode` does not include `NO_ZERO_DATE` or `NO_ZERO_IN_DATE`. These
+values are not representable in Materialize's corresponding native types,
+so they will cause ingestion to fail for the affected column.
+
+To ingest columns that contain zero values, use [`TEXT
+COLUMNS`](/sql/create-source/mysql/#handling-unsupported-types) to
+decode the affected columns as `text`. The zero values for `date`,
+`datetime`, `timestamp`, and `year` are preserved verbatim as strings
+(e.g. `"0000-00-00 00:00:00"`, `"0000"`).
 
 ### Truncation
 
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
+Avoid truncating upstream tables that are being replicated into Materialize.
 If a replicated upstream table is truncated, the corresponding
 subsource in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
+produce any data until it is recreated.
+
+Instead of truncating, use an unqualified `DELETE` to remove all rows from
+the upstream table:
+
+```mzsql
+DELETE FROM t;
+```
 
 ### Modifying an existing source
 

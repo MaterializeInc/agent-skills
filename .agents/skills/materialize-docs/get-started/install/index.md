@@ -21,21 +21,11 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 <h2 id="installation-guides">Installation guides</h2>
 <p>The following installation guides are available to help you get started:</p>
 
-<h3 id="install-using-helm-commands">Install using Helm Commands</h3>
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/install-on-local-kind/" >Install locally on Kind</a></td>
-          <td>Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.</td>
-      </tr>
-  </tbody>
-</table>
+### Install using Helm Commands
+
+|  Guide         | Description  |
+| ------------- | -------|
+| [Install locally on Kind](/self-managed-deployments/installation/install-on-local-kind/) | Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.
 
 <h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
 > **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking

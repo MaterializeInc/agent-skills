@@ -41,18 +41,20 @@ with another subquery that specifies the ordering and the limit K.
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<p>Use a subquery to
-<a href="/sql/select/#select-distinct" >SELECT DISTINCT</a> on the grouping key (e.g.,
-<code>fieldA</code>), and perform a <a href="/sql/select/join/#lateral-subqueries" >LATERAL</a> join
-(by the grouping key <code>fieldA</code>) with another subquery that specifies the ordering
-(e.g., <code>fieldZ [ASC|DESC]</code>) and the limit K.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldB</span><span class="p">,</span> <span class="mf">...</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="n">fieldA</span> <span class="k">FROM</span> <span class="n">tableA</span><span class="p">)</span> <span class="n">grp</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">     <span class="k">LATERAL</span> <span class="p">(</span><span class="k">SELECT</span> <span class="n">fieldB</span><span class="p">,</span> <span class="mf">...</span> <span class="p">,</span> <span class="n">fieldZ</span> <span class="k">FROM</span> <span class="n">tableA</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span> <span class="n">fieldA</span> <span class="o">=</span> <span class="n">grp</span><span class="mf">.</span><span class="n">fieldA</span>
-</span></span><span class="line"><span class="cl">        <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldZ</span> <span class="mf">...</span> <span class="k">LIMIT</span> <span class="n">K</span><span class="p">)</span>   <span class="c1">-- K is a number &gt;= 1
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldZ</span> <span class="mf">...</span> <span class="p">;</span>
-</span></span></code></pre></div>
+Use a subquery to
+[SELECT DISTINCT](/sql/select/#select-distinct) on the grouping key (e.g.,
+`fieldA`), and perform a [LATERAL](/sql/select/join/#lateral-subqueries) join
+(by the grouping key `fieldA`) with another subquery that specifies the ordering
+(e.g., `fieldZ [ASC|DESC]`) and the limit K.
+
+```mzsql
+SELECT fieldA, fieldB, ...
+FROM (SELECT DISTINCT fieldA FROM tableA) grp,
+     LATERAL (SELECT fieldB, ... , fieldZ FROM tableA
+        WHERE fieldA = grp.fieldA
+        ORDER BY fieldZ ... LIMIT K)   -- K is a number >= 1
+ORDER BY fieldA, fieldZ ... ;
+```
 
 </td>
 </tr>
@@ -60,17 +62,19 @@ with another subquery that specifies the ordering and the limit K.
 <td><red>Anti-pattern</red></td>
 <td>
 
-<p><red>Avoid the use of <code>ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)</code> for Top-K queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for Top-K queries.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, fieldB, ...
 FROM (
    SELECT fieldA, fieldB, ... , fieldZ,
       ROW_NUMBER() OVER (PARTITION BY fieldA
       ORDER BY fieldZ ... ) as rn
    FROM tableA)
-WHERE rn &lt;= K     -- K is a number &gt;= 1
+WHERE rn <= K     -- K is a number >= 1
 ORDER BY fieldA, fieldZ ...;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -118,10 +122,11 @@ pattern, specifying 1 as the limit.
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">ON</span><span class="p">(</span><span class="n">fieldA</span><span class="p">)</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldB</span><span class="p">,</span> <span class="mf">...</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldZ</span> <span class="mf">...</span> <span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT DISTINCT ON(fieldA) fieldA, fieldB, ...
+FROM tableA
+ORDER BY fieldA, fieldZ ... ;
+```
 
 </td>
 </tr>
@@ -130,8 +135,10 @@ pattern, specifying 1 as the limit.
 <td><red>Anti-pattern</red></td>
 <td>
 
-<p><red>Avoid the use of <code>ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)</code> for Top-K queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for Top-K queries.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, fieldB, ...
 FROM (
    SELECT fieldA, fieldB, ... , fieldZ,
@@ -140,7 +147,7 @@ FROM (
    FROM tableA)
 WHERE rn = 1
 ORDER BY fieldA, fieldZ ...;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -189,13 +196,14 @@ DESC`) and limits its results to 3 (`LIMIT 3`).
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">subtotal</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="n">order_id</span> <span class="k">FROM</span> <span class="n">orders_view</span><span class="p">)</span> <span class="n">grp</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">     <span class="k">LATERAL</span> <span class="p">(</span><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">subtotal</span> <span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span> <span class="n">order_id</span> <span class="o">=</span> <span class="n">grp</span><span class="mf">.</span><span class="n">order_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">subtotal</span> <span class="k">DESC</span> <span class="k">LIMIT</span> <span class="mf">3</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">subtotal</span> <span class="k">DESC</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT order_id, item, subtotal
+FROM (SELECT DISTINCT order_id FROM orders_view) grp,
+     LATERAL (SELECT item, subtotal FROM orders_view
+        WHERE order_id = grp.order_id
+        ORDER BY subtotal DESC LIMIT 3)
+ORDER BY order_id, subtotal DESC;
+```
 
 </td>
 </tr>
@@ -204,16 +212,18 @@ DESC`) and limits its results to 3 (`LIMIT 3`).
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <code>ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)</code> for Top-K queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern --
+<red>Avoid the use of `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for Top-K queries.</red>
+
+```nofmt
+-- Anti-pattern --
 SELECT order_id, item, subtotal
 FROM (
    SELECT order_id, item, subtotal,
       ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY subtotal DESC) as rn
    FROM orders_view)
-WHERE rn &lt;= 3
+WHERE rn <= 3
 ORDER BY order_id, subtotal DESC;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -241,10 +251,11 @@ ON`/grouping key, then the descending subtotal). [^1]
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">ON</span><span class="p">(</span><span class="n">order_id</span><span class="p">)</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">subtotal</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">subtotal</span> <span class="k">DESC</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT DISTINCT ON(order_id) order_id, item, subtotal
+FROM orders_view
+ORDER BY order_id, subtotal DESC;
+```
 
 </td>
 </tr>
@@ -252,8 +263,10 @@ ON`/grouping key, then the descending subtotal). [^1]
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <code>ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)</code> for Top-K queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern --
+<red>Avoid the use of `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for Top-K queries.</red>
+
+```nofmt
+-- Anti-pattern --
 SELECT order_id, item, subtotal
 FROM (
    SELECT order_id, item, subtotal,
@@ -261,7 +274,7 @@ FROM (
    FROM orders_view)
 WHERE rn = 1
 ORDER BY order_id, subtotal DESC;
-</code></pre>
+```
 
 </td>
 </tr>

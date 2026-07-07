@@ -16,6 +16,7 @@ This section contains various resources for managing Materialize.
 |-------|-------------|
 | [Using dbt to manage Materialize](/manage/dbt/) | Guides for using dbt to manage Materialize |
 | [Using Terraform to manage Materialize](/manage/terraform/) | Guides for using Terraform to manage Materialize |
+| [Using mz-deploy to manage Materialize](/manage/mz-deploy/) | SQL-native CLI for zero-downtime blue/green deployments |
 
 ## Usage and billing
 
@@ -316,21 +317,17 @@ In production, if possible, use a dedicated cluster for
 [sources](/concepts/sources/); i.e., avoid putting sources on the same cluster
 that hosts compute objects, sinks, and/or serves queries.
 
-<p>In addition, for upsert sources:</p>
-<ul>
-<li>
-<p>Consider separating upsert sources from your other sources. Upsert sources
-have higher resource requirements (since, for upsert sources, Materialize
-maintains each key and associated last value for the key as well as to perform
-deduplication). As such, if possible, use a separate source cluster for upsert
-sources.</p>
-</li>
-<li>
-<p>Consider using a larger cluster size during snapshotting for upsert sources.
-Once the snapshotting operation is complete, you can downsize the cluster to
-align with the steady-state ingestion.</p>
-</li>
-</ul>
+In addition, for upsert sources:
+
+- Consider separating upsert sources from your other sources. Upsert sources
+  have higher resource requirements (since, for upsert sources, Materialize
+  maintains each key and associated last value for the key as well as to perform
+  deduplication). As such, if possible, use a separate source cluster for upsert
+  sources.
+
+- Consider using a larger cluster size during snapshotting for upsert sources.
+  Once the snapshotting operation is complete, you can downsize the cluster to
+  align with the steady-state ingestion.
 
 See also [Production cluster architecture](#three-tier-architecture).
 
@@ -480,6 +477,102 @@ in your team, and you want to manage objects like
 [clusters](/concepts/clusters/), [connections](/sql/create-connection/), or
 [secrets](/sql/create-secret/) as code, we recommend using the [Materialize
 Terraform provider](/manage/terraform/) as a complementary deployment tool.
+
+---
+
+## Use mz-deploy to manage Materialize
+
+> **Warning:** `mz-deploy` is a v0.2 release and is not yet recommended for production use.
+
+`mz-deploy` is a CLI that manages your Materialize deployment from plain SQL
+files in a git repository. It catches errors before they reach production, lets
+you test view logic locally, and deploys changes without downtime.
+
+## Installation
+
+On macOS and Linux, we recommend installing `mz-deploy` with
+[Homebrew](https://brew.sh/):
+
+```shell
+brew install materializeinc/materialize/mz-deploy
+```
+
+For direct downloads and other installation options, see
+[Get started](/manage/mz-deploy/get-started/#prerequisites-and-installation).
+
+## Why mz-deploy
+
+### Write plain SQL, deploy safely
+
+Everything lives in `.sql` files — one object per file, organized by database
+and schema. `mz-deploy` tracks dependencies between objects, diffs your project
+against the live environment, and deploys only what changed. Durable objects
+like secrets, connections, sources, and tables are converged in place (like
+Terraform). Views, materialized views, indexes, and sinks go through a staged
+deployment so changes can be validated before going live.
+
+### Catch errors before deploying
+
+`mz-deploy compile` type-checks every SQL statement against your dependency
+schemas — locally, with no database connection required. Inline unit tests let
+you mock dependencies and verify view logic with deterministic inputs before
+anything touches a real environment. Changes that break types or dependencies
+fail fast on your laptop or in CI, not in production.
+
+### Ship without downtime
+
+When you deploy, `mz-deploy` creates your changes in isolated staging schemas
+alongside production. Once all materialized views finish computing their initial
+results, a single atomic swap cuts traffic over to the new version. Running
+queries are never interrupted, and if something goes wrong, the staging
+deployment can be cleaned up without affecting production.
+
+## When to use it
+
+| Tool | Best for | Manages infrastructure | Zero-downtime deployments |
+|------|----------|----------------------|--------------------------|
+| **Plain SQL / psql scripts** | Manual execution. No dependency tracking, no diff, no rollback. Where most teams start. | No | No |
+| **mz-deploy** | SQL-native, git-based workflow with offline type-checking, unit tests, and staged deployments. | Yes | Yes |
+| **[dbt](/manage/dbt/)** | Teams already invested in dbt. Manages views and materialized views. | No (clusters, connections, secrets are out of scope) | Yes (via `dbt-materialize` adapter macros) |
+| **[Terraform](/manage/terraform/)** | Teams managing Materialize alongside other cloud infrastructure. | Yes | No |
+
+## Available guides
+
+<div class="multilinkbox">
+<div class="linkbox ">
+  <div class="title">
+    To get started
+  </div>
+  <a href="/manage/mz-deploy/get-started/" >Get started with mz-deploy</a>
+</div>
+
+<div class="linkbox ">
+  <div class="title">
+    Develop
+  </div>
+  <ul>
+<li><a href="/manage/mz-deploy/project-structure/" >Project structure</a></li>
+<li><a href="/manage/mz-deploy/infrastructure/" >Infrastructure</a></li>
+<li><a href="/manage/mz-deploy/local-development/" >Local development</a></li>
+<li><a href="/manage/mz-deploy/editor-setup/" >Editor setup</a></li>
+<li><a href="/manage/mz-deploy/agent-setup/" >AI agent setup</a></li>
+</ul>
+
+</div>
+
+<div class="linkbox ">
+  <div class="title">
+    Deploy
+  </div>
+  <ul>
+<li><a href="/manage/mz-deploy/deployments/" >Deployments</a></li>
+<li><a href="/manage/mz-deploy/stable-apis/" >Stable APIs</a></li>
+<li><a href="/manage/mz-deploy/profiles/" >Profiles</a></li>
+</ul>
+
+</div>
+
+</div>
 
 ---
 

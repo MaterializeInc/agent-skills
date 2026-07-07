@@ -68,30 +68,36 @@ array/list/map contains duplicates, include [`DISTINCT`](/sql/select/#select-dis
 <td><blue>Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<p><strong>If no duplicates exist in the unnested field:</strong> Use a Common Table
-Expression (CTE) to <a href="/sql/functions/#unnest" ><code>UNNEST()</code></a> the array of
-values and perform the equi-join on the unnested values.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- array_field contains no duplicates.--
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
-</span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">my_expanded_values</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">UNNEST</span><span class="p">(</span><span class="n">array_field</span><span class="p">)</span> <span class="k">AS</span> <span class="n">fieldZ</span> <span class="k">FROM</span> <span class="n">tableB</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="mf">...</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">a</span>
-</span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">my_expanded_values</span> <span class="n">t</span> <span class="k">ON</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldZ</span> <span class="o">=</span> <span class="n">t</span><span class="mf">.</span><span class="n">fieldZ</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div><p><strong>Duplicates may exist in the unnested field:</strong> Use a Common Table
-Expression (CTE) to <a href="/sql/select/#select-distinct" ><code>DISTINCT</code></a>
-<a href="/sql/functions/#unnest" ><code>UNNEST()</code></a> the array of values and perform the
-equi-join on the unnested values.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- array_field may contain duplicates.--
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
-</span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">my_expanded_values</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">UNNEST</span><span class="p">(</span><span class="n">array_field</span><span class="p">)</span> <span class="k">AS</span> <span class="n">fieldZ</span> <span class="k">FROM</span> <span class="n">tableB</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="mf">...</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span> <span class="n">a</span>
-</span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">my_expanded_values</span> <span class="n">t</span> <span class="k">ON</span> <span class="n">a</span><span class="mf">.</span><span class="n">fieldZ</span> <span class="o">=</span> <span class="n">t</span><span class="mf">.</span><span class="n">fieldZ</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div>
+**If no duplicates exist in the unnested field:** Use a Common Table
+Expression (CTE) to [`UNNEST()`](/sql/functions/#unnest) the array of
+values and perform the equi-join on the unnested values.
+
+```mzsql
+-- array_field contains no duplicates.--
+
+WITH my_expanded_values AS
+(SELECT UNNEST(array_field) AS fieldZ FROM tableB)
+SELECT a.fieldA, ...
+FROM tableA a
+JOIN my_expanded_values t ON a.fieldZ = t.fieldZ
+;
+```
+
+**Duplicates may exist in the unnested field:** Use a Common Table
+Expression (CTE) to [`DISTINCT`](/sql/select/#select-distinct)
+[`UNNEST()`](/sql/functions/#unnest) the array of values and perform the
+equi-join on the unnested values.
+
+```mzsql
+-- array_field may contain duplicates.--
+
+WITH my_expanded_values AS
+(SELECT DISTINCT UNNEST(array_field) AS fieldZ FROM tableB)
+SELECT a.fieldA, ...
+FROM tableA a
+JOIN my_expanded_values t ON a.fieldZ = t.fieldZ
+;
+```
 
 </td>
 </tr>
@@ -99,14 +105,16 @@ equi-join on the unnested values.</p>
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#expression-bool_op-any" ><code>ANY(...)</code> function</a> for equi-join
-conditions.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of [`ANY(...)` function](/sql/functions/#expression-bool_op-any) for equi-join
+conditions.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT a.fieldA, ...
 FROM tableA a, tableB b
 WHERE a.fieldZ = ANY(b.array_field) -- Anti-pattern. Avoid.
 ;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -141,29 +149,35 @@ with the `orders` table on the unnested values.
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<p><em><strong>If no duplicates in the unnested field</strong></em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- sales_items.items contains no duplicates. --
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
-</span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">individual_sales_items</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">as</span> <span class="n">item</span><span class="p">,</span> <span class="n">week_of</span> <span class="k">FROM</span> <span class="n">sales_items</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders</span> <span class="n">o</span>
-</span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">individual_sales_items</span> <span class="n">s</span> <span class="k">ON</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">item</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_date</span><span class="p">)</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div><p><em><strong>To omit duplicates that may exist in the unnested field</strong></em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="c1">-- sales_items.items may contains duplicates --
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
-</span></span><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">individual_sales_items</span> <span class="k">AS</span>
-</span></span><span class="line"><span class="cl"><span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">as</span> <span class="n">item</span><span class="p">,</span> <span class="n">week_of</span> <span class="k">FROM</span> <span class="n">sales_items</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders</span> <span class="n">o</span>
-</span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">individual_sales_items</span> <span class="n">s</span> <span class="k">ON</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">item</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_date</span><span class="p">)</span> <span class="o">=</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">s</span><span class="mf">.</span><span class="n">week_of</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">quantity</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div>
+***If no duplicates in the unnested field***
+
+```mzsql
+-- sales_items.items contains no duplicates. --
+
+WITH individual_sales_items AS
+(SELECT unnest(items) as item, week_of FROM sales_items)
+SELECT s.week_of, o.order_id, o.item, o.quantity
+FROM orders o
+JOIN individual_sales_items s ON o.item = s.item
+WHERE date_trunc('week', o.order_date) = s.week_of
+ORDER BY s.week_of, o.order_id, o.item, o.quantity
+;
+```
+
+***To omit duplicates that may exist in the unnested field***
+
+```mzsql
+-- sales_items.items may contains duplicates --
+
+WITH individual_sales_items AS
+(SELECT DISTINCT unnest(items) as item, week_of FROM sales_items)
+SELECT s.week_of, o.order_id, o.item, o.quantity
+FROM orders o
+JOIN individual_sales_items s ON o.item = s.item
+WHERE date_trunc('week', o.order_date) = s.week_of
+ORDER BY s.week_of, o.order_id, o.item, o.quantity
+;
+```
 
 </td>
 </tr>
@@ -172,15 +186,17 @@ with the `orders` table on the unnested values.
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#expression-bool_op-any" ><code>ANY()</code></a> for the equi-join condition.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of [`ANY()`](/sql/functions/#expression-bool_op-any) for the equi-join condition.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT s.week_of, o.order_id, o.item, o.quantity
 FROM orders o
 JOIN sales_items s ON o.item = ANY(s.items)
-WHERE date_trunc(&#39;week&#39;, o.order_date) = s.week_of
+WHERE date_trunc('week', o.order_date) = s.week_of
 ORDER BY s.week_of, o.order_id, o.item, o.quantity
 ;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -247,18 +263,24 @@ the following rewrites are available:
 <td><blue>Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<p><strong>Rewrite to <code>NOT EXISTS</code> with a correlated subquery.</strong></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">t1</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="p">(</span><span class="k">SELECT</span> <span class="mf">1</span> <span class="k">FROM</span> <span class="n">t2</span> <span class="k">WHERE</span> <span class="n">t2</span><span class="mf">.</span><span class="n">a</span> <span class="o">=</span> <span class="n">t1</span><span class="mf">.</span><span class="n">a</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div><p><strong>Filter out <code>NULL</code>s on both sides of the <code>NOT IN</code>.</strong></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">t1</span><span class="mf">.</span><span class="o">*</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">t1</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">t1</span><span class="mf">.</span><span class="n">a</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span>
-</span></span><span class="line"><span class="cl">  <span class="k">AND</span> <span class="n">t1</span><span class="mf">.</span><span class="n">a</span> <span class="k">NOT</span> <span class="k">IN</span> <span class="p">(</span><span class="k">SELECT</span> <span class="n">t2</span><span class="mf">.</span><span class="n">a</span> <span class="k">FROM</span> <span class="n">t2</span> <span class="k">WHERE</span> <span class="n">t2</span><span class="mf">.</span><span class="n">a</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div>
+**Rewrite to `NOT EXISTS` with a correlated subquery.**
+
+```mzsql
+SELECT t1.*
+FROM t1
+WHERE NOT EXISTS (SELECT 1 FROM t2 WHERE t2.a = t1.a)
+;
+```
+
+**Filter out `NULL`s on both sides of the `NOT IN`.**
+
+```mzsql
+SELECT t1.*
+FROM t1
+WHERE t1.a IS NOT NULL
+  AND t1.a NOT IN (SELECT t2.a FROM t2 WHERE t2.a IS NOT NULL)
+;
+```
 
 </td>
 </tr>
@@ -266,14 +288,16 @@ the following rewrites are available:
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid <code>NOT IN (&lt;subquery&gt;)</code> predicates, which force a cross join
-between the outer relation and the subquery.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid `NOT IN (<subquery>)` predicates, which force a cross join
+between the outer relation and the subquery.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT t1.*
 FROM t1
 WHERE t1.a NOT IN (SELECT t2.a FROM t2) -- Anti-pattern. Avoid.
 ;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -321,38 +345,45 @@ value depends on the outer row:
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<p>Because the subquery uses <a href="/sql/functions/#unnest" ><code>UNNEST()</code></a> on a column
-of the outer-correlated row, factor the <code>UNNEST()</code> into an uncorrelated
-<a href="/sql/select/#common-table-expressions-ctes" >Common Table Expression
-(CTE)</a> first.</p>
-<p><em><strong>Rewrite to <code>NOT EXISTS</code> with a CTE for the <code>UNNEST()</code></strong></em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">this_weeks_sales</span> <span class="k">AS</span> <span class="p">(</span>
-</span></span><span class="line"><span class="cl">  <span class="k">SELECT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">AS</span> <span class="n">sale_item</span>
-</span></span><span class="line"><span class="cl">  <span class="k">FROM</span> <span class="n">sales_items</span>
-</span></span><span class="line"><span class="cl">  <span class="k">WHERE</span> <span class="n">week_of</span> <span class="o">=</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">current_timestamp</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">i</span><span class="mf">.</span><span class="n">price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">items</span> <span class="n">i</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="k">NOT</span> <span class="k">EXISTS</span> <span class="p">(</span>
-</span></span><span class="line"><span class="cl">  <span class="k">SELECT</span> <span class="mf">1</span> <span class="k">FROM</span> <span class="n">this_weeks_sales</span> <span class="n">s</span> <span class="k">WHERE</span> <span class="n">s</span><span class="mf">.</span><span class="n">sale_item</span> <span class="o">=</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span>
-</span></span><span class="line"><span class="cl"><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div><p><em><strong>Filter out <code>NULL</code>s with a CTE for the <code>UNNEST()</code></strong></em></p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">WITH</span> <span class="n">this_weeks_sales</span> <span class="k">AS</span> <span class="p">(</span>
-</span></span><span class="line"><span class="cl">  <span class="k">SELECT</span> <span class="k">unnest</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">AS</span> <span class="n">sale_item</span>
-</span></span><span class="line"><span class="cl">  <span class="k">FROM</span> <span class="n">sales_items</span>
-</span></span><span class="line"><span class="cl">  <span class="k">WHERE</span> <span class="n">week_of</span> <span class="o">=</span> <span class="n">date_trunc</span><span class="p">(</span><span class="s1">&#39;week&#39;</span><span class="p">,</span> <span class="n">current_timestamp</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">i</span><span class="mf">.</span><span class="n">price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">items</span> <span class="n">i</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span>
-</span></span><span class="line"><span class="cl">  <span class="k">AND</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span> <span class="k">NOT</span> <span class="k">IN</span> <span class="p">(</span>
-</span></span><span class="line"><span class="cl">    <span class="k">SELECT</span> <span class="n">sale_item</span> <span class="k">FROM</span> <span class="n">this_weeks_sales</span> <span class="k">WHERE</span> <span class="n">sale_item</span> <span class="k">IS</span> <span class="k">NOT</span> <span class="k">NULL</span>
-</span></span><span class="line"><span class="cl">  <span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">i</span><span class="mf">.</span><span class="n">item</span>
-</span></span><span class="line"><span class="cl"><span class="p">;</span>
-</span></span></code></pre></div>
+Because the subquery uses [`UNNEST()`](/sql/functions/#unnest) on a column
+of the outer-correlated row, factor the `UNNEST()` into an uncorrelated
+[Common Table Expression
+(CTE)](/sql/select/#common-table-expressions-ctes) first.
+
+***Rewrite to `NOT EXISTS` with a CTE for the `UNNEST()`***
+
+```mzsql
+WITH this_weeks_sales AS (
+  SELECT unnest(items) AS sale_item
+  FROM sales_items
+  WHERE week_of = date_trunc('week', current_timestamp)
+)
+SELECT i.item, i.price
+FROM items i
+WHERE NOT EXISTS (
+  SELECT 1 FROM this_weeks_sales s WHERE s.sale_item = i.item
+)
+ORDER BY i.item
+;
+```
+
+***Filter out `NULL`s with a CTE for the `UNNEST()`***
+
+```mzsql
+WITH this_weeks_sales AS (
+  SELECT unnest(items) AS sale_item
+  FROM sales_items
+  WHERE week_of = date_trunc('week', current_timestamp)
+)
+SELECT i.item, i.price
+FROM items i
+WHERE i.item IS NOT NULL
+  AND i.item NOT IN (
+    SELECT sale_item FROM this_weeks_sales WHERE sale_item IS NOT NULL
+  )
+ORDER BY i.item
+;
+```
 
 </td>
 </tr>
@@ -361,17 +392,19 @@ of the outer-correlated row, factor the <code>UNNEST()</code> into an uncorrelat
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid <code>NOT IN (&lt;subquery&gt;)</code>, which forces a cross join.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid `NOT IN (<subquery>)`, which forces a cross join.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT i.item, i.price
 FROM items i
 WHERE i.item NOT IN (
   SELECT unnest(items) FROM sales_items
-  WHERE week_of = date_trunc(&#39;week&#39;, current_timestamp)
+  WHERE week_of = date_trunc('week', current_timestamp)
 )
 ORDER BY i.item
 ;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -432,18 +465,20 @@ in a subquery.
 <td><blue>Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<p>Use a subquery that uses the <a href="/sql/functions/#min" >MIN()</a> or
-<a href="/sql/functions/#max" >MAX()</a> aggregate function.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldB</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">Z</span>
-</span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl"> <span class="p">(</span><span class="k">SELECT</span> <span class="n">fieldA</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="n">MIN</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">),</span>
-</span></span><span class="line"><span class="cl">    <span class="k">MAX</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span>
-</span></span><span class="line"><span class="cl"> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">fieldA</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span> <span class="mf">...</span> <span class="p">;</span>
-</span></span></code></pre></div>
+Use a subquery that uses the [MIN()](/sql/functions/#min) or
+[MAX()](/sql/functions/#max) aggregate function.
+
+```mzsql
+SELECT tableA.fieldA, tableA.fieldB, minmax.Z
+ FROM tableA,
+ (SELECT fieldA,
+    MIN(fieldZ),
+    MAX(fieldZ)
+ FROM tableA
+ GROUP BY fieldA) minmax
+WHERE tableA.fieldA = minmax.fieldA
+ORDER BY fieldA ... ;
+```
 
 </td>
 </tr>
@@ -452,16 +487,18 @@ in a subquery.
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#first_value" ><code>FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)</code>
-window function</a> for first value within groups
-queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of [`FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)`
+window function](/sql/functions/#first_value) for first value within groups
+queries.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, fieldB,
  FIRST_VALUE(fieldZ) OVER (PARTITION BY fieldA ORDER BY ...),
  FIRST_VALUE(fieldZ) OVER (PARTITION BY fieldA ORDER BY ... DESC)
 FROM tableA
 ORDER BY fieldA, ...;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -517,16 +554,17 @@ value if ordered by ascending price values).
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span> <span class="k">AS</span> <span class="n">diff_lowest_price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">         <span class="n">MIN</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">lowest_price</span>
-</span></span><span class="line"><span class="cl">      <span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl">      <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT o.order_id, minmax.lowest_price, o.item, o.price,
+  o.price - minmax.lowest_price AS diff_lowest_price
+FROM orders_view o,
+      (SELECT order_id,
+         MIN(price) AS lowest_price
+      FROM orders_view
+      GROUP BY order_id) minmax
+WHERE o.order_id = minmax.order_id
+ORDER BY o.order_id, o.item;
+```
 
 </td>
 </tr>
@@ -534,9 +572,11 @@ value if ordered by ascending price values).
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#first_value" ><code>FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)</code>
-window function</a> for first value within groups queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern --
+<red>Avoid the use of [`FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)`
+window function](/sql/functions/#first_value) for first value within groups queries.</red>
+
+```nofmt
+-- Anti-pattern --
 SELECT order_id,
   FIRST_VALUE(price)
     OVER (PARTITION BY order_id ORDER BY price) AS lowest_price,
@@ -546,7 +586,7 @@ SELECT order_id,
     OVER (PARTITION BY order_id ORDER BY price) AS diff_lowest_price
 FROM orders_view
 ORDER BY order_id, item;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -573,16 +613,17 @@ value if ordered by descending price values).
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span> <span class="k">AS</span> <span class="n">diff_highest_price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">         <span class="k">MAX</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">highest_price</span>
-</span></span><span class="line"><span class="cl">      <span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl">      <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT o.order_id, minmax.highest_price, o.item, o.price,
+  o.price - minmax.highest_price AS diff_highest_price
+FROM orders_view o,
+      (SELECT order_id,
+         MAX(price) AS highest_price
+      FROM orders_view
+      GROUP BY order_id) minmax
+WHERE o.order_id = minmax.order_id
+ORDER BY o.order_id, o.item;
+```
 
 </td>
 </tr>
@@ -590,10 +631,12 @@ value if ordered by descending price values).
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#first_value" ><code>FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)</code>
-window function</a> for first value within groups
-queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern --
+<red>Avoid the use of [`FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)`
+window function](/sql/functions/#first_value) for first value within groups
+queries.</red>
+
+```nofmt
+-- Anti-pattern --
 SELECT order_id,
   FIRST_VALUE(price)
     OVER (PARTITION BY order_id ORDER BY price DESC) AS highest_price,
@@ -603,7 +646,7 @@ SELECT order_id,
     OVER (PARTITION BY order_id ORDER BY price DESC) AS diff_highest_price
 FROM orders_view
 ORDER BY order_id, item;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -632,18 +675,19 @@ value if ordered by descending price values).
 <td><blue>Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span> <span class="k">AS</span> <span class="n">diff_lowest_price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span> <span class="k">AS</span> <span class="n">diff_highest_price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">         <span class="n">MIN</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">lowest_price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">         <span class="k">MAX</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">highest_price</span>
-</span></span><span class="line"><span class="cl">      <span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl">      <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT o.order_id, minmax.lowest_price, minmax.highest_price, o.item, o.price,
+  o.price - minmax.lowest_price AS diff_lowest_price,
+  o.price - minmax.highest_price AS diff_highest_price
+FROM orders_view o,
+      (SELECT order_id,
+         MIN(price) AS lowest_price,
+         MAX(price) AS highest_price
+      FROM orders_view
+      GROUP BY order_id) minmax
+WHERE o.order_id = minmax.order_id
+ORDER BY o.order_id, o.item;
+```
 
 </td>
 </tr>
@@ -651,10 +695,12 @@ value if ordered by descending price values).
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#first_value" ><code>FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)</code>
-window function</a> for first value within groups
-queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern --
+<red>Avoid the use of [`FIRST_VALUE() OVER (PARTITION BY ... ORDER BY ...)`
+window function](/sql/functions/#first_value) for first value within groups
+queries.</red>
+
+```nofmt
+-- Anti-pattern --
 SELECT order_id,
   FIRST_VALUE(price)
     OVER (PARTITION BY order_id ORDER BY price) AS lowest_price,
@@ -668,7 +714,7 @@ SELECT order_id,
     OVER (PARTITION BY order_id ORDER BY price DESC) AS diff_highest_price
 FROM orders_view
 ORDER BY order_id, item;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -760,13 +806,15 @@ row.</p>
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG(fieldZ) OVER (ORDER BY ...)</code></a>
-window function when the order by field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of [`LAG(fieldZ) OVER (ORDER BY ...)`](/sql/functions/#lag)
+window function when the order by field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, ...
     LAG(fieldZ) OVER (ORDER BY fieldA) as previous_row_value
 FROM tableA;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -820,13 +868,15 @@ query <em>includes</em> the first row, returning <code>null</code> as its lag va
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG(fieldZ) OVER (ORDER BY ...)</code></a>
-window function when the order by field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of [`LAG(fieldZ) OVER (ORDER BY ...)`](/sql/functions/#lag)
+window function when the order by field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, ...
     LAG(fieldZ) OVER (ORDER BY fieldA) as previous_row_value
 FROM tableA;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -878,14 +928,16 @@ previous row.
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG() OVER (ORDER BY ...)</code> window
-function</a> to access previous row&rsquo;s value if the order by
-field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Includes the first row&#39;s value. --
+<red>Avoid the use of [`LAG() OVER (ORDER BY ...)` window
+function](/sql/functions/#lag) to access previous row's value if the order by
+field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Includes the first row's value. --
 SELECT order_date, daily_total,
     LAG(daily_total) OVER (ORDER BY order_date) as previous_daily_total
 FROM orders_daily_totals;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -932,14 +984,16 @@ query includes the first row in the results, using `null` as the previous value.
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lag" ><code>LAG() OVER (ORDER BY ...)</code> window
-function</a> to access previous row&rsquo;s value if the order by
-field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Includes the first row&#39;s value. --
+<red>Avoid the use of [`LAG() OVER (ORDER BY ...)` window
+function](/sql/functions/#lag) to access previous row's value if the order by
+field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Includes the first row's value. --
 SELECT order_date, daily_total,
     LAG(daily_total) OVER (ORDER BY order_date) as previous_daily_total
 FROM orders_daily_totals;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -997,18 +1051,20 @@ in a subquery.
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<p>Use a subquery that uses the <a href="/sql/functions/#min" >MIN()</a> or
-<a href="/sql/functions/#max" >MAX()</a> aggregate function.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldB</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">Z</span>
-</span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl"> <span class="p">(</span><span class="k">SELECT</span> <span class="n">fieldA</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="k">MAX</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">),</span>
-</span></span><span class="line"><span class="cl">    <span class="n">MIN</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span>
-</span></span><span class="line"><span class="cl"> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">fieldA</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span> <span class="mf">...</span> <span class="p">;</span>
-</span></span></code></pre></div>
+Use a subquery that uses the [MIN()](/sql/functions/#min) or
+[MAX()](/sql/functions/#max) aggregate function.
+
+```mzsql
+SELECT tableA.fieldA, tableA.fieldB, minmax.Z
+ FROM tableA,
+ (SELECT fieldA,
+    MAX(fieldZ),
+    MIN(fieldZ)
+ FROM tableA
+ GROUP BY fieldA) minmax
+WHERE tableA.fieldA = minmax.fieldA
+ORDER BY fieldA ... ;
+```
 
 </td>
 </tr>
@@ -1092,16 +1148,17 @@ highest price (i.e., the last price if ordered by ascending price values):
 <td><blue>Idiomatic Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span> <span class="k">AS</span> <span class="n">diff_highest_price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">     <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">        <span class="k">MAX</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">highest_price</span>
-</span></span><span class="line"><span class="cl">     <span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl">     <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT o.order_id, minmax.highest_price, o.item, o.price,
+  o.price - minmax.highest_price AS diff_highest_price
+FROM orders_view o,
+     (SELECT order_id,
+        MAX(price) AS highest_price
+     FROM orders_view
+     GROUP BY order_id) minmax
+WHERE o.order_id = minmax.order_id
+ORDER BY o.order_id, o.item;
+```
 
 </td>
 </tr>
@@ -1158,16 +1215,17 @@ in the order and the lowest price.  That is, use a subquery that groups by the
 <td><blue>Idiomatic Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span> <span class="k">AS</span> <span class="n">diff_lowest_price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">     <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">        <span class="n">MIN</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">lowest_price</span>
-</span></span><span class="line"><span class="cl">     <span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl">     <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT o.order_id, minmax.lowest_price, o.item, o.price,
+  o.price - minmax.lowest_price AS diff_lowest_price
+FROM orders_view o,
+     (SELECT order_id,
+        MIN(price) AS lowest_price
+     FROM orders_view
+     GROUP BY order_id) minmax
+WHERE o.order_id = minmax.order_id
+ORDER BY o.order_id, o.item;
+```
 
 </td>
 </tr>
@@ -1226,18 +1284,19 @@ ordered by ascending price values).
 <td><blue>Idiomatic Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span> <span class="k">AS</span> <span class="n">diff_lowest_price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span> <span class="k">AS</span> <span class="n">diff_highest_price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">         <span class="n">MIN</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">lowest_price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">         <span class="k">MAX</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">highest_price</span>
-</span></span><span class="line"><span class="cl">      <span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl">      <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT o.order_id, minmax.lowest_price, minmax.highest_price, o.item, o.price,
+  o.price - minmax.lowest_price AS diff_lowest_price,
+  o.price - minmax.highest_price AS diff_highest_price
+FROM orders_view o,
+      (SELECT order_id,
+         MIN(price) AS lowest_price,
+         MAX(price) AS highest_price
+      FROM orders_view
+      GROUP BY order_id) minmax
+WHERE o.order_id = minmax.order_id
+ORDER BY o.order_id, o.item;
+```
 
 </td>
 </tr>
@@ -1369,13 +1428,15 @@ does not have a next row.</p>
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lead" ><code>LEAD(fieldZ) OVER (ORDER BY ...)</code></a>
-window function when the order by field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of [`LEAD(fieldZ) OVER (ORDER BY ...)`](/sql/functions/#lead)
+window function when the order by field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, ...
     LEAD(fieldZ) OVER (ORDER BY fieldA) as next_row_value
 FROM tableA;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -1429,13 +1490,15 @@ last row, returning <code>null</code> as its lead value.</p>
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lead" ><code>LEAD(fieldZ) OVER (ORDER BY ...)</code></a>
-window function when the order by field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of [`LEAD(fieldZ) OVER (ORDER BY ...)`](/sql/functions/#lead)
+window function when the order by field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, ...
     LEAD(fieldZ) OVER (ORDER BY fieldA) as next_row_value
 FROM tableA;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -1487,14 +1550,16 @@ next row.
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lead" ><code>LEAD() OVER (ORDER BY ...)</code> window
-function</a> to access next row&rsquo;s value if the order by
-field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Includes the last row&#39;s value. --
+<red>Avoid the use of [`LEAD() OVER (ORDER BY ...)` window
+function](/sql/functions/#lead) to access next row's value if the order by
+field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Includes the last row's value. --
 SELECT order_date, daily_total,
     LEAD(daily_total) OVER (ORDER BY order_date) as next_daily_total
 FROM orders_daily_totals;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -1542,14 +1607,16 @@ value.
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lead" ><code>LEAD() OVER (ORDER BY ...)</code> window
-function</a> to access next row&rsquo;s value if the order by
-field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Includes the last row&#39;s value. --
+<red>Avoid the use of [`LEAD() OVER (ORDER BY ...)` window
+function](/sql/functions/#lead) to access next row's value if the order by
+field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Includes the last row's value. --
 SELECT order_date, daily_total,
     LEAD(daily_total) OVER (ORDER BY order_date) as next_daily_total
 FROM orders_daily_totals;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -1688,18 +1755,20 @@ with another subquery that specifies the ordering and the limit K.
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<p>Use a subquery to
-<a href="/sql/select/#select-distinct" >SELECT DISTINCT</a> on the grouping key (e.g.,
-<code>fieldA</code>), and perform a <a href="/sql/select/join/#lateral-subqueries" >LATERAL</a> join
-(by the grouping key <code>fieldA</code>) with another subquery that specifies the ordering
-(e.g., <code>fieldZ [ASC|DESC]</code>) and the limit K.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldB</span><span class="p">,</span> <span class="mf">...</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="n">fieldA</span> <span class="k">FROM</span> <span class="n">tableA</span><span class="p">)</span> <span class="n">grp</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">     <span class="k">LATERAL</span> <span class="p">(</span><span class="k">SELECT</span> <span class="n">fieldB</span><span class="p">,</span> <span class="mf">...</span> <span class="p">,</span> <span class="n">fieldZ</span> <span class="k">FROM</span> <span class="n">tableA</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span> <span class="n">fieldA</span> <span class="o">=</span> <span class="n">grp</span><span class="mf">.</span><span class="n">fieldA</span>
-</span></span><span class="line"><span class="cl">        <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldZ</span> <span class="mf">...</span> <span class="k">LIMIT</span> <span class="n">K</span><span class="p">)</span>   <span class="c1">-- K is a number &gt;= 1
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldZ</span> <span class="mf">...</span> <span class="p">;</span>
-</span></span></code></pre></div>
+Use a subquery to
+[SELECT DISTINCT](/sql/select/#select-distinct) on the grouping key (e.g.,
+`fieldA`), and perform a [LATERAL](/sql/select/join/#lateral-subqueries) join
+(by the grouping key `fieldA`) with another subquery that specifies the ordering
+(e.g., `fieldZ [ASC|DESC]`) and the limit K.
+
+```mzsql
+SELECT fieldA, fieldB, ...
+FROM (SELECT DISTINCT fieldA FROM tableA) grp,
+     LATERAL (SELECT fieldB, ... , fieldZ FROM tableA
+        WHERE fieldA = grp.fieldA
+        ORDER BY fieldZ ... LIMIT K)   -- K is a number >= 1
+ORDER BY fieldA, fieldZ ... ;
+```
 
 </td>
 </tr>
@@ -1707,17 +1776,19 @@ with another subquery that specifies the ordering and the limit K.
 <td><red>Anti-pattern</red></td>
 <td>
 
-<p><red>Avoid the use of <code>ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)</code> for Top-K queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for Top-K queries.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, fieldB, ...
 FROM (
    SELECT fieldA, fieldB, ... , fieldZ,
       ROW_NUMBER() OVER (PARTITION BY fieldA
       ORDER BY fieldZ ... ) as rn
    FROM tableA)
-WHERE rn &lt;= K     -- K is a number &gt;= 1
+WHERE rn <= K     -- K is a number >= 1
 ORDER BY fieldA, fieldZ ...;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -1765,10 +1836,11 @@ pattern, specifying 1 as the limit.
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">ON</span><span class="p">(</span><span class="n">fieldA</span><span class="p">)</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldB</span><span class="p">,</span> <span class="mf">...</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">tableA</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">,</span> <span class="n">fieldZ</span> <span class="mf">...</span> <span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT DISTINCT ON(fieldA) fieldA, fieldB, ...
+FROM tableA
+ORDER BY fieldA, fieldZ ... ;
+```
 
 </td>
 </tr>
@@ -1777,8 +1849,10 @@ pattern, specifying 1 as the limit.
 <td><red>Anti-pattern</red></td>
 <td>
 
-<p><red>Avoid the use of <code>ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)</code> for Top-K queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for Top-K queries.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, fieldB, ...
 FROM (
    SELECT fieldA, fieldB, ... , fieldZ,
@@ -1787,7 +1861,7 @@ FROM (
    FROM tableA)
 WHERE rn = 1
 ORDER BY fieldA, fieldZ ...;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -1836,13 +1910,14 @@ DESC`) and limits its results to 3 (`LIMIT 3`).
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">subtotal</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="p">(</span><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="n">order_id</span> <span class="k">FROM</span> <span class="n">orders_view</span><span class="p">)</span> <span class="n">grp</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">     <span class="k">LATERAL</span> <span class="p">(</span><span class="k">SELECT</span> <span class="n">item</span><span class="p">,</span> <span class="n">subtotal</span> <span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl">        <span class="k">WHERE</span> <span class="n">order_id</span> <span class="o">=</span> <span class="n">grp</span><span class="mf">.</span><span class="n">order_id</span>
-</span></span><span class="line"><span class="cl">        <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">subtotal</span> <span class="k">DESC</span> <span class="k">LIMIT</span> <span class="mf">3</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">subtotal</span> <span class="k">DESC</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT order_id, item, subtotal
+FROM (SELECT DISTINCT order_id FROM orders_view) grp,
+     LATERAL (SELECT item, subtotal FROM orders_view
+        WHERE order_id = grp.order_id
+        ORDER BY subtotal DESC LIMIT 3)
+ORDER BY order_id, subtotal DESC;
+```
 
 </td>
 </tr>
@@ -1851,16 +1926,18 @@ DESC`) and limits its results to 3 (`LIMIT 3`).
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <code>ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)</code> for Top-K queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern --
+<red>Avoid the use of `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for Top-K queries.</red>
+
+```nofmt
+-- Anti-pattern --
 SELECT order_id, item, subtotal
 FROM (
    SELECT order_id, item, subtotal,
       ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY subtotal DESC) as rn
    FROM orders_view)
-WHERE rn &lt;= 3
+WHERE rn <= 3
 ORDER BY order_id, subtotal DESC;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -1888,10 +1965,11 @@ ON`/grouping key, then the descending subtotal). [^1]
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="k">DISTINCT</span> <span class="k">ON</span><span class="p">(</span><span class="n">order_id</span><span class="p">)</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">subtotal</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">,</span> <span class="n">subtotal</span> <span class="k">DESC</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT DISTINCT ON(order_id) order_id, item, subtotal
+FROM orders_view
+ORDER BY order_id, subtotal DESC;
+```
 
 </td>
 </tr>
@@ -1899,8 +1977,10 @@ ON`/grouping key, then the descending subtotal). [^1]
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <code>ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)</code> for Top-K queries.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern --
+<red>Avoid the use of `ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ...)` for Top-K queries.</red>
+
+```nofmt
+-- Anti-pattern --
 SELECT order_id, item, subtotal
 FROM (
    SELECT order_id, item, subtotal,
@@ -1908,7 +1988,7 @@ FROM (
    FROM orders_view)
 WHERE rn = 1
 ORDER BY order_id, subtotal DESC;
-</code></pre>
+```
 
 </td>
 </tr>

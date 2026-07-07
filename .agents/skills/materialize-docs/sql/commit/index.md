@@ -15,21 +15,16 @@ COMMIT;
 
 ## Details
 
-<p><a href="/sql/begin/" ><code>BEGIN</code></a> starts a transaction block. Once a transaction is started:</p>
-<ul>
-<li>Statements within the transaction are executed sequentially.</li>
-<li>A transaction ends with either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
-<a href="/sql/rollback/" ><code>ROLLBACK</code></a> statement.
-<ul>
-<li>If all transaction statements succeed and a <a href="/sql/commit/" ><code>COMMIT</code></a> is
-<a href="/sql/commit/#details" >issued</a>, all changes are saved.</li>
-<li>If all transaction statements succeed and a <a href="/sql/rollback/" ><code>ROLLBACK</code></a>
-is issued, all changes are discarded.</li>
-<li>If an error occurs and either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
-<a href="/sql/rollback/" ><code>ROLLBACK</code></a> is issued, all changes are discarded.</li>
-</ul>
-</li>
-</ul>
+[`BEGIN`](/sql/begin/) starts a transaction block. Once a transaction is started:
+- Statements within the transaction are executed sequentially.
+- A transaction ends with either a [`COMMIT`](/sql/commit/) or a
+  [`ROLLBACK`](/sql/rollback/) statement.
+  - If all transaction statements succeed and a [`COMMIT`](/sql/commit/) is
+  [issued](/sql/commit/#details), all changes are saved.
+  - If all transaction statements succeed and a [`ROLLBACK`](/sql/rollback/)
+  is issued, all changes are discarded.
+  - If an error occurs and either a [`COMMIT`](/sql/commit/) or a
+  [`ROLLBACK`](/sql/rollback/) is issued, all changes are discarded.
 
 Transactions in Materialize are **read-only** transactions, **write-only**
 (more specifically, **insert-only**) transactions, or **DDL-only**
@@ -48,24 +43,31 @@ statements in the transaction are committed at the same timestamp.
 
 In Materialize, write-only transactions are **insert-only** transactions.
 
-<p>An <strong>insert-only</strong> transaction block only contains <a href="/sql/insert/" ><code>INSERT</code></a>
-statements that insert into the <strong>same</strong> table.</p>
-<p>On a successful <a href="/sql/commit/" ><code>COMMIT</code></a>, all statements from the
-transaction are committed at the same timestamp.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">BEGIN</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;brownie&#39;</span><span class="p">,</span><span class="mf">10</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1">-- Subsequent INSERTs must write to sales_items table only
-</span></span></span><span class="line"><span class="cl"><span class="c1">-- Otherwise, the COMMIT will error and roll back the transaction.
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
-</span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;chocolate cake&#39;</span><span class="p">,</span><span class="mf">1</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;chocolate chip cookie&#39;</span><span class="p">,</span><span class="mf">20</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="k">COMMIT</span><span class="p">;</span>
-</span></span></code></pre></div><p>If, within the transaction, a statement inserts into a table different from
-that of the first statement, on <a href="/sql/commit/" ><code>COMMIT</code></a>, the transaction
-encounters an <strong>internal ERROR</strong> and rolls back:</p>
-<pre tabindex="0"><code class="language-none" data-lang="none">ERROR:  internal error, wrong set of locks acquired
-</code></pre>
+An **insert-only** transaction block only contains [`INSERT`](/sql/insert/)
+statements that insert into the **same** table.
+
+On a successful [`COMMIT`](/sql/commit/), all statements from the
+transaction are committed at the same timestamp.
+
+```mzsql
+BEGIN;
+INSERT INTO orders VALUES (11,current_timestamp,'brownie',10);
+
+-- Subsequent INSERTs must write to sales_items table only
+-- Otherwise, the COMMIT will error and roll back the transaction.
+
+INSERT INTO orders VALUES (11,current_timestamp,'chocolate cake',1);
+INSERT INTO orders VALUES (11,current_timestamp,'chocolate chip cookie',20);
+COMMIT;
+```
+
+If, within the transaction, a statement inserts into a table different from
+that of the first statement, on [`COMMIT`](/sql/commit/), the transaction
+encounters an **internal ERROR** and rolls back:
+
+```none
+ERROR:  internal error, wrong set of locks acquired
+```
 
 ### Commit a read-only transaction
 

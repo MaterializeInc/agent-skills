@@ -379,21 +379,17 @@ In production, if possible, use a dedicated cluster for
 [sources](/concepts/sources/); i.e., avoid putting sources on the same cluster
 that hosts compute objects, sinks, and/or serves queries.
 
-<p>In addition, for upsert sources:</p>
-<ul>
-<li>
-<p>Consider separating upsert sources from your other sources. Upsert sources
-have higher resource requirements (since, for upsert sources, Materialize
-maintains each key and associated last value for the key as well as to perform
-deduplication). As such, if possible, use a separate source cluster for upsert
-sources.</p>
-</li>
-<li>
-<p>Consider using a larger cluster size during snapshotting for upsert sources.
-Once the snapshotting operation is complete, you can downsize the cluster to
-align with the steady-state ingestion.</p>
-</li>
-</ul>
+In addition, for upsert sources:
+
+- Consider separating upsert sources from your other sources. Upsert sources
+  have higher resource requirements (since, for upsert sources, Materialize
+  maintains each key and associated last value for the key as well as to perform
+  deduplication). As such, if possible, use a separate source cluster for upsert
+  sources.
+
+- Consider using a larger cluster size during snapshotting for upsert sources.
+  Once the snapshotting operation is complete, you can downsize the cluster to
+  align with the steady-state ingestion.
 
 ### Sizing a source
 
@@ -2271,36 +2267,33 @@ Materialize supports schema changes in the upstream database as follows:
 > [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
 > [MySQL: Source versioning guide](/ingest-data/mysql/source-versioning/).
 
-<ul>
-<li>
-<p>Adding columns to tables. Materialize will <strong>not ingest</strong> new columns
-added upstream unless you use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> to
+- Adding columns to tables. Materialize will **not ingest** new columns
+added upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to
 first drop the affected subsource, and then add the table back to the source
-using <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a>.</p>
-</li>
-<li>
-<p>Dropping columns that were added after the source was created. These
-columns are never ingested, so you can drop them without issue.</p>
-</li>
-<li>
-<p>Adding or removing <code>NOT NULL</code> constraints to tables that were nullable
-when the source was created.</p>
-</li>
-</ul>
+using [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/).
+
+- Dropping columns that were added after the source was created. These
+columns are never ingested, so you can drop them without issue.
+
+- Adding or removing `NOT NULL` constraints to tables that were nullable
+when the source was created.
 
 #### Incompatible schema changes
 
-<p>All other schema changes to upstream tables will set the corresponding
+All other schema changes to upstream tables will set the corresponding
 subsource into an error state, which prevents you from reading from the
-subsource.</p>
-<p>To handle incompatible <a href="#schema-changes" >schema changes</a>, use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> to first drop the affected subsource,
-and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
+subsource.
+
+To handle incompatible [schema changes](#schema-changes), use [`DROP
+SOURCE`](/sql/alter-source/#context) to first drop the affected subsource,
+and then [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to add the
 subsource back to the source. When you add the subsource, it will have the
-updated schema from the corresponding upstream table.</p>
+updated schema from the corresponding upstream table.
 
 ### Supported types
 
-<p>Materialize natively supports the following MySQL types:</p>
+Materialize natively supports the following MySQL types:
+
 <ul style="column-count: 3">
 <li><code>bigint</code></li>
 <li><code>binary</code></li>
@@ -2333,36 +2326,49 @@ updated schema from the corresponding upstream table.</p>
 <li><code>varchar</code></li>
 </ul>
 
-<p>When replicating tables that contain the <strong>unsupported <a href="/sql/types/" >data
-types</a></strong>, you can:</p>
-<ul>
-<li>
-<p>Use <a href="/sql/create-source/mysql/#handling-unsupported-types" ><code>TEXT COLUMNS</code>
-option</a> for the
-following unsupported  MySQL types:</p>
-<ul>
-<li><code>enum</code></li>
-<li><code>year</code></li>
-</ul>
-<p>The specified columns will be treated as <code>text</code> and will not offer the
-expected MySQL type features.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/create-source/mysql/#excluding-columns" ><code>EXCLUDE COLUMNS</code></a>
-option to exclude any columns that contain unsupported data types.</p>
-</li>
-</ul>
+When replicating tables that contain the **unsupported [data
+types](/sql/types/)**, you can:
+
+- Use [`TEXT COLUMNS`
+  option](/sql/create-source/mysql/#handling-unsupported-types) for the
+  following unsupported  MySQL types:
+
+  - `enum`
+  - `year`
+
+  The specified columns will be treated as `text` and will not offer the
+  expected MySQL type features.
+
+- Use the [`EXCLUDE COLUMNS`](/sql/create-source/mysql/#excluding-columns)
+option to exclude any columns that contain unsupported data types.
+
+#### Zero values for `date`, `datetime`, and `timestamp`
+
+MySQL allows the special "zero" values `0000-00-00`, `0000-00-00
+00:00:00` in `date`, `datetime`, and `timestamp` columns when the server
+`sql_mode` does not include `NO_ZERO_DATE` or `NO_ZERO_IN_DATE`. These
+values are not representable in Materialize's corresponding native types,
+so they will cause ingestion to fail for the affected column.
+
+To ingest columns that contain zero values, use [`TEXT
+COLUMNS`](/sql/create-source/mysql/#handling-unsupported-types) to
+decode the affected columns as `text`. The zero values for `date`,
+`datetime`, `timestamp`, and `year` are preserved verbatim as strings
+(e.g. `"0000-00-00 00:00:00"`, `"0000"`).
 
 ### Truncation
 
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
+Avoid truncating upstream tables that are being replicated into Materialize.
 If a replicated upstream table is truncated, the corresponding
 subsource in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
+produce any data until it is recreated.
+
+Instead of truncating, use an unqualified `DELETE` to remove all rows from
+the upstream table:
+
+```mzsql
+DELETE FROM t;
+```
 
 ### Modifying an existing source
 
@@ -2481,7 +2487,10 @@ CREATE SOURCE mz_source
 
 If you're replicating tables that use [data types unsupported](#supported-types)
 by Materialize, use the `TEXT COLUMNS` option to decode data as `text` for the
-affected columns. This option expects the upstream fully-qualified names of the
+affected columns. `TEXT COLUMNS` should also be used for columns that contain
+MySQL zero-value `DATE`, `DATETIME`, or `TIMESTAMP` data.
+
+This option expects the upstream fully-qualified names of the
 replicated table and column (i.e. as defined in your MySQL database).
 
 ```mzsql
@@ -2555,30 +2564,19 @@ process.
 
 ## Prerequisites
 
-<p>To create a source from MySQL(8.0.1+), you must first:</p>
-<ul>
-<li><strong>Configure upstream MySQL instance</strong>
-<ul>
-<li>Enable <a href="#change-data-capture" >GTID-based binary log(binlog)
-replication</a>. You <strong>must</strong> set
-<a href="#change-data-capture" ><code>binlog_row_metadata=FULL</code></a> to use the new
-<code>CREATE SOURCE</code> syntax.</li>
-<li>Create a replication user and password for Materialize to use to
-connect.</li>
-</ul>
-</li>
-<li><strong>Configure network security</strong>
-<ul>
-<li>Ensure Materialize can connect to your MySQL instance.</li>
-</ul>
-</li>
-<li><strong>Create a connection to MySQL in Materialize</strong>
-<ul>
-<li>The <a href="/sql/create-connection/#mysql" >connection setup</a> depends on the
-network security configuration.</li>
-</ul>
-</li>
-</ul>
+To create a source from MySQL(8.0.1+), you must first:
+- **Configure upstream MySQL instance**
+  - Enable [GTID-based binary log(binlog)
+    replication](#change-data-capture). You **must** set
+    [`binlog_row_metadata=FULL`](#change-data-capture) to use the new
+    `CREATE SOURCE` syntax.
+  - Create a replication user and password for Materialize to use to
+    connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your MySQL instance.
+- **Create a connection to MySQL in Materialize**
+  - The [connection setup](/sql/create-connection/#mysql) depends on the
+    network security configuration.
 
 ## Syntax
 
@@ -2626,7 +2624,8 @@ With the new syntax, after a MySQL source is created, you [`CREATE TABLE FROM
 SOURCE`](/sql/create-table/) to create a corresponding table in Materialize and
 start ingesting data.
 
-<p>Materialize natively supports the following MySQL types:</p>
+Materialize natively supports the following MySQL types:
+
 <ul style="column-count: 3">
 <li><code>bigint</code></li>
 <li><code>binary</code></li>
@@ -2659,39 +2658,52 @@ start ingesting data.
 <li><code>varchar</code></li>
 </ul>
 
-<p>When replicating tables that contain the <strong>unsupported <a href="/sql/types/" >data
-types</a></strong>, you can:</p>
-<ul>
-<li>
-<p>Use <a href="/sql/create-source/mysql/#handling-unsupported-types" ><code>TEXT COLUMNS</code>
-option</a> for the
-following unsupported  MySQL types:</p>
-<ul>
-<li><code>enum</code></li>
-<li><code>year</code></li>
-</ul>
-<p>The specified columns will be treated as <code>text</code> and will not offer the
-expected MySQL type features.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/create-source/mysql/#excluding-columns" ><code>EXCLUDE COLUMNS</code></a>
-option to exclude any columns that contain unsupported data types.</p>
-</li>
-</ul>
+When replicating tables that contain the **unsupported [data
+types](/sql/types/)**, you can:
+
+- Use [`TEXT COLUMNS`
+  option](/sql/create-source/mysql/#handling-unsupported-types) for the
+  following unsupported  MySQL types:
+
+  - `enum`
+  - `year`
+
+  The specified columns will be treated as `text` and will not offer the
+  expected MySQL type features.
+
+- Use the [`EXCLUDE COLUMNS`](/sql/create-source/mysql/#excluding-columns)
+option to exclude any columns that contain unsupported data types.
+
+#### Zero values for `date`, `datetime`, and `timestamp`
+
+MySQL allows the special "zero" values `0000-00-00`, `0000-00-00
+00:00:00` in `date`, `datetime`, and `timestamp` columns when the server
+`sql_mode` does not include `NO_ZERO_DATE` or `NO_ZERO_IN_DATE`. These
+values are not representable in Materialize's corresponding native types,
+so they will cause ingestion to fail for the affected column.
+
+To ingest columns that contain zero values, use [`TEXT
+COLUMNS`](/sql/create-source/mysql/#handling-unsupported-types) to
+decode the affected columns as `text`. The zero values for `date`,
+`datetime`, `timestamp`, and `year` are preserved verbatim as strings
+(e.g. `"0000-00-00 00:00:00"`, `"0000"`).
 
 For more information, including strategies for handling unsupported types,
 see [`CREATE TABLE FROM SOURCE`](/sql/create-table/).
 
 ### Upstream table truncation restrictions
 
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
+Avoid truncating upstream tables that are being replicated into Materialize.
 If a replicated upstream table is truncated, the corresponding
 subsource in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
+produce any data until it is recreated.
+
+Instead of truncating, use an unqualified `DELETE` to remove all rows from
+the upstream table:
+
+```mzsql
+DELETE FROM t;
+```
 
 For additional considerations, see also [`CREATE TABLE`](/sql/create-table/).
 
@@ -2924,30 +2936,19 @@ database. For more information, see [Troubleshooting](/ops/troubleshooting/).
 
 ### Prerequisites
 
-<p>To create a source from MySQL(8.0.1+), you must first:</p>
-<ul>
-<li><strong>Configure upstream MySQL instance</strong>
-<ul>
-<li>Enable <a href="#change-data-capture" >GTID-based binary log(binlog)
-replication</a>. You <strong>must</strong> set
-<a href="#change-data-capture" ><code>binlog_row_metadata=FULL</code></a> to use the new
-<code>CREATE SOURCE</code> syntax.</li>
-<li>Create a replication user and password for Materialize to use to
-connect.</li>
-</ul>
-</li>
-<li><strong>Configure network security</strong>
-<ul>
-<li>Ensure Materialize can connect to your MySQL instance.</li>
-</ul>
-</li>
-<li><strong>Create a connection to MySQL in Materialize</strong>
-<ul>
-<li>The <a href="/sql/create-connection/#mysql" >connection setup</a> depends on the
-network security configuration.</li>
-</ul>
-</li>
-</ul>
+To create a source from MySQL(8.0.1+), you must first:
+- **Configure upstream MySQL instance**
+  - Enable [GTID-based binary log(binlog)
+    replication](#change-data-capture). You **must** set
+    [`binlog_row_metadata=FULL`](#change-data-capture) to use the new
+    `CREATE SOURCE` syntax.
+  - Create a replication user and password for Materialize to use to
+    connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your MySQL instance.
+- **Create a connection to MySQL in Materialize**
+  - The [connection setup](/sql/create-connection/#mysql) depends on the
+    network security configuration.
 
 For details, see the [MySQL integration
 guides](/ingest-data/mysql/#integration-guides).
@@ -2995,7 +2996,8 @@ COMMIT;
 
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
 
-Materialize supports PostgreSQL (11+) as a data source. To connect to a
+Materialize supports PostgreSQL (11+) as a data source. PostgreSQL 16+ is
+required for connecting Materialize to a physical replica. To connect to a
 PostgreSQL instance, you first need to [create a connection](#creating-a-connection)
 that specifies access and authentication parameters.
 Once created, a connection is **reusable** across multiple `CREATE SOURCE`
@@ -3118,25 +3120,18 @@ specified publication using **a single** replication slot. This allows you to
 minimize the performance impact on the upstream database, as well as reuse the
 same source across multiple materializations.
 
-> **Tip:** <ul>
-> <li>
-> <p>For PostgreSQL 13+, set a reasonable value
-> for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-> to limit the amount of storage used by replication slots.</p>
-> </li>
-> <li>
-> <p>If you stop using Materialize, or if either the Materialize instance or
+> **Tip:** - For PostgreSQL 13+, set a reasonable value
+> for [`max_slot_wal_keep_size`](https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE)
+> to limit the amount of storage used by replication slots.
+> - If you stop using Materialize, or if either the Materialize instance or
 > the PostgreSQL instance crash, delete any replication slots. You can query
-> the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-> replication slot created for each source.</p>
-> </li>
-> <li>
-> <p>If you delete all objects that depend on a source without also dropping
+> the `mz_internal.mz_postgres_sources` table to look up the name of the
+> replication slot created for each source.
+> - If you delete all objects that depend on a source without also dropping
 > the source, the upstream replication slot remains and will continue to
 > accumulate data so that the source can resume in the future. To avoid
-> unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-> </li>
-> </ul>
+> unbounded disk space usage, make sure to use [`DROP
+> SOURCE`](/sql/drop-source/) or manually delete the replication slot.
 
 ##### PostgreSQL schemas
 
@@ -3210,34 +3205,39 @@ when the source was created.</p>
 
 #### Incompatible schema changes
 
-<p>All other schema changes to upstream tables will set the corresponding
+All other schema changes to upstream tables will set the corresponding
 subsource into an error state, which prevents you from reading from the
-source.</p>
-<p>To handle incompatible <a href="#schema-changes" >schema changes</a>, use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> and <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to first drop the affected subsource, and
+source.
+
+To handle incompatible [schema changes](#schema-changes), use [`DROP
+SOURCE`](/sql/alter-source/#context) and [`ALTER SOURCE...ADD
+SUBSOURCE`](/sql/alter-source/) to first drop the affected subsource, and
 then add the table back to the source. When you add the subsource, it will
-have the updated schema from the corresponding upstream table.</p>
+have the updated schema from the corresponding upstream table.
 
 ### Publication membership
 
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
+PostgreSQL's logical replication API does not provide a signal when users
 remove tables from publications. Because of this, Materialize relies on
 periodic checks to determine if a table has been removed from a publication,
 at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
+being read from the table.
+
+However, it is possible to remove a table from a publication and then re-add
 it before Materialize notices that the table was removed. In this case,
 Materialize can no longer provide any consistency guarantees about the data
 we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
+occurred.
 
 To mitigate this issue, if you need to drop and re-add a table to a
 publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.
+_before_ re-adding it using the [`DROP SOURCE`](/sql/drop-source/) command.
 
 ### Supported types
 
-<p>Materialize natively supports the following PostgreSQL types (including the
-array type for each of the types):</p>
+Materialize natively supports the following PostgreSQL types (including the
+array type for each of the types):
+
 <ul style="column-count: 3">
 <li><code>bool</code></li>
 <li><code>bpchar</code></li>
@@ -3269,51 +3269,54 @@ array type for each of the types):</p>
 <li><code>varchar</code></li>
 </ul>
 
-<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
-possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
-treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
-features. For example:</p>
-<ul>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-enum.html" ><code>enum</code></a>: When decoded as <code>text</code>, the implicit ordering of the original
-PostgreSQL <code>enum</code> type is not preserved; instead, Materialize will sort values
-as <code>text</code>.</p>
-</li>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-money.html" ><code>money</code></a>: When decoded as <code>text</code>, resulting <code>text</code> value cannot be cast
-back to <code>numeric</code>, since PostgreSQL adds typical currency formatting to the
-output.</p>
-</li>
-</ul>
+Replicating tables that contain **unsupported [data types](/sql/types/)** is
+possible via the `TEXT COLUMNS` option. The specified columns will be
+treated as `text`; i.e., will not have the expected PostgreSQL type
+features. For example:
+
+* [`enum`]: When decoded as `text`, the implicit ordering of the original
+  PostgreSQL `enum` type is not preserved; instead, Materialize will sort values
+  as `text`.
+
+* [`money`]: When decoded as `text`, resulting `text` value cannot be cast
+back to `numeric`, since PostgreSQL adds typical currency formatting to the
+output.
+
+[`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
+[`money`]: https://www.postgresql.org/docs/current/datatype-money.html
 
 ### Truncation
 
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
+Avoid truncating upstream tables that are being replicated into Materialize.
 If a replicated upstream table is truncated, the corresponding
 subsource(s)/table(s) in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
+produce any data until it is recreated.
+
+Instead of truncating, use an unqualified `DELETE` to remove all rows from
+the upstream table:
+
+```mzsql
+DELETE FROM t;
+```
 
 ### Inherited tables
 
-<p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
-PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
-also present in the inherited table. However, both PostgreSQL&rsquo;s logical
-replication and <code>COPY</code> only present data written to the tables themselves,
-i.e. the inheriting data is <em>not</em> treated as part of the inherited table.</p>
-<p>PostgreSQL sources use logical replication and <code>COPY</code> to ingest table data,
-so inheriting tables&rsquo; data will only be ingested as part of the inheriting
-table, i.e. in Materialize, the data will not be returned when serving
-<code>SELECT</code>s from the inherited table.</p>
+When using [PostgreSQL table inheritance](https://www.postgresql.org/docs/current/tutorial-inheritance.html),
+PostgreSQL serves data from `SELECT`s as if the inheriting tables' data is
+also present in the inherited table. However, both PostgreSQL's logical
+replication and `COPY` only present data written to the tables themselves,
+i.e. the inheriting data is _not_ treated as part of the inherited table.
 
-You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
+PostgreSQL sources use logical replication and `COPY` to ingest table data,
+so inheriting tables' data will only be ingested as part of the inheriting
+table, i.e. in Materialize, the data will not be returned when serving
+`SELECT`s from the inherited table.
+
+You can mimic PostgreSQL's `SELECT` behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
-inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
+inheriting tables (using `UNION ALL`). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
-view. You will need to add the inheriting tables via <code>ADD SUBSOURCE</code> and
+view. You will need to add the inheriting tables via `ADD SUBSOURCE` and
 create a new view (materialized or non-) that unions the new table.
 
 ## Examples
@@ -3507,28 +3510,19 @@ process.
 
 ## Prerequisites
 
-<p>To create a source from PostgreSQL 11+, you must first:</p>
-<ul>
-<li><strong>Configure upstream PostgreSQL instance</strong>
-<ul>
-<li>Set up logical replication.</li>
-<li>Create a publication.</li>
-<li>Create a replication user and password for Materialize to use to connect.</li>
-</ul>
-</li>
-<li><strong>Configure network security</strong>
-<ul>
-<li>Ensure Materialize can connect to your PostgreSQL instance.</li>
-</ul>
-</li>
-<li><strong>Create a connection to PostgreSQL in Materialize</strong>
-<ul>
-<li>The connection setup depends on the network security configuration.</li>
-</ul>
-</li>
-</ul>
-<p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
-guides</a>.</p>
+To create a source from PostgreSQL 11+, you must first:
+
+- **Configure upstream PostgreSQL instance**
+  - Set up logical replication.
+  - Create a publication.
+  - Create a replication user and password for Materialize to use to connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your PostgreSQL instance.
+- **Create a connection to PostgreSQL in Materialize**
+  - The connection setup depends on the network security configuration.
+
+For details, see the [PostgreSQL integration
+guides](/ingest-data/postgres/#integration-guides).
 
 ## Syntax
 
@@ -3577,8 +3571,9 @@ With the new syntax, after a PostgreSQL source is created, you [`CREATE TABLE
 FROM SOURCE`](/sql/create-table/) to create a corresponding table in
 Matererialize and start ingesting data.
 
-<p>Materialize natively supports the following PostgreSQL types (including the
-array type for each of the types):</p>
+Materialize natively supports the following PostgreSQL types (including the
+array type for each of the types):
+
 <ul style="column-count: 3">
 <li><code>bool</code></li>
 <li><code>bpchar</code></li>
@@ -3615,33 +3610,37 @@ see [`CREATE TABLE FROM SOURCE`](/sql/create-table/).
 
 #### Upstream table truncation restrictions
 
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
+Avoid truncating upstream tables that are being replicated into Materialize.
 If a replicated upstream table is truncated, the corresponding
 subsource(s)/table(s) in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
+produce any data until it is recreated.
+
+Instead of truncating, use an unqualified `DELETE` to remove all rows from
+the upstream table:
+
+```mzsql
+DELETE FROM t;
+```
 
 For additional considerations, see also [`CREATE TABLE`](/sql/create-table/).
 
 ### Publication membership
 
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
+PostgreSQL's logical replication API does not provide a signal when users
 remove tables from publications. Because of this, Materialize relies on
 periodic checks to determine if a table has been removed from a publication,
 at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
+being read from the table.
+
+However, it is possible to remove a table from a publication and then re-add
 it before Materialize notices that the table was removed. In this case,
 Materialize can no longer provide any consistency guarantees about the data
 we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
+occurred.
 
 To mitigate this issue, if you need to drop and re-add a table to a
 publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.
+_before_ re-adding it using the [`DROP SOURCE`](/sql/drop-source/) command.
 
 ### PostgreSQL replication slots
 
@@ -3667,52 +3666,36 @@ SELECT id, replication_slot FROM mz_internal.mz_postgres_sources;
   u8     | materialize_7f8a72d0bf2a4b6e9ebc4e61ba769b71
 ```
 
-> **Tip:** <ul>
-> <li>
-> <p>For PostgreSQL 13+, set a reasonable value
-> for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-> to limit the amount of storage used by replication slots.</p>
-> </li>
-> <li>
-> <p>If you stop using Materialize, or if either the Materialize instance or
+> **Tip:** - For PostgreSQL 13+, set a reasonable value
+> for [`max_slot_wal_keep_size`](https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE)
+> to limit the amount of storage used by replication slots.
+> - If you stop using Materialize, or if either the Materialize instance or
 > the PostgreSQL instance crash, delete any replication slots. You can query
-> the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-> replication slot created for each source.</p>
-> </li>
-> <li>
-> <p>If you delete all objects that depend on a source without also dropping
+> the `mz_internal.mz_postgres_sources` table to look up the name of the
+> replication slot created for each source.
+> - If you delete all objects that depend on a source without also dropping
 > the source, the upstream replication slot remains and will continue to
 > accumulate data so that the source can resume in the future. To avoid
-> unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-> </li>
-> </ul>
+> unbounded disk space usage, make sure to use [`DROP
+> SOURCE`](/sql/drop-source/) or manually delete the replication slot.
 
 ## Examples
 
 ### Prerequisites
 
-<p>To create a source from PostgreSQL 11+, you must first:</p>
-<ul>
-<li><strong>Configure upstream PostgreSQL instance</strong>
-<ul>
-<li>Set up logical replication.</li>
-<li>Create a publication.</li>
-<li>Create a replication user and password for Materialize to use to connect.</li>
-</ul>
-</li>
-<li><strong>Configure network security</strong>
-<ul>
-<li>Ensure Materialize can connect to your PostgreSQL instance.</li>
-</ul>
-</li>
-<li><strong>Create a connection to PostgreSQL in Materialize</strong>
-<ul>
-<li>The connection setup depends on the network security configuration.</li>
-</ul>
-</li>
-</ul>
-<p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
-guides</a>.</p>
+To create a source from PostgreSQL 11+, you must first:
+
+- **Configure upstream PostgreSQL instance**
+  - Set up logical replication.
+  - Create a publication.
+  - Create a replication user and password for Materialize to use to connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your PostgreSQL instance.
+- **Create a connection to PostgreSQL in Materialize**
+  - The connection setup depends on the network security configuration.
+
+For details, see the [PostgreSQL integration
+guides](/ingest-data/postgres/#integration-guides).
 
 ### Create a source {#create-source-example}
 

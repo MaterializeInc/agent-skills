@@ -38,18 +38,20 @@ in a subquery.
 <td><blue>Idiomatic Materialize SQL</blue></td>
 <td class="copyableCode">
 
-<p>Use a subquery that uses the <a href="/sql/functions/#min" >MIN()</a> or
-<a href="/sql/functions/#max" >MAX()</a> aggregate function.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span><span class="p">,</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldB</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">Z</span>
-</span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl"> <span class="p">(</span><span class="k">SELECT</span> <span class="n">fieldA</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="k">MAX</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">),</span>
-</span></span><span class="line"><span class="cl">    <span class="n">MIN</span><span class="p">(</span><span class="n">fieldZ</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"> <span class="k">FROM</span> <span class="n">tableA</span>
-</span></span><span class="line"><span class="cl"> <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">fieldA</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">tableA</span><span class="mf">.</span><span class="n">fieldA</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">fieldA</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">fieldA</span> <span class="mf">...</span> <span class="p">;</span>
-</span></span></code></pre></div>
+Use a subquery that uses the [MIN()](/sql/functions/#min) or
+[MAX()](/sql/functions/#max) aggregate function.
+
+```mzsql
+SELECT tableA.fieldA, tableA.fieldB, minmax.Z
+ FROM tableA,
+ (SELECT fieldA,
+    MAX(fieldZ),
+    MIN(fieldZ)
+ FROM tableA
+ GROUP BY fieldA) minmax
+WHERE tableA.fieldA = minmax.fieldA
+ORDER BY fieldA ... ;
+```
 
 </td>
 </tr>
@@ -133,16 +135,17 @@ highest price (i.e., the last price if ordered by ascending price values):
 <td><blue>Idiomatic Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span> <span class="k">AS</span> <span class="n">diff_highest_price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">     <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">        <span class="k">MAX</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">highest_price</span>
-</span></span><span class="line"><span class="cl">     <span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl">     <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT o.order_id, minmax.highest_price, o.item, o.price,
+  o.price - minmax.highest_price AS diff_highest_price
+FROM orders_view o,
+     (SELECT order_id,
+        MAX(price) AS highest_price
+     FROM orders_view
+     GROUP BY order_id) minmax
+WHERE o.order_id = minmax.order_id
+ORDER BY o.order_id, o.item;
+```
 
 </td>
 </tr>
@@ -199,16 +202,17 @@ in the order and the lowest price.  That is, use a subquery that groups by the
 <td><blue>Idiomatic Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span> <span class="k">AS</span> <span class="n">diff_lowest_price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">     <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">        <span class="n">MIN</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">lowest_price</span>
-</span></span><span class="line"><span class="cl">     <span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl">     <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT o.order_id, minmax.lowest_price, o.item, o.price,
+  o.price - minmax.lowest_price AS diff_lowest_price
+FROM orders_view o,
+     (SELECT order_id,
+        MIN(price) AS lowest_price
+     FROM orders_view
+     GROUP BY order_id) minmax
+WHERE o.order_id = minmax.order_id
+ORDER BY o.order_id, o.item;
+```
 
 </td>
 </tr>
@@ -267,18 +271,19 @@ ordered by ascending price values).
 <td><blue>Idiomatic Materialize SQL</blue> ✅</td>
 <td class="copyableCode">
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span><span class="p">,</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">lowest_price</span> <span class="k">AS</span> <span class="n">diff_lowest_price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">  <span class="n">o</span><span class="mf">.</span><span class="n">price</span> <span class="o">-</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">highest_price</span> <span class="k">AS</span> <span class="n">diff_highest_price</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">orders_view</span> <span class="n">o</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">      <span class="p">(</span><span class="k">SELECT</span> <span class="n">order_id</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">         <span class="n">MIN</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">lowest_price</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">         <span class="k">MAX</span><span class="p">(</span><span class="n">price</span><span class="p">)</span> <span class="k">AS</span> <span class="n">highest_price</span>
-</span></span><span class="line"><span class="cl">      <span class="k">FROM</span> <span class="n">orders_view</span>
-</span></span><span class="line"><span class="cl">      <span class="k">GROUP</span> <span class="k">BY</span> <span class="n">order_id</span><span class="p">)</span> <span class="n">minmax</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span> <span class="o">=</span> <span class="n">minmax</span><span class="mf">.</span><span class="n">order_id</span>
-</span></span><span class="line"><span class="cl"><span class="k">ORDER</span> <span class="k">BY</span> <span class="n">o</span><span class="mf">.</span><span class="n">order_id</span><span class="p">,</span> <span class="n">o</span><span class="mf">.</span><span class="n">item</span><span class="p">;</span>
-</span></span></code></pre></div>
+```mzsql
+SELECT o.order_id, minmax.lowest_price, minmax.highest_price, o.item, o.price,
+  o.price - minmax.lowest_price AS diff_lowest_price,
+  o.price - minmax.highest_price AS diff_highest_price
+FROM orders_view o,
+      (SELECT order_id,
+         MIN(price) AS lowest_price,
+         MAX(price) AS highest_price
+      FROM orders_view
+      GROUP BY order_id) minmax
+WHERE o.order_id = minmax.order_id
+ORDER BY o.order_id, o.item;
+```
 
 </td>
 </tr>
