@@ -33,28 +33,19 @@ INSERT INTO T (A) VALUES
 
 ### Connect your source database to Materialize
 
-<p>To create a source from PostgreSQL 11+, you must first:</p>
-<ul>
-<li><strong>Configure upstream PostgreSQL instance</strong>
-<ul>
-<li>Set up logical replication.</li>
-<li>Create a publication.</li>
-<li>Create a replication user and password for Materialize to use to connect.</li>
-</ul>
-</li>
-<li><strong>Configure network security</strong>
-<ul>
-<li>Ensure Materialize can connect to your PostgreSQL instance.</li>
-</ul>
-</li>
-<li><strong>Create a connection to PostgreSQL in Materialize</strong>
-<ul>
-<li>The connection setup depends on the network security configuration.</li>
-</ul>
-</li>
-</ul>
-<p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
-guides</a>.</p>
+To create a source from PostgreSQL 11+, you must first:
+
+- **Configure upstream PostgreSQL instance**
+  - Set up logical replication.
+  - Create a publication.
+  - Create a replication user and password for Materialize to use to connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your PostgreSQL instance.
+- **Create a connection to PostgreSQL in Materialize**
+  - The connection setup depends on the network security configuration.
+
+For details, see the [PostgreSQL integration
+guides](/ingest-data/postgres/#integration-guides).
 
 ## Create a source using the new syntax
 

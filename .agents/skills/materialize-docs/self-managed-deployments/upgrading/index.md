@@ -13,34 +13,25 @@ Materialize releases new Self-Managed versions per the schedule outlined in [Rel
 notes</a>.</p>
 </li>
 <li>
-<strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+**Always** upgrade the Materialize Operator **before**
 upgrading the Materialize instances.
+
 </li>
 </ul>
 
-> **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
-> at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
-> permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
+> **Note:** For major version upgrades, you can **only** upgrade **one** major version
+> at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
+> permitted but **v26**.1.0 to **v28**.0.0 is not.
 
 ## Upgrade guides
 
 The following upgrade guides are available as examples:
 
-<h4 id="upgrade-using-helm-commands">Upgrade using Helm Commands</h4>
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/upgrading/upgrade-on-kind/" >Upgrade on Kind</a></td>
-          <td>Uses standard Helm commands to upgrade Materialize on a Kind cluster in Docker.</td>
-      </tr>
-  </tbody>
-</table>
+#### Upgrade using Helm Commands
+
+|  Guide         | Description  |
+| ------------- | -------|
+| [Upgrade on Kind](/self-managed-deployments/upgrading/upgrade-on-kind/) | Uses standard Helm commands to upgrade Materialize on a Kind cluster in Docker.
 
 <h4 id="upgrade-using-the-new-terraform-modules">Upgrade using the new Terraform Modules</h4>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
@@ -154,7 +145,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.27.0
+  --version v26.29.0
 ```
 
 ## Upgrading Materialize Instances
@@ -192,13 +183,13 @@ To stage the Materialize instances version upgrade, update the
 compatible version of your currently deployed Materialize Operator.
 
 To stage, but **not** rollout, the Materialize instance version upgrade, you can
-use the `kubectl patch` command; for example, if the **App Version** is v26.27.0:
+use the `kubectl patch` command; for example, if the **App Version** is v26.29.0:
 
 ```shell
 kubectl patch materialize <instance-name> \
   -n <materialize-instance-namespace> \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.27.0\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.29.0\"}}"
 ```
 
 > **Note:** Until you specify a new `requestRollout`, the Operator watches for updates but
@@ -226,7 +217,7 @@ can, if preferred, combine both operations in a single command
 kubectl patch materialize <instance-name> \
   -n materialize-environment \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.27.0\", \"requestRollout\": \"$(uuidgen)\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.29.0\", \"requestRollout\": \"$(uuidgen)\"}}"
 ```
 
 #### Using YAML Definition
@@ -240,7 +231,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.27.0 # Update version as needed
+  environmentdImageRef: materialize/environmentd:v26.29.0 # Update version as needed
   requestRollout: 22222222-2222-2222-2222-222222222222    # Use a new UUID
   forceRollout: 33333333-3333-3333-3333-333333333333      # Optional: for forced rollouts
   inPlaceRollout: false                                   # In Place rollout is deprecated and ignored. Please use rolloutStrategy
@@ -292,8 +283,17 @@ The behavior of the new version rollout follows your `rolloutStrategy` setting.
 
 #### *WaitUntilReady* - ***Default***
 
-`WaitUntilReady` creates a new generation of pods and automatically cuts over to them as soon as they catch up to the old generation and become `ReadyToPromote`. This strategy temporarily doubles the required resources to run Materialize.
-> **Warning:** `WaitUntilReady` waits up to 72 hours (configurable by the `with_0dt_deployment_max_wait` flag) for the new pods to become ready. If the promotion has not occurred by then, the new pods are automatically promoted.
+`WaitUntilReady` creates a new generation of pods and automatically promotes
+them as soon as they catch up to the old generation and become `ReadyToPromote`.
+Because both generations run simultaneously until the promotion, this strategy
+temporarily doubles the required resources to run Materialize.
+
+> **Note:** Starting in v26.28.0, `WaitUntilReady` waits up to 1 year (configurable by the
+> `with_0dt_deployment_max_wait` flag) for the new pods to become
+> `ReadyToPromote`. If the pods do not reach `ReadyToPromote` by then, the rollout
+> is cancelled and the new pods are removed.
+> Earlier versions used a default wait of 72 hours, and, once the wait time
+> expired, the new pods were automatically promoted regardless of their readiness.
 
 #### *ImmediatelyPromoteCausingDowntime*
 > **Warning:** Using the `ImmediatelyPromoteCausingDowntime` rollout flag will cause downtime.
@@ -470,14 +470,15 @@ AWS](/self-managed-deployments/installation/install-on-aws/).
 notes</a>.</p>
 </li>
 <li>
-<strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+**Always** upgrade the Materialize Operator **before**
 upgrading the Materialize instances.
+
 </li>
 </ul>
 
-> **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
-> at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
-> permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
+> **Note:** For major version upgrades, you can **only** upgrade **one** major version
+> at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
+> permitted but **v26**.1.0 to **v28**.0.0 is not.
 
 > **Note:** Downgrading is not supported.
 
@@ -541,24 +542,26 @@ upgrading the Materialize instances.
 
 ### Step 2: Update the Helm Chart
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
-<p>To update your Materialize Helm Chart repository:</p>
-<ol>
-<li>
-<p>Update the Helm repo:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm repo update materialize
-</span></span></code></pre></div></li>
-<li>
-<p>View the available chart versions:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm search repo materialize/materialize-operator --versions
-</span></span></code></pre></div></li>
-</ol>
+To update your Materialize Helm Chart repository:
+
+1. Update the Helm repo:
+
+   ```shell
+   helm repo update materialize
+   ```
+
+1. View the available chart versions:
+
+   ```shell
+   helm search repo materialize/materialize-operator --versions
+   ```
 
 ### Step 3: Upgrade the Materialize Operator
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
 <ol>
@@ -579,14 +582,14 @@ simple-demo  materialize  1         2025-12-08 11:39:50.185976 -0500 EST   deplo
 </span></span></code></pre></div></li>
 <li>
 <p>Upgrade your Operator. For example, the following upgrades the Operator
-to v26.27.0:</p>
-> **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
->    at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
->    permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
+to v26.29.0:</p>
+> **Note:** For major version upgrades, you can **only** upgrade **one** major version
+>    at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
+>    permitted but **v26**.1.0 to **v28**.0.0 is not.
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade -n materialize simple-demo materialize/materialize-operator  <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -f my-values.yaml <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.27.0
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.29.0
 </span></span></code></pre></div></li>
 <li>
 <p>Verify that the Operator is running:</p>
@@ -602,7 +605,7 @@ Materialize instances.</p>
 
 ### Step 4: Upgrading Materialize Instances
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
 <p><strong>After</strong> you have upgraded your Materialize Operator, upgrade your
@@ -630,7 +633,7 @@ main
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main<span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.27.0\&#34;}}&#34;</span>
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.29.0\&#34;}}&#34;</span>
 </span></span></code></pre></div></li>
 <li>
 <p>Rollout the Materialize instance version change.</p>
@@ -671,14 +674,15 @@ Azure](/self-managed-deployments/installation/install-on-azure/).
 notes</a>.</p>
 </li>
 <li>
-<strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+**Always** upgrade the Materialize Operator **before**
 upgrading the Materialize instances.
+
 </li>
 </ul>
 
-> **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
-> at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
-> permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
+> **Note:** For major version upgrades, you can **only** upgrade **one** major version
+> at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
+> permitted but **v26**.1.0 to **v28**.0.0 is not.
 
 > **Note:** Downgrading is not supported.
 
@@ -734,24 +738,26 @@ upgrading the Materialize instances.
 
 ### Step 2: Update the Helm Chart
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
-<p>To update your Materialize Helm Chart repository:</p>
-<ol>
-<li>
-<p>Update the Helm repo:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm repo update materialize
-</span></span></code></pre></div></li>
-<li>
-<p>View the available chart versions:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm search repo materialize/materialize-operator --versions
-</span></span></code></pre></div></li>
-</ol>
+To update your Materialize Helm Chart repository:
+
+1. Update the Helm repo:
+
+   ```shell
+   helm repo update materialize
+   ```
+
+1. View the available chart versions:
+
+   ```shell
+   helm search repo materialize/materialize-operator --versions
+   ```
 
 ### Step 3: Upgrade the Materialize Operator
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
 <ol>
@@ -772,14 +778,14 @@ simple-demo  materialize  1         2025-12-08 11:39:50.185976 -0500 EST   deplo
 </span></span></code></pre></div></li>
 <li>
 <p>Upgrade your Operator. For example, the following upgrades the Operator
-to v26.27.0:</p>
-> **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
->    at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
->    permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
+to v26.29.0:</p>
+> **Note:** For major version upgrades, you can **only** upgrade **one** major version
+>    at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
+>    permitted but **v26**.1.0 to **v28**.0.0 is not.
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade -n materialize simple-demo materialize/materialize-operator  <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -f my-values.yaml <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.27.0
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.29.0
 </span></span></code></pre></div></li>
 <li>
 <p>Verify that the Operator is running:</p>
@@ -795,7 +801,7 @@ Materialize instances.</p>
 
 ### Step 4: Upgrading Materialize Instances
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
 <p><strong>After</strong> you have upgraded your Materialize Operator, upgrade your
@@ -823,7 +829,7 @@ main
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main<span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.27.0\&#34;}}&#34;</span>
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.29.0\&#34;}}&#34;</span>
 </span></span></code></pre></div></li>
 <li>
 <p>Rollout the Materialize instance version change.</p>
@@ -864,14 +870,15 @@ GCP](/self-managed-deployments/installation/install-on-gcp/).
 notes</a>.</p>
 </li>
 <li>
-<strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+**Always** upgrade the Materialize Operator **before**
 upgrading the Materialize instances.
+
 </li>
 </ul>
 
-> **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
-> at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
-> permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
+> **Note:** For major version upgrades, you can **only** upgrade **one** major version
+> at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
+> permitted but **v26**.1.0 to **v28**.0.0 is not.
 
 > **Note:** Downgrading is not supported.
 
@@ -931,24 +938,26 @@ upgrading the Materialize instances.
 
 ### Step 2: Update the Helm Chart
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
-<p>To update your Materialize Helm Chart repository:</p>
-<ol>
-<li>
-<p>Update the Helm repo:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm repo update materialize
-</span></span></code></pre></div></li>
-<li>
-<p>View the available chart versions:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm search repo materialize/materialize-operator --versions
-</span></span></code></pre></div></li>
-</ol>
+To update your Materialize Helm Chart repository:
+
+1. Update the Helm repo:
+
+   ```shell
+   helm repo update materialize
+   ```
+
+1. View the available chart versions:
+
+   ```shell
+   helm search repo materialize/materialize-operator --versions
+   ```
 
 ### Step 3: Upgrade the Materialize Operator
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
 <ol>
@@ -969,14 +978,14 @@ simple-demo  materialize  1         2025-12-08 11:39:50.185976 -0500 EST   deplo
 </span></span></code></pre></div></li>
 <li>
 <p>Upgrade your Operator. For example, the following upgrades the Operator
-to v26.27.0:</p>
-> **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
->    at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
->    permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
+to v26.29.0:</p>
+> **Note:** For major version upgrades, you can **only** upgrade **one** major version
+>    at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
+>    permitted but **v26**.1.0 to **v28**.0.0 is not.
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade -n materialize simple-demo materialize/materialize-operator  <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -f my-values.yaml <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.27.0
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.29.0
 </span></span></code></pre></div></li>
 <li>
 <p>Verify that the Operator is running:</p>
@@ -992,7 +1001,7 @@ Materialize instances.</p>
 
 ### Step 4: Upgrading Materialize Instances
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
 <p><strong>After</strong> you have upgraded your Materialize Operator, upgrade your
@@ -1020,7 +1029,7 @@ main
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main<span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.27.0\&#34;}}&#34;</span>
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.29.0\&#34;}}&#34;</span>
 </span></span></code></pre></div></li>
 <li>
 <p>Rollout the Materialize instance version change.</p>
@@ -1103,7 +1112,7 @@ deployment does not have a license key configured, contact <a href="https://mate
 1. Get the sample configuration files for the new version.
 
    ```shell
-   mz_version=v26.27.0
+   mz_version=v26.29.0
 
    curl -o upgrade-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
    ```
@@ -1118,7 +1127,7 @@ deployment does not have a license key configured, contact <a href="https://mate
    ```shell
    helm upgrade my-materialize-operator materialize/materialize-operator \
    --namespace=materialize \
-   --version v26.27.0 \
+   --version v26.29.0 \
    -f upgrade-values.yaml \
    --set observability.podMetrics.enabled=true
    ```
@@ -1150,7 +1159,7 @@ deployment has not been configured with a license key:
 
    | Field | Description |
    |-------|-------------|
-   | `environmentdImageRef` | Update the version to the new version. This should be the same as the operator version: `v26.27.0`. |
+   | `environmentdImageRef` | Update the version to the new version. This should be the same as the operator version: `v26.29.0`. |
    | `requestRollout` or `forceRollout`| Enter a new UUID. Can be generated with `uuidgen`. <br> <ul><li>`requestRollout` triggers a rollout only if changes exist. </li><li>`forceRollout` triggers a rollout even if no changes exist.</li></ul> |
 
    ```yaml
@@ -1160,7 +1169,7 @@ deployment has not been configured with a license key:
      name: 12345678-1234-1234-1234-123456789012
      namespace: materialize-environment
    spec:
-     environmentdImageRef: materialize/environmentd:v26.27.0 # Update version
+     environmentdImageRef: materialize/environmentd:v26.29.0 # Update version
      requestRollout: 22222222-2222-2222-2222-222222222222    # Enter a new UUID
    # forceRollout: 33333333-3333-3333-3333-333333333333    # For forced rollouts
      rolloutStrategy: WaitUntilReady                         # The mechanism to use when rolling out the new version.

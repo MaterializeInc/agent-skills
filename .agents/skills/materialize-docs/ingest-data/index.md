@@ -465,9 +465,39 @@ and retrieve the AWS principal needed to configure the AWS PrivateLink service.
 
     **Remarks**:
 
-    a. Network Load Balancers do not have associated security groups. Therefore, the security groups for your targets must use IP addresses to allow traffic.
+    - By default, Network Load Balancers do not have associated security
+      groups. In addition, target security groups cannot use client security
+      groups as a traffic source. Therefore, the security groups for your
+      targets must allow traffic using IP address ranges rather than security
+      group references. For more information, see the [AWS
+      documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
 
-    b. You can't use the security groups for the clients as a source in the security groups for the targets. Therefore, the security groups for your targets must use the IP addresses of the clients to allow traffic. For more details, check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
+    - If you use [network ACLs
+      (NACLs)](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html)
+      and traffic between the NLB and its targets crosses subnet boundaries,
+      the NACLs must allow both the application port and the ephemeral port
+      range (1024–65535) for return traffic. This can occur when cross-zone
+      load balancing is enabled, or when the NLB and its targets reside in
+      different subnets, even within the same Availability Zone.
+
+      For example, if a target application listens on port 9098, the target
+      subnet must allow ingress on port 9098 from the NLB's IP ranges and
+      egress on the ephemeral port range (1024–65535) to those ranges
+      for return traffic. Likewise, the NLB subnet must allow egress on
+      port 9098 to the target IP ranges and ingress on the ephemeral port
+      range from them.
+
+    - If you have associated a security group with your Network Load Balancer
+      and enabled **Enforce inbound rules on PrivateLink traffic**, the
+      security group's inbound rules also apply to traffic from Materialize's
+      VPC endpoint. Any traffic not explicitly permitted, including
+      Materialize's, will be silently blocked.
+
+      To resolve this, either:
+      - Add inbound rules to the NLB's security group that permit the listener
+        port and the health check port from a source covering Materialize's
+        VPC endpoint traffic, or
+      - Disable **Enforce inbound rules on PrivateLink traffic**.
 
 1. Create a VPC [endpoint service](https://docs.aws.amazon.com/vpc/latest/privatelink/create-endpoint-service.html) and associate it with the **Network Load Balancer** that you’ve just created.
 
@@ -594,7 +624,7 @@ connection you just configured:
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
 
 1. #### Create target groups
-    Create a dedicated [target group](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-target-group.html) for your RDS or Aurora or Aurora instance with the following details:
+    Create a dedicated [target group](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-target-group.html) for your RDS or Aurora instance with the following details:
 
     a. Target type as **IP address**.
 
@@ -606,6 +636,13 @@ connection you just configured:
 
     e. Click next, and register the respective RDS or Aurora instance to the target group using its IP address.
 
+1. #### Create a Network Load Balancer (NLB)
+    Create a [Network Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html) that is **enabled for the same subnets** that the RDS or Aurora instance is in.
+
+1. #### Create TCP listeners
+
+    Create a [TCP listener](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-listener.html) for your RDS or Aurora instance that forwards to the corresponding target group you created.
+
 1. #### Verify security groups and health checks
 
     Once the target groups have been created, make sure that the [health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html) are passing and that the targets are reported as healthy.
@@ -614,16 +651,39 @@ connection you just configured:
 
     **Remarks**:
 
-    a. Network Load Balancers do not have associated security groups. Therefore, the security groups for your targets must use IP addresses to allow traffic.
+    - By default, Network Load Balancers do not have associated security
+      groups. In addition, target security groups cannot use client security
+      groups as a traffic source. Therefore, the security groups for your
+      targets must allow traffic using IP address ranges rather than security
+      group references. For more information, see the [AWS
+      documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
 
-    b. You can't use the security groups for the clients as a source in the security groups for the targets. Therefore, the security groups for your targets must use the IP addresses of the clients to allow traffic. For more details, check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
+    - If you use [network ACLs
+      (NACLs)](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html)
+      and traffic between the NLB and its targets crosses subnet boundaries,
+      the NACLs must allow both the application port and the ephemeral port
+      range (1024–65535) for return traffic. This can occur when cross-zone
+      load balancing is enabled, or when the NLB and its targets reside in
+      different subnets, even within the same Availability Zone.
 
-1. #### Create a Network Load Balancer (NLB)
-    Create a [Network Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html) that is **enabled for the same subnets** that the RDS or Aurora instance is in.
+      For example, if a target application listens on port 9098, the target
+      subnet must allow ingress on port 9098 from the NLB's IP ranges and
+      egress on the ephemeral port range (1024–65535) to those ranges
+      for return traffic. Likewise, the NLB subnet must allow egress on
+      port 9098 to the target IP ranges and ingress on the ephemeral port
+      range from them.
 
-1. #### Create TCP listeners
+    - If you have associated a security group with your Network Load Balancer
+      and enabled **Enforce inbound rules on PrivateLink traffic**, the
+      security group's inbound rules also apply to traffic from Materialize's
+      VPC endpoint. Any traffic not explicitly permitted, including
+      Materialize's, will be silently blocked.
 
-    Create a [TCP listener](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-listener.html) for your RDS or Aurora instance that forwards to the corresponding target group you created.
+      To resolve this, either:
+      - Add inbound rules to the NLB's security group that permit the listener
+        port and the health check port from a source covering Materialize's
+        VPC endpoint traffic, or
+      - Disable **Enforce inbound rules on PrivateLink traffic**.
 
 1. #### Create a VPC endpoint service
 
@@ -750,6 +810,13 @@ This PostgreSQL connection can then be reused across multiple [`CREATE SOURCE`](
 
     e. Click next, and register the respective RDS instance to the target group using its IP address.
 
+1. #### Create a Network Load Balancer (NLB)
+    Create a [Network Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html) that is **enabled for the same subnets** that the RDS instance is in.
+
+1. #### Create TCP listeners
+
+    Create a [TCP listener](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-listener.html) for your RDS instance that forwards to the corresponding target group you created.
+
 1. #### Verify security groups and health checks
 
     Once the target groups have been created, make sure that the [health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html) are passing and that the targets are reported as healthy.
@@ -758,16 +825,39 @@ This PostgreSQL connection can then be reused across multiple [`CREATE SOURCE`](
 
     **Remarks**:
 
-    a. Network Load Balancers do not have associated security groups. Therefore, the security groups for your targets must use IP addresses to allow traffic.
+    - By default, Network Load Balancers do not have associated security
+      groups. In addition, target security groups cannot use client security
+      groups as a traffic source. Therefore, the security groups for your
+      targets must allow traffic using IP address ranges rather than security
+      group references. For more information, see the [AWS
+      documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
 
-    b. You can't use the security groups for the clients as a source in the security groups for the targets. Therefore, the security groups for your targets must use the IP addresses of the clients to allow traffic. For more details, check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
+    - If you use [network ACLs
+      (NACLs)](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html)
+      and traffic between the NLB and its targets crosses subnet boundaries,
+      the NACLs must allow both the application port and the ephemeral port
+      range (1024–65535) for return traffic. This can occur when cross-zone
+      load balancing is enabled, or when the NLB and its targets reside in
+      different subnets, even within the same Availability Zone.
 
-1. #### Create a Network Load Balancer (NLB)
-    Create a [Network Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html) that is **enabled for the same subnets** that the RDS instance is in.
+      For example, if a target application listens on port 9098, the target
+      subnet must allow ingress on port 9098 from the NLB's IP ranges and
+      egress on the ephemeral port range (1024–65535) to those ranges
+      for return traffic. Likewise, the NLB subnet must allow egress on
+      port 9098 to the target IP ranges and ingress on the ephemeral port
+      range from them.
 
-1. #### Create TCP listeners
+    - If you have associated a security group with your Network Load Balancer
+      and enabled **Enforce inbound rules on PrivateLink traffic**, the
+      security group's inbound rules also apply to traffic from Materialize's
+      VPC endpoint. Any traffic not explicitly permitted, including
+      Materialize's, will be silently blocked.
 
-    Create a [TCP listener](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-listener.html) for your RDS instance that forwards to the corresponding target group you created.
+      To resolve this, either:
+      - Add inbound rules to the NLB's security group that permit the listener
+        port and the health check port from a source covering Materialize's
+        VPC endpoint traffic, or
+      - Disable **Enforce inbound rules on PrivateLink traffic**.
 
 1. #### Create a VPC endpoint service
 
@@ -1159,6 +1249,93 @@ connectors.
 For more details on CDC support in Materialize, check the
 [Kafka source](/sql/create-source/kafka/#debezium-envelope) reference
 documentation.
+
+---
+
+## Fivetran
+
+[Fivetran](https://www.fivetran.com/) is a cloud-based automated data movement platform for
+extracting, loading and transforming data from a wide variety of connectors.
+
+You can use Fivetran to sync data into Materialize for the following use cases:
+- To sync data from SaaS applications or platforms, such as HubSpot, Shopify, or Stripe.
+- To sync data from event streaming sources, such as Kinesis or Google Pub/Sub.
+- To sync data from other data warehouses, such as Snowflake, Databricks, or Oracle.
+
+For relational databases like PostgreSQL or MySQL, and event streaming sources like Apache Kafka,
+you should prefer to use [Materialize native sources](/sql/create-source/).
+
+## Before you begin
+### Terminology
+Fivetran syncs data from what they call
+[sources](https://fivetran.com/docs/getting-started/glossary#source) to what they call
+[destinations](https://fivetran.com/docs/getting-started/glossary#destination). Users create
+[connectors](https://fivetran.com/docs/getting-started/glossary#connector) to configure the data
+pipelines that repeatedly sync the data from each source to the destination at a scheduled cadence.
+
+In this setup, Materialize is the destination. The source is whichever data source you're syncing
+into Materialize, such as Hubspot or Shopify.
+
+### Prerequisites
+Ensure that you have:
+- An active [Fivetran](https://www.fivetran.com/) account with
+[permission to add destinations and connectors](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/account-management/role-based-access-control#legacyandnewrbacmodel).
+- For the Materialize user that you're using to connect to Fivetran,
+[`CREATE`](/security/appendix/appendix-privileges/) privileges on the
+target database in Materialize.
+
+## Setup guide
+### Step 1: Create the Materialize destination
+Follow this
+[Materialize-authored guide in the Fivetran docs](https://fivetran.com/docs/destinations/materialize/setup-guide#materializesetupguide) to set up Materialize as a destination in Fivetran.
+
+### Step 2: Create the connector(s)
+Follow the
+[Fivetran guide on connectors](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/connectors#overview)
+to set up your connector(s). Choose your newly created Materialize destination as the destination
+for the connector.
+
+Schema changes to existing tables is not currently supported. When creating a Connector you should
+select the option to
+["Block all" schema changes](https://fivetran.com/docs/using-fivetran/fivetran-dashboard/connectors/schema#defineschemachangehandlingsettings).
+
+You can see the full list of available [Fivetran connectors](https://fivetran.com/docs/connectors)
+in their docs.
+
+## Other setup information
+### Type transformation mapping
+As we extract your data, we match Fivetran data types to types that Materialize supports. If we don't
+support a specific data type, we automatically change that type to the closest supported data type.
+
+The data types in Materialize follow Fivetran's standard data type storage.
+
+The following table illustrates how we transform Fivetran data types into Materialize-supported
+types:
+
+| FIVETRAN DATA TYPE | MATERIALIZE DATA TYPE |
+|--------------------|-----------------------|
+| BOOLEAN            | BOOLEAN               |
+| SHORT              | INT16                 |
+| INT                | INT32                 |
+| LONG               | INT64                 |
+| BIGDECIMAL         | DOUBLE                |
+| FLOAT              | FLOAT                 |
+| DOUBLE             | DOUBLE                |
+| LOCALDATE          | DATE                  |
+| LOCALDATETIME      | TIMESTAMP             |
+| INSTANT            | TIMESTAMP             |
+| STRING             | STRING                |
+| JSON               | JSONB                 |
+| BINARY             | STRING                |
+| XML                | Unsupported           |
+
+----
+
+### Sync frequency
+The highest sync frequency Fivetran offers is 1 minute for Enterprise and Business Critical plans,
+and 5 minutes for all other plans. The lowest sync frequency is 24 hours. You can read more about
+sync scheduling in the
+[Fivetran docs](https://fivetran.com/docs/core-concepts/syncoverview#syncfrequencyandscheduling).
 
 ---
 
@@ -1898,36 +2075,33 @@ Materialize supports schema changes in the upstream database as follows:
 > [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
 > [MySQL: Source versioning guide](/ingest-data/mysql/source-versioning/).
 
-<ul>
-<li>
-<p>Adding columns to tables. Materialize will <strong>not ingest</strong> new columns
-added upstream unless you use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> to
+- Adding columns to tables. Materialize will **not ingest** new columns
+added upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to
 first drop the affected subsource, and then add the table back to the source
-using <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a>.</p>
-</li>
-<li>
-<p>Dropping columns that were added after the source was created. These
-columns are never ingested, so you can drop them without issue.</p>
-</li>
-<li>
-<p>Adding or removing <code>NOT NULL</code> constraints to tables that were nullable
-when the source was created.</p>
-</li>
-</ul>
+using [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/).
+
+- Dropping columns that were added after the source was created. These
+columns are never ingested, so you can drop them without issue.
+
+- Adding or removing `NOT NULL` constraints to tables that were nullable
+when the source was created.
 
 #### Incompatible schema changes
 
-<p>All other schema changes to upstream tables will set the corresponding
+All other schema changes to upstream tables will set the corresponding
 subsource into an error state, which prevents you from reading from the
-subsource.</p>
-<p>To handle incompatible <a href="#schema-changes" >schema changes</a>, use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> to first drop the affected subsource,
-and then <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to add the
+subsource.
+
+To handle incompatible [schema changes](#schema-changes), use [`DROP
+SOURCE`](/sql/alter-source/#context) to first drop the affected subsource,
+and then [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to add the
 subsource back to the source. When you add the subsource, it will have the
-updated schema from the corresponding upstream table.</p>
+updated schema from the corresponding upstream table.
 
 ### Supported types
 
-<p>Materialize natively supports the following MySQL types:</p>
+Materialize natively supports the following MySQL types:
+
 <ul style="column-count: 3">
 <li><code>bigint</code></li>
 <li><code>binary</code></li>
@@ -1960,36 +2134,49 @@ updated schema from the corresponding upstream table.</p>
 <li><code>varchar</code></li>
 </ul>
 
-<p>When replicating tables that contain the <strong>unsupported <a href="/sql/types/" >data
-types</a></strong>, you can:</p>
-<ul>
-<li>
-<p>Use <a href="/sql/create-source/mysql/#handling-unsupported-types" ><code>TEXT COLUMNS</code>
-option</a> for the
-following unsupported  MySQL types:</p>
-<ul>
-<li><code>enum</code></li>
-<li><code>year</code></li>
-</ul>
-<p>The specified columns will be treated as <code>text</code> and will not offer the
-expected MySQL type features.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/create-source/mysql/#excluding-columns" ><code>EXCLUDE COLUMNS</code></a>
-option to exclude any columns that contain unsupported data types.</p>
-</li>
-</ul>
+When replicating tables that contain the **unsupported [data
+types](/sql/types/)**, you can:
+
+- Use [`TEXT COLUMNS`
+  option](/sql/create-source/mysql/#handling-unsupported-types) for the
+  following unsupported  MySQL types:
+
+  - `enum`
+  - `year`
+
+  The specified columns will be treated as `text` and will not offer the
+  expected MySQL type features.
+
+- Use the [`EXCLUDE COLUMNS`](/sql/create-source/mysql/#excluding-columns)
+option to exclude any columns that contain unsupported data types.
+
+#### Zero values for `date`, `datetime`, and `timestamp`
+
+MySQL allows the special "zero" values `0000-00-00`, `0000-00-00
+00:00:00` in `date`, `datetime`, and `timestamp` columns when the server
+`sql_mode` does not include `NO_ZERO_DATE` or `NO_ZERO_IN_DATE`. These
+values are not representable in Materialize's corresponding native types,
+so they will cause ingestion to fail for the affected column.
+
+To ingest columns that contain zero values, use [`TEXT
+COLUMNS`](/sql/create-source/mysql/#handling-unsupported-types) to
+decode the affected columns as `text`. The zero values for `date`,
+`datetime`, `timestamp`, and `year` are preserved verbatim as strings
+(e.g. `"0000-00-00 00:00:00"`, `"0000"`).
 
 ### Truncation
 
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
+Avoid truncating upstream tables that are being replicated into Materialize.
 If a replicated upstream table is truncated, the corresponding
 subsource in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
+produce any data until it is recreated.
+
+Instead of truncating, use an unqualified `DELETE` to remove all rows from
+the upstream table:
+
+```mzsql
+DELETE FROM t;
+```
 
 ### Modifying an existing source
 
@@ -2150,8 +2337,7 @@ produce any data until it is recreated.</p>
 <p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
 the upstream table:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
-<h3 id="inherited-tables">Inherited tables</h3>
+</span></span></code></pre></div><h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
 also present in the inherited table. However, both PostgreSQL&rsquo;s logical
@@ -2164,7 +2350,7 @@ table, i.e. in Materialize, the data will not be returned when serving
 <ul>
 <li>
 <p>If using legacy syntax <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a>:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
@@ -2173,7 +2359,7 @@ create a new view (materialized or non-) that unions the new table.</p>
 </li>
 <li>
 <p>If using new <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> syntax:</p>
-<p>You can mimic PostgreSQL’s <code>SELECT</code> behavior with inherited tables by
+<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
 inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the

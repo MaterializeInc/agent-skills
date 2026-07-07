@@ -2,18 +2,20 @@
 Connecting Materialize to an Apache Iceberg table
 > **Public Preview:** This feature is in public preview.
 
-Use `CREATE SINK ... INTO ICEBERG CATALOG...` to create Iceberg sinks. Iceberg sinks write data from Materialize into an Iceberg table hosted on
-AWS S3 Tables. As data changes in Materialize, your Iceberg tables are
-automatically kept up to date.
+Use `CREATE SINK ... INTO ICEBERG CATALOG...` to create Iceberg sinks. Iceberg
+sinks write data from Materialize into an Iceberg table hosted on AWS S3
+Tables or Google Cloud BigLake. As data changes in Materialize, your Iceberg
+tables are automatically kept up to date.
 
-To create an Iceberg sink, you need:
-
-- An [AWS connection](/sql/create-connection/#aws) for authentication with
-  object storage.
-- An [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) to
-  specify access parameters to your Iceberg catalog.
+To create an Iceberg sink, you need an [Iceberg catalog
+connection](/sql/create-connection/#iceberg-catalog) that specifies access
+parameters to your Iceberg catalog.
 
 ## Syntax
+
+> **Note:** `CREATE SINK` no longer includes a `USING AWS CONNECTION` clause.
+> Instead, the sink inherits credentials from the [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog).
+> Existing Iceberg sinks are not affected and will continue to function as before.
 
 **MODE UPSERT:**
 
@@ -25,7 +27,6 @@ INTO ICEBERG CATALOG CONNECTION <catalog_connection> (
   NAMESPACE = '<namespace>',
   TABLE = '<table>'
 )
-USING AWS CONNECTION <aws_connection>
 KEY ( <key_col> [, ...] ) [NOT ENFORCED]
 MODE UPSERT
 WITH (COMMIT INTERVAL = '<interval>')
@@ -41,7 +42,6 @@ WITH (COMMIT INTERVAL = '<interval>')
 | **ICEBERG CATALOG CONNECTION** `<catalog_connection>` | The name of the [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) to use.  |
 | **NAMESPACE** `'<namespace>'` | The Iceberg namespace (database) containing the table.  |
 | **TABLE** `'<table>'` | The name of the unpartitioned Iceberg table to write to. If the table doesn't exist, Materialize creates it automatically. For details, see [Iceberg table creation](/sql/create-sink/iceberg/#iceberg-table-creation).  |
-| **USING AWS CONNECTION** `<aws_connection>` | The [AWS connection](/sql/create-connection/#aws) for object storage access.  |
 | **KEY** ( `<key_col>` [, ...] ) | The columns that uniquely identify rows. Materialize validates that the key is unique unless `NOT ENFORCED` is specified.  |
 | **NOT ENFORCED** | Optional. Disable validation of key uniqueness. Use only when you have outside knowledge that the key is unique.  |
 | **MODE UPSERT** | Indicates that the sink uses upsert semantics based on the `KEY`.  |
@@ -57,7 +57,6 @@ INTO ICEBERG CATALOG CONNECTION <catalog_connection> (
   NAMESPACE = '<namespace>',
   TABLE = '<table>'
 )
-USING AWS CONNECTION <aws_connection>
 MODE APPEND
 WITH (COMMIT INTERVAL = '<interval>')
 
@@ -72,7 +71,6 @@ WITH (COMMIT INTERVAL = '<interval>')
 | **ICEBERG CATALOG CONNECTION** `<catalog_connection>` | The name of the [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) to use.  |
 | **NAMESPACE** `'<namespace>'` | The Iceberg namespace (database) containing the table.  |
 | **TABLE** `'<table>'` | The name of the unpartitioned Iceberg table to write to. If the table doesn't exist, Materialize creates it automatically. For details, see [Iceberg table creation](/sql/create-sink/iceberg/#iceberg-table-creation).  |
-| **USING AWS CONNECTION** `<aws_connection>` | The [AWS connection](/sql/create-connection/#aws) for object storage access.  |
 | **MODE APPEND** | Writes all changes as data rows instead of using Iceberg delete files. Two extra columns are appended to the Iceberg table: `_mz_diff` (`int`, `+1` for inserts, `-1` for deletes) and `_mz_timestamp` (`long`). An update produces two rows: one with `_mz_diff = -1` (old values) and one with `_mz_diff = +1` (new values). No `KEY` clause is permitted. See [Append mode](#append-mode).  |
 | **COMMIT INTERVAL** `'<interval>'` | How frequently to commit snapshots to Iceberg (e.g., `'60s'`, `'5m'`). See [Commit interval tradeoffs](#commit-interval-tradeoffs).  |
 
@@ -107,11 +105,12 @@ See also: [Restrictions and limitations](#restrictions-and-limitations).
 
 ### Exactly-once delivery
 
-<p>Iceberg sinks provide <strong>exactly-once delivery</strong>. After a restart,
+Iceberg sinks provide **exactly-once delivery**. After a restart,
 Materialize resumes from the last committed snapshot without duplicating
-data.</p>
-<p>Materialize stores progress information in Iceberg snapshot metadata
-properties (<code>mz-frontier</code> and <code>mz-sink-version</code>).</p>
+data.
+
+Materialize stores progress information in Iceberg snapshot metadata
+properties (`mz-frontier` and `mz-sink-version`).
 
 ### Commit interval tradeoffs
 
@@ -193,12 +192,9 @@ Materialize converts SQL types to Iceberg/Parquet types:
 
 ### Restrictions and limitations
 
-- Your S3 Tables bucket must be in the same AWS region as your Materialize
-deployment.
-
 - Partitioned tables are not supported.
 
-- Schema evolution of an Iceberg table is not supported. If the <code>SINK FROM</code> object&rsquo;s schema changes, you must drop and recreate the sink.
+- Schema evolution of an Iceberg table is not supported. If the `SINK FROM` object's schema changes, you must drop and recreate the sink.
 
 ### Delete handling
 
@@ -249,10 +245,11 @@ if conflicts persist, ensure no other writers are modifying the same table.
 
 ### Prerequisites: Create connections
 
-To create an Iceberg sink, you need an AWS connection and an Iceberg catalog
-connection.
+To create an Iceberg sink, you need an [Iceberg catalog connection](/serve-results/sink/iceberg/):
 
-The following example creates an AWS connection and an Iceberg catalog connection:
+**AWS S3 Tables:**
+
+The following example creates an [AWS connection](/sql/create-connection/#aws) and an [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) for AWS S3 Tables:
 ```mzsql
 -- First, create an AWS connection for authentication
 CREATE CONNECTION aws_connection
@@ -264,6 +261,29 @@ CREATE CONNECTION iceberg_catalog_connection TO ICEBERG CATALOG (
     URL = 'https://s3tables.us-east-1.amazonaws.com/iceberg',
     WAREHOUSE = 'arn:aws:s3tables:us-east-1:123456789012:bucket/my-table-bucket',
     AWS CONNECTION = aws_connection
+);
+
+```
+
+**GCP BigLake:**
+
+The following example creates a [GCP connection](/sql/create-connection/#gcp) and an [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) for Google Cloud BigLake:
+```mzsql
+-- Using the base64-encoded service account key (e.g. base64 < sa_key.json)
+CREATE SECRET gcp_service_account_key
+  AS decode('<base64-encoded service account key JSON>', 'base64');
+
+-- Create a GCP connection that uses the service-account key.
+CREATE CONNECTION gcp_connection TO GCP (
+    SERVICE ACCOUNT KEY = SECRET gcp_service_account_key
+);
+
+-- Create the Iceberg catalog connection pointing to BigLake.
+CREATE CONNECTION iceberg_catalog_connection TO ICEBERG CATALOG (
+    CATALOG TYPE = 'rest',
+    URL = 'https://biglake.googleapis.com/iceberg/v1/restcatalog',
+    WAREHOUSE = 'gs://<bucket>',
+    GCP CONNECTION = gcp_connection
 );
 
 ```
@@ -280,7 +300,6 @@ CREATE SINK user_events_iceberg
     NAMESPACE = 'events',
     TABLE = 'user_events'
   )
-  USING AWS CONNECTION aws_connection
   KEY (user_id, event_timestamp)
   MODE UPSERT
   WITH (COMMIT INTERVAL = '1m');
@@ -304,7 +323,6 @@ CREATE SINK deduped_sink
     NAMESPACE = 'raw',
     TABLE = 'events'
   )
-  USING AWS CONNECTION aws_connection
   KEY (event_id) NOT ENFORCED
   MODE UPSERT
   WITH (COMMIT INTERVAL = '1m');
@@ -325,7 +343,6 @@ CREATE SINK events_log_iceberg
     NAMESPACE = 'events',
     TABLE = 'user_events_log'
   )
-  USING AWS CONNECTION aws_connection
   MODE APPEND
   WITH (COMMIT INTERVAL = '1m');
 

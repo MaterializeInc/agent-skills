@@ -62,9 +62,39 @@ and retrieve the AWS principal needed to configure the AWS PrivateLink service.
 
     **Remarks**:
 
-    a. Network Load Balancers do not have associated security groups. Therefore, the security groups for your targets must use IP addresses to allow traffic.
+    - By default, Network Load Balancers do not have associated security
+      groups. In addition, target security groups cannot use client security
+      groups as a traffic source. Therefore, the security groups for your
+      targets must allow traffic using IP address ranges rather than security
+      group references. For more information, see the [AWS
+      documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
 
-    b. You can't use the security groups for the clients as a source in the security groups for the targets. Therefore, the security groups for your targets must use the IP addresses of the clients to allow traffic. For more details, check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
+    - If you use [network ACLs
+      (NACLs)](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html)
+      and traffic between the NLB and its targets crosses subnet boundaries,
+      the NACLs must allow both the application port and the ephemeral port
+      range (1024–65535) for return traffic. This can occur when cross-zone
+      load balancing is enabled, or when the NLB and its targets reside in
+      different subnets, even within the same Availability Zone.
+
+      For example, if a target application listens on port 9098, the target
+      subnet must allow ingress on port 9098 from the NLB's IP ranges and
+      egress on the ephemeral port range (1024–65535) to those ranges
+      for return traffic. Likewise, the NLB subnet must allow egress on
+      port 9098 to the target IP ranges and ingress on the ephemeral port
+      range from them.
+
+    - If you have associated a security group with your Network Load Balancer
+      and enabled **Enforce inbound rules on PrivateLink traffic**, the
+      security group's inbound rules also apply to traffic from Materialize's
+      VPC endpoint. Any traffic not explicitly permitted, including
+      Materialize's, will be silently blocked.
+
+      To resolve this, either:
+      - Add inbound rules to the NLB's security group that permit the listener
+        port and the health check port from a source covering Materialize's
+        VPC endpoint traffic, or
+      - Disable **Enforce inbound rules on PrivateLink traffic**.
 
 1. Create a VPC [endpoint service](https://docs.aws.amazon.com/vpc/latest/privatelink/create-endpoint-service.html) and associate it with the **Network Load Balancer** that you’ve just created.
 
@@ -191,7 +221,7 @@ connection you just configured:
 > see the [Terraform module repository](https://github.com/MaterializeInc/terraform-aws-rds-privatelink).
 
 1. #### Create target groups
-    Create a dedicated [target group](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-target-group.html) for your RDS or Aurora or Aurora instance with the following details:
+    Create a dedicated [target group](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-target-group.html) for your RDS or Aurora instance with the following details:
 
     a. Target type as **IP address**.
 
@@ -203,6 +233,13 @@ connection you just configured:
 
     e. Click next, and register the respective RDS or Aurora instance to the target group using its IP address.
 
+1. #### Create a Network Load Balancer (NLB)
+    Create a [Network Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html) that is **enabled for the same subnets** that the RDS or Aurora instance is in.
+
+1. #### Create TCP listeners
+
+    Create a [TCP listener](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-listener.html) for your RDS or Aurora instance that forwards to the corresponding target group you created.
+
 1. #### Verify security groups and health checks
 
     Once the target groups have been created, make sure that the [health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html) are passing and that the targets are reported as healthy.
@@ -211,16 +248,39 @@ connection you just configured:
 
     **Remarks**:
 
-    a. Network Load Balancers do not have associated security groups. Therefore, the security groups for your targets must use IP addresses to allow traffic.
+    - By default, Network Load Balancers do not have associated security
+      groups. In addition, target security groups cannot use client security
+      groups as a traffic source. Therefore, the security groups for your
+      targets must allow traffic using IP address ranges rather than security
+      group references. For more information, see the [AWS
+      documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
 
-    b. You can't use the security groups for the clients as a source in the security groups for the targets. Therefore, the security groups for your targets must use the IP addresses of the clients to allow traffic. For more details, check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
+    - If you use [network ACLs
+      (NACLs)](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html)
+      and traffic between the NLB and its targets crosses subnet boundaries,
+      the NACLs must allow both the application port and the ephemeral port
+      range (1024–65535) for return traffic. This can occur when cross-zone
+      load balancing is enabled, or when the NLB and its targets reside in
+      different subnets, even within the same Availability Zone.
 
-1. #### Create a Network Load Balancer (NLB)
-    Create a [Network Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html) that is **enabled for the same subnets** that the RDS or Aurora instance is in.
+      For example, if a target application listens on port 9098, the target
+      subnet must allow ingress on port 9098 from the NLB's IP ranges and
+      egress on the ephemeral port range (1024–65535) to those ranges
+      for return traffic. Likewise, the NLB subnet must allow egress on
+      port 9098 to the target IP ranges and ingress on the ephemeral port
+      range from them.
 
-1. #### Create TCP listeners
+    - If you have associated a security group with your Network Load Balancer
+      and enabled **Enforce inbound rules on PrivateLink traffic**, the
+      security group's inbound rules also apply to traffic from Materialize's
+      VPC endpoint. Any traffic not explicitly permitted, including
+      Materialize's, will be silently blocked.
 
-    Create a [TCP listener](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-listener.html) for your RDS or Aurora instance that forwards to the corresponding target group you created.
+      To resolve this, either:
+      - Add inbound rules to the NLB's security group that permit the listener
+        port and the health check port from a source covering Materialize's
+        VPC endpoint traffic, or
+      - Disable **Enforce inbound rules on PrivateLink traffic**.
 
 1. #### Create a VPC endpoint service
 
@@ -347,6 +407,13 @@ This PostgreSQL connection can then be reused across multiple [`CREATE SOURCE`](
 
     e. Click next, and register the respective RDS instance to the target group using its IP address.
 
+1. #### Create a Network Load Balancer (NLB)
+    Create a [Network Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html) that is **enabled for the same subnets** that the RDS instance is in.
+
+1. #### Create TCP listeners
+
+    Create a [TCP listener](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-listener.html) for your RDS instance that forwards to the corresponding target group you created.
+
 1. #### Verify security groups and health checks
 
     Once the target groups have been created, make sure that the [health checks](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-health-checks.html) are passing and that the targets are reported as healthy.
@@ -355,16 +422,39 @@ This PostgreSQL connection can then be reused across multiple [`CREATE SOURCE`](
 
     **Remarks**:
 
-    a. Network Load Balancers do not have associated security groups. Therefore, the security groups for your targets must use IP addresses to allow traffic.
+    - By default, Network Load Balancers do not have associated security
+      groups. In addition, target security groups cannot use client security
+      groups as a traffic source. Therefore, the security groups for your
+      targets must allow traffic using IP address ranges rather than security
+      group references. For more information, see the [AWS
+      documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
 
-    b. You can't use the security groups for the clients as a source in the security groups for the targets. Therefore, the security groups for your targets must use the IP addresses of the clients to allow traffic. For more details, check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
+    - If you use [network ACLs
+      (NACLs)](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html)
+      and traffic between the NLB and its targets crosses subnet boundaries,
+      the NACLs must allow both the application port and the ephemeral port
+      range (1024–65535) for return traffic. This can occur when cross-zone
+      load balancing is enabled, or when the NLB and its targets reside in
+      different subnets, even within the same Availability Zone.
 
-1. #### Create a Network Load Balancer (NLB)
-    Create a [Network Load Balancer](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-network-load-balancer.html) that is **enabled for the same subnets** that the RDS instance is in.
+      For example, if a target application listens on port 9098, the target
+      subnet must allow ingress on port 9098 from the NLB's IP ranges and
+      egress on the ephemeral port range (1024–65535) to those ranges
+      for return traffic. Likewise, the NLB subnet must allow egress on
+      port 9098 to the target IP ranges and ingress on the ephemeral port
+      range from them.
 
-1. #### Create TCP listeners
+    - If you have associated a security group with your Network Load Balancer
+      and enabled **Enforce inbound rules on PrivateLink traffic**, the
+      security group's inbound rules also apply to traffic from Materialize's
+      VPC endpoint. Any traffic not explicitly permitted, including
+      Materialize's, will be silently blocked.
 
-    Create a [TCP listener](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/create-listener.html) for your RDS instance that forwards to the corresponding target group you created.
+      To resolve this, either:
+      - Add inbound rules to the NLB's security group that permit the listener
+        port and the health check port from a source covering Materialize's
+        VPC endpoint traffic, or
+      - Disable **Enforce inbound rules on PrivateLink traffic**.
 
 1. #### Create a VPC endpoint service
 

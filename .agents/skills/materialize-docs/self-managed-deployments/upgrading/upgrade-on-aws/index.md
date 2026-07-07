@@ -14,14 +14,15 @@ AWS](/self-managed-deployments/installation/install-on-aws/).
 notes</a>.</p>
 </li>
 <li>
-<strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+**Always** upgrade the Materialize Operator **before**
 upgrading the Materialize instances.
+
 </li>
 </ul>
 
-> **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
-> at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
-> permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
+> **Note:** For major version upgrades, you can **only** upgrade **one** major version
+> at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
+> permitted but **v26**.1.0 to **v28**.0.0 is not.
 
 > **Note:** Downgrading is not supported.
 
@@ -85,24 +86,26 @@ upgrading the Materialize instances.
 
 ### Step 2: Update the Helm Chart
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
-<p>To update your Materialize Helm Chart repository:</p>
-<ol>
-<li>
-<p>Update the Helm repo:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm repo update materialize
-</span></span></code></pre></div></li>
-<li>
-<p>View the available chart versions:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm search repo materialize/materialize-operator --versions
-</span></span></code></pre></div></li>
-</ol>
+To update your Materialize Helm Chart repository:
+
+1. Update the Helm repo:
+
+   ```shell
+   helm repo update materialize
+   ```
+
+1. View the available chart versions:
+
+   ```shell
+   helm search repo materialize/materialize-operator --versions
+   ```
 
 ### Step 3: Upgrade the Materialize Operator
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
 <ol>
@@ -123,14 +126,14 @@ simple-demo  materialize  1         2025-12-08 11:39:50.185976 -0500 EST   deplo
 </span></span></code></pre></div></li>
 <li>
 <p>Upgrade your Operator. For example, the following upgrades the Operator
-to v26.27.0:</p>
-> **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
->    at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
->    permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
+to v26.29.0:</p>
+> **Note:** For major version upgrades, you can **only** upgrade **one** major version
+>    at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
+>    permitted but **v26**.1.0 to **v28**.0.0 is not.
 
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade -n materialize simple-demo materialize/materialize-operator  <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -f my-values.yaml <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.27.0
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.29.0
 </span></span></code></pre></div></li>
 <li>
 <p>Verify that the Operator is running:</p>
@@ -146,7 +149,7 @@ Materialize instances.</p>
 
 ### Step 4: Upgrading Materialize Instances
 
-> **Important:** <strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+> **Important:** **Always** upgrade the Materialize Operator **before**
 > upgrading the Materialize instances.
 
 <p><strong>After</strong> you have upgraded your Materialize Operator, upgrade your
@@ -174,7 +177,7 @@ main
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main<span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.27.0\&#34;}}&#34;</span>
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.29.0\&#34;}}&#34;</span>
 </span></span></code></pre></div></li>
 <li>
 <p>Rollout the Materialize instance version change.</p>

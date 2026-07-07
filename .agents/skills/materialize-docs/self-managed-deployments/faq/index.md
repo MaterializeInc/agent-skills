@@ -27,3 +27,4 @@ kubectl -n materialize-environment patch secret materialize-backend -p '{"string
 ## How can I downgrade Self-Managed Materialize?
 
 Downgrading is not supported.
+

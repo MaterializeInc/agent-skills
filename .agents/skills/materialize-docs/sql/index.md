@@ -1226,31 +1226,29 @@ VIEW`](/sql/create-materialized-view/) with [`ALTER MATERIALIZED VIEW ... APPLY
 REPLACEMENT`](/sql/alter-materialized-view) to replace materialized views
 in-place without recreating dependent objects or incurring downtime.
 
-<p>When replacing a materialized view, the operation:</p>
-<ul>
-<li>
-<p>Replaces the materialized view&rsquo;s definition with that of the replacement
-view and drops the replacement view at the same time.</p>
-</li>
-<li>
-<p>Emits a diff representing the changes between the old and new output.</p>
-</li>
-</ul>
+When replacing a materialized view, the operation:
+
+- Replaces the materialized view's definition with that of the replacement
+  view and drops the replacement view at the same time.
+
+- Emits a diff representing the changes between the old and new output.
 
 See [Recommended checks before replacing a
 view](/sql/alter-materialized-view/#recommended-checks-before-replacing-a-view).
 
 #### Recommended checks before replacing a view
 
-<p>Before applying, verify that the replacement materialized view is hydrated
-to avoid downtime:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">   <span class="n">mv</span><span class="mf">.</span><span class="k">name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">   <span class="n">h</span><span class="mf">.</span><span class="n">hydrated</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">mz_catalog</span><span class="mf">.</span><span class="n">mz_materialized_views</span> <span class="k">AS</span> <span class="n">mv</span>
-</span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_hydration_statuses</span> <span class="k">AS</span> <span class="n">h</span> <span class="k">ON</span> <span class="p">(</span><span class="n">mv</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">h</span><span class="mf">.</span><span class="n">object_id</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">mv</span><span class="mf">.</span><span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;&lt;replacement_view&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div>
+Before applying, verify that the replacement materialized view is hydrated
+to avoid downtime:
+
+  ```mzsql
+  SELECT
+     mv.name,
+     h.hydrated
+  FROM mz_catalog.mz_materialized_views AS mv
+  JOIN mz_internal.mz_hydration_statuses AS h ON (mv.id = h.object_id)
+  WHERE mv.name = '<replacement_view>';
+  ```
 
 #### Considerations
 
@@ -1260,23 +1258,30 @@ cause temporary CPU and memory spikes.
 
 #### Troubleshooting
 
-<p><strong>Issue:</strong> Command does not return.</p>
-<p><strong>Common cause:</strong> The original materialized view is lagging behind the replacement. If
+**Issue:** Command does not return.
+
+**Common cause:** The original materialized view is lagging behind the replacement. If
 the original is lagging behind the replacement, the command waits for the
-original view to catch up.</p>
-<p><strong>Action:</strong> Cancel the command and check whether the original materialized view is
-lagging behind the replacement.</p>
-<p>To check whether the original materialized view is lagging behind the replacement, run
+original view to catch up.
+
+**Action:** Cancel the command and check whether the original materialized view is
+lagging behind the replacement.
+
+To check whether the original materialized view is lagging behind the replacement, run
 the following query to check their write frontiers, substituting the names
-of your original and replacement materialized views.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="k">name</span><span class="p">,</span> <span class="n">f</span><span class="mf">.</span><span class="n">write_frontier</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">mz_objects</span> <span class="n">o</span><span class="p">,</span> <span class="n">mz_cluster_replica_frontiers</span> <span class="n">f</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="k">name</span> <span class="k">in</span> <span class="p">(</span><span class="s1">&#39;&lt;view&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;view_replacement&gt;&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">AND</span> <span class="n">f</span><span class="mf">.</span><span class="n">object_id</span> <span class="o">=</span> <span class="n">o</span><span class="mf">.</span><span class="k">id</span><span class="p">;</span>
-</span></span></code></pre></div><p>If the original materialized view is behind, rerun the query to check the progress of the
+of your original and replacement materialized views.
+
+```mzsql
+SELECT o.name, f.write_frontier
+FROM mz_objects o, mz_cluster_replica_frontiers f
+WHERE o.name in ('<view>', '<view_replacement>')
+AND f.object_id = o.id;
+```
+
+If the original materialized view is behind, rerun the query to check the progress of the
 original materialized view. If the rate of advancement suggests that catch
 up will take an extended period of time, it is recommended to drop the
-replacement view.</p>
+replacement view.
 
 ## Privileges
 
@@ -2382,7 +2387,11 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
+
+, `bounded staleness <duration>` (for example, `bounded staleness 5s`)
+
+. | Yes
 
 ### Other configuration parameters
 
@@ -2479,7 +2488,11 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
+
+, `bounded staleness <duration>` (for example, `bounded staleness 5s`)
+
+. | Yes
 
 ### Other configuration parameters
 
@@ -2746,21 +2759,16 @@ The privileges required to execute this statement are:
 
 ## BEGIN
 
-<p><a href="/sql/begin/" ><code>BEGIN</code></a> starts a transaction block. Once a transaction is started:</p>
-<ul>
-<li>Statements within the transaction are executed sequentially.</li>
-<li>A transaction ends with either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
-<a href="/sql/rollback/" ><code>ROLLBACK</code></a> statement.
-<ul>
-<li>If all transaction statements succeed and a <a href="/sql/commit/" ><code>COMMIT</code></a> is
-<a href="/sql/commit/#details" >issued</a>, all changes are saved.</li>
-<li>If all transaction statements succeed and a <a href="/sql/rollback/" ><code>ROLLBACK</code></a>
-is issued, all changes are discarded.</li>
-<li>If an error occurs and either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
-<a href="/sql/rollback/" ><code>ROLLBACK</code></a> is issued, all changes are discarded.</li>
-</ul>
-</li>
-</ul>
+[`BEGIN`](/sql/begin/) starts a transaction block. Once a transaction is started:
+- Statements within the transaction are executed sequentially.
+- A transaction ends with either a [`COMMIT`](/sql/commit/) or a
+  [`ROLLBACK`](/sql/rollback/) statement.
+  - If all transaction statements succeed and a [`COMMIT`](/sql/commit/) is
+  [issued](/sql/commit/#details), all changes are saved.
+  - If all transaction statements succeed and a [`ROLLBACK`](/sql/rollback/)
+  is issued, all changes are discarded.
+  - If an error occurs and either a [`COMMIT`](/sql/commit/) or a
+  [`ROLLBACK`](/sql/rollback/) is issued, all changes are discarded.
 
 Materialize supports multi-statement[^ddltxn] transaction blocks for:
 - [**read-only** statements](#read-only-transactions);
@@ -2906,24 +2914,31 @@ statements.
 
 #### INSERT-only transactions
 
-<p>An <strong>insert-only</strong> transaction block only contains <a href="/sql/insert/" ><code>INSERT</code></a>
-statements that insert into the <strong>same</strong> table.</p>
-<p>On a successful <a href="/sql/commit/" ><code>COMMIT</code></a>, all statements from the
-transaction are committed at the same timestamp.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">BEGIN</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;brownie&#39;</span><span class="p">,</span><span class="mf">10</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1">-- Subsequent INSERTs must write to sales_items table only
-</span></span></span><span class="line"><span class="cl"><span class="c1">-- Otherwise, the COMMIT will error and roll back the transaction.
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
-</span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;chocolate cake&#39;</span><span class="p">,</span><span class="mf">1</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;chocolate chip cookie&#39;</span><span class="p">,</span><span class="mf">20</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="k">COMMIT</span><span class="p">;</span>
-</span></span></code></pre></div><p>If, within the transaction, a statement inserts into a table different from
-that of the first statement, on <a href="/sql/commit/" ><code>COMMIT</code></a>, the transaction
-encounters an <strong>internal ERROR</strong> and rolls back:</p>
-<pre tabindex="0"><code class="language-none" data-lang="none">ERROR:  internal error, wrong set of locks acquired
-</code></pre>
+An **insert-only** transaction block only contains [`INSERT`](/sql/insert/)
+statements that insert into the **same** table.
+
+On a successful [`COMMIT`](/sql/commit/), all statements from the
+transaction are committed at the same timestamp.
+
+```mzsql
+BEGIN;
+INSERT INTO orders VALUES (11,current_timestamp,'brownie',10);
+
+-- Subsequent INSERTs must write to sales_items table only
+-- Otherwise, the COMMIT will error and roll back the transaction.
+
+INSERT INTO orders VALUES (11,current_timestamp,'chocolate cake',1);
+INSERT INTO orders VALUES (11,current_timestamp,'chocolate chip cookie',20);
+COMMIT;
+```
+
+If, within the transaction, a statement inserts into a table different from
+that of the first statement, on [`COMMIT`](/sql/commit/), the transaction
+encounters an **internal ERROR** and rolls back:
+
+```none
+ERROR:  internal error, wrong set of locks acquired
+```
 
 ### DDL-only transactions
 
@@ -3055,21 +3070,16 @@ COMMIT;
 
 ## Details
 
-<p><a href="/sql/begin/" ><code>BEGIN</code></a> starts a transaction block. Once a transaction is started:</p>
-<ul>
-<li>Statements within the transaction are executed sequentially.</li>
-<li>A transaction ends with either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
-<a href="/sql/rollback/" ><code>ROLLBACK</code></a> statement.
-<ul>
-<li>If all transaction statements succeed and a <a href="/sql/commit/" ><code>COMMIT</code></a> is
-<a href="/sql/commit/#details" >issued</a>, all changes are saved.</li>
-<li>If all transaction statements succeed and a <a href="/sql/rollback/" ><code>ROLLBACK</code></a>
-is issued, all changes are discarded.</li>
-<li>If an error occurs and either a <a href="/sql/commit/" ><code>COMMIT</code></a> or a
-<a href="/sql/rollback/" ><code>ROLLBACK</code></a> is issued, all changes are discarded.</li>
-</ul>
-</li>
-</ul>
+[`BEGIN`](/sql/begin/) starts a transaction block. Once a transaction is started:
+- Statements within the transaction are executed sequentially.
+- A transaction ends with either a [`COMMIT`](/sql/commit/) or a
+  [`ROLLBACK`](/sql/rollback/) statement.
+  - If all transaction statements succeed and a [`COMMIT`](/sql/commit/) is
+  [issued](/sql/commit/#details), all changes are saved.
+  - If all transaction statements succeed and a [`ROLLBACK`](/sql/rollback/)
+  is issued, all changes are discarded.
+  - If an error occurs and either a [`COMMIT`](/sql/commit/) or a
+  [`ROLLBACK`](/sql/rollback/) is issued, all changes are discarded.
 
 Transactions in Materialize are **read-only** transactions, **write-only**
 (more specifically, **insert-only**) transactions, or **DDL-only**
@@ -3088,24 +3098,31 @@ statements in the transaction are committed at the same timestamp.
 
 In Materialize, write-only transactions are **insert-only** transactions.
 
-<p>An <strong>insert-only</strong> transaction block only contains <a href="/sql/insert/" ><code>INSERT</code></a>
-statements that insert into the <strong>same</strong> table.</p>
-<p>On a successful <a href="/sql/commit/" ><code>COMMIT</code></a>, all statements from the
-transaction are committed at the same timestamp.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">BEGIN</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;brownie&#39;</span><span class="p">,</span><span class="mf">10</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1">-- Subsequent INSERTs must write to sales_items table only
-</span></span></span><span class="line"><span class="cl"><span class="c1">-- Otherwise, the COMMIT will error and roll back the transaction.
-</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
-</span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;chocolate cake&#39;</span><span class="p">,</span><span class="mf">1</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="k">INSERT</span> <span class="k">INTO</span> <span class="n">orders</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mf">11</span><span class="p">,</span><span class="n">current_timestamp</span><span class="p">,</span><span class="s1">&#39;chocolate chip cookie&#39;</span><span class="p">,</span><span class="mf">20</span><span class="p">);</span>
-</span></span><span class="line"><span class="cl"><span class="k">COMMIT</span><span class="p">;</span>
-</span></span></code></pre></div><p>If, within the transaction, a statement inserts into a table different from
-that of the first statement, on <a href="/sql/commit/" ><code>COMMIT</code></a>, the transaction
-encounters an <strong>internal ERROR</strong> and rolls back:</p>
-<pre tabindex="0"><code class="language-none" data-lang="none">ERROR:  internal error, wrong set of locks acquired
-</code></pre>
+An **insert-only** transaction block only contains [`INSERT`](/sql/insert/)
+statements that insert into the **same** table.
+
+On a successful [`COMMIT`](/sql/commit/), all statements from the
+transaction are committed at the same timestamp.
+
+```mzsql
+BEGIN;
+INSERT INTO orders VALUES (11,current_timestamp,'brownie',10);
+
+-- Subsequent INSERTs must write to sales_items table only
+-- Otherwise, the COMMIT will error and roll back the transaction.
+
+INSERT INTO orders VALUES (11,current_timestamp,'chocolate cake',1);
+INSERT INTO orders VALUES (11,current_timestamp,'chocolate chip cookie',20);
+COMMIT;
+```
+
+If, within the transaction, a statement inserts into a table different from
+that of the first statement, on [`COMMIT`](/sql/commit/), the transaction
+encounters an **internal ERROR** and rolls back:
+
+```none
+ERROR:  internal error, wrong set of locks acquired
+```
 
 ### Commit a read-only transaction
 
@@ -3415,274 +3432,79 @@ WITH (
 
 #### Writer settings
 
-<p>For <code>'csv'</code> format, Materialize writes CSV files using the following
-writer settings:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Setting</th>
-          <th>Value</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>delimiter</td>
-          <td><code>,</code></td>
-      </tr>
-      <tr>
-          <td>quote</td>
-          <td><code>&quot;</code></td>
-      </tr>
-      <tr>
-          <td>escape</td>
-          <td><code>&quot;</code></td>
-      </tr>
-      <tr>
-          <td>header</td>
-          <td><code>false</code></td>
-      </tr>
-  </tbody>
-</table>
+For `'csv'` format, Materialize writes CSV files using the following
+writer settings:
+
+| Setting | Value |
+|---------|-------|
+| delimiter | `,` |
+| quote | `"` |
+| escape | `"` |
+| header | `false` |
 
 ### Copy to S3: Parquet {#copy-to-s3-parquet}
 
 #### Writer settings
 
-<p>For <code>'parquet'</code> format, Materialize writes Parquet files that aim for
+For `'parquet'` format, Materialize writes Parquet files that aim for
 maximum compatibility with downstream systems. The following Parquet
-writer settings are used:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Setting</th>
-          <th>Value</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Writer version</td>
-          <td>1.0</td>
-      </tr>
-      <tr>
-          <td>Compression</td>
-          <td><code>snappy</code></td>
-      </tr>
-      <tr>
-          <td>Default column encoding</td>
-          <td>Dictionary</td>
-      </tr>
-      <tr>
-          <td>Fallback column encoding</td>
-          <td>Plain</td>
-      </tr>
-      <tr>
-          <td>Dictionary page encoding</td>
-          <td>Plain</td>
-      </tr>
-      <tr>
-          <td>Dictionary data page encoding</td>
-          <td><code>RLE_DICTIONARY</code></td>
-      </tr>
-  </tbody>
-</table>
-<p>If you encounter issues trying to ingest Parquet files produced by
-Materialize into your downstream systems, please <a href="/support/" >contact our
-team</a>.</p>
+writer settings are used:
+
+| Setting | Value |
+|---------|-------|
+| Writer version | 1.0 |
+| Compression | `snappy` |
+| Default column encoding | Dictionary |
+| Fallback column encoding | Plain |
+| Dictionary page encoding | Plain |
+| Dictionary data page encoding | `RLE_DICTIONARY` |
+
+If you encounter issues trying to ingest Parquet files produced by
+Materialize into your downstream systems, please [contact our
+team](/support/).
 
 #### Parquet data types
 
-<p>When using the <code>parquet</code> format, Materialize converts the values in the
-result set to <a href="https://arrow.apache.org/docs/index.html" >Apache Arrow</a>,
+When using the `parquet` format, Materialize converts the values in the
+result set to [Apache Arrow](https://arrow.apache.org/docs/index.html),
 and then serializes this Arrow representation to Parquet. The Arrow schema is
 embedded in the Parquet file metadata and allows reconstructing the Arrow
-representation using a compatible reader.</p>
-<p>Materialize also includes <a href="https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#metadata" >Parquet <code>LogicalType</code> annotations</a>
-where possible. However, many newer <code>LogicalType</code> annotations are not supported
-in the 1.0 writer version.</p>
-<p>Materialize also embeds its own type information into the Apache Arrow schema.
-The field metadata in the schema contains an <code>ARROW:extension:name</code> annotation
-to indicate the Materialize native type the field originated from.</p>
-<table>
-  <thead>
-      <tr>
-          <th>Materialize type</th>
-          <th>Arrow extension name</th>
-          <th><a href="https://github.com/apache/arrow/blob/main/format/Schema.fbs" >Arrow type</a></th>
-          <th><a href="https://parquet.apache.org/docs/file-format/types/" >Parquet primitive type</a></th>
-          <th><a href="https://github.com/apache/parquet-format/blob/master/LogicalTypes.md" >Parquet logical type</a></th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/sql/types/integer/#bigint-info" ><code>bigint</code></a></td>
-          <td><code>materialize.v1.bigint</code></td>
-          <td><code>int64</code></td>
-          <td><code>INT64</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/boolean/" ><code>boolean</code></a></td>
-          <td><code>materialize.v1.boolean</code></td>
-          <td><code>bool</code></td>
-          <td><code>BOOLEAN</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/bytea/" ><code>bytea</code></a></td>
-          <td><code>materialize.v1.bytea</code></td>
-          <td><code>large_binary</code></td>
-          <td><code>BYTE_ARRAY</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/date/" ><code>date</code></a></td>
-          <td><code>materialize.v1.date</code></td>
-          <td><code>date32</code></td>
-          <td><code>INT32</code></td>
-          <td><code>DATE</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/float/#double-precision-info" ><code>double precision</code></a></td>
-          <td><code>materialize.v1.double</code></td>
-          <td><code>float64</code></td>
-          <td><code>DOUBLE</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/integer/#integer-info" ><code>integer</code></a></td>
-          <td><code>materialize.v1.integer</code></td>
-          <td><code>int32</code></td>
-          <td><code>INT32</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/jsonb/" ><code>jsonb</code></a></td>
-          <td><code>materialize.v1.jsonb</code></td>
-          <td><code>large_utf8</code></td>
-          <td><code>BYTE_ARRAY</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/map/" ><code>map</code></a></td>
-          <td><code>materialize.v1.map</code></td>
-          <td><code>map</code> (<code>struct</code> with fields <code>keys</code> and <code>values</code>)</td>
-          <td>Nested</td>
-          <td><code>MAP</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/list/" ><code>list</code></a></td>
-          <td><code>materialize.v1.list</code></td>
-          <td><code>list</code></td>
-          <td>Nested</td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/numeric/" ><code>numeric</code></a></td>
-          <td><code>materialize.v1.numeric</code></td>
-          <td><code>decimal128[38, 10 or max-scale]</code></td>
-          <td><code>FIXED_LEN_BYTE_ARRAY</code></td>
-          <td><code>DECIMAL</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/float/#real-info" ><code>real</code></a></td>
-          <td><code>materialize.v1.real</code></td>
-          <td><code>float32</code></td>
-          <td><code>FLOAT</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/integer/#smallint-info" ><code>smallint</code></a></td>
-          <td><code>materialize.v1.smallint</code></td>
-          <td><code>int16</code></td>
-          <td><code>INT32</code></td>
-          <td><code>INT(16, true)</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/text/" ><code>text</code></a></td>
-          <td><code>materialize.v1.text</code></td>
-          <td><code>utf8</code> or <code>large_utf8</code></td>
-          <td><code>BYTE_ARRAY</code></td>
-          <td><code>STRING</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/time/" ><code>time</code></a></td>
-          <td><code>materialize.v1.time</code></td>
-          <td><code>time64[nanosecond]</code></td>
-          <td><code>INT64</code></td>
-          <td><code>TIME[isAdjustedToUTC = false, unit = NANOS]</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/uint/#uint2-info" ><code>uint2</code></a></td>
-          <td><code>materialize.v1.uint2</code></td>
-          <td><code>uint16</code></td>
-          <td><code>INT32</code></td>
-          <td><code>INT(16, false)</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/uint/#uint4-info" ><code>uint4</code></a></td>
-          <td><code>materialize.v1.uint4</code></td>
-          <td><code>uint32</code></td>
-          <td><code>INT32</code></td>
-          <td><code>INT(32, false)</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/uint/#uint8-info" ><code>uint8</code></a></td>
-          <td><code>materialize.v1.uint8</code></td>
-          <td><code>uint64</code></td>
-          <td><code>INT64</code></td>
-          <td><code>INT(64, false)</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/timestamp/#timestamp-info" ><code>timestamp</code></a></td>
-          <td><code>materialize.v1.timestamp</code></td>
-          <td><code>time64[microsecond]</code></td>
-          <td><code>INT64</code></td>
-          <td><code>TIMESTAMP[isAdjustedToUTC = false, unit = MICROS]</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/timestamp/#timestamp-with-time-zone-info" ><code>timestamp with time zone</code></a></td>
-          <td><code>materialize.v1.timestampz</code></td>
-          <td><code>time64[microsecond]</code></td>
-          <td><code>INT64</code></td>
-          <td><code>TIMESTAMP[isAdjustedToUTC = true, unit = MICROS]</code></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/array/" >Arrays</a> (<code>[]</code>)</td>
-          <td><code>materialize.v1.array</code></td>
-          <td><code>struct</code> with <code>list</code> field <code>items</code> and <code>uint8</code> field <code>dimensions</code></td>
-          <td>Nested</td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/uuid/" ><code>uuid</code></a></td>
-          <td><code>materialize.v1.uuid</code></td>
-          <td><code>fixed_size_binary(16)</code></td>
-          <td><code>FIXED_LEN_BYTE_ARRAY</code></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/oid/" ><code>oid</code></a></td>
-          <td>Unsupported</td>
-          <td></td>
-          <td></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/interval/" ><code>interval</code></a></td>
-          <td>Unsupported</td>
-          <td></td>
-          <td></td>
-          <td></td>
-      </tr>
-      <tr>
-          <td><a href="/sql/types/record/" ><code>record</code></a></td>
-          <td>Unsupported</td>
-          <td></td>
-          <td></td>
-          <td></td>
-      </tr>
-  </tbody>
-</table>
+representation using a compatible reader.
+
+Materialize also includes [Parquet `LogicalType` annotations](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md#metadata)
+where possible. However, many newer `LogicalType` annotations are not supported
+in the 1.0 writer version.
+
+Materialize also embeds its own type information into the Apache Arrow schema.
+The field metadata in the schema contains an `ARROW:extension:name` annotation
+to indicate the Materialize native type the field originated from.
+
+Materialize type | Arrow extension name | [Arrow type](https://github.com/apache/arrow/blob/main/format/Schema.fbs) | [Parquet primitive type](https://parquet.apache.org/docs/file-format/types/) | [Parquet logical type](https://github.com/apache/parquet-format/blob/master/LogicalTypes.md)
+----------------------------------|----------------------------|------------|-------------------|--------------
+[`bigint`](/sql/types/integer/#bigint-info)         | `materialize.v1.bigint`    | `int64` | `INT64`
+[`boolean`](/sql/types/boolean/)        | `materialize.v1.boolean`   | `bool` | `BOOLEAN`
+[`bytea`](/sql/types/bytea/)            | `materialize.v1.bytea`     | `large_binary` | `BYTE_ARRAY`
+[`date`](/sql/types/date/)              | `materialize.v1.date`      | `date32` | `INT32` | `DATE`
+[`double precision`](/sql/types/float/#double-precision-info) | `materialize.v1.double`    | `float64` | `DOUBLE`
+[`integer`](/sql/types/integer/#integer-info)        | `materialize.v1.integer`   | `int32` | `INT32`
+[`jsonb`](/sql/types/jsonb/)            | `materialize.v1.jsonb`     | `large_utf8` | `BYTE_ARRAY`
+[`map`](/sql/types/map/)                | `materialize.v1.map`       | `map` (`struct` with fields `keys` and `values`) | Nested | `MAP`
+[`list`](/sql/types/list/)              | `materialize.v1.list`      | `list` | Nested
+[`numeric`](/sql/types/numeric/)        | `materialize.v1.numeric`   | `decimal128[38, 10 or max-scale]` | `FIXED_LEN_BYTE_ARRAY`             | `DECIMAL`
+[`real`](/sql/types/float/#real-info)             | `materialize.v1.real`      | `float32` | `FLOAT`
+[`smallint`](/sql/types/integer/#smallint-info)       | `materialize.v1.smallint`  | `int16` | `INT32` | `INT(16, true)`
+[`text`](/sql/types/text/)              | `materialize.v1.text`      | `utf8` or `large_utf8` | `BYTE_ARRAY` | `STRING`
+[`time`](/sql/types/time/)              | `materialize.v1.time`      | `time64[nanosecond]` | `INT64` | `TIME[isAdjustedToUTC = false, unit = NANOS]`
+[`uint2`](/sql/types/uint/#uint2-info)             | `materialize.v1.uint2`     | `uint16` | `INT32` | `INT(16, false)`
+[`uint4`](/sql/types/uint/#uint4-info)             | `materialize.v1.uint4`     | `uint32` | `INT32` | `INT(32, false)`
+[`uint8`](/sql/types/uint/#uint8-info)             | `materialize.v1.uint8`     | `uint64` | `INT64` | `INT(64, false)`
+[`timestamp`](/sql/types/timestamp/#timestamp-info)    | `materialize.v1.timestamp` | `time64[microsecond]` | `INT64` | `TIMESTAMP[isAdjustedToUTC = false, unit = MICROS]`
+[`timestamp with time zone`](/sql/types/timestamp/#timestamp-with-time-zone-info) | `materialize.v1.timestampz` | `time64[microsecond]` | `INT64` | `TIMESTAMP[isAdjustedToUTC = true, unit = MICROS]`
+[Arrays](/sql/types/array/) (`[]`)      | `materialize.v1.array`     | `struct` with `list` field `items` and `uint8` field `dimensions` | Nested
+[`uuid`](/sql/types/uuid/)              | `materialize.v1.uuid`      | `fixed_size_binary(16)` | `FIXED_LEN_BYTE_ARRAY`
+[`oid`](/sql/types/oid/)                      | Unsupported
+[`interval`](/sql/types/interval/)            | Unsupported
+[`record`](/sql/types/record/)                | Unsupported
 
 ## Privileges
 
@@ -3716,46 +3538,22 @@ WITH (
   );
 ```
 
-<p>For <code>'parquet'</code> format, Materialize writes Parquet files that aim for
+For `'parquet'` format, Materialize writes Parquet files that aim for
 maximum compatibility with downstream systems. The following Parquet
-writer settings are used:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Setting</th>
-          <th>Value</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>Writer version</td>
-          <td>1.0</td>
-      </tr>
-      <tr>
-          <td>Compression</td>
-          <td><code>snappy</code></td>
-      </tr>
-      <tr>
-          <td>Default column encoding</td>
-          <td>Dictionary</td>
-      </tr>
-      <tr>
-          <td>Fallback column encoding</td>
-          <td>Plain</td>
-      </tr>
-      <tr>
-          <td>Dictionary page encoding</td>
-          <td>Plain</td>
-      </tr>
-      <tr>
-          <td>Dictionary data page encoding</td>
-          <td><code>RLE_DICTIONARY</code></td>
-      </tr>
-  </tbody>
-</table>
-<p>If you encounter issues trying to ingest Parquet files produced by
-Materialize into your downstream systems, please <a href="/support/" >contact our
-team</a>.</p>
+writer settings are used:
+
+| Setting | Value |
+|---------|-------|
+| Writer version | 1.0 |
+| Compression | `snappy` |
+| Default column encoding | Dictionary |
+| Fallback column encoding | Plain |
+| Dictionary page encoding | Plain |
+| Dictionary data page encoding | `RLE_DICTIONARY` |
+
+If you encounter issues trying to ingest Parquet files produced by
+Materialize into your downstream systems, please [contact our
+team](/support/).
 
 See also [Copy to S3: Parquet Data Types](#parquet-data-types).
 
@@ -3769,34 +3567,15 @@ WITH (
   );
 ```
 
-<p>For <code>'csv'</code> format, Materialize writes CSV files using the following
-writer settings:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Setting</th>
-          <th>Value</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>delimiter</td>
-          <td><code>,</code></td>
-      </tr>
-      <tr>
-          <td>quote</td>
-          <td><code>&quot;</code></td>
-      </tr>
-      <tr>
-          <td>escape</td>
-          <td><code>&quot;</code></td>
-      </tr>
-      <tr>
-          <td>header</td>
-          <td><code>false</code></td>
-      </tr>
-  </tbody>
-</table>
+For `'csv'` format, Materialize writes CSV files using the following
+writer settings:
+
+| Setting | Value |
+|---------|-------|
+| delimiter | `,` |
+| quote | `"` |
+| escape | `"` |
+| header | `false` |
 
 ## Related pages
 
@@ -4425,7 +4204,7 @@ CREATE CONNECTION aws_credentials TO AWS (
 ```
 
 ### S3 compatible object storage
-You can use an AWS connection to perform bulk exports and bulk imports with any S3 compatible object
+You can use an AWS connection to perform bulk exports ([`COPY TO`](/sql/copy-to)) and bulk imports ([`COPY FROM`](/sql/copy-from)) with any S3 compatible object
 storage service, such as Google Cloud Storage, Cloudflare R2, or MinIO. While connecting to S3
 compatible object storage, you need to provide static access key credentials, specify the endpoint,
 and the region.
@@ -4441,6 +4220,45 @@ CREATE CONNECTION gcs_connection TO AWS (
     REGION = 'us'
 );
 ```
+
+If you are exporting to Google Cloud Storage using [Iceberg sinks](/sql/create-sink/iceberg), use a [GCP connection](#gcp).
+
+### GCP
+
+You can use a GCP connection to export data to
+[Lakehouse/BigLake](https://docs.cloud.google.com/lakehouse/docs/lakehouse-iceberg-rest-catalog)
+via [Iceberg sinks](/sql/create-sink/iceberg).
+
+The GCP connection uses a [GCP service account key
+(JSON)](https://docs.cloud.google.com/iam/docs/keys-create-delete) to
+authenticate. Create a [GCP service
+account](https://docs.cloud.google.com/iam/docs/service-account-overview) for
+Materialize to use and generate a [service account
+key](https://docs.cloud.google.com/iam/docs/keys-create-delete) in JSON format.
+Base64-encode the entire JSON key (e.g., `base64 < sa_key.json`) and decode it
+in the `CREATE SECRET` statement, as shown below. This avoids escaping quotes
+and newlines in the SQL string literal.
+
+#### Syntax {#gcp-syntax}
+
+```mzsql
+-- Create the secret with the service account key.
+-- Base64-encode the entire JSON service account key (e.g., base64 < sa_key.json)
+-- And decode it in the CREATE SECRET statement.
+CREATE SECRET <secret_name> AS decode('<sa_key_json_base64>', 'base64');
+
+CREATE CONNECTION <connection_name> TO GCP (
+    SERVICE ACCOUNT KEY = SECRET <secret_name>
+)
+[WITH (<with_options>)];
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<connection_name>` | A name for the connection.  |
+| `SECRET <secret_name>` | Secret containing the [GCP service account key](https://docs.cloud.google.com/iam/docs/keys-create-delete) (JSON).  To create the secret, first base64-encode the entire JSON service account key and then decode it in the `CREATE SECRET` statement. This avoids escaping quotes and newlines in the SQL string literal.  |
+| `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `false`. \|  |
 
 ### Kafka
 
@@ -5255,13 +5073,23 @@ CREATE CONNECTION sqlserver_connection TO SQL SERVER (
 An Iceberg catalog connection establishes a link to an [Apache Iceberg](https://iceberg.apache.org/)
 catalog. You can use Iceberg catalog connections to create [Iceberg sinks](/sql/create-sink/iceberg).
 
+Materialize supports two catalog types:
+
+| Catalog type | Destination | Authentication |
+| --- | --- | --- |
+| `'s3tablesrest'` | [AWS S3 Tables](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables.html) | [AWS connection](#aws) |
+| `'rest'` | [Google Cloud BigLake](https://docs.cloud.google.com/lakehouse/docs/lakehouse-iceberg-rest-catalog) <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
+ | [GCP connection](#gcp) |
+
 #### Syntax {#iceberg-catalog-syntax}
+
+**AWS S3 Tables:**
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
     CATALOG TYPE = 's3tablesrest',
     URL = '<catalog_url>',
-    WAREHOUSE = '<warehouse_arn>',
+    WAREHOUSE = '<warehouse>',
     AWS CONNECTION = <aws_connection>
 );
 
@@ -5270,25 +5098,70 @@ CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
 | Syntax element | Description |
 | --- | --- |
 | `<connection_name>` | A name for the connection.  |
-| `CATALOG TYPE` | *Value:* `text`. Required.  The type of Iceberg catalog. Currently only `'s3tablesrest'` (AWS S3 Tables) is supported.  |
-| `URL` | *Value:* `text`. Required.  The URL of the Iceberg catalog endpoint. For AWS S3 Tables, use `https://s3tables.<region>.amazonaws.com/iceberg`.  |
-| `WAREHOUSE` | *Value:* `text`. Required.  The ARN of the S3 Tables bucket: `arn:aws:s3tables:<region>:<account-id>:bucket/<bucket-name>`.  |
+| `URL` | *Value:* `text`. Required.  S3 Tables Iceberg catalog URL: `https://s3tables.<region>.amazonaws.com/iceberg`  |
+| `WAREHOUSE` | *Value:* `text`. Required.  S3 Tables bucket ARN: `arn:aws:s3tables:<region>:<account-id>:bucket/<bucket-name>`  |
 | `AWS CONNECTION` | *Value:* object name. Required.  The name of an [AWS connection](#aws) to use for authentication.  |
 
-#### Example {#iceberg-catalog-example}
+**GCP BigLake:**
 
+```mzsql
+CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
+    CATALOG TYPE = 'rest',
+    URL = '<catalog_url>',
+    WAREHOUSE = '<warehouse>',
+    GCP CONNECTION = <gcp_connection>
+);
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<connection_name>` | A name for the connection.  |
+| `URL` | *Value:* `text`. Required.  GCP BigLake Iceberg catalog URL: `https://biglake.googleapis.com/iceberg/v1/restcatalog`  |
+| `WAREHOUSE` | *Value:* `text`. Required.  GCS bucket URI: `gs://<bucket>`  |
+| `GCP CONNECTION` | *Value:* object name. Required.  The name of a [GCP connection](#gcp) to use for authentication.  |
+
+#### Examples {#iceberg-catalog-examples}
+
+**AWS S3 Tables:**
+
+The following example creates an [AWS connection](/sql/create-connection/#aws) and an [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) for AWS S3 Tables:
 ```mzsql
 -- First, create an AWS connection for authentication
 CREATE CONNECTION aws_connection
   TO AWS (ASSUME ROLE ARN = 'arn:aws:iam::123456789012:role/MaterializeIceberg');
 
--- Create the Iceberg catalog connection
-CREATE CONNECTION iceberg_catalog TO ICEBERG CATALOG (
+-- Create the Iceberg catalog connection pointing to S3 Tables
+CREATE CONNECTION iceberg_catalog_connection TO ICEBERG CATALOG (
     CATALOG TYPE = 's3tablesrest',
     URL = 'https://s3tables.us-east-1.amazonaws.com/iceberg',
     WAREHOUSE = 'arn:aws:s3tables:us-east-1:123456789012:bucket/my-table-bucket',
     AWS CONNECTION = aws_connection
 );
+
+```
+
+**GCP BigLake:**
+
+The following example creates a [GCP connection](/sql/create-connection/#gcp) and an [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) for Google Cloud BigLake:
+```mzsql
+-- Using the base64-encoded service account key (e.g. base64 < sa_key.json)
+CREATE SECRET gcp_service_account_key
+  AS decode('<base64-encoded service account key JSON>', 'base64');
+
+-- Create a GCP connection that uses the service-account key.
+CREATE CONNECTION gcp_connection TO GCP (
+    SERVICE ACCOUNT KEY = SECRET gcp_service_account_key
+);
+
+-- Create the Iceberg catalog connection pointing to BigLake.
+CREATE CONNECTION iceberg_catalog_connection TO ICEBERG CATALOG (
+    CATALOG TYPE = 'rest',
+    URL = 'https://biglake.googleapis.com/iceberg/v1/restcatalog',
+    WAREHOUSE = 'gs://<bucket>',
+    GCP CONNECTION = gcp_connection
+);
+
 ```
 
 For more information about using Iceberg sinks, see the [Iceberg sink documentation](/serve-results/sink/iceberg/).
@@ -5664,68 +5537,42 @@ of the index.
 
 #### Best practices
 
-<p>Before creating an index, consider the following:</p>
-<ul>
-<li>
-<p>If you create stacked views (i.e., views that depend on other views) to
-reduce SQL complexity, we recommend that you create an index <strong>only</strong> on the
-view that will serve results, taking into account the expected data access
-patterns.</p>
-</li>
-<li>
-<p>Materialize can reuse indexes across queries that concurrently access the same
-data in memory, which reduces redundancy and resource utilization per query.
-In particular, this means that joins do <strong>not</strong> need to store data in memory
-multiple times.</p>
-</li>
-<li>
-<p>For queries that have no supporting indexes, Materialize uses the same
-mechanics used by indexes to optimize computations. However, since this
-underlying work is discarded after each query run, take into account the
-expected data access patterns to determine if you need to index or not.</p>
-</li>
-</ul>
+Before creating an index, consider the following:
+
+- If you create stacked views (i.e., views that depend on other views) to
+  reduce SQL complexity, we recommend that you create an index **only** on the
+  view that will serve results, taking into account the expected data access
+  patterns.
+
+- Materialize can reuse indexes across queries that concurrently access the same
+  data in memory, which reduces redundancy and resource utilization per query.
+  In particular, this means that joins do **not** need to store data in memory
+  multiple times.
+
+- For queries that have no supporting indexes, Materialize uses the same
+  mechanics used by indexes to optimize computations. However, since this
+  underlying work is discarded after each query run, take into account the
+  expected data access patterns to determine if you need to index or not.
 
 ### Usage patterns
 
 #### Indexes on views vs. materialized views
 
-In Materialize, both <a href="/concepts/indexes" >indexes</a> on views and <a href="/concepts/views/#materialized-views" >materialized
-views</a> incrementally update the view
+In Materialize, both [indexes](/concepts/indexes) on views and [materialized
+views](/concepts/views/#materialized-views) incrementally update the view
 results when Materialize ingests new data. Whereas materialized views persist
 the view results in durable storage and can be accessed across clusters, indexes
-on views compute and store view results in memory within a <strong>single</strong> cluster.
-<p>Some general guidelines for usage patterns include:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Usage Pattern</th>
-          <th>General Guideline</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture.</td>
-          <td>View with an <a href="/sql/create-index" >index</a></td>
-      </tr>
-      <tr>
-          <td>View used as a building block for stacked views; i.e., views not used to serve results.</td>
-          <td>View</td>
-      </tr>
-      <tr>
-          <td>View results are accessed across <a href="/concepts/clusters" >clusters</a>;<br>such as in a 3-cluster architecture.</td>
-          <td>Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster)</td>
-      </tr>
-      <tr>
-          <td>Use with a <a href="/serve-results/sink/" >sink</a> or a <a href="/sql/subscribe" ><code>SUBSCRIBE</code></a> operation</td>
-          <td>Materialized view</td>
-      </tr>
-      <tr>
-          <td>Use with <a href="/transform-data/patterns/temporal-filters/" >temporal filters</a></td>
-          <td>Materialized view</td>
-      </tr>
-  </tbody>
-</table>
+on views compute and store view results in memory within a **single** cluster.
+
+Some general guidelines for usage patterns include:
+
+| Usage Pattern | General Guideline |
+|--------------------------------------------------------------------------------|--------------------|
+| View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture. | View with an [index](/sql/create-index) |
+| View used as a building block for stacked views; i.e., views not used to serve results. | View |
+| View results are accessed across [clusters](/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
+| Use with a [sink](/serve-results/sink/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
+| Use with [temporal filters](/transform-data/patterns/temporal-filters/) | Materialized view  |
 
 #### Indexes and query optimizations
 
@@ -5735,20 +5582,16 @@ You might want to create indexes when...
     this case, you could create an index on the columns in the join condition.
 -   You want to speed up searches filtering by literal values or expressions.
 
-<p>Specific instances where indexes can be useful to improve performance include:</p>
-<ul>
-<li>
-<p>When used in ad-hoc queries.</p>
-</li>
-<li>
-<p>When used by multiple queries within the same cluster.</p>
-</li>
-<li>
-<p>When used to enable <a href="/transform-data/optimization/#optimize-multi-way-joins-with-delta-joins" >delta
-joins</a>.</p>
-</li>
-</ul>
-<p>For more information, see <a href="/transform-data/optimization" >Optimization</a>.</p>
+Specific instances where indexes can be useful to improve performance include:
+
+- When used in ad-hoc queries.
+
+- When used by multiple queries within the same cluster.
+
+- When used to enable [delta
+  joins](/transform-data/optimization/#optimize-multi-way-joins-with-delta-joins).
+
+For more information, see [Optimization](/transform-data/optimization).
 
 ## Examples
 
@@ -5916,42 +5759,21 @@ views](#creating-replacement-materialized-views).
 
 ### Usage pattern
 
-In Materialize, both <a href="/concepts/indexes" >indexes</a> on views and <a href="/concepts/views/#materialized-views" >materialized
-views</a> incrementally update the view
+In Materialize, both [indexes](/concepts/indexes) on views and [materialized
+views](/concepts/views/#materialized-views) incrementally update the view
 results when Materialize ingests new data. Whereas materialized views persist
 the view results in durable storage and can be accessed across clusters, indexes
-on views compute and store view results in memory within a <strong>single</strong> cluster.
-<p>Some general guidelines for usage patterns include:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Usage Pattern</th>
-          <th>General Guideline</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture.</td>
-          <td>View with an <a href="/sql/create-index" >index</a></td>
-      </tr>
-      <tr>
-          <td>View used as a building block for stacked views; i.e., views not used to serve results.</td>
-          <td>View</td>
-      </tr>
-      <tr>
-          <td>View results are accessed across <a href="/concepts/clusters" >clusters</a>;<br>such as in a 3-cluster architecture.</td>
-          <td>Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster)</td>
-      </tr>
-      <tr>
-          <td>Use with a <a href="/serve-results/sink/" >sink</a> or a <a href="/sql/subscribe" ><code>SUBSCRIBE</code></a> operation</td>
-          <td>Materialized view</td>
-      </tr>
-      <tr>
-          <td>Use with <a href="/transform-data/patterns/temporal-filters/" >temporal filters</a></td>
-          <td>Materialized view</td>
-      </tr>
-  </tbody>
-</table>
+on views compute and store view results in memory within a **single** cluster.
+
+Some general guidelines for usage patterns include:
+
+| Usage Pattern | General Guideline |
+|--------------------------------------------------------------------------------|--------------------|
+| View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture. | View with an [index](/sql/create-index) |
+| View used as a building block for stacked views; i.e., views not used to serve results. | View |
+| View results are accessed across [clusters](/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
+| Use with a [sink](/serve-results/sink/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
+| Use with [temporal filters](/transform-data/patterns/temporal-filters/) | Materialized view  |
 
 ### Indexing materialized views
 
@@ -5992,13 +5814,12 @@ VIEW`](/sql/create-materialized-view/) with [`ALTER MATERIALIZED VIEW ... APPLY
 REPLACEMENT`](/sql/alter-materialized-view) to replace materialized views
 in-place without recreating dependent objects or incurring downtime.
 
-<p>To create a replacement materialized view, you must:</p>
-<ul>
-<li>Specify the target materialized view.</li>
-<li>Specify a <code>SELECT</code> statement for the replacement view that produces the
-same output schema (including column order and keys) as the target view.</li>
-</ul>
-<p>Upon creation, the replacement view starts hydrating in the background.</p>
+To create a replacement materialized view, you must:
+- Specify the target materialized view.
+- Specify a `SELECT` statement for the replacement view that produces the
+  same output schema (including column order and keys) as the target view.
+
+Upon creation, the replacement view starts hydrating in the background.
 
 Before applying the replacement view, verify that the replacement view is
 hydrated to avoid downtime:
@@ -6576,6 +6397,37 @@ For details, see [CREATE Sink: Kafka/Redpanda](/sql/create-sink/kafka/).
 
 > **Public Preview:** This feature is in public preview.
 
+**MODE UPSERT:**
+
+<no value>```mzsql
+CREATE SINK [IF NOT EXISTS] <sink_name>
+[IN CLUSTER <cluster_name>]
+FROM <item_name>
+INTO ICEBERG CATALOG CONNECTION <catalog_connection> (
+  NAMESPACE = '<namespace>',
+  TABLE = '<table>'
+)
+KEY ( <key_col> [, ...] ) [NOT ENFORCED]
+MODE UPSERT
+WITH (COMMIT INTERVAL = '<interval>')
+
+```
+
+**MODE APPEND:**
+
+<no value>```mzsql
+CREATE SINK [IF NOT EXISTS] <sink_name>
+[IN CLUSTER <cluster_name>]
+FROM <item_name>
+INTO ICEBERG CATALOG CONNECTION <catalog_connection> (
+  NAMESPACE = '<namespace>',
+  TABLE = '<table>'
+)
+MODE APPEND
+WITH (COMMIT INTERVAL = '<interval>')
+
+```
+
 For details, see [CREATE Sink: Iceberg](/sql/create-sink/iceberg/).
 
 ## Best practices
@@ -7002,21 +6854,17 @@ In production, if possible, use a dedicated cluster for
 [sources](/concepts/sources/); i.e., avoid putting sources on the same cluster
 that hosts compute objects, sinks, and/or serves queries.
 
-<p>In addition, for upsert sources:</p>
-<ul>
-<li>
-<p>Consider separating upsert sources from your other sources. Upsert sources
-have higher resource requirements (since, for upsert sources, Materialize
-maintains each key and associated last value for the key as well as to perform
-deduplication). As such, if possible, use a separate source cluster for upsert
-sources.</p>
-</li>
-<li>
-<p>Consider using a larger cluster size during snapshotting for upsert sources.
-Once the snapshotting operation is complete, you can downsize the cluster to
-align with the steady-state ingestion.</p>
-</li>
-</ul>
+In addition, for upsert sources:
+
+- Consider separating upsert sources from your other sources. Upsert sources
+  have higher resource requirements (since, for upsert sources, Materialize
+  maintains each key and associated last value for the key as well as to perform
+  deduplication). As such, if possible, use a separate source cluster for upsert
+  sources.
+
+- Consider using a larger cluster size during snapshotting for upsert sources.
+  Once the snapshotting operation is complete, you can downsize the cluster to
+  align with the steady-state ingestion.
 
 ### Sizing a source
 
@@ -7261,8 +7109,9 @@ timestamp), you are not able to query the table until snapshotting is complete.<
 **PostgreSQL:**
 #### PostgreSQL types
 
-<p>Materialize natively supports the following PostgreSQL types (including the
-array type for each of the types):</p>
+Materialize natively supports the following PostgreSQL types (including the
+array type for each of the types):
+
 <ul style="column-count: 3">
 <li><code>bool</code></li>
 <li><code>bpchar</code></li>
@@ -7294,27 +7143,27 @@ array type for each of the types):</p>
 <li><code>varchar</code></li>
 </ul>
 
-<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
-possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
-treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
-features. For example:</p>
-<ul>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-enum.html" ><code>enum</code></a>: When decoded as <code>text</code>, the implicit ordering of the original
-PostgreSQL <code>enum</code> type is not preserved; instead, Materialize will sort values
-as <code>text</code>.</p>
-</li>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-money.html" ><code>money</code></a>: When decoded as <code>text</code>, resulting <code>text</code> value cannot be cast
-back to <code>numeric</code>, since PostgreSQL adds typical currency formatting to the
-output.</p>
-</li>
-</ul>
+Replicating tables that contain **unsupported [data types](/sql/types/)** is
+possible via the `TEXT COLUMNS` option. The specified columns will be
+treated as `text`; i.e., will not have the expected PostgreSQL type
+features. For example:
+
+* [`enum`]: When decoded as `text`, the implicit ordering of the original
+  PostgreSQL `enum` type is not preserved; instead, Materialize will sort values
+  as `text`.
+
+* [`money`]: When decoded as `text`, resulting `text` value cannot be cast
+back to `numeric`, since PostgreSQL adds typical currency formatting to the
+output.
+
+[`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
+[`money`]: https://www.postgresql.org/docs/current/datatype-money.html
 
 **MySQL:**
 #### MySQL types
 
-<p>Materialize natively supports the following MySQL types:</p>
+Materialize natively supports the following MySQL types:
+
 <ul style="column-count: 3">
 <li><code>bigint</code></li>
 <li><code>binary</code></li>
@@ -7347,25 +7196,35 @@ output.</p>
 <li><code>varchar</code></li>
 </ul>
 
-<p>When replicating tables that contain the <strong>unsupported <a href="/sql/types/" >data
-types</a></strong>, you can:</p>
-<ul>
-<li>
-<p>Use <a href="/sql/create-source/mysql/#handling-unsupported-types" ><code>TEXT COLUMNS</code>
-option</a> for the
-following unsupported  MySQL types:</p>
-<ul>
-<li><code>enum</code></li>
-<li><code>year</code></li>
-</ul>
-<p>The specified columns will be treated as <code>text</code> and will not offer the
-expected MySQL type features.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/create-source/mysql/#excluding-columns" ><code>EXCLUDE COLUMNS</code></a>
-option to exclude any columns that contain unsupported data types.</p>
-</li>
-</ul>
+When replicating tables that contain the **unsupported [data
+types](/sql/types/)**, you can:
+
+- Use [`TEXT COLUMNS`
+  option](/sql/create-source/mysql/#handling-unsupported-types) for the
+  following unsupported  MySQL types:
+
+  - `enum`
+  - `year`
+
+  The specified columns will be treated as `text` and will not offer the
+  expected MySQL type features.
+
+- Use the [`EXCLUDE COLUMNS`](/sql/create-source/mysql/#excluding-columns)
+option to exclude any columns that contain unsupported data types.
+
+#### Zero values for `date`, `datetime`, and `timestamp`
+
+MySQL allows the special "zero" values `0000-00-00`, `0000-00-00
+00:00:00` in `date`, `datetime`, and `timestamp` columns when the server
+`sql_mode` does not include `NO_ZERO_DATE` or `NO_ZERO_IN_DATE`. These
+values are not representable in Materialize's corresponding native types,
+so they will cause ingestion to fail for the affected column.
+
+To ingest columns that contain zero values, use [`TEXT
+COLUMNS`](/sql/create-source/mysql/#handling-unsupported-types) to
+decode the affected columns as `text`. The zero values for `date`,
+`datetime`, `timestamp`, and `year` are preserved verbatim as strings
+(e.g. `"0000-00-00 00:00:00"`, `"0000"`).
 
 **SQL Server:**
 #### SQL Server types
@@ -7453,40 +7312,47 @@ downtime](/ingest-data/sql-server/source-versioning/)
 
 #### Incompatible schema changes
 
-<p>All other schema changes to upstream tables will set the corresponding
-Materialize tables into an error state, preventing reads from these tables.</p>
-<p>To handle <a href="#incompatible-schema-changes" >incompatible schema changes</a>, drop
-the affected table <a href="/sql/drop-table/" ><code>DROP TABLE</code></a> , and then, <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> to recreate the table with the
-updated schema.</p>
+All other schema changes to upstream tables will set the corresponding
+Materialize tables into an error state, preventing reads from these tables.
+
+To handle [incompatible schema changes](#incompatible-schema-changes), drop
+the affected table [`DROP TABLE`](/sql/drop-table/) , and then, [`CREATE
+TABLE FROM SOURCE`](/sql/create-table/) to recreate the table with the
+updated schema.
 
 ### Upstream table truncation restrictions
 
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
+Avoid truncating upstream tables that are being replicated into Materialize.
 If a replicated upstream table is truncated, the corresponding
 subsource(s)/table(s) in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
+produce any data until it is recreated.
+
+Instead of truncating, use an unqualified `DELETE` to remove all rows from
+the upstream table:
+
+```mzsql
+DELETE FROM t;
+```
 
 ### Inherited tables
 
-<p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
-PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
-also present in the inherited table. However, both PostgreSQL&rsquo;s logical
-replication and <code>COPY</code> only present data written to the tables themselves,
-i.e. the inheriting data is <em>not</em> treated as part of the inherited table.</p>
-<p>PostgreSQL sources use logical replication and <code>COPY</code> to ingest table data,
-so inheriting tables&rsquo; data will only be ingested as part of the inheriting
-table, i.e. in Materialize, the data will not be returned when serving
-<code>SELECT</code>s from the inherited table.</p>
+When using [PostgreSQL table inheritance](https://www.postgresql.org/docs/current/tutorial-inheritance.html),
+PostgreSQL serves data from `SELECT`s as if the inheriting tables' data is
+also present in the inherited table. However, both PostgreSQL's logical
+replication and `COPY` only present data written to the tables themselves,
+i.e. the inheriting data is _not_ treated as part of the inherited table.
 
-You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
+PostgreSQL sources use logical replication and `COPY` to ingest table data,
+so inheriting tables' data will only be ingested as part of the inheriting
+table, i.e. in Materialize, the data will not be returned when serving
+`SELECT`s from the inherited table.
+
+You can mimic PostgreSQL's `SELECT` behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
-inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
+inheriting tables (using `UNION ALL`). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
-view. You will need to add the inheriting tables via <code>CREATE TABLE .. FROM SOURCE</code> and create a new view (materialized or non-) that unions the new
+view. You will need to add the inheriting tables via `CREATE TABLE .. FROM
+SOURCE` and create a new view (materialized or non-) that unions the new
 table.
 
 ## Privileges
@@ -9155,6 +9021,124 @@ explicitly deallocate the statement using [`DEALLOCATE`].
 
 ---
 
+## EXECUTE UNIT TEST
+
+> **Public Preview:** This feature is in public preview.
+
+`EXECUTE UNIT TEST` defines a unit test for a view or materialized view. A test
+substitutes literal rows for the view's dependencies, runs the view against
+that fixed input, and compares the result to a set of expected rows. Tests are
+written inline in the same `.sql` file as the view they exercise.
+
+> **Warning:** `EXECUTE UNIT TEST` is executed only by [`mz-deploy`](/manage/mz-deploy/), not by
+> Materialize itself. The Materialize SQL layer parses the statement but rejects
+> it during planning, so running it through a SQL client such as `psql` returns an
+> `EXECUTE UNIT TEST statement not yet supported` error. Use
+> [`mz-deploy test`](/manage/mz-deploy/local-development/#write-and-run-unit-tests)
+> to discover and run these tests.
+
+## Syntax
+
+```mzsql
+EXECUTE UNIT TEST <test_name>
+FOR <target_view>
+[AT TIME <timestamp_expr>]
+[MOCK <dependency>(<col_name> <col_type>, ...) AS (<query>)[, ...]]
+EXPECTED(<col_name> <col_type>, ...) AS (<query>);
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<test_name>` | A name for the test. It identifies the test in `mz-deploy test` output and in test filters.  |
+| `FOR <target_view>` | The view or materialized view under test, given as a fully-qualified name (`<database>.<schema>.<view>`).  |
+| `AT TIME <timestamp_expr>` | Optional. Sets the value [`mz_now()`](/sql/functions/now_and_mz_now/) returns while the test runs, so views with temporal filters produce deterministic results. If omitted, `mz_now()` is not pinned.  |
+| `MOCK <dependency>(...) AS (<query>)` | Replaces a dependency of the target view with literal rows. Specify zero or more `MOCK` clauses, separated by commas; there is no comma before the trailing `EXPECTED` clause. Every object the target view depends on must have a corresponding `MOCK`. The dependency name may be unqualified (`orders`), schema-qualified (`public.orders`), or fully-qualified (`materialize.public.orders`), and is resolved relative to the target view. The column list declares the names and types of the mock; `<query>` supplies its rows, typically with [`VALUES`](/sql/values/).  |
+| `EXPECTED(...) AS (<query>)` | Required. The rows the target view should produce. The column list must match the names and types of the target view's output columns, and `<query>` supplies the expected rows. The test passes when the view's output and the expected rows are equal as sets.  |
+
+## Details
+
+### Where tests run
+
+`mz-deploy test` discovers every `EXECUTE UNIT TEST` statement in a project,
+then runs each one in a local Materialize Docker container — your remote
+database is never touched. For each test, `mz-deploy` creates temporary views
+for the mocks and the expected rows, rewrites the target view to read from the
+mocks instead of its real dependencies, and computes the symmetric difference
+between the view's output and the expected rows. The test passes when that
+difference is empty.
+
+### Mocking dependencies
+
+Every object the target view depends on must have a `MOCK` clause; an unmocked
+dependency is a validation error. A mock's column names and types must match the
+real object's schema, and the target view's output columns must match the
+`EXPECTED` column list. Run [`mz-deploy lock`](/manage/mz-deploy/local-development/#lock-types)
+to refresh the schema information used for this validation when an external
+dependency changes.
+
+### Type normalization
+
+Column types in `MOCK` and `EXPECTED` are normalized before comparison, so
+common aliases are interchangeable — for example `int`/`int4`/`integer`,
+`bigint`/`int8`, `text`/`varchar`/`string`,
+`float`/`float8`/`double precision`, `numeric`/`decimal`, and `json`/`jsonb`.
+
+### Testing temporal logic
+
+Views that filter on [`mz_now()`](/sql/functions/now_and_mz_now/) depend on the
+current time, which would make their output non-deterministic in a test. Set
+`AT TIME` to pin the value `mz_now()` returns so the test result is stable.
+
+## Examples
+
+### Testing a join
+
+```mzsql
+CREATE VIEW user_order_summary AS
+SELECT u.id AS user_id, u.name, count(*) AS total_orders
+FROM users u
+JOIN orders o ON o.user_id = u.id
+GROUP BY u.id, u.name;
+
+EXECUTE UNIT TEST test_single_user_single_order
+FOR materialize.public.user_order_summary
+MOCK materialize.public.users(id bigint, name text) AS (
+  SELECT * FROM VALUES (1, 'alice')
+),
+MOCK materialize.public.orders(id bigint, user_id bigint) AS (
+  SELECT * FROM VALUES (10, 1)
+)
+EXPECTED(user_id bigint, name text, total_orders bigint) AS (
+  SELECT * FROM VALUES (1, 'alice', 1)
+);
+```
+
+### Pinning `mz_now()`
+
+```mzsql
+EXECUTE UNIT TEST test_recent_events
+FOR materialize.public.recent_events
+AT TIME '2024-01-15T12:00:00Z'
+MOCK materialize.public.events(id bigint, ts timestamptz) AS (
+  SELECT * FROM VALUES
+    (1, '2024-01-15T11:59:00Z'::timestamptz),
+    (2, '2024-01-14T12:00:00Z'::timestamptz)
+)
+EXPECTED(id bigint, ts timestamptz) AS (
+  SELECT * FROM VALUES (1, '2024-01-15T11:59:00Z'::timestamptz)
+);
+```
+
+## Related pages
+
+- [Local development with mz-deploy](/manage/mz-deploy/local-development/#write-and-run-unit-tests)
+- [`CREATE VIEW`](/sql/create-view/)
+- [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view/)
+- [`VALUES`](/sql/values/)
+
+---
+
 ## EXPLAIN ANALYZE
 
 `EXPLAIN ANALYZE`:
@@ -10562,6 +10546,13 @@ role(s)](/sql/create-role/).
 > **Note:** The syntax supports the `ALL [PRIVILEGES]` shorthand to refer to all
 > [*applicable* privileges](/sql/grant-privilege/#available-privileges) for the
 > object type.
+> For PostgreSQL compatibility, you can reference views, materialized views,
+> and sources with the `TABLE` keyword. With `ON TABLE`, the `ALL [PRIVILEGES]`
+> shorthand expands to the full table privilege set
+> (`SELECT, INSERT, UPDATE, DELETE`), even if some of those privileges aren't
+> meaningful for the object type. The non-applicable privileges have no
+> runtime effect. They're stored so that a later `REVOKE ALL ON TABLE` can
+> clear every privilege previously granted through the same shorthand.
 
 <!-- ============ CLUSTER syntax ==============  -->
 
@@ -10636,7 +10627,19 @@ For specific materialized view(s)/view(s)/source(s):
 
 ```mzsql
 GRANT <SELECT | ALL [PRIVILEGES]>
-ON [TABLE] <name> [, <name> ...] -- For PostgreSQL compatibility, if specifying type, use TABLE
+ON <name> [, <name> ...]
+TO <role_name> [, ... ];
+```
+
+For PostgreSQL compatibility, the `TABLE` keyword is also accepted. With the
+`TABLE` syntax, you can name `INSERT`, `UPDATE`, and `DELETE` explicitly, and
+`ALL [PRIVILEGES]` expands to the full table privilege set
+(`SELECT, INSERT, UPDATE, DELETE`). The non-applicable privileges have no
+runtime effect, but they're stored so a matching `REVOKE ALL` can clear them.
+
+```mzsql
+GRANT <SELECT | INSERT | UPDATE | DELETE | ALL [PRIVILEGES]> [, ...]
+ON TABLE <name> [, <name> ...]
 TO <role_name> [, ... ];
 ```
 
@@ -11226,7 +11229,11 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
+
+, `bounded staleness <duration>` (for example, `bounded staleness 5s`)
+
+. | Yes
 
 ### Other configuration parameters
 
@@ -11322,6 +11329,12 @@ be used to indicate that the privileges should be revoked from all roles
 > **Note:** The syntax supports the `ALL [PRIVILEGES]` shorthand to refer to all
 > [*applicable* privileges](#applicable-privileges-to-revoke) for the
 > object type.
+> For PostgreSQL compatibility, you can reference views, materialized views,
+> and sources with the `TABLE` keyword. With `ON TABLE`, the `ALL [PRIVILEGES]`
+> shorthand expands to the full table privilege set
+> (`SELECT, INSERT, UPDATE, DELETE`). This clears every privilege previously
+> granted through the same shorthand, including the non-applicable ones that
+> have no runtime effect.
 
 <!-- ============ CLUSTER syntax ==============  -->
 
@@ -11398,7 +11411,19 @@ For specific materialized view(s)/view(s)/source(s):
 
 ```mzsql
 REVOKE <SELECT | ALL [PRIVILEGES]>
-ON [TABLE] <name> [, <name> ...] -- For PostgreSQL compatibility, if specifying type, use TABLE
+ON <name> [, <name> ...]
+FROM <role_name> [, ... ];
+```
+
+For PostgreSQL compatibility, the `TABLE` keyword is also accepted. With the
+`TABLE` syntax, you can name `INSERT`, `UPDATE`, and `DELETE` explicitly, and
+`ALL [PRIVILEGES]` expands to the full table privilege set
+(`SELECT, INSERT, UPDATE, DELETE`). This clears every privilege previously
+granted through the matching `GRANT ALL ON TABLE` shorthand.
+
+```mzsql
+REVOKE <SELECT | INSERT | UPDATE | DELETE | ALL [PRIVILEGES]> [, ...]
+ON TABLE <name> [, <name> ...]
 FROM <role_name> [, ... ];
 ```
 
@@ -11965,7 +11990,11 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
+
+, `bounded staleness <duration>` (for example, `bounded staleness 5s`)
+
+. | Yes
 
 ### Other configuration parameters
 
@@ -12102,7 +12131,11 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`. | Yes
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
+
+, `bounded staleness <duration>` (for example, `bounded staleness 5s`)
+
+. | Yes
 
 ### Other configuration parameters
 

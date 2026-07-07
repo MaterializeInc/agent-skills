@@ -85,16 +85,17 @@ SQL patterns enabled by streaming like [**Change Data Capture
 filters**](/sql/patterns/temporal-filters/), and
 [**subscriptions**](/sql/subscribe/).
 
-<p>Materialize follows the SQL standard (SQL-92) implementation and aims for
-compatibility with the PostgreSQL dialect. It <strong>does not</strong> aim for
+Materialize follows the SQL standard (SQL-92) implementation and aims for
+compatibility with the PostgreSQL dialect. It **does not** aim for
 compatibility with a specific version of PostgreSQL. This means that
 Materialize might support syntax from any released PostgreSQL version, but does
 not provide full coverage of the PostgreSQL dialect. The implementation and
-performance of specific features (like <a href="/transform-data/idiomatic-materialize-sql/appendix/window-function-to-materialize" >window functions</a>)
+performance of specific features (like [window functions](/transform-data/idiomatic-materialize-sql/appendix/window-function-to-materialize))
 might also differ, because Materialize uses an entirely different database
-engine based on <a href="/get-started/#incremental-updates" >Timely and Differential Dataflow</a>.</p>
-<p>If you need specific syntax or features that are not currently supported in
-Materialize, please submit a <a href="/support/#share-your-feedback" >feature request</a>.</p>
+engine based on [Timely and Differential Dataflow](/get-started/#incremental-updates).
+
+If you need specific syntax or features that are not currently supported in
+Materialize, please submit a [feature request](/support/#share-your-feedback).
 
 ### Real-time data ingestion
 
@@ -343,7 +344,7 @@ not suitable for full feature set evaluations or production workloads.
    been already downloaded.
 
    ```sh
-   docker run -d -p 127.0.0.1:6874:6874 -p 127.0.0.1:6875:6875 -p 127.0.0.1:6876:6876 -p 127.0.0.1:6877:6877 materialize/materialized:v26.28.0
+   docker run -d -p 127.0.0.1:6874:6874 -p 127.0.0.1:6875:6875 -p 127.0.0.1:6876:6876 -p 127.0.0.1:6877:6877 materialize/materialized:v26.29.0
    ```
 
    When running locally:
@@ -474,21 +475,11 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 <h2 id="installation-guides">Installation guides</h2>
 <p>The following installation guides are available to help you get started:</p>
 
-<h3 id="install-using-helm-commands">Install using Helm Commands</h3>
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/install-on-local-kind/" >Install locally on Kind</a></td>
-          <td>Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.</td>
-      </tr>
-  </tbody>
-</table>
+### Install using Helm Commands
+
+|  Guide         | Description  |
+| ------------- | -------|
+| [Install locally on Kind](/self-managed-deployments/installation/install-on-local-kind/) | Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.
 
 <h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
 > **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
@@ -1096,37 +1087,15 @@ views incrementally update the view results. Materialized views persist the
 query results in durable storage and is available across clusters while indexes
 maintain the view results in memory within a single cluster.
 
-<p>Some general guidelines for usage patterns include:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Usage Pattern</th>
-          <th>General Guideline</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture.</td>
-          <td>View with an <a href="/sql/create-index" >index</a></td>
-      </tr>
-      <tr>
-          <td>View used as a building block for stacked views; i.e., views not used to serve results.</td>
-          <td>View</td>
-      </tr>
-      <tr>
-          <td>View results are accessed across <a href="/concepts/clusters" >clusters</a>;<br>such as in a 3-cluster architecture.</td>
-          <td>Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster)</td>
-      </tr>
-      <tr>
-          <td>Use with a <a href="/serve-results/sink/" >sink</a> or a <a href="/sql/subscribe" ><code>SUBSCRIBE</code></a> operation</td>
-          <td>Materialized view</td>
-      </tr>
-      <tr>
-          <td>Use with <a href="/transform-data/patterns/temporal-filters/" >temporal filters</a></td>
-          <td>Materialized view</td>
-      </tr>
-  </tbody>
-</table>
+Some general guidelines for usage patterns include:
+
+| Usage Pattern | General Guideline |
+|--------------------------------------------------------------------------------|--------------------|
+| View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture. | View with an [index](/sql/create-index) |
+| View used as a building block for stacked views; i.e., views not used to serve results. | View |
+| View results are accessed across [clusters](/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
+| Use with a [sink](/serve-results/sink/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
+| Use with [temporal filters](/transform-data/patterns/temporal-filters/) | Materialized view  |
 
 The quickstart used an index since:
 

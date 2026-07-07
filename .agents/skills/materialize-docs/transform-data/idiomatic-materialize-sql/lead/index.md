@@ -72,13 +72,15 @@ does not have a next row.</p>
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lead" ><code>LEAD(fieldZ) OVER (ORDER BY ...)</code></a>
-window function when the order by field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of [`LEAD(fieldZ) OVER (ORDER BY ...)`](/sql/functions/#lead)
+window function when the order by field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, ...
     LEAD(fieldZ) OVER (ORDER BY fieldA) as next_row_value
 FROM tableA;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -132,13 +134,15 @@ last row, returning <code>null</code> as its lead value.</p>
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lead" ><code>LEAD(fieldZ) OVER (ORDER BY ...)</code></a>
-window function when the order by field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Avoid. --
+<red>Avoid the use of [`LEAD(fieldZ) OVER (ORDER BY ...)`](/sql/functions/#lead)
+window function when the order by field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Avoid. --
 SELECT fieldA, ...
     LEAD(fieldZ) OVER (ORDER BY fieldA) as next_row_value
 FROM tableA;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -190,14 +194,16 @@ next row.
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lead" ><code>LEAD() OVER (ORDER BY ...)</code> window
-function</a> to access next row&rsquo;s value if the order by
-field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Includes the last row&#39;s value. --
+<red>Avoid the use of [`LEAD() OVER (ORDER BY ...)` window
+function](/sql/functions/#lead) to access next row's value if the order by
+field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Includes the last row's value. --
 SELECT order_date, daily_total,
     LEAD(daily_total) OVER (ORDER BY order_date) as next_daily_total
 FROM orders_daily_totals;
-</code></pre>
+```
 
 </td>
 </tr>
@@ -245,14 +251,16 @@ value.
 <td><red>Anti-pattern</red> ❌</td>
 <td>
 
-<p><red>Avoid the use of <a href="/sql/functions/#lead" ><code>LEAD() OVER (ORDER BY ...)</code> window
-function</a> to access next row&rsquo;s value if the order by
-field increases in a regular pattern.</red></p>
-<pre tabindex="0"><code class="language-nofmt" data-lang="nofmt">-- Anti-pattern. Includes the last row&#39;s value. --
+<red>Avoid the use of [`LEAD() OVER (ORDER BY ...)` window
+function](/sql/functions/#lead) to access next row's value if the order by
+field increases in a regular pattern.</red>
+
+```nofmt
+-- Anti-pattern. Includes the last row's value. --
 SELECT order_date, daily_total,
     LEAD(daily_total) OVER (ORDER BY order_date) as next_daily_total
 FROM orders_daily_totals;
-</code></pre>
+```
 
 </td>
 </tr>

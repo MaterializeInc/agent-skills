@@ -10,28 +10,19 @@ process.
 
 ## Prerequisites
 
-<p>To create a source from PostgreSQL 11+, you must first:</p>
-<ul>
-<li><strong>Configure upstream PostgreSQL instance</strong>
-<ul>
-<li>Set up logical replication.</li>
-<li>Create a publication.</li>
-<li>Create a replication user and password for Materialize to use to connect.</li>
-</ul>
-</li>
-<li><strong>Configure network security</strong>
-<ul>
-<li>Ensure Materialize can connect to your PostgreSQL instance.</li>
-</ul>
-</li>
-<li><strong>Create a connection to PostgreSQL in Materialize</strong>
-<ul>
-<li>The connection setup depends on the network security configuration.</li>
-</ul>
-</li>
-</ul>
-<p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
-guides</a>.</p>
+To create a source from PostgreSQL 11+, you must first:
+
+- **Configure upstream PostgreSQL instance**
+  - Set up logical replication.
+  - Create a publication.
+  - Create a replication user and password for Materialize to use to connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your PostgreSQL instance.
+- **Create a connection to PostgreSQL in Materialize**
+  - The connection setup depends on the network security configuration.
+
+For details, see the [PostgreSQL integration
+guides](/ingest-data/postgres/#integration-guides).
 
 ## Syntax
 
@@ -80,8 +71,9 @@ With the new syntax, after a PostgreSQL source is created, you [`CREATE TABLE
 FROM SOURCE`](/sql/create-table/) to create a corresponding table in
 Matererialize and start ingesting data.
 
-<p>Materialize natively supports the following PostgreSQL types (including the
-array type for each of the types):</p>
+Materialize natively supports the following PostgreSQL types (including the
+array type for each of the types):
+
 <ul style="column-count: 3">
 <li><code>bool</code></li>
 <li><code>bpchar</code></li>
@@ -118,33 +110,37 @@ see [`CREATE TABLE FROM SOURCE`](/sql/create-table/).
 
 #### Upstream table truncation restrictions
 
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
+Avoid truncating upstream tables that are being replicated into Materialize.
 If a replicated upstream table is truncated, the corresponding
 subsource(s)/table(s) in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
+produce any data until it is recreated.
+
+Instead of truncating, use an unqualified `DELETE` to remove all rows from
+the upstream table:
+
+```mzsql
+DELETE FROM t;
+```
 
 For additional considerations, see also [`CREATE TABLE`](/sql/create-table/).
 
 ### Publication membership
 
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
+PostgreSQL's logical replication API does not provide a signal when users
 remove tables from publications. Because of this, Materialize relies on
 periodic checks to determine if a table has been removed from a publication,
 at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
+being read from the table.
+
+However, it is possible to remove a table from a publication and then re-add
 it before Materialize notices that the table was removed. In this case,
 Materialize can no longer provide any consistency guarantees about the data
 we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
+occurred.
 
 To mitigate this issue, if you need to drop and re-add a table to a
 publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.
+_before_ re-adding it using the [`DROP SOURCE`](/sql/drop-source/) command.
 
 ### PostgreSQL replication slots
 
@@ -170,52 +166,36 @@ SELECT id, replication_slot FROM mz_internal.mz_postgres_sources;
   u8     | materialize_7f8a72d0bf2a4b6e9ebc4e61ba769b71
 ```
 
-> **Tip:** <ul>
-> <li>
-> <p>For PostgreSQL 13+, set a reasonable value
-> for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-> to limit the amount of storage used by replication slots.</p>
-> </li>
-> <li>
-> <p>If you stop using Materialize, or if either the Materialize instance or
+> **Tip:** - For PostgreSQL 13+, set a reasonable value
+> for [`max_slot_wal_keep_size`](https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE)
+> to limit the amount of storage used by replication slots.
+> - If you stop using Materialize, or if either the Materialize instance or
 > the PostgreSQL instance crash, delete any replication slots. You can query
-> the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-> replication slot created for each source.</p>
-> </li>
-> <li>
-> <p>If you delete all objects that depend on a source without also dropping
+> the `mz_internal.mz_postgres_sources` table to look up the name of the
+> replication slot created for each source.
+> - If you delete all objects that depend on a source without also dropping
 > the source, the upstream replication slot remains and will continue to
 > accumulate data so that the source can resume in the future. To avoid
-> unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-> </li>
-> </ul>
+> unbounded disk space usage, make sure to use [`DROP
+> SOURCE`](/sql/drop-source/) or manually delete the replication slot.
 
 ## Examples
 
 ### Prerequisites
 
-<p>To create a source from PostgreSQL 11+, you must first:</p>
-<ul>
-<li><strong>Configure upstream PostgreSQL instance</strong>
-<ul>
-<li>Set up logical replication.</li>
-<li>Create a publication.</li>
-<li>Create a replication user and password for Materialize to use to connect.</li>
-</ul>
-</li>
-<li><strong>Configure network security</strong>
-<ul>
-<li>Ensure Materialize can connect to your PostgreSQL instance.</li>
-</ul>
-</li>
-<li><strong>Create a connection to PostgreSQL in Materialize</strong>
-<ul>
-<li>The connection setup depends on the network security configuration.</li>
-</ul>
-</li>
-</ul>
-<p>For details, see the <a href="/ingest-data/postgres/#integration-guides" >PostgreSQL integration
-guides</a>.</p>
+To create a source from PostgreSQL 11+, you must first:
+
+- **Configure upstream PostgreSQL instance**
+  - Set up logical replication.
+  - Create a publication.
+  - Create a replication user and password for Materialize to use to connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your PostgreSQL instance.
+- **Create a connection to PostgreSQL in Materialize**
+  - The connection setup depends on the network security configuration.
+
+For details, see the [PostgreSQL integration
+guides](/ingest-data/postgres/#integration-guides).
 
 ### Create a source {#create-source-example}
 

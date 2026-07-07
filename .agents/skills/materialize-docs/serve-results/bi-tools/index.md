@@ -36,13 +36,18 @@ This guide walks you through the steps required to use the collaborative data no
 
 ## Configure a custom cluster
 
-<p>To direct queries to a specific cluster, <a href="/sql/alter-role" >set the cluster at the role
-level</a> using the following SQL statement:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">ALTER</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="o">&lt;</span><span class="n">your_user</span><span class="o">&gt;</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="k">CLUSTER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">custom_cluster</span><span class="o">&gt;</span><span class="p">;</span><span class="w">
-</span></span></span></code></pre></div><p>Replace <code>&lt;your_user&gt;</code> with the name of your Materialize role and <code>&lt;custom_cluster&gt;</code> with the name of the cluster you want to use.</p>
-<p>Once set, all new sessions for that user will automatically run in the specified
+To direct queries to a specific cluster, [set the cluster at the role
+level](/sql/alter-role) using the following SQL statement:
+
+```sql
+ALTER ROLE <your_user> SET CLUSTER = <custom_cluster>;
+```
+
+Replace `<your_user>` with the name of your Materialize role and `<custom_cluster>` with the name of the cluster you want to use.
+
+Once set, all new sessions for that user will automatically run in the specified
 cluster, eliminating the need to manually specify it in each query or
-connection.</p>
+connection.
 
 ## Execute and visualize a query
 
@@ -346,13 +351,18 @@ This guide walks you through the steps required to use the collaborative data no
 
 ## Configure a custom cluster
 
-<p>To direct queries to a specific cluster, <a href="/sql/alter-role" >set the cluster at the role
-level</a> using the following SQL statement:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">ALTER</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="o">&lt;</span><span class="n">your_user</span><span class="o">&gt;</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="k">CLUSTER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">custom_cluster</span><span class="o">&gt;</span><span class="p">;</span><span class="w">
-</span></span></span></code></pre></div><p>Replace <code>&lt;your_user&gt;</code> with the name of your Materialize role and <code>&lt;custom_cluster&gt;</code> with the name of the cluster you want to use.</p>
-<p>Once set, all new sessions for that user will automatically run in the specified
+To direct queries to a specific cluster, [set the cluster at the role
+level](/sql/alter-role) using the following SQL statement:
+
+```sql
+ALTER ROLE <your_user> SET CLUSTER = <custom_cluster>;
+```
+
+Replace `<your_user>` with the name of your Materialize role and `<custom_cluster>` with the name of the cluster you want to use.
+
+Once set, all new sessions for that user will automatically run in the specified
 cluster, eliminating the need to manually specify it in each query or
-connection.</p>
+connection.
 
 ## Execute and visualize a query
 
@@ -417,13 +427,18 @@ Database password      | App-specific password.
 
 ## Configure a custom cluster
 
-<p>To direct queries to a specific cluster, <a href="/sql/alter-role" >set the cluster at the role
-level</a> using the following SQL statement:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">ALTER</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="o">&lt;</span><span class="n">your_user</span><span class="o">&gt;</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="k">CLUSTER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">custom_cluster</span><span class="o">&gt;</span><span class="p">;</span><span class="w">
-</span></span></span></code></pre></div><p>Replace <code>&lt;your_user&gt;</code> with the name of your Materialize role and <code>&lt;custom_cluster&gt;</code> with the name of the cluster you want to use.</p>
-<p>Once set, all new sessions for that user will automatically run in the specified
+To direct queries to a specific cluster, [set the cluster at the role
+level](/sql/alter-role) using the following SQL statement:
+
+```sql
+ALTER ROLE <your_user> SET CLUSTER = <custom_cluster>;
+```
+
+Replace `<your_user>` with the name of your Materialize role and `<custom_cluster>` with the name of the cluster you want to use.
+
+Once set, all new sessions for that user will automatically run in the specified
 cluster, eliminating the need to manually specify it in each query or
-connection.</p>
+connection.
 
 ## Known limitations
 
@@ -497,13 +512,18 @@ For more details and troubleshooting, check the
 
 ## Configure a custom cluster
 
-<p>To direct queries to a specific cluster, <a href="/sql/alter-role" >set the cluster at the role
-level</a> using the following SQL statement:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">ALTER</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="o">&lt;</span><span class="n">your_user</span><span class="o">&gt;</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="k">CLUSTER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">custom_cluster</span><span class="o">&gt;</span><span class="p">;</span><span class="w">
-</span></span></span></code></pre></div><p>Replace <code>&lt;your_user&gt;</code> with the name of your Materialize role and <code>&lt;custom_cluster&gt;</code> with the name of the cluster you want to use.</p>
-<p>Once set, all new sessions for that user will automatically run in the specified
+To direct queries to a specific cluster, [set the cluster at the role
+level](/sql/alter-role) using the following SQL statement:
+
+```sql
+ALTER ROLE <your_user> SET CLUSTER = <custom_cluster>;
+```
+
+Replace `<your_user>` with the name of your Materialize role and `<custom_cluster>` with the name of the cluster you want to use.
+
+Once set, all new sessions for that user will automatically run in the specified
 cluster, eliminating the need to manually specify it in each query or
-connection.</p>
+connection.
 
 ## Refresh rate
 
@@ -547,13 +567,18 @@ Database password      | App-specific password.
 
 ## Configure a custom cluster
 
-<p>To direct queries to a specific cluster, <a href="/sql/alter-role" >set the cluster at the role
-level</a> using the following SQL statement:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">ALTER</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="o">&lt;</span><span class="n">your_user</span><span class="o">&gt;</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="k">CLUSTER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">custom_cluster</span><span class="o">&gt;</span><span class="p">;</span><span class="w">
-</span></span></span></code></pre></div><p>Replace <code>&lt;your_user&gt;</code> with the name of your Materialize role and <code>&lt;custom_cluster&gt;</code> with the name of the cluster you want to use.</p>
-<p>Once set, all new sessions for that user will automatically run in the specified
+To direct queries to a specific cluster, [set the cluster at the role
+level](/sql/alter-role) using the following SQL statement:
+
+```sql
+ALTER ROLE <your_user> SET CLUSTER = <custom_cluster>;
+```
+
+Replace `<your_user>` with the name of your Materialize role and `<custom_cluster>` with the name of the cluster you want to use.
+
+Once set, all new sessions for that user will automatically run in the specified
 cluster, eliminating the need to manually specify it in each query or
-connection.</p>
+connection.
 
 ## Troubleshooting
 
@@ -693,13 +718,18 @@ connections"
 
 ## Configure a custom cluster
 
-<p>To direct queries to a specific cluster, <a href="/sql/alter-role" >set the cluster at the role
-level</a> using the following SQL statement:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">ALTER</span><span class="w"> </span><span class="k">ROLE</span><span class="w"> </span><span class="o">&lt;</span><span class="n">your_user</span><span class="o">&gt;</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="k">CLUSTER</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">custom_cluster</span><span class="o">&gt;</span><span class="p">;</span><span class="w">
-</span></span></span></code></pre></div><p>Replace <code>&lt;your_user&gt;</code> with the name of your Materialize role and <code>&lt;custom_cluster&gt;</code> with the name of the cluster you want to use.</p>
-<p>Once set, all new sessions for that user will automatically run in the specified
+To direct queries to a specific cluster, [set the cluster at the role
+level](/sql/alter-role) using the following SQL statement:
+
+```sql
+ALTER ROLE <your_user> SET CLUSTER = <custom_cluster>;
+```
+
+Replace `<your_user>` with the name of your Materialize role and `<custom_cluster>` with the name of the cluster you want to use.
+
+Once set, all new sessions for that user will automatically run in the specified
 cluster, eliminating the need to manually specify it in each query or
-connection.</p>
+connection.
 
 ### Troubleshooting
 

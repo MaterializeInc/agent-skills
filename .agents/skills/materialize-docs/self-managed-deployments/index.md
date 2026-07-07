@@ -17,21 +17,11 @@ for deploying, managing, and troubleshooting your Self-Managed Materialize.
 
 To help you get started, the following installation guides are available:
 
-<h3 id="install-using-helm-commands">Install using Helm Commands</h3>
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/install-on-local-kind/" >Install locally on Kind</a></td>
-          <td>Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.</td>
-      </tr>
-  </tbody>
-</table>
+### Install using Helm Commands
+
+|  Guide         | Description  |
+| ------------- | -------|
+| [Install locally on Kind](/self-managed-deployments/installation/install-on-local-kind/) | Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.
 
 ### Install using Terraform Modules
 
@@ -172,7 +162,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.27.0
+  environmentdImageRef: materialize/environmentd:v26.29.0
 # ... additional fields omitted for brevity
 ```
 
@@ -655,21 +645,11 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 <h2 id="installation-guides">Installation guides</h2>
 <p>The following installation guides are available to help you get started:</p>
 
-<h3 id="install-using-helm-commands">Install using Helm Commands</h3>
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/install-on-local-kind/" >Install locally on Kind</a></td>
-          <td>Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.</td>
-      </tr>
-  </tbody>
-</table>
+### Install using Helm Commands
+
+|  Guide         | Description  |
+| ------------- | -------|
+| [Install locally on Kind](/self-managed-deployments/installation/install-on-local-kind/) | Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.
 
 <h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
 > **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
@@ -931,14 +911,14 @@ the CREATE CONNECTION feature.</p>
 <td><code>forcePromote</code></td>
 <td></td>
 <td>
-<em><strong>Uuid</strong></em>
+<em><strong>String</strong></em>
 
 <p>If <code>forcePromote</code> is set to the same value as <code>requestRollout</code>, the
 current rollout will skip waiting for clusters in the new
 generation to rehydrate before promoting the new environmentd to
 leader.</p>
 
-<p><strong>Default:</strong> <code>00000000-0000-0000-0000-000000000000</code></p></td>
+</td>
 </tr>
 <tr>
 <td><code>forceRollout</code></td>
@@ -1932,9 +1912,51 @@ To configure the Materialize operator, you can:
 </tr>
 
 <tr>
+<td><a href='#operatorargsinstallv1crd'><code>operator.args.installV1CRD</code></a></td>
+<td>
+<code>false</code>
+</td>
+</tr>
+
+<tr>
 <td><a href='#operatorargsstartuplogfilter'><code>operator.args.startupLogFilter</code></a></td>
 <td>
 <code>&quot;INFO,mz_orchestratord=TRACE&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorargswebhookcertreloadinterval'><code>operator.args.webhookCertReloadInterval</code></a></td>
+<td>
+<code>nil</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcertificatecaduration'><code>operator.certificate.caDuration</code></a></td>
+<td>
+<code>&quot;87600h&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcertificatecarenewbefore'><code>operator.certificate.caRenewBefore</code></a></td>
+<td>
+<code>&quot;8760h&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcertificatesecretname'><code>operator.certificate.secretName</code></a></td>
+<td>
+<code>nil</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcertificatesource'><code>operator.certificate.source</code></a></td>
+<td>
+<code>&quot;cert-manager&quot;</code>
 </td>
 </tr>
 
@@ -2081,7 +2103,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.29.0&quot;</code>
+<code>&quot;v26.31.0&quot;</code>
 </td>
 </tr>
 
@@ -2456,11 +2478,47 @@ Affinity to use for the operator pod
 
 **Default**: <code>false</code>
 
+#### operator.args.installV1CRD
+
+**Default**: <code>false</code>
+
+Whether to install the v1 version of the Materialize CRD and the conversion webhook that converts between v1 and v1alpha1. When false, only the v1alpha1 CRD version is installed and no webhook serving certificate or service is created.
+
 #### operator.args.startupLogFilter
 
 **Default**: <code>&quot;INFO,mz_orchestratord=TRACE&quot;</code>
 
 Log filtering settings for startup logs
+
+#### operator.args.webhookCertReloadInterval
+
+**Default**: <code>nil</code>
+
+How often orchestratord reloads its webhook TLS certificate from disk and, when the CA changes, refreshes the conversion webhook&rsquo;s CA bundle. Must be shorter than the certificate&rsquo;s lifetime. Accepts a humantime duration (e.g. &ldquo;1h&rdquo;, &ldquo;30m&rdquo;). Leave null to use the binary default. Only used if <code>installV1CRD</code> is true.
+
+#### operator.certificate.caDuration
+
+**Default**: <code>&quot;87600h&quot;</code>
+
+Lifetime of the root CA that signs the webhook serving certificate, when <code>source</code> is &ldquo;cert-manager&rdquo;. The serving certificate is signed by this CA, so the CA outlives individual serving-certificate rotations.
+
+#### operator.certificate.caRenewBefore
+
+**Default**: <code>&quot;8760h&quot;</code>
+
+How long before the root CA expires to renew it. Must be less than <code>caDuration</code>.
+
+#### operator.certificate.secretName
+
+**Default**: <code>nil</code>
+
+Name of a secret in the operator&rsquo;s namespace containing ca.crt, tls.crt, and tls.key entries. Only used if <code>source</code> is &ldquo;secret&rdquo;.
+
+#### operator.certificate.source
+
+**Default**: <code>&quot;cert-manager&quot;</code>
+
+Where to obtain the certificate for orchestratord. Valid values are &lsquo;cert-manager&rsquo; and &lsquo;secret&rsquo;. Only used if <code>operator.args.installV1CRD</code> is true.
 
 #### operator.cloudProvider.providers.aws.accountID
 
@@ -2562,7 +2620,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.29.0&quot;</code>
+**Default**: <code>&quot;v26.31.0&quot;</code>
 
 The tag/version of the operator image to be used
 
@@ -2697,6 +2755,8 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
+| v26.29 | v26.29 | v26.29 | 2026-06-19 | See <a href="/releases/#v26290" >v26.29 release notes</a> |
+| v26.28 | v26.28 | v26.28 | 2026-06-12 | See <a href="/releases/#v26280" >v26.28 release notes</a> |
 | v26.27 | v26.27 | v26.27 | 2026-06-05 | See <a href="/releases/#v26270" >v26.27 release notes</a> |
 | v26.26 | v26.26 | v26.26 | 2026-05-29 | See <a href="/releases/#v26260" >v26.26 release notes</a> |
 | v26.24.3 | v26.24.3 | v26.24.3 | 2026-05-20 | See <a href="/releases/#v26243" >v26.24.3 release notes</a> |
@@ -2868,34 +2928,25 @@ Materialize releases new Self-Managed versions per the schedule outlined in [Rel
 notes</a>.</p>
 </li>
 <li>
-<strong>Always</strong> upgrade the Materialize Operator <strong>before</strong>
+**Always** upgrade the Materialize Operator **before**
 upgrading the Materialize instances.
+
 </li>
 </ul>
 
-> **Note:** For major version upgrades, you can <strong>only</strong> upgrade <strong>one</strong> major version
-> at a time. For example, upgrades from <strong>v26</strong>.1.0 to <strong>v27</strong>.3.0 is
-> permitted but <strong>v26</strong>.1.0 to <strong>v28</strong>.0.0 is not.
+> **Note:** For major version upgrades, you can **only** upgrade **one** major version
+> at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
+> permitted but **v26**.1.0 to **v28**.0.0 is not.
 
 ## Upgrade guides
 
 The following upgrade guides are available as examples:
 
-<h4 id="upgrade-using-helm-commands">Upgrade using Helm Commands</h4>
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/upgrading/upgrade-on-kind/" >Upgrade on Kind</a></td>
-          <td>Uses standard Helm commands to upgrade Materialize on a Kind cluster in Docker.</td>
-      </tr>
-  </tbody>
-</table>
+#### Upgrade using Helm Commands
+
+|  Guide         | Description  |
+| ------------- | -------|
+| [Upgrade on Kind](/self-managed-deployments/upgrading/upgrade-on-kind/) | Uses standard Helm commands to upgrade Materialize on a Kind cluster in Docker.
 
 <h4 id="upgrade-using-the-new-terraform-modules">Upgrade using the new Terraform Modules</h4>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
@@ -3009,7 +3060,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.27.0
+  --version v26.29.0
 ```
 
 ## Upgrading Materialize Instances
@@ -3047,13 +3098,13 @@ To stage the Materialize instances version upgrade, update the
 compatible version of your currently deployed Materialize Operator.
 
 To stage, but **not** rollout, the Materialize instance version upgrade, you can
-use the `kubectl patch` command; for example, if the **App Version** is v26.27.0:
+use the `kubectl patch` command; for example, if the **App Version** is v26.29.0:
 
 ```shell
 kubectl patch materialize <instance-name> \
   -n <materialize-instance-namespace> \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.27.0\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.29.0\"}}"
 ```
 
 > **Note:** Until you specify a new `requestRollout`, the Operator watches for updates but
@@ -3081,7 +3132,7 @@ can, if preferred, combine both operations in a single command
 kubectl patch materialize <instance-name> \
   -n materialize-environment \
   --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.27.0\", \"requestRollout\": \"$(uuidgen)\"}}"
+  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.29.0\", \"requestRollout\": \"$(uuidgen)\"}}"
 ```
 
 #### Using YAML Definition
@@ -3095,7 +3146,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.27.0 # Update version as needed
+  environmentdImageRef: materialize/environmentd:v26.29.0 # Update version as needed
   requestRollout: 22222222-2222-2222-2222-222222222222    # Use a new UUID
   forceRollout: 33333333-3333-3333-3333-333333333333      # Optional: for forced rollouts
   inPlaceRollout: false                                   # In Place rollout is deprecated and ignored. Please use rolloutStrategy
@@ -3147,8 +3198,17 @@ The behavior of the new version rollout follows your `rolloutStrategy` setting.
 
 #### *WaitUntilReady* - ***Default***
 
-`WaitUntilReady` creates a new generation of pods and automatically cuts over to them as soon as they catch up to the old generation and become `ReadyToPromote`. This strategy temporarily doubles the required resources to run Materialize.
-> **Warning:** `WaitUntilReady` waits up to 72 hours (configurable by the `with_0dt_deployment_max_wait` flag) for the new pods to become ready. If the promotion has not occurred by then, the new pods are automatically promoted.
+`WaitUntilReady` creates a new generation of pods and automatically promotes
+them as soon as they catch up to the old generation and become `ReadyToPromote`.
+Because both generations run simultaneously until the promotion, this strategy
+temporarily doubles the required resources to run Materialize.
+
+> **Note:** Starting in v26.28.0, `WaitUntilReady` waits up to 1 year (configurable by the
+> `with_0dt_deployment_max_wait` flag) for the new pods to become
+> `ReadyToPromote`. If the pods do not reach `ReadyToPromote` by then, the rollout
+> is cancelled and the new pods are removed.
+> Earlier versions used a default wait of 72 hours, and, once the wait time
+> expired, the new pods were automatically promoted regardless of their readiness.
 
 #### *ImmediatelyPromoteCausingDowntime*
 > **Warning:** Using the `ImmediatelyPromoteCausingDowntime` rollout flag will cause downtime.

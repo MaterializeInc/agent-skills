@@ -4,7 +4,8 @@ Connecting Materialize to a PostgreSQL database for Change Data Capture (CDC).
 
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
 
-Materialize supports PostgreSQL (11+) as a data source. To connect to a
+Materialize supports PostgreSQL (11+) as a data source. PostgreSQL 16+ is
+required for connecting Materialize to a physical replica. To connect to a
 PostgreSQL instance, you first need to [create a connection](#creating-a-connection)
 that specifies access and authentication parameters.
 Once created, a connection is **reusable** across multiple `CREATE SOURCE`
@@ -127,25 +128,18 @@ specified publication using **a single** replication slot. This allows you to
 minimize the performance impact on the upstream database, as well as reuse the
 same source across multiple materializations.
 
-> **Tip:** <ul>
-> <li>
-> <p>For PostgreSQL 13+, set a reasonable value
-> for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-> to limit the amount of storage used by replication slots.</p>
-> </li>
-> <li>
-> <p>If you stop using Materialize, or if either the Materialize instance or
+> **Tip:** - For PostgreSQL 13+, set a reasonable value
+> for [`max_slot_wal_keep_size`](https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE)
+> to limit the amount of storage used by replication slots.
+> - If you stop using Materialize, or if either the Materialize instance or
 > the PostgreSQL instance crash, delete any replication slots. You can query
-> the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-> replication slot created for each source.</p>
-> </li>
-> <li>
-> <p>If you delete all objects that depend on a source without also dropping
+> the `mz_internal.mz_postgres_sources` table to look up the name of the
+> replication slot created for each source.
+> - If you delete all objects that depend on a source without also dropping
 > the source, the upstream replication slot remains and will continue to
 > accumulate data so that the source can resume in the future. To avoid
-> unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-> </li>
-> </ul>
+> unbounded disk space usage, make sure to use [`DROP
+> SOURCE`](/sql/drop-source/) or manually delete the replication slot.
 
 ##### PostgreSQL schemas
 
@@ -219,34 +213,39 @@ when the source was created.</p>
 
 #### Incompatible schema changes
 
-<p>All other schema changes to upstream tables will set the corresponding
+All other schema changes to upstream tables will set the corresponding
 subsource into an error state, which prevents you from reading from the
-source.</p>
-<p>To handle incompatible <a href="#schema-changes" >schema changes</a>, use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> and <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a> to first drop the affected subsource, and
+source.
+
+To handle incompatible [schema changes](#schema-changes), use [`DROP
+SOURCE`](/sql/alter-source/#context) and [`ALTER SOURCE...ADD
+SUBSOURCE`](/sql/alter-source/) to first drop the affected subsource, and
 then add the table back to the source. When you add the subsource, it will
-have the updated schema from the corresponding upstream table.</p>
+have the updated schema from the corresponding upstream table.
 
 ### Publication membership
 
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
+PostgreSQL's logical replication API does not provide a signal when users
 remove tables from publications. Because of this, Materialize relies on
 periodic checks to determine if a table has been removed from a publication,
 at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
+being read from the table.
+
+However, it is possible to remove a table from a publication and then re-add
 it before Materialize notices that the table was removed. In this case,
 Materialize can no longer provide any consistency guarantees about the data
 we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
+occurred.
 
 To mitigate this issue, if you need to drop and re-add a table to a
 publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.
+_before_ re-adding it using the [`DROP SOURCE`](/sql/drop-source/) command.
 
 ### Supported types
 
-<p>Materialize natively supports the following PostgreSQL types (including the
-array type for each of the types):</p>
+Materialize natively supports the following PostgreSQL types (including the
+array type for each of the types):
+
 <ul style="column-count: 3">
 <li><code>bool</code></li>
 <li><code>bpchar</code></li>
@@ -278,51 +277,54 @@ array type for each of the types):</p>
 <li><code>varchar</code></li>
 </ul>
 
-<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
-possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
-treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
-features. For example:</p>
-<ul>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-enum.html" ><code>enum</code></a>: When decoded as <code>text</code>, the implicit ordering of the original
-PostgreSQL <code>enum</code> type is not preserved; instead, Materialize will sort values
-as <code>text</code>.</p>
-</li>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-money.html" ><code>money</code></a>: When decoded as <code>text</code>, resulting <code>text</code> value cannot be cast
-back to <code>numeric</code>, since PostgreSQL adds typical currency formatting to the
-output.</p>
-</li>
-</ul>
+Replicating tables that contain **unsupported [data types](/sql/types/)** is
+possible via the `TEXT COLUMNS` option. The specified columns will be
+treated as `text`; i.e., will not have the expected PostgreSQL type
+features. For example:
+
+* [`enum`]: When decoded as `text`, the implicit ordering of the original
+  PostgreSQL `enum` type is not preserved; instead, Materialize will sort values
+  as `text`.
+
+* [`money`]: When decoded as `text`, resulting `text` value cannot be cast
+back to `numeric`, since PostgreSQL adds typical currency formatting to the
+output.
+
+[`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
+[`money`]: https://www.postgresql.org/docs/current/datatype-money.html
 
 ### Truncation
 
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
+Avoid truncating upstream tables that are being replicated into Materialize.
 If a replicated upstream table is truncated, the corresponding
 subsource(s)/table(s) in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
+produce any data until it is recreated.
+
+Instead of truncating, use an unqualified `DELETE` to remove all rows from
+the upstream table:
+
+```mzsql
+DELETE FROM t;
+```
 
 ### Inherited tables
 
-<p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
-PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
-also present in the inherited table. However, both PostgreSQL&rsquo;s logical
-replication and <code>COPY</code> only present data written to the tables themselves,
-i.e. the inheriting data is <em>not</em> treated as part of the inherited table.</p>
-<p>PostgreSQL sources use logical replication and <code>COPY</code> to ingest table data,
-so inheriting tables&rsquo; data will only be ingested as part of the inheriting
-table, i.e. in Materialize, the data will not be returned when serving
-<code>SELECT</code>s from the inherited table.</p>
+When using [PostgreSQL table inheritance](https://www.postgresql.org/docs/current/tutorial-inheritance.html),
+PostgreSQL serves data from `SELECT`s as if the inheriting tables' data is
+also present in the inherited table. However, both PostgreSQL's logical
+replication and `COPY` only present data written to the tables themselves,
+i.e. the inheriting data is _not_ treated as part of the inherited table.
 
-You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
+PostgreSQL sources use logical replication and `COPY` to ingest table data,
+so inheriting tables' data will only be ingested as part of the inheriting
+table, i.e. in Materialize, the data will not be returned when serving
+`SELECT`s from the inherited table.
+
+You can mimic PostgreSQL's `SELECT` behavior with inherited tables by
 creating a materialized view that unions data from the inherited and
-inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
+inheriting tables (using `UNION ALL`). However, if new tables inherit from
 the table, data from the inheriting tables will not be available in the
-view. You will need to add the inheriting tables via <code>ADD SUBSOURCE</code> and
+view. You will need to add the inheriting tables via `ADD SUBSOURCE` and
 create a new view (materialized or non-) that unions the new table.
 
 ## Examples

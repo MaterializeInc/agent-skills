@@ -101,31 +101,29 @@ VIEW`](/sql/create-materialized-view/) with [`ALTER MATERIALIZED VIEW ... APPLY
 REPLACEMENT`](/sql/alter-materialized-view) to replace materialized views
 in-place without recreating dependent objects or incurring downtime.
 
-<p>When replacing a materialized view, the operation:</p>
-<ul>
-<li>
-<p>Replaces the materialized view&rsquo;s definition with that of the replacement
-view and drops the replacement view at the same time.</p>
-</li>
-<li>
-<p>Emits a diff representing the changes between the old and new output.</p>
-</li>
-</ul>
+When replacing a materialized view, the operation:
+
+- Replaces the materialized view's definition with that of the replacement
+  view and drops the replacement view at the same time.
+
+- Emits a diff representing the changes between the old and new output.
 
 See [Recommended checks before replacing a
 view](/sql/alter-materialized-view/#recommended-checks-before-replacing-a-view).
 
 #### Recommended checks before replacing a view
 
-<p>Before applying, verify that the replacement materialized view is hydrated
-to avoid downtime:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span>
-</span></span><span class="line"><span class="cl">   <span class="n">mv</span><span class="mf">.</span><span class="k">name</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">   <span class="n">h</span><span class="mf">.</span><span class="n">hydrated</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">mz_catalog</span><span class="mf">.</span><span class="n">mz_materialized_views</span> <span class="k">AS</span> <span class="n">mv</span>
-</span></span><span class="line"><span class="cl"><span class="k">JOIN</span> <span class="n">mz_internal</span><span class="mf">.</span><span class="n">mz_hydration_statuses</span> <span class="k">AS</span> <span class="n">h</span> <span class="k">ON</span> <span class="p">(</span><span class="n">mv</span><span class="mf">.</span><span class="k">id</span> <span class="o">=</span> <span class="n">h</span><span class="mf">.</span><span class="n">object_id</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">mv</span><span class="mf">.</span><span class="k">name</span> <span class="o">=</span> <span class="s1">&#39;&lt;replacement_view&gt;&#39;</span><span class="p">;</span>
-</span></span></code></pre></div>
+Before applying, verify that the replacement materialized view is hydrated
+to avoid downtime:
+
+  ```mzsql
+  SELECT
+     mv.name,
+     h.hydrated
+  FROM mz_catalog.mz_materialized_views AS mv
+  JOIN mz_internal.mz_hydration_statuses AS h ON (mv.id = h.object_id)
+  WHERE mv.name = '<replacement_view>';
+  ```
 
 #### Considerations
 
@@ -135,23 +133,30 @@ cause temporary CPU and memory spikes.
 
 #### Troubleshooting
 
-<p><strong>Issue:</strong> Command does not return.</p>
-<p><strong>Common cause:</strong> The original materialized view is lagging behind the replacement. If
+**Issue:** Command does not return.
+
+**Common cause:** The original materialized view is lagging behind the replacement. If
 the original is lagging behind the replacement, the command waits for the
-original view to catch up.</p>
-<p><strong>Action:</strong> Cancel the command and check whether the original materialized view is
-lagging behind the replacement.</p>
-<p>To check whether the original materialized view is lagging behind the replacement, run
+original view to catch up.
+
+**Action:** Cancel the command and check whether the original materialized view is
+lagging behind the replacement.
+
+To check whether the original materialized view is lagging behind the replacement, run
 the following query to check their write frontiers, substituting the names
-of your original and replacement materialized views.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="n">o</span><span class="mf">.</span><span class="k">name</span><span class="p">,</span> <span class="n">f</span><span class="mf">.</span><span class="n">write_frontier</span>
-</span></span><span class="line"><span class="cl"><span class="k">FROM</span> <span class="n">mz_objects</span> <span class="n">o</span><span class="p">,</span> <span class="n">mz_cluster_replica_frontiers</span> <span class="n">f</span>
-</span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">o</span><span class="mf">.</span><span class="k">name</span> <span class="k">in</span> <span class="p">(</span><span class="s1">&#39;&lt;view&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;view_replacement&gt;&#39;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="k">AND</span> <span class="n">f</span><span class="mf">.</span><span class="n">object_id</span> <span class="o">=</span> <span class="n">o</span><span class="mf">.</span><span class="k">id</span><span class="p">;</span>
-</span></span></code></pre></div><p>If the original materialized view is behind, rerun the query to check the progress of the
+of your original and replacement materialized views.
+
+```mzsql
+SELECT o.name, f.write_frontier
+FROM mz_objects o, mz_cluster_replica_frontiers f
+WHERE o.name in ('<view>', '<view_replacement>')
+AND f.object_id = o.id;
+```
+
+If the original materialized view is behind, rerun the query to check the progress of the
 original materialized view. If the rate of advancement suggests that catch
 up will take an extended period of time, it is recommended to drop the
-replacement view.</p>
+replacement view.
 
 ## Privileges
 

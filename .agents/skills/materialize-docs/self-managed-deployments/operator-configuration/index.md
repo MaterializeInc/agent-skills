@@ -285,9 +285,51 @@ To configure the Materialize operator, you can:
 </tr>
 
 <tr>
+<td><a href='#operatorargsinstallv1crd'><code>operator.args.installV1CRD</code></a></td>
+<td>
+<code>false</code>
+</td>
+</tr>
+
+<tr>
 <td><a href='#operatorargsstartuplogfilter'><code>operator.args.startupLogFilter</code></a></td>
 <td>
 <code>&quot;INFO,mz_orchestratord=TRACE&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorargswebhookcertreloadinterval'><code>operator.args.webhookCertReloadInterval</code></a></td>
+<td>
+<code>nil</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcertificatecaduration'><code>operator.certificate.caDuration</code></a></td>
+<td>
+<code>&quot;87600h&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcertificatecarenewbefore'><code>operator.certificate.caRenewBefore</code></a></td>
+<td>
+<code>&quot;8760h&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcertificatesecretname'><code>operator.certificate.secretName</code></a></td>
+<td>
+<code>nil</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcertificatesource'><code>operator.certificate.source</code></a></td>
+<td>
+<code>&quot;cert-manager&quot;</code>
 </td>
 </tr>
 
@@ -434,7 +476,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.29.0&quot;</code>
+<code>&quot;v26.31.0&quot;</code>
 </td>
 </tr>
 
@@ -809,11 +851,47 @@ Affinity to use for the operator pod
 
 **Default**: <code>false</code>
 
+#### operator.args.installV1CRD
+
+**Default**: <code>false</code>
+
+Whether to install the v1 version of the Materialize CRD and the conversion webhook that converts between v1 and v1alpha1. When false, only the v1alpha1 CRD version is installed and no webhook serving certificate or service is created.
+
 #### operator.args.startupLogFilter
 
 **Default**: <code>&quot;INFO,mz_orchestratord=TRACE&quot;</code>
 
 Log filtering settings for startup logs
+
+#### operator.args.webhookCertReloadInterval
+
+**Default**: <code>nil</code>
+
+How often orchestratord reloads its webhook TLS certificate from disk and, when the CA changes, refreshes the conversion webhook&rsquo;s CA bundle. Must be shorter than the certificate&rsquo;s lifetime. Accepts a humantime duration (e.g. &ldquo;1h&rdquo;, &ldquo;30m&rdquo;). Leave null to use the binary default. Only used if <code>installV1CRD</code> is true.
+
+#### operator.certificate.caDuration
+
+**Default**: <code>&quot;87600h&quot;</code>
+
+Lifetime of the root CA that signs the webhook serving certificate, when <code>source</code> is &ldquo;cert-manager&rdquo;. The serving certificate is signed by this CA, so the CA outlives individual serving-certificate rotations.
+
+#### operator.certificate.caRenewBefore
+
+**Default**: <code>&quot;8760h&quot;</code>
+
+How long before the root CA expires to renew it. Must be less than <code>caDuration</code>.
+
+#### operator.certificate.secretName
+
+**Default**: <code>nil</code>
+
+Name of a secret in the operator&rsquo;s namespace containing ca.crt, tls.crt, and tls.key entries. Only used if <code>source</code> is &ldquo;secret&rdquo;.
+
+#### operator.certificate.source
+
+**Default**: <code>&quot;cert-manager&quot;</code>
+
+Where to obtain the certificate for orchestratord. Valid values are &lsquo;cert-manager&rsquo; and &lsquo;secret&rsquo;. Only used if <code>operator.args.installV1CRD</code> is true.
 
 #### operator.cloudProvider.providers.aws.accountID
 
@@ -915,7 +993,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.29.0&quot;</code>
+**Default**: <code>&quot;v26.31.0&quot;</code>
 
 The tag/version of the operator image to be used
 

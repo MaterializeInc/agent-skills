@@ -88,9 +88,39 @@ and retrieve the AWS principal needed to configure the AWS PrivateLink service.
 
     **Remarks**:
 
-    a. Network Load Balancers do not have associated security groups. Therefore, the security groups for your targets must use IP addresses to allow traffic.
+    - By default, Network Load Balancers do not have associated security
+      groups. In addition, target security groups cannot use client security
+      groups as a traffic source. Therefore, the security groups for your
+      targets must allow traffic using IP address ranges rather than security
+      group references. For more information, see the [AWS
+      documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
 
-    b. You can't use the security groups for the clients as a source in the security groups for the targets. Therefore, the security groups for your targets must use the IP addresses of the clients to allow traffic. For more details, check the [AWS documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/network/target-group-register-targets.html).
+    - If you use [network ACLs
+      (NACLs)](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html)
+      and traffic between the NLB and its targets crosses subnet boundaries,
+      the NACLs must allow both the application port and the ephemeral port
+      range (1024–65535) for return traffic. This can occur when cross-zone
+      load balancing is enabled, or when the NLB and its targets reside in
+      different subnets, even within the same Availability Zone.
+
+      For example, if a target application listens on port 9098, the target
+      subnet must allow ingress on port 9098 from the NLB's IP ranges and
+      egress on the ephemeral port range (1024–65535) to those ranges
+      for return traffic. Likewise, the NLB subnet must allow egress on
+      port 9098 to the target IP ranges and ingress on the ephemeral port
+      range from them.
+
+    - If you have associated a security group with your Network Load Balancer
+      and enabled **Enforce inbound rules on PrivateLink traffic**, the
+      security group's inbound rules also apply to traffic from Materialize's
+      VPC endpoint. Any traffic not explicitly permitted, including
+      Materialize's, will be silently blocked.
+
+      To resolve this, either:
+      - Add inbound rules to the NLB's security group that permit the listener
+        port and the health check port from a source covering Materialize's
+        VPC endpoint traffic, or
+      - Disable **Enforce inbound rules on PrivateLink traffic**.
 
 1. Create a VPC [endpoint service](https://docs.aws.amazon.com/vpc/latest/privatelink/create-endpoint-service.html) and associate it with the **Network Load Balancer** that you’ve just created.
 

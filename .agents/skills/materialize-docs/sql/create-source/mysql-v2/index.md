@@ -11,30 +11,19 @@ process.
 
 ## Prerequisites
 
-<p>To create a source from MySQL(8.0.1+), you must first:</p>
-<ul>
-<li><strong>Configure upstream MySQL instance</strong>
-<ul>
-<li>Enable <a href="#change-data-capture" >GTID-based binary log(binlog)
-replication</a>. You <strong>must</strong> set
-<a href="#change-data-capture" ><code>binlog_row_metadata=FULL</code></a> to use the new
-<code>CREATE SOURCE</code> syntax.</li>
-<li>Create a replication user and password for Materialize to use to
-connect.</li>
-</ul>
-</li>
-<li><strong>Configure network security</strong>
-<ul>
-<li>Ensure Materialize can connect to your MySQL instance.</li>
-</ul>
-</li>
-<li><strong>Create a connection to MySQL in Materialize</strong>
-<ul>
-<li>The <a href="/sql/create-connection/#mysql" >connection setup</a> depends on the
-network security configuration.</li>
-</ul>
-</li>
-</ul>
+To create a source from MySQL(8.0.1+), you must first:
+- **Configure upstream MySQL instance**
+  - Enable [GTID-based binary log(binlog)
+    replication](#change-data-capture). You **must** set
+    [`binlog_row_metadata=FULL`](#change-data-capture) to use the new
+    `CREATE SOURCE` syntax.
+  - Create a replication user and password for Materialize to use to
+    connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your MySQL instance.
+- **Create a connection to MySQL in Materialize**
+  - The [connection setup](/sql/create-connection/#mysql) depends on the
+    network security configuration.
 
 ## Syntax
 
@@ -82,7 +71,8 @@ With the new syntax, after a MySQL source is created, you [`CREATE TABLE FROM
 SOURCE`](/sql/create-table/) to create a corresponding table in Materialize and
 start ingesting data.
 
-<p>Materialize natively supports the following MySQL types:</p>
+Materialize natively supports the following MySQL types:
+
 <ul style="column-count: 3">
 <li><code>bigint</code></li>
 <li><code>binary</code></li>
@@ -115,39 +105,52 @@ start ingesting data.
 <li><code>varchar</code></li>
 </ul>
 
-<p>When replicating tables that contain the <strong>unsupported <a href="/sql/types/" >data
-types</a></strong>, you can:</p>
-<ul>
-<li>
-<p>Use <a href="/sql/create-source/mysql/#handling-unsupported-types" ><code>TEXT COLUMNS</code>
-option</a> for the
-following unsupported  MySQL types:</p>
-<ul>
-<li><code>enum</code></li>
-<li><code>year</code></li>
-</ul>
-<p>The specified columns will be treated as <code>text</code> and will not offer the
-expected MySQL type features.</p>
-</li>
-<li>
-<p>Use the <a href="/sql/create-source/mysql/#excluding-columns" ><code>EXCLUDE COLUMNS</code></a>
-option to exclude any columns that contain unsupported data types.</p>
-</li>
-</ul>
+When replicating tables that contain the **unsupported [data
+types](/sql/types/)**, you can:
+
+- Use [`TEXT COLUMNS`
+  option](/sql/create-source/mysql/#handling-unsupported-types) for the
+  following unsupported  MySQL types:
+
+  - `enum`
+  - `year`
+
+  The specified columns will be treated as `text` and will not offer the
+  expected MySQL type features.
+
+- Use the [`EXCLUDE COLUMNS`](/sql/create-source/mysql/#excluding-columns)
+option to exclude any columns that contain unsupported data types.
+
+#### Zero values for `date`, `datetime`, and `timestamp`
+
+MySQL allows the special "zero" values `0000-00-00`, `0000-00-00
+00:00:00` in `date`, `datetime`, and `timestamp` columns when the server
+`sql_mode` does not include `NO_ZERO_DATE` or `NO_ZERO_IN_DATE`. These
+values are not representable in Materialize's corresponding native types,
+so they will cause ingestion to fail for the affected column.
+
+To ingest columns that contain zero values, use [`TEXT
+COLUMNS`](/sql/create-source/mysql/#handling-unsupported-types) to
+decode the affected columns as `text`. The zero values for `date`,
+`datetime`, `timestamp`, and `year` are preserved verbatim as strings
+(e.g. `"0000-00-00 00:00:00"`, `"0000"`).
 
 For more information, including strategies for handling unsupported types,
 see [`CREATE TABLE FROM SOURCE`](/sql/create-table/).
 
 ### Upstream table truncation restrictions
 
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
+Avoid truncating upstream tables that are being replicated into Materialize.
 If a replicated upstream table is truncated, the corresponding
 subsource in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div>
+produce any data until it is recreated.
+
+Instead of truncating, use an unqualified `DELETE` to remove all rows from
+the upstream table:
+
+```mzsql
+DELETE FROM t;
+```
 
 For additional considerations, see also [`CREATE TABLE`](/sql/create-table/).
 
@@ -380,30 +383,19 @@ database. For more information, see [Troubleshooting](/ops/troubleshooting/).
 
 ### Prerequisites
 
-<p>To create a source from MySQL(8.0.1+), you must first:</p>
-<ul>
-<li><strong>Configure upstream MySQL instance</strong>
-<ul>
-<li>Enable <a href="#change-data-capture" >GTID-based binary log(binlog)
-replication</a>. You <strong>must</strong> set
-<a href="#change-data-capture" ><code>binlog_row_metadata=FULL</code></a> to use the new
-<code>CREATE SOURCE</code> syntax.</li>
-<li>Create a replication user and password for Materialize to use to
-connect.</li>
-</ul>
-</li>
-<li><strong>Configure network security</strong>
-<ul>
-<li>Ensure Materialize can connect to your MySQL instance.</li>
-</ul>
-</li>
-<li><strong>Create a connection to MySQL in Materialize</strong>
-<ul>
-<li>The <a href="/sql/create-connection/#mysql" >connection setup</a> depends on the
-network security configuration.</li>
-</ul>
-</li>
-</ul>
+To create a source from MySQL(8.0.1+), you must first:
+- **Configure upstream MySQL instance**
+  - Enable [GTID-based binary log(binlog)
+    replication](#change-data-capture). You **must** set
+    [`binlog_row_metadata=FULL`](#change-data-capture) to use the new
+    `CREATE SOURCE` syntax.
+  - Create a replication user and password for Materialize to use to
+    connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your MySQL instance.
+- **Create a connection to MySQL in Materialize**
+  - The [connection setup](/sql/create-connection/#mysql) depends on the
+    network security configuration.
 
 For details, see the [MySQL integration
 guides](/ingest-data/mysql/#integration-guides).
