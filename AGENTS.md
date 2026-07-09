@@ -24,6 +24,7 @@ skills/
 | Skill | Description |
 |-------|-------------|
 | `materialize-docs` | Materialize documentation for SQL syntax, data ingestion, concepts, and best practices |
+| `materialize-terraform-provider` | Using the Materialize Terraform provider to manage Materialize resources declaratively |
 
 ## Working with Skills
 
