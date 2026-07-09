@@ -44,6 +44,23 @@ Materialize documentation for SQL syntax, data ingestion, concepts, and best pra
 </details>
 
 <details>
+<summary><strong>materialize-terraform-self-managed</strong></summary>
+
+Terraform modules for deploying self-managed Materialize on AWS (EKS), Azure (AKS), and GCP (GKE).
+
+**Use when:**
+
+- Deploying self-managed Materialize with Terraform on any cloud
+- Customizing the networking, Kubernetes, database, or storage modules
+- Configuring the Materialize operator or instance (CRD versions, rollout strategies)
+- Pulling the modules into an existing Terraform project with pinned Git sources
+- Upgrading Materialize instances or troubleshooting a deployment
+
+**Covers:** module layout and variables for all three clouds, backend URL formats, storage authentication support, instance sizing, post-deployment setup, upgrades, and common gotchas from the [materialize-terraform-self-managed](https://github.com/MaterializeInc/materialize-terraform-self-managed) repository.
+
+</details>
+
+<details>
 <summary><strong>mcp-developer-analysis</strong></summary>
 
 Analyze a Materialize environment via the MCP Developer endpoint, and/or configure an MCP client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to connect to the materialize-developer server.
