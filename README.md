@@ -136,6 +136,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-07-09: Add materialize-terraform-provider skill
 - 2026-05-08: Add MCP client setup playbook to mcp-developer-analysis
 - 2026-05-05: Rename mz-developer-analysis to mcp-developer-analysis
 - 2026-04-28: Add mcp-developer-analysis skill
