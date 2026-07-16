@@ -60,11 +60,13 @@ deployments</a></p>
 <p>However, with a two-tier architecture:</p>
 <ul>
 <li>
-<p>Compute/transform operations and queries compete for the same cluster
-resources.</p>
+<p>Compute/transform operations and queries compete for the same
+cluster resources.</p>
 </li>
 <li>
-<p>Cluster restarts require rehydration of the indexes on views.</p>
+<p>No isolation between sinks and compute. A crash in a
+colocated sink can take down the compute and serving resources sharing the
+cluster.</p>
 </li>
 </ul>
 
@@ -89,7 +91,13 @@ architecture" ></p>
 <p><strong>Limitations of a one-tier architecture</strong> include:</p>
 <ul>
 <li>
-<p>Sources, compute objects, and queries compete for cluster resources.</p>
+<p>Sources, compute objects, queries, and sinks compete for cluster
+resources.</p>
+</li>
+<li>
+<p>No isolation between sources/sinks and compute. A crash in a
+colocated source or sink can take down the compute and serving resources
+sharing the cluster.</p>
 </li>
 <li>
 <p><a href="/manage/dbt/blue-green-deployments/" >Blue/green
@@ -97,9 +105,6 @@ deployment</a> is
 unsupported since sources would need to be dropped and recreated, putting strain on your upstream system during source recreation.</p>
 <p>To support blue/green deployments, use a two-tier architecture by moving
 compute objects to a new cluster (i.e., recreating compute objects in a new cluster).</p>
-</li>
-<li>
-<p>Cluster restarts require rehydration of the indexes on views.</p>
 </li>
 </ul>
 

@@ -9,8 +9,15 @@ Materialize releases new Self-Managed versions per the schedule outlined in [Rel
 <p>When upgrading:</p>
 <ul>
 <li>
-<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/#version-specific-upgrade-notes" >version specific upgrade
-notes</a>.</p>
+<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/version-notes/" >version-specific upgrade
+notes</a> for your target
+version:</p>
+<ul>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v2630-and-later-versions" >Upgrading to <code>v26.30</code> and later versions</a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v261-and-later-versions" >Upgrading to <code>v26.1</code> and later versions</a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v260" >Upgrading to <code>v26.0</code></a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-between-minor-versions-less-than-v26" >Upgrading between minor versions less than <code>v26</code></a></li>
+</ul>
 </li>
 <li>
 **Always** upgrade the Materialize Operator **before**
@@ -123,7 +130,7 @@ helm upgrade -n <namespace> <release-name> materialize/materialize-operator \
 | `<namespace>` | The namespace where the Operator is running. (e.g., `materialize`)  |
 | `<release-name>` | The release name. You can use `helm list -n <namespace>` to find your release name.  |
 | `<new_version>` | The upgrade version.  |
-| `<your-custom-values.yml>` | The name of your customization file, if using. If you are configuring using `\-\-set key=value` options, include them as well.  |
+| `<your-custom-values.yml>` | The name of your customization file, if using. If you are configuring using `--set key=value` options, include them as well.  |
 
 You can use `helm list` to find your release name. For example, if your Operator
 is running in the namespace `materialize`, run `helm list`:
@@ -145,116 +152,36 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.29.0
+  --version v26.32.0
 ```
 
 ## Upgrading Materialize Instances
 
-**After** you have upgraded your Materialize Operator, upgrade your Materialize
-instance(s) to the **APP Version** of the Operator. To find the version of your
-currently deployed Materialize Operator:
+After upgrading the operator, upgrade each Materialize instance to the
+operator's **App Version** by updating its `environmentdImageRef`. For
+step-by-step instructions, use the [upgrade guide](#upgrade-guides) for your
+environment (Kind, AWS, Azure, or GCP). This section explains how instance
+rollouts work.
 
-```shell
-helm list -n materialize
-```
+## Rollout configuration
 
-You will use the returned **App Version** for the updated `environmentdImageRef`
-value. Specifically, for your Materialize instance(s), set
-`environmentdImageRef` value to use the new version:
+Materialize supports two CRD API versions: `v1alpha1` and `v1` (available
+starting in v26.30). The Helm chart defaults to `v1alpha1`. The Terraform
+modules default to `v1` starting in v4.0.0.
 
-```
-spec:
-  environmentdImageRef: docker.io/materialize/environmentd:<app_version>
-```
+How you trigger a rollout depends on the CRD API version of your instances.
 
-To minimize unexpected downtime and avoid connection drops at critical
-periods for your application, the upgrade process involves two steps:
+> **Tip:** To migrate a `v1alpha1` instance to `v1`, see
+> [Adopting the v1 CRD](/self-managed-deployments/upgrading/adopting-the-v1-crd/).
 
-- First, stage the changes (update the `environmentdImageRef` with the new
-  version) to the Materialize custom resource. The Operator watches for changes
-  but does not automatically roll out the changes.
+**v1alpha1:**
 
-- Second, roll out the changes by specifying a new UUID for `requestRollout`.
+Specify a new `UUID` value for `requestRollout` to roll out changes to the
+Materialize instance.
 
-### Stage the Materialize instance version change
-
-To stage the Materialize instances version upgrade, update the
-`environmentdImageRef` field in the Materialize custom resource spec to the
-compatible version of your currently deployed Materialize Operator.
-
-To stage, but **not** rollout, the Materialize instance version upgrade, you can
-use the `kubectl patch` command; for example, if the **App Version** is v26.29.0:
-
-```shell
-kubectl patch materialize <instance-name> \
-  -n <materialize-instance-namespace> \
-  --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.29.0\"}}"
-```
-
-> **Note:** Until you specify a new `requestRollout`, the Operator watches for updates but
-> does not roll out the changes.
-
-### Applying the changes via `requestRollout`
-
-To apply chang Materialize instance upgrade, you must update the `requestRollout` field in the Materialize custom resource spec to a new UUID.
-Be sure to consult the [Rollout Configurations](#rollout-configuration) to ensure you've selected the correct rollout behavior.
-```shell
-# Then trigger the rollout with a new UUID
-kubectl patch materialize <instance-name> \
-  -n <materialize-instance-namespace> \
-  --type='merge' \
-  -p "{\"spec\": {\"requestRollout\": \"$(uuidgen)\"}}"
-```
-
-### Staging and applying in a single command
-
-Although separating the staging and rollout of the changes into two steps can
-minimize unexpected downtime and avoid connection drops at critical periods, you
-can, if preferred, combine both operations in a single command
-
-```shell
-kubectl patch materialize <instance-name> \
-  -n materialize-environment \
-  --type='merge' \
-  -p "{\"spec\": {\"environmentdImageRef\": \"docker.io/materialize/environmentd:v26.29.0\", \"requestRollout\": \"$(uuidgen)\"}}"
-```
-
-#### Using YAML Definition
-
-Alternatively, you can update your Materialize custom resource definition directly:
-
-```yaml
-apiVersion: materialize.cloud/v1alpha1
-kind: Materialize
-metadata:
-  name: 12345678-1234-1234-1234-123456789012
-  namespace: materialize-environment
-spec:
-  environmentdImageRef: materialize/environmentd:v26.29.0 # Update version as needed
-  requestRollout: 22222222-2222-2222-2222-222222222222    # Use a new UUID
-  forceRollout: 33333333-3333-3333-3333-333333333333      # Optional: for forced rollouts
-  inPlaceRollout: false                                   # In Place rollout is deprecated and ignored. Please use rolloutStrategy
-  rolloutStrategy: WaitUntilReady                         # The mechanism to use when rolling out the new version. Can be WaitUntilReady or ImmediatelyPromoteCausingDowntime
-  backendSecretName: materialize-backend
-```
-
-Apply the updated definition:
-
-```shell
-kubectl apply -f materialize.yaml
-```
-
-## Rollout Configuration
-
-### `requestRollout`
-
-Specify a new `UUID` value for the `requestRollout` to roll out the changes to
-the Materialize instance.
-
-> **Note:** `requestRollout` without the `forcedRollout` field only rolls out if changes
-> exist to the Materialize instance. To roll out even if there are no changes to
-> the instance, use with `forcedRollouts`.
+> **Note:** `requestRollout` without the `forceRollout` field only rolls out if changes exist
+> to the Materialize instance. To roll out even if there are no changes to the
+> instance, use it with `forceRollout`.
 
 ```shell
 # Only rolls out if there are changes
@@ -263,62 +190,107 @@ kubectl patch materialize <instance-name> \
   --type='merge' \
   -p "{\"spec\": {\"requestRollout\": \"$(uuidgen)\"}}"
 ```
-#### `requestRollout` with `forcedRollouts`
 
-Specify a new `UUID` value for `forcedRollout` to roll out even when there are
-no changes to the instance. Use `forcedRollout` with `requestRollout`.
+To force a rollout even when there are no other changes, set a new `forceRollout`
+UUID alongside `requestRollout`:
 
 ```shell
 kubectl patch materialize <instance-name> \
-  -n materialize-environment \
+  -n <materialize-instance-namespace> \
   --type='merge' \
   -p "{\"spec\": {\"requestRollout\": \"$(uuidgen)\", \"forceRollout\": \"$(uuidgen)\"}}"
 ```
 
-### Rollout strategies
+**v1:**
 
-Rollout strategies control how Materialize transitions from the current generation to a new generation during an upgrade.
+With v1, updating the spec automatically triggers a rollout and there is no
+`requestRollout` field. For details on the underlying mechanism, see [How it
+works](/self-managed-deployments/upgrading/adopting-the-v1-crd/#how-the-switchover-works).
 
-The behavior of the new version rollout follows your `rolloutStrategy` setting.
+To trigger a rollout even when there are no other changes to the instance,
+specify a new `UUID` value for `forceRollout`. That is:
 
-#### *WaitUntilReady* - ***Default***
+- Set it in your manifest:
 
-`WaitUntilReady` creates a new generation of pods and automatically promotes
-them as soon as they catch up to the old generation and become `ReadyToPromote`.
+  ```yaml
+  spec:
+    forceRollout: <new-uuid>  # e.g. the output of `uuidgen`
+  ```
+
+- Then reapply.
+
+  ```shell
+  kubectl apply -f materialize.yaml
+  ```
+
+## Rollout strategies
+
+Rollout strategies control how Materialize transitions from the current
+generation to a new generation during an upgrade. The behavior follows your
+`rolloutStrategy` setting.
+
+### *WaitUntilReady* — ***Default***
+
+`WaitUntilReady` creates a new generation of pods and automatically promotes them
+as soon as they catch up to the old generation and become `ReadyToPromote`.
 Because both generations run simultaneously until the promotion, this strategy
 temporarily doubles the required resources to run Materialize.
 
-> **Note:** Starting in v26.28.0, `WaitUntilReady` waits up to 1 year (configurable by the
-> `with_0dt_deployment_max_wait` flag) for the new pods to become
-> `ReadyToPromote`. If the pods do not reach `ReadyToPromote` by then, the rollout
-> is cancelled and the new pods are removed.
-> Earlier versions used a default wait of 72 hours, and, once the wait time
-> expired, the new pods were automatically promoted regardless of their readiness.
+> **Note:** While the new generation waits to become `ReadyToPromote`, it runs in a
+> read-only, un-promoted state and holds back compaction. To prevent it from
+> sitting in this state indefinitely (which can cause incident-inducing load when
+> it is eventually promoted), the rollout is bounded by the `rolloutRequestTimeout`
+> field in the Materialize spec, which defaults to `24h`.
+> If the new generation does not become `ReadyToPromote` within
+> `rolloutRequestTimeout`, the operator cancels the rollout: the new generation is
+> torn down and the previously-active generation continues serving. You can then
+> trigger a new rollout (in v1, set a new `forceRollout`; in v1alpha1, set a new
+> `requestRollout`).
 
-#### *ImmediatelyPromoteCausingDowntime*
+### *ImmediatelyPromoteCausingDowntime*
+
 > **Warning:** Using the `ImmediatelyPromoteCausingDowntime` rollout flag will cause downtime.
 
-`ImmediatelyPromoteCausingDowntime` tears down the prior generation, and immediately promotes the new generation without waiting for it to hydrate. This causes downtime until the new generation has hydrated. However, it does not require additional resources.
+`ImmediatelyPromoteCausingDowntime` tears down the prior generation and
+immediately promotes the new generation without waiting for it to hydrate. This
+causes downtime until the new generation has hydrated. However, it does not
+require additional resources.
 
-#### *ManuallyPromote*
+### *ManuallyPromote*
 
-`ManuallyPromote` allows you to choose when to promote the new generation. This means you can time the promotion for periods when load is low, minimizing the impact of potential downtime for any clients connected to Materialize. This strategy temporarily doubles the required resources to run Materialize.
+`ManuallyPromote` allows you to choose when to promote the new generation. This
+means you can time the promotion for periods when load is low, minimizing the
+impact of potential downtime for any clients connected to Materialize. This
+strategy temporarily doubles the required resources to run Materialize.
 
-To minimize downtime, wait until the new generation has fully hydrated and caught up to the prior generation before promoting. To check hydration status, inspect the `UpToDate` condition in the Materialize resource status. When hydration completes, the condition will be `ReadyToPromote`.
+To minimize downtime, wait until the new generation has fully hydrated and caught
+up to the prior generation before promoting. To check hydration status, inspect
+the `UpToDate` condition in the Materialize resource status. When hydration
+completes, the condition will be `ReadyToPromote`.
 
-To promote, update the `forcePromote` field to match the `requestRollout` field in the Materialize spec. If you need to promote before hydration completes, you can set `forcePromote` immediately, but clients may experience downtime.
+To promote, update the `forcePromote` field to match the current rollout
+identifier (in v1, the `status.requestedRolloutHash`; in v1alpha1, the
+`requestRollout` UUID in the spec). If you need to promote before hydration
+completes, you can set `forcePromote` immediately, but clients may experience
+downtime.
 
 > **Warning:** Leaving a new generation unpromoted for over 6 hours may cause downtime.
 
-**Do not leave new generations unpromoted indefinitely**. They should either be promoted or canceled. New generations open a read hold on the metadata database that prevents compaction. This hold is only released when the generation is promoted or canceled. If left open too long, promoting or canceling can trigger a spike in deletion load on the metadata database, potentially causing downtime. It is not recommended to leave generations unpromoted for over 6 hours.
+**Do not leave new generations unpromoted indefinitely**. They should either be
+promoted or canceled. New generations open a read hold on the metadata database
+that prevents compaction. This hold is only released when the generation is
+promoted or canceled. If left open too long, promoting or canceling can trigger a
+spike in deletion load on the metadata database, potentially causing downtime. It
+is not recommended to leave generations unpromoted for over 6 hours.
 
-#### *inPlaceRollout* - ***Deprecated***
+### *inPlaceRollout* — ***Deprecated*** (v1alpha1 only)
 
 The setting is ignored.
 
-## Verifying the Upgrade
+## Verifying the upgrade
 
-After initiating the rollout, you can monitor the status field of the Materialize custom resource to check on the upgrade.
+After initiating the rollout, you can monitor the status field of the Materialize
+custom resource to check on the upgrade.
 
 ```shell
 # Watch the status of your Materialize environment
@@ -328,16 +300,21 @@ kubectl get materialize -n materialize-environment -w
 kubectl logs -l app.kubernetes.io/name=materialize-operator -n materialize
 ```
 
-## Cancelling the Upgrade
+## Cancelling the upgrade
 
-You may want to cancel an in-progress rollout if the upgrade has failed. This may be indicated by new pods not being healthy. Before cancelling, verify that the upgrade has not already completed by checking that the deploy generation (found via `status.activeGeneration`) is still the one from before the upgrade. Once an upgrade has already happened, you cannot revert using this method.
+You may want to cancel an in-progress rollout if the upgrade has failed (for
+example, new pods are not healthy). Before cancelling, verify that the upgrade has
+not already completed by checking that the deploy generation (found via
+`status.activeGeneration`) is still the one from before the upgrade. Once an
+upgrade has already happened, you cannot revert using this method.
 
-To cancel an in-progress rollout and revert to the last completed rollout
-state, revert both `requestRollout` and `environmentdImageRef` back to the
-values from the last completed rollout. Reverting `environmentdImageRef`
-alongside `requestRollout` keeps the spec aligned with what is actually
-running, so a later rollout doesn't accidentally pick up the previously
-attempted upgrade image.
+**v1alpha1:**
+
+To cancel an in-progress rollout and revert to the last completed rollout state,
+revert both `requestRollout` and `environmentdImageRef` back to the values from
+the last completed rollout. Reverting `environmentdImageRef` alongside
+`requestRollout` keeps the spec aligned with what is actually running, so a later
+rollout doesn't accidentally pick up the previously attempted upgrade image.
 
 First, retrieve the last completed rollout request ID and the matching
 environmentd image ref from your Materialize CR:
@@ -347,7 +324,7 @@ kubectl get materialize <instance-name> -n materialize-environment \
   -o jsonpath='{.status.lastCompletedRolloutRequest} {.status.lastCompletedRolloutEnvironmentdImageRef}'
 ```
 
-Then, set both fields back to these values in a single patch:
+Then set both fields back to these values in a single patch:
 
 ```shell
 kubectl patch materialize <instance-name> \
@@ -356,15 +333,365 @@ kubectl patch materialize <instance-name> \
   -p "{\"spec\": {\"requestRollout\": \"<lastCompletedRolloutRequest-value>\", \"environmentdImageRef\": \"<lastCompletedRolloutEnvironmentdImageRef-value>\"}}"
 ```
 
-## Version Specific Upgrade Notes
+**v1:**
 
-### Upgrading to `v26.1` and later versions
+To cancel an in-progress rollout and revert to the last completed rollout state,
+reapply the Materialize resource with the spec it had before the rollout (notably
+the previous `environmentdImageRef`). Because v1 derives the rollout from the
+spec hash, restoring the previous spec produces the previous hash and returns the
+instance to the last completed state.
+
+```shell
+kubectl apply -f previous_materialize_configuration.yaml
+```
+
+## See also
+
+- [Version-specific upgrade
+  notes](/self-managed-deployments/upgrading/version-notes/)
+
+- [Adopting the v1
+  CRD](/self-managed-deployments/upgrading/adopting-the-v1-crd/)
+
+- [Materialize Operator
+  Configuration](/self-managed-deployments/operator-configuration/)
+
+- [Materialize CRD Field
+  Descriptions](/self-managed-deployments/materialize-crd-field-descriptions/)
+
+- [Troubleshooting](/self-managed-deployments/troubleshooting/)
+
+---
+
+## Adopting the v1 CRD
+
+This page describes the Materialize CRD API versions and how to adopt `v1` for
+your Materialize instances.
+
+## CRD API versions
+
+Starting in v26.30, Materialize introduces support for a new version of the
+Materialize CRD, `v1`, which provides simplified rollouts. Previously,
+Materialize only supported `v1alpha1`. The Helm chart still defaults to
+`v1alpha1`, while the [Terraform
+modules](https://github.com/MaterializeInc/materialize-terraform-self-managed)
+default to `v1` starting in v4.0.0.
+
+- **v1alpha1** (Helm chart default) uses a two-step rollout: first stage the spec
+  change, then trigger a rollout with a new `requestRollout` UUID.
+
+  ```yaml
+  apiVersion: materialize.cloud/v1alpha1
+  kind: Materialize
+  metadata:
+    name: 12345678-1234-1234-1234-123456789012
+    namespace: materialize-environment
+  spec:
+    environmentdImageRef: materialize/environmentd:v26.30.1
+    requestRollout: 22222222-2222-2222-2222-222222222222  # ← MUST set a new UUID every upgrade
+  # forceRollout: 33333333-3333-3333-3333-333333333333   # ← for forced rollouts
+    rolloutStrategy: WaitUntilReady
+    backendSecretName: materialize-backend
+  ```
+- **v1** rolls out automatically when spec fields change, removing the
+  need to manually set a `requestRollout` UUID.
+
+  ```yaml
+  apiVersion: materialize.cloud/v1
+  kind: Materialize
+  metadata:
+    name: 12345678-1234-1234-1234-123456789012
+    namespace: materialize-environment
+  spec:
+    environmentdImageRef: materialize/environmentd:v26.30.1  # ← just change this
+  # forceRollout: 33333333-3333-3333-3333-333333333333       # ← only for forced rollouts
+    rolloutStrategy: WaitUntilReady
+    backendSecretName: materialize-backend
+  ```
+
+When using the Helm chart, adopting `v1` is **opt-in** for now. When using the
+Terraform modules, `crd_version` defaults to `v1` starting in v4.0.0. Upgrading
+the operator to v26.30+ does not change your existing `v1alpha1` CRs or their
+behavior; you can continue using `v1alpha1` until the next major release.
+
+> **Important:** In the next major release, all Materialize CRs will be force upgraded to `v1`.
+> You will still be able to apply `v1alpha1` CRs, but they will be auto-converted
+> to `v1` and use the `v1` rollout behavior. We recommend opting in to `v1` at
+> your convenience to migrate on your own schedule before the upgrade is
+> mandatory. With the new change, the `requestRollout` field will be removed,
+> along with all previously deprecated fields.
+
+## Prerequisites
+
+- First, set up infrastructure requirements (needed by conversion webhooks to
+  allow for graceful migration from `v1alpha1` to `v1`)
+  - Install `cert-manager` (or provide your own certificate).
+  - Allow internal network ingress on port `8001`.
+
+- Next, enable the `v1` CRD by setting the Helm value
+  `operator.args.installV1CRD=true`. Enabling the `v1` CRD does not roll out
+  your existing instances; they continue to use `v1alpha1`.
+
+For instructions on completing the prerequisites, select the tab that matches
+your deployment method:
+
+**Supported Terraform:**
+
+If you are using the [supported Terraform
+modules](https://github.com/MaterializeInc/materialize-terraform-self-managed),
+the required infrastructure changes (cert-manager and network ingress) and
+enabling of `v1` CRD will be handled for you automatically starting in TF
+modules (**v3.1.1 or greater**). Starting in TF modules **v4.0.0**, the
+`materialize-instance` module also defaults `crd_version` to `v1`.
+
+- If you have already upgraded your TF modules to **v3.1.1 or greater**, the
+  prerequisites are handled automatically.
+
+- If you are on earlier TF modules, use the same [procedure to perform version
+  upgrades](/self-managed-deployments/upgrading/#upgrade-using-the-new-terraform-modules)
+  to upgrade to **v3.1.1 or greater**; i.e., update each module's `source` to
+  point to the new release tag (v3.1.1 or greater), then run `terraform init &&
+  terraform plan && terraform apply`.
+
+  This will also upgrade your Materialize version to that associated with that
+  TF release tag.
+
+  - [Upgrade on AWS](/self-managed-deployments/upgrading/upgrade-on-aws/)
+  - [Upgrade on Azure](/self-managed-deployments/upgrading/upgrade-on-azure/)
+  - [Upgrade on GCP](/self-managed-deployments/upgrading/upgrade-on-gcp/)
+
+**Legacy Terraform:**
+
+If you are using the legacy Terraform modules
+([AWS](https://github.com/MaterializeInc/terraform-aws-materialize),
+[GCP](https://github.com/MaterializeInc/terraform-gcp-materialize), or
+[Azure](https://github.com/MaterializeInc/terraform-azure-materialize)),
+we recommend migrating to the [new supported Terraform
+modules](https://github.com/MaterializeInc/materialize-terraform-self-managed)
+before opting in to the `v1` CRD.
+
+The new modules include built-in support for the conversion webhooks used by
+the `v1` CRD, including cert-manager installation and network policy
+configuration. The legacy modules do not include these changes, so you would
+need to apply them manually (see the **Manual** tab).
+
+For migration guidance, see the documentation for your cloud provider:
+
+- [AWS migration guide](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws/examples/migration)
+- [GCP migration guide](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp/examples/migration)
+- [Azure migration guide](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure/examples/migration)
+
+**Manual:**
+
+If you are not using our Terraform modules, you **must** complete the following
+steps before enabling the `v1` CRD:
+
+**1. Install cert-manager**
+
+The conversion webhook requires a TLS certificate.
+The Helm chart defaults to using [cert-manager](https://cert-manager.io/)
+to automatically create and manage this certificate. cert-manager must be
+installed **before** enabling the `v1` CRD.
+
+If you prefer to provide your own certificate instead of using cert-manager,
+set the following Helm values:
+- `operator.certificate.source`: `secret`
+- `operator.certificate.secretName`: the name of the Kubernetes Secret
+  containing `ca.crt`, `tls.crt`, and `tls.key` entries.
+
+**2. Allow network access to the webhook port**
+
+The conversion webhooks require the Kubernetes API server to reach the
+`orchestratord` pod on port `8001`. If your cluster enforces network policies
+or cloud-level firewall rules, you must allow ingress traffic on TCP port
+`8001` from the API server to pods with the label
+`app.kubernetes.io/name: materialize-operator`.
+
+**Kubernetes NetworkPolicy:** Add a policy that allows ingress from the
+Kubernetes API server on port `8001` to the `materialize-operator` pods in the
+namespace where the operator is deployed:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-api-server-ingress-to-conversion-webhook
+  namespace: materialize  # the namespace where the operator runs
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: materialize-operator
+  policyTypes:
+    - Ingress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8001
+```
+
+**Cloud firewall rules (e.g., AWS security groups, GCP firewall rules):**
+Ensure the node security group or firewall allows inbound TCP traffic on
+port `8001` from the Kubernetes control plane. For example, on AWS, add an
+ingress rule to the EKS node security group allowing port `8001` from the
+cluster security group. On GCP with private clusters, add a firewall rule
+allowing port `8001` from the GKE control plane CIDR.
+
+For a complete example of the required changes across AWS, Azure, and GCP,
+see [this pull request](https://github.com/MaterializeInc/materialize-terraform-self-managed/pull/160).
+
+**3. Enable the v1 CRD**
+
+Once the prerequisites above are in place, set the following Helm value when
+installing or upgrading the operator:
+
+```yaml
+operator:
+  args:
+    installV1CRD: true
+```
+
+This installs the `v1` version of the Materialize CRD and the conversion
+webhook that converts between `v1` and `v1alpha1`.
+
+## Switch to `v1`
+
+After you have fulfilled the pre-requisites (Materialize v26.30+, set up
+infrastructure requirements, enabled `v1` CRD), you can submit a `v1` CR to
+adopt `v1`.
+
+> **Important:** Schedule `v1` adoption during a window where a rollout is acceptable.
+
+### How the switchover works
+
+When you submit a `v1` CR, the operator's conversion webhook automatically
+converts it to `v1alpha1` for storage. During conversion, the webhook computes a
+SHA256 hash of a subset of the spec fields and derives a deterministic
+`requestRollout` UUID from it. The hash covers the fields that affect the
+running `environmentd` (for example, `environmentdImageRef`,
+`environmentdExtraArgs`, `environmentdExtraEnv`, resource requirements,
+`podAnnotations`, `podLabels`, `authenticatorKind`, `enableRbac`,
+`rolloutStrategy`, and `forceRollout`). It excludes fields that do not require a
+rollout, such as `balancerd`/`console` resource requirements and replica counts.
+
+> **Important:** Schedule `v1` adoption during a window where a rollout is acceptable. Adopting
+> `v1` on an existing `v1alpha1` instance typically triggers a rollout. The
+> derived `requestRollout` is computed from the spec hash and will not match the
+> `requestRollout` you previously set by hand, so the instance rolls out once even
+> if nothing else in the spec changed.
+
+**Supported Terraform:**
+
+If you are managing your Materialize instance with the [Materialize Terraform
+modules](https://github.com/MaterializeInc/materialize-terraform-self-managed),
+set:
+
+```hcl
+crd_version     = "v1"
+request_rollout = null
+```
+
+Starting in Terraform module version v4.0.0, `crd_version` defaults to `v1`,
+so you can also omit it.
+
+**Once on v1, an unchanged spec will not trigger a rollout.** Reapplying the
+same spec produces the same hash and the same derived `requestRollout`. Changing
+a hashed spec field produces a new value and triggers a rollout automatically.
+
+**Manual:**
+
+To adopt v1 for an existing instance, apply your CR with `apiVersion:
+materialize.cloud/v1` and remove the `requestRollout` field:
+
+```shell
+kubectl apply -f - <<EOF
+apiVersion: materialize.cloud/v1
+kind: Materialize
+metadata:
+  name: <instance-name>
+  namespace: <materialize-instance-namespace>
+spec:
+  environmentdImageRef: <current-image-ref>
+  backendSecretName: <backend-secret-name>
+  # ... other spec fields (copy from your existing CR, removing requestRollout)
+EOF
+```
+
+**Once on v1, an unchanged spec will not trigger a rollout.** Reapplying the
+same spec produces the same hash and the same derived `requestRollout`. Changing
+a hashed spec field produces a new value and triggers a rollout automatically.
+
+## Returning to the v1alpha1 behavior
+
+You can go back to the `v1alpha1` rollout behavior at any time by applying your
+CR with `apiVersion: materialize.cloud/v1alpha1` and an explicit
+`requestRollout` UUID. With the Terraform modules, set `crd_version =
+"v1alpha1"` explicitly (required starting in v4.0.0, where `crd_version`
+defaults to `v1`) and set `request_rollout` to a new UUID.
+
+---
+
+## Upgrade Guides (Legacy)
+
+<h4 id="upgrade-using-legacy-terraform-modules">Upgrade using Legacy Terraform Modules</h4>
+> **Tip:** The Terraform modules are provided as examples. They are not required for
+> upgrading Materialize.
+
+<table>
+  <thead>
+      <tr>
+          <th>Guide</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><a href="/self-managed-deployments/upgrading/legacy/upgrade-on-aws-legacy/" >Upgrade on AWS (Legacy Terraform)</a></td>
+          <td>Uses legacy Terraform module to deploy Materialize to AWS Elastic Kubernetes Service (EKS).</td>
+      </tr>
+      <tr>
+          <td><a href="/self-managed-deployments/upgrading/legacy/upgrade-on-azure-legacy/" >Upgrade on Azure (Legacy Terraform)</a></td>
+          <td>Uses legacy Terraform module to deploy Materialize to Azure Kubernetes Service (AKS).</td>
+      </tr>
+      <tr>
+          <td><a href="/self-managed-deployments/upgrading/legacy/upgrade-on-gcp-legacy/" >Upgrade on GCP (Legacy Terraform)</a></td>
+          <td>Uses legacy Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
+      </tr>
+  </tbody>
+</table>
+
+---
+
+## Upgrade notes
+
+Review the notes for your target version before upgrading. For the general
+upgrade procedure, see the [upgrade
+guides](/self-managed-deployments/upgrading/#upgrade-guides).
+
+## Upgrading to `v26.30` and later versions
+
+<p>v26.30.0 introduces support for a new version of the Materialize CRD, <code>v1</code>,
+which provides simplified rollouts. Previously, Materialize only supported
+<code>v1alpha1</code>; <code>v1alpha1</code> remains the default.</p>
+<p>Upgrading to v26.30+ does <strong>not</strong> require adopting the <code>v1</code> CRD; adopting <code>v1</code>
+is <strong>opt-in</strong>. You can upgrade as usual while continuing to use <code>v1alpha1</code>; your
+existing instances will behave exactly as before. However, once you are on
+v26.30+, we do recommend you schedule <a href="/self-managed-deployments/upgrading/adopting-the-v1-crd/" >adoption of
+<code>v1</code></a> before the next
+major release.</p>
+<p>If using Materialize-provided TF modules, v3.1.1+ automatically handles the
+<a href="/self-managed-deployments/upgrading/adopting-the-v1-crd/#prerequisites" >prerequisites for adopting
+<code>v1</code></a>.
+It does not switch your instances to <code>v1</code>. To switch to <code>v1</code>, see <a href="/self-managed-deployments/upgrading/adopting-the-v1-crd/#switch-to-v1" >Switch to
+<code>v1</code>
+CRD</a>.</p>
+
+## Upgrading to `v26.1` and later versions
 
 <ul>
 <li>To upgrade to <code>v26.1</code> or future versions, you must first upgrade to <code>v26.0</code></li>
 </ul>
 
-### Upgrading to `v26.0`
+## Upgrading to `v26.0`
 
 <ul>
 <li>
@@ -407,50 +734,10 @@ to <a href="/self-managed-deployments/appendix/upgrade-to-swap/" >Prepare for sw
 </li>
 </ul>
 
-### Upgrading between minor versions less than `v26`
- - Prior to `v26`, you must upgrade at most one minor version at a time. For
-   example, upgrading from `v25.1.5` to `v25.2.16` is permitted.
+## Upgrading between minor versions less than `v26`
 
-## See also
-
-- [Materialize Operator
-  Configuration](/self-managed-deployments/operator-configuration/)
-
-- [Materialize CRD Field
-  Descriptions](/self-managed-deployments/materialize-crd-field-descriptions/)
-
-- [Troubleshooting](/self-managed-deployments/troubleshooting/)
-
----
-
-## Upgrade Guides (Legacy)
-
-<h4 id="upgrade-using-legacy-terraform-modules">Upgrade using Legacy Terraform Modules</h4>
-> **Tip:** The Terraform modules are provided as examples. They are not required for
-> upgrading Materialize.
-
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/upgrading/legacy/upgrade-on-aws-legacy/" >Upgrade on AWS (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to AWS Elastic Kubernetes Service (EKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/upgrading/legacy/upgrade-on-azure-legacy/" >Upgrade on Azure (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Azure Kubernetes Service (AKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/upgrading/legacy/upgrade-on-gcp-legacy/" >Upgrade on GCP (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
-      </tr>
-  </tbody>
-</table>
+- Prior to `v26`, you must upgrade at most one minor version at a time. For
+  example, upgrading from `v25.1.5` to `v25.2.16` is permitted.
 
 ---
 
@@ -466,8 +753,15 @@ AWS](/self-managed-deployments/installation/install-on-aws/).
 <p>When upgrading:</p>
 <ul>
 <li>
-<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/#version-specific-upgrade-notes" >version specific upgrade
-notes</a>.</p>
+<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/version-notes/" >version-specific upgrade
+notes</a> for your target
+version:</p>
+<ul>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v2630-and-later-versions" >Upgrading to <code>v26.30</code> and later versions</a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v261-and-later-versions" >Upgrading to <code>v26.1</code> and later versions</a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v260" >Upgrading to <code>v26.0</code></a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-between-minor-versions-less-than-v26" >Upgrading between minor versions less than <code>v26</code></a></li>
+</ul>
 </li>
 <li>
 **Always** upgrade the Materialize Operator **before**
@@ -489,164 +783,147 @@ upgrading the Materialize instances.
 - [Terraform](https://developer.hashicorp.com/terraform/install?product_intent=terraform)
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 - [kubectl](https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html)
-- [Helm 3.2.0+](https://helm.sh/docs/intro/install/)
 
 ## Upgrade process
 
 > **Important:** The following procedure performs a rolling upgrade, where both the old and new Materialize instances are running before the old instances are removed. When performing a rolling upgrade, ensure you have enough resources to support having both the old and new Materialize instances running.
 
-### Step 1: Set up
+### Step 1: Update TF module source version
 
-1. Open a Terminal window.
+Update each module's `source` to point to the desired release tag, substituting
+`<RELEASE_TAG>` in the code block below with your tag version:
 
-1. Configure AWS CLI with your AWS credentials. For details, see the [AWS
-   documentation](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html).
+> **Important:** The following code block is not comprehensive. Only the core modules and their
+> dependency chain are shown below.
+> If your configuration includes additional modules (networking, storage,
+> database, node pools, etc.) provided by Materialize, **update those to the same
+> release tag as well**.
 
-1. Go to the Terraform directory for your Materialize deployment. For example,
-   if you deployed from the `aws/examples/simple` directory:
+```hcl
+module "eks" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//aws/modules/eks?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
+}
 
-   ```bash
-   cd materialize-terraform-self-managed/aws/examples/simple
-   ```
+module "cert_manager" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//kubernetes/modules/cert-manager?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
 
-1. Ensure your AWS CLI is configured with the appropriate profile, substitute
-   `<your-aws-profile>` with the profile to use:
+  # Your configuration may have additional dependencies here.
+  depends_on = [module.eks]
+}
 
-   ```bash
-   # Set your AWS profile for the session
-   export AWS_PROFILE=<your-aws-profile>
-   ```
+module "operator" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//aws/modules/operator?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
 
-1. Configure `kubectl` to connect to your EKS cluster, replacing:
+  # Your configuration may have additional dependencies here.
+  depends_on = [module.cert_manager]
+}
 
-   - `<your-eks-cluster-name>` with the your cluster name; i.e., the
-     `eks_cluster_name` in the Terraform output. For the
-     sample example, your cluster name has the form `{prefix_name}-eks`; e.g.,
-     `simple-demo-eks`.
+module "materialize_instance" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//kubernetes/modules/materialize-instance?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
 
-   - `<your-region>` with the region of your cluster. Your region can be
-     found in your `terraform.tfvars` file; e.g., `us-east-1`.
+  # Your configuration may have additional dependencies here.
+  depends_on = [module.operator]
+}
 
-   ```bash
-   # aws eks update-kubeconfig --name <your-eks-cluster-name> --region <your-region>
-   aws eks update-kubeconfig --name $(terraform output -raw eks_cluster_name) --region <your-region>
-   ```
+# Update the source of any additional Materialize-provided modules to the same release tag
+```
 
-   To verify that you have configured correctly, run the following command:
+### Step 2: Explicitly request rollout if using v1alpha1
 
-   ```bash
-   kubectl get nodes
-   ```
+<p><code>v1alpha1</code> is the default CRD version for the Materialize Helm
+chart. The Terraform modules default to <code>v1</code> starting in v4.0.0.
+With <code>v1alpha1</code>, instance rollouts require manually rotating a
+UUID.</p>
 
-   For help with `kubectl` commands, see [kubectl Quick reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/).
+> **Important:** Starting in Terraform module version v4.0.0, `crd_version` defaults to
+> `v1`. If your instance uses `v1alpha1` and you are upgrading to module
+> version v4.0.0 or greater, set `crd_version = "v1alpha1"` explicitly to
+> stay on `v1alpha1`. Otherwise, applying migrates the instance to `v1` and
+> triggers a rollout. See [Adopting the v1
+> CRD](/self-managed-deployments/upgrading/adopting-the-v1-crd/).
 
-### Step 2: Update the Helm Chart
+To check the CRD version of the Materialize manifest that was applied, run
+the following:
 
-> **Important:** **Always** upgrade the Materialize Operator **before**
-> upgrading the Materialize instances.
+```sh
+terraform state show 'module.materialize_instance.kubectl_manifest.materialize_instance' \
+  | grep -iE 'api_?version|kind'
+```
 
-To update your Materialize Helm Chart repository:
+- If you are using `v1`, skip to the [Apply the updated TF
+  step](#step-3-apply-the-updated-tf).
+- **If you are using `v1alpha1`**, you need to update your `terraform.tfvars`
+file to set the `request_rollout` variable to a new UUID value, substituting
+the example value in the code block below with a UUID you generate (for
+example, with `uuidgen`):
 
-1. Update the Helm repo:
+```hcl
+# ...
+# ...
+request_rollout = "DBB4FCEC-1837-44F6-9CF2-3894678DD8D5" # ONLY for v1alpha1
+```
 
-   ```shell
-   helm repo update materialize
-   ```
+### Step 3: Apply the updated TF
 
-1. View the available chart versions:
+1. Initialize the Terraform directory to download the required providers
+    and modules:
 
-   ```shell
-   helm search repo materialize/materialize-operator --versions
-   ```
+    ```bash
+    terraform init
+    ```
 
-### Step 3: Upgrade the Materialize Operator
+1. Review the execution plan before applying. In particular, check for any
+  resources Terraform plans to destroy and recreate (shown as `-/+` in the
+  plan), especially stateful resources such as your cluster, storage, and
+  database:
 
-> **Important:** **Always** upgrade the Materialize Operator **before**
-> upgrading the Materialize instances.
+    ```bash
+    terraform plan
+    ```
+
+1. After reviewing the plan, apply the Terraform configuration.
+
+    ```bash
+    terraform apply
+    ```
+
+### Step 4: Verify the upgrade
+
+Configure `kubectl` to connect to your EKS cluster, replacing `<your-region>`
+with the region of your cluster (found in your `terraform.tfvars`; e.g.,
+`us-east-1`):
+
+```bash
+# aws eks update-kubeconfig --name <your-eks-cluster-name> --region <your-region>
+aws eks update-kubeconfig --name $(terraform output -raw eks_cluster_name) --region <your-region>
+```
+
+> **Note:** `terraform apply` returns once the Materialize custom resource is updated.
+> The Operator then rolls out the new generation asynchronously, so the new
+> `environmentd` pods may take a few minutes to become ready.
 
 <ol>
 <li>
-<p>Use <code>helm list</code> to find the release name. The sample example
-deployment using the unified Terraform module deploys the Operator in the
-<code>materialize</code> namespace.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm list -n materialize
-</span></span></code></pre></div><p>Retrieve the release name (corresponds to the <code>name_prefix</code> variable
-specified in your <code>terraform.tfvars</code>) associated with the
-<code>materialize-operator</code> <strong>CHART</strong>; for example, <code>simple-demo</code> in the following output:</p>
-<pre tabindex="0"><code class="language-none" data-lang="none">NAME    	    NAMESPACE    REVISION   UPDATED                               STATUS     CHART                         APP VERSION
-simple-demo  materialize  1         2025-12-08 11:39:50.185976 -0500 EST   deployed  materialize-operator-v26.1.0  v26.1.0
-</code></pre></li>
-<li>
-<p>Export your current values to a file to preserve any custom settings:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm get values -n materialize simple-demo -o yaml &gt; my-values.yaml
-</span></span></code></pre></div></li>
-<li>
-<p>Upgrade your Operator. For example, the following upgrades the Operator
-to v26.29.0:</p>
-> **Note:** For major version upgrades, you can **only** upgrade **one** major version
->    at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
->    permitted but **v26**.1.0 to **v28**.0.0 is not.
-
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade -n materialize simple-demo materialize/materialize-operator  <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -f my-values.yaml <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.29.0
-</span></span></code></pre></div></li>
-<li>
-<p>Verify that the Operator is running:</p>
+<p>Check the status of the <code>materialize</code> namespace:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize get all
 </span></span></code></pre></div></li>
 <li>
-<p>Get the <strong>APP VERSION</strong> of the Operator.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm list -n materialize
-</span></span></code></pre></div><p>The <strong>APP VERSION</strong> will be the value that you will use for upgrading
-Materialize instances.</p>
-</li>
-</ol>
-
-### Step 4: Upgrading Materialize Instances
-
-> **Important:** **Always** upgrade the Materialize Operator **before**
-> upgrading the Materialize instances.
-
-<p><strong>After</strong> you have upgraded your Materialize Operator, upgrade your
-Materialize instance(s) to the <strong>APP Version</strong> of the Operator. When
-upgrading Materialize Instances versions, changes are not automatically
-rolled out by the Operator in order to minimize unexpected downtime and
-avoid connection drops at critical periods. Instead, the upgrade process
-involves two steps:</p>
-<ul>
-<li>First, staging the version change to the Materialize custom resource.</li>
-<li>Second, rolling out the changes via a <code>requestRollout</code> flag.</li>
-</ul>
-<ol>
-<li>
-<p>Find the name of the Materialize instance to upgrade. The sample example
-deployment using the unified Terraform module deploys the Materialie
-instance in the<code>materialize-environment</code> namespace.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl get materialize -n  materialize-environment
-</span></span></code></pre></div><p>In the example deployment, the name of the instance is <code>main</code>.</p>
-<pre tabindex="0"><code class="language-none" data-lang="none">NAME
-main
-</code></pre></li>
-<li>
-<p>Stage, but not rollout, the Materialize instance version upgrade.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main<span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.29.0\&#34;}}&#34;</span>
+<p>Check the status of the <code>materialize-environment</code> namespace:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment get all
 </span></span></code></pre></div></li>
 <li>
-<p>Rollout the Materialize instance version change.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;requestRollout\&#34;: \&#34;</span><span class="k">$(</span>uuidgen<span class="k">)</span><span class="s2">\&#34;}}&#34;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Verify the upgrade by checking the <code>environmentd</code> events:</p>
+<p>Once a new <code>environmentd</code> is up (may take a few minutes), confirm the
+running <code>environmentd</code> version matches the version you upgraded to. Check
+the <code>Image</code> field in the pod description.</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment describe pod -l <span class="nv">app</span><span class="o">=</span>environmentd
 </span></span></code></pre></div></li>
 </ol>
+<p>If you run into an error during the upgrade, refer to the
+<a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
 
 ## See also
 
@@ -670,8 +947,15 @@ Azure](/self-managed-deployments/installation/install-on-azure/).
 <p>When upgrading:</p>
 <ul>
 <li>
-<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/#version-specific-upgrade-notes" >version specific upgrade
-notes</a>.</p>
+<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/version-notes/" >version-specific upgrade
+notes</a> for your target
+version:</p>
+<ul>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v2630-and-later-versions" >Upgrading to <code>v26.30</code> and later versions</a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v261-and-later-versions" >Upgrading to <code>v26.1</code> and later versions</a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v260" >Upgrading to <code>v26.0</code></a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-between-minor-versions-less-than-v26" >Upgrading between minor versions less than <code>v26</code></a></li>
+</ul>
 </li>
 <li>
 **Always** upgrade the Materialize Operator **before**
@@ -693,156 +977,145 @@ upgrading the Materialize instances.
 - [Terraform](https://developer.hashicorp.com/terraform/install?product_intent=terraform)
 - [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- [Helm 3.2.0+](https://helm.sh/docs/intro/install/)
 
 ## Upgrade process
 
 > **Important:** The following procedure performs a rolling upgrade, where both the old and new Materialize instances are running before the old instances are removed. When performing a rolling upgrade, ensure you have enough resources to support having both the old and new Materialize instances running.
 
-### Step 1: Set up
+### Step 1: Update TF module source version
 
-1. Open a Terminal window.
+Update each module's `source` to point to the desired release tag, substituting
+`<RELEASE_TAG>` in the code block below with your tag version:
 
-1. Configure Azure CLI with your Azure credentials. For details, see the [Azure
-   documentation](https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli).
+> **Important:** The following code block is not comprehensive. Only the core modules and their
+> dependency chain are shown below.
+> If your configuration includes additional modules (networking, storage,
+> database, node pools, etc.) provided by Materialize, **update those to the same
+> release tag as well**.
 
-1. Go to the Terraform directory for your Materialize deployment. For example,
-   if you deployed from the `azure/examples/simple` directory:
+```hcl
+module "aks" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//azure/modules/aks?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
+}
 
-   ```bash
-   cd materialize-terraform-self-managed/azure/examples/simple
-   ```
+module "cert_manager" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//kubernetes/modules/cert-manager?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
 
-1. Configure `kubectl` to connect to your AKS cluster, replacing:
+  # Your configuration may have additional dependencies here.
+  depends_on = [module.aks]
+}
 
-   - `<your-resource-group-name>` with your resource group name; i.e., the
-     `resource_group_name` in the Terraform output or in the
-     `terraform.tfvars` file.
+module "operator" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//azure/modules/operator?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
 
-   - `<your-aks-cluster-name>` with your cluster name; i.e., the
-     `aks_cluster_name` in the Terraform output. For the sample example,
-     your cluster name has the form `{prefix_name}-aks`; e.g., simple-demo-aks`.
+  # Your configuration may have additional dependencies here.
+  depends_on = [module.cert_manager]
+}
 
-   ```bash
-   # az aks get-credentials --resource-group <your-resource-group-name> --name <your-aks-cluster-name>
-   az aks get-credentials --resource-group $(terraform output -raw resource_group_name) --name $(terraform output -raw aks_cluster_name)
-   ```
+module "materialize_instance" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//kubernetes/modules/materialize-instance?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
 
-   To verify that you have configured correctly, run the following command:
+  # Your configuration may have additional dependencies here.
+  depends_on = [module.operator]
+}
 
-   ```bash
-   kubectl get nodes
-   ```
+# Update the source of any additional Materialize-provided modules to the same release tag
+```
 
-   For help with `kubectl` commands, see [kubectl Quick reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/).
+### Step 2: Explicitly request rollout if using v1alpha1
 
-### Step 2: Update the Helm Chart
+<p><code>v1alpha1</code> is the default CRD version for the Materialize Helm
+chart. The Terraform modules default to <code>v1</code> starting in v4.0.0.
+With <code>v1alpha1</code>, instance rollouts require manually rotating a
+UUID.</p>
 
-> **Important:** **Always** upgrade the Materialize Operator **before**
-> upgrading the Materialize instances.
+> **Important:** Starting in Terraform module version v4.0.0, `crd_version` defaults to
+> `v1`. If your instance uses `v1alpha1` and you are upgrading to module
+> version v4.0.0 or greater, set `crd_version = "v1alpha1"` explicitly to
+> stay on `v1alpha1`. Otherwise, applying migrates the instance to `v1` and
+> triggers a rollout. See [Adopting the v1
+> CRD](/self-managed-deployments/upgrading/adopting-the-v1-crd/).
 
-To update your Materialize Helm Chart repository:
+To check the CRD version of the Materialize manifest that was applied, run
+the following:
 
-1. Update the Helm repo:
+```sh
+terraform state show 'module.materialize_instance.kubectl_manifest.materialize_instance' \
+  | grep -iE 'api_?version|kind'
+```
 
-   ```shell
-   helm repo update materialize
-   ```
+- If you are using `v1`, skip to the [Apply the updated TF
+  step](#step-3-apply-the-updated-tf).
+- **If you are using `v1alpha1`**, you need to update your `terraform.tfvars`
+file to set the `request_rollout` variable to a new UUID value, substituting
+the example value in the code block below with a UUID you generate (for
+example, with `uuidgen`):
 
-1. View the available chart versions:
+```hcl
+# ...
+# ...
+request_rollout = "DBB4FCEC-1837-44F6-9CF2-3894678DD8D5" # ONLY for v1alpha1
+```
 
-   ```shell
-   helm search repo materialize/materialize-operator --versions
-   ```
+### Step 3: Apply the updated TF
 
-### Step 3: Upgrade the Materialize Operator
+1. Initialize the Terraform directory to download the required providers
+    and modules:
 
-> **Important:** **Always** upgrade the Materialize Operator **before**
-> upgrading the Materialize instances.
+    ```bash
+    terraform init
+    ```
+
+1. Review the execution plan before applying. In particular, check for any
+  resources Terraform plans to destroy and recreate (shown as `-/+` in the
+  plan), especially stateful resources such as your cluster, storage, and
+  database:
+
+    ```bash
+    terraform plan
+    ```
+
+1. After reviewing the plan, apply the Terraform configuration.
+
+    ```bash
+    terraform apply
+    ```
+
+### Step 4: Verify the upgrade
+
+Configure `kubectl` to connect to your AKS cluster:
+
+```bash
+# az aks get-credentials --resource-group <your-resource-group-name> --name <your-aks-cluster-name>
+az aks get-credentials --resource-group $(terraform output -raw resource_group_name) --name $(terraform output -raw aks_cluster_name)
+```
+
+> **Note:** `terraform apply` returns once the Materialize custom resource is updated.
+> The Operator then rolls out the new generation asynchronously, so the new
+> `environmentd` pods may take a few minutes to become ready.
 
 <ol>
 <li>
-<p>Use <code>helm list</code> to find the release name. The sample example
-deployment using the unified Terraform module deploys the Operator in the
-<code>materialize</code> namespace.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm list -n materialize
-</span></span></code></pre></div><p>Retrieve the release name (corresponds to the <code>name_prefix</code> variable
-specified in your <code>terraform.tfvars</code>) associated with the
-<code>materialize-operator</code> <strong>CHART</strong>; for example, <code>simple-demo</code> in the following output:</p>
-<pre tabindex="0"><code class="language-none" data-lang="none">NAME    	    NAMESPACE    REVISION   UPDATED                               STATUS     CHART                         APP VERSION
-simple-demo  materialize  1         2025-12-08 11:39:50.185976 -0500 EST   deployed  materialize-operator-v26.1.0  v26.1.0
-</code></pre></li>
-<li>
-<p>Export your current values to a file to preserve any custom settings:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm get values -n materialize simple-demo -o yaml &gt; my-values.yaml
-</span></span></code></pre></div></li>
-<li>
-<p>Upgrade your Operator. For example, the following upgrades the Operator
-to v26.29.0:</p>
-> **Note:** For major version upgrades, you can **only** upgrade **one** major version
->    at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
->    permitted but **v26**.1.0 to **v28**.0.0 is not.
-
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade -n materialize simple-demo materialize/materialize-operator  <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -f my-values.yaml <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.29.0
-</span></span></code></pre></div></li>
-<li>
-<p>Verify that the Operator is running:</p>
+<p>Check the status of the <code>materialize</code> namespace:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize get all
 </span></span></code></pre></div></li>
 <li>
-<p>Get the <strong>APP VERSION</strong> of the Operator.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm list -n materialize
-</span></span></code></pre></div><p>The <strong>APP VERSION</strong> will be the value that you will use for upgrading
-Materialize instances.</p>
-</li>
-</ol>
-
-### Step 4: Upgrading Materialize Instances
-
-> **Important:** **Always** upgrade the Materialize Operator **before**
-> upgrading the Materialize instances.
-
-<p><strong>After</strong> you have upgraded your Materialize Operator, upgrade your
-Materialize instance(s) to the <strong>APP Version</strong> of the Operator. When
-upgrading Materialize Instances versions, changes are not automatically
-rolled out by the Operator in order to minimize unexpected downtime and
-avoid connection drops at critical periods. Instead, the upgrade process
-involves two steps:</p>
-<ul>
-<li>First, staging the version change to the Materialize custom resource.</li>
-<li>Second, rolling out the changes via a <code>requestRollout</code> flag.</li>
-</ul>
-<ol>
-<li>
-<p>Find the name of the Materialize instance to upgrade. The sample example
-deployment using the unified Terraform module deploys the Materialie
-instance in the<code>materialize-environment</code> namespace.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl get materialize -n  materialize-environment
-</span></span></code></pre></div><p>In the example deployment, the name of the instance is <code>main</code>.</p>
-<pre tabindex="0"><code class="language-none" data-lang="none">NAME
-main
-</code></pre></li>
-<li>
-<p>Stage, but not rollout, the Materialize instance version upgrade.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main<span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.29.0\&#34;}}&#34;</span>
+<p>Check the status of the <code>materialize-environment</code> namespace:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment get all
 </span></span></code></pre></div></li>
 <li>
-<p>Rollout the Materialize instance version change.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;requestRollout\&#34;: \&#34;</span><span class="k">$(</span>uuidgen<span class="k">)</span><span class="s2">\&#34;}}&#34;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Verify the upgrade by checking the <code>environmentd</code> events:</p>
+<p>Once a new <code>environmentd</code> is up (may take a few minutes), confirm the
+running <code>environmentd</code> version matches the version you upgraded to. Check
+the <code>Image</code> field in the pod description.</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment describe pod -l <span class="nv">app</span><span class="o">=</span>environmentd
 </span></span></code></pre></div></li>
 </ol>
+<p>If you run into an error during the upgrade, refer to the
+<a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
 
 ## See also
 
@@ -866,8 +1139,15 @@ GCP](/self-managed-deployments/installation/install-on-gcp/).
 <p>When upgrading:</p>
 <ul>
 <li>
-<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/#version-specific-upgrade-notes" >version specific upgrade
-notes</a>.</p>
+<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/version-notes/" >version-specific upgrade
+notes</a> for your target
+version:</p>
+<ul>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v2630-and-later-versions" >Upgrading to <code>v26.30</code> and later versions</a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v261-and-later-versions" >Upgrading to <code>v26.1</code> and later versions</a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-to-v260" >Upgrading to <code>v26.0</code></a></li>
+<li><a href="/self-managed-deployments/upgrading/version-notes/#upgrading-between-minor-versions-less-than-v26" >Upgrading between minor versions less than <code>v26</code></a></li>
+</ul>
 </li>
 <li>
 **Always** upgrade the Materialize Operator **before**
@@ -889,160 +1169,148 @@ upgrading the Materialize instances.
 - [Terraform](https://developer.hashicorp.com/terraform/install?product_intent=terraform)
 - [Google Cloud CLI](https://cloud.google.com/sdk/docs/install)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- [Helm 3.2.0+](https://helm.sh/docs/intro/install/)
 
 ## Upgrade process
 
 > **Important:** The following procedure performs a rolling upgrade, where both the old and new Materialize instances are running before the old instances are removed. When performing a rolling upgrade, ensure you have enough resources to support having both the old and new Materialize instances running.
 
-### Step 1: Set up
+### Step 1: Update TF module source version
 
-1. Open a Terminal window.
+Update each module's `source` to point to the desired release tag, substituting
+`<RELEASE_TAG>` in the code block below with your tag version:
 
-1. Configure Google Cloud CLI with your GCP credentials. For details, see the [Google Cloud
-   documentation](https://cloud.google.com/sdk/docs/initializing).
+> **Important:** The following code block is not comprehensive. Only the core modules and their
+> dependency chain are shown below.
+> If your configuration includes additional modules (networking, storage,
+> database, node pools, etc.) provided by Materialize, **update those to the same
+> release tag as well**.
 
-1. Go to the Terraform directory for your Materialize deployment. For example,
-   if you deployed from the `gcp/examples/simple` directory:
+```hcl
+module "gke" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//gcp/modules/gke?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
+}
 
-   ```bash
-   cd materialize-terraform-self-managed/gcp/examples/simple
-   ```
+module "cert_manager" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//kubernetes/modules/cert-manager?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
 
-1. Configure `kubectl` to connect to your GKE cluster, replacing:
+  # Your configuration may have additional dependencies here.
+  depends_on = [module.gke]
+}
 
-   - `<your-gke-cluster-name>` with your cluster name; i.e., the
-     `gke_cluster_name` in the Terraform output. For the sample example, your
-     cluster name has the form `<name_prefix>-gke`; e.g., `simple-demo-gke`
+module "operator" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//gcp/modules/operator?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
 
-   - `<your-region>` with your cluster location; i.e., the
-     `gke_cluster_location` in the Terraform output. Your
-     region can also be found in your `terraform.tfvars` file.
+  # Your configuration may have additional dependencies here.
+  depends_on = [module.cert_manager]
+}
 
-   - `<your-project-id>` with your GCP project ID.
+module "materialize_instance" {
+  source = "github.com/MaterializeInc/materialize-terraform-self-managed//kubernetes/modules/materialize-instance?ref=<RELEASE_TAG>"
+  # ... your existing configuration ...
 
-   ```bash
-   # gcloud container clusters get-credentials <your-gke-cluster-name> --region <your-region> --project <your-project-id>
-   gcloud container clusters get-credentials $(terraform output -raw gke_cluster_name) \
-    --region $(terraform output -raw gke_cluster_location) \
-    --project <your-project-id>
-   ```
+  # Your configuration may have additional dependencies here.
+  depends_on = [module.operator]
+}
 
-   To verify that you have configured correctly, run the following command:
+# Update the source of any additional Materialize-provided modules to the same release tag
+```
 
-   ```bash
-   kubectl get nodes
-   ```
+### Step 2: Explicitly request rollout if using v1alpha1
 
-   For help with `kubectl` commands, see [kubectl Quick reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/).
+<p><code>v1alpha1</code> is the default CRD version for the Materialize Helm
+chart. The Terraform modules default to <code>v1</code> starting in v4.0.0.
+With <code>v1alpha1</code>, instance rollouts require manually rotating a
+UUID.</p>
 
-### Step 2: Update the Helm Chart
+> **Important:** Starting in Terraform module version v4.0.0, `crd_version` defaults to
+> `v1`. If your instance uses `v1alpha1` and you are upgrading to module
+> version v4.0.0 or greater, set `crd_version = "v1alpha1"` explicitly to
+> stay on `v1alpha1`. Otherwise, applying migrates the instance to `v1` and
+> triggers a rollout. See [Adopting the v1
+> CRD](/self-managed-deployments/upgrading/adopting-the-v1-crd/).
 
-> **Important:** **Always** upgrade the Materialize Operator **before**
-> upgrading the Materialize instances.
+To check the CRD version of the Materialize manifest that was applied, run
+the following:
 
-To update your Materialize Helm Chart repository:
+```sh
+terraform state show 'module.materialize_instance.kubectl_manifest.materialize_instance' \
+  | grep -iE 'api_?version|kind'
+```
 
-1. Update the Helm repo:
+- If you are using `v1`, skip to the [Apply the updated TF
+  step](#step-3-apply-the-updated-tf).
+- **If you are using `v1alpha1`**, you need to update your `terraform.tfvars`
+file to set the `request_rollout` variable to a new UUID value, substituting
+the example value in the code block below with a UUID you generate (for
+example, with `uuidgen`):
 
-   ```shell
-   helm repo update materialize
-   ```
+```hcl
+# ...
+# ...
+request_rollout = "DBB4FCEC-1837-44F6-9CF2-3894678DD8D5" # ONLY for v1alpha1
+```
 
-1. View the available chart versions:
+### Step 3: Apply the updated TF
 
-   ```shell
-   helm search repo materialize/materialize-operator --versions
-   ```
+1. Initialize the Terraform directory to download the required providers
+    and modules:
 
-### Step 3: Upgrade the Materialize Operator
+    ```bash
+    terraform init
+    ```
 
-> **Important:** **Always** upgrade the Materialize Operator **before**
-> upgrading the Materialize instances.
+1. Review the execution plan before applying. In particular, check for any
+  resources Terraform plans to destroy and recreate (shown as `-/+` in the
+  plan), especially stateful resources such as your cluster, storage, and
+  database:
+
+    ```bash
+    terraform plan
+    ```
+
+1. After reviewing the plan, apply the Terraform configuration.
+
+    ```bash
+    terraform apply
+    ```
+
+### Step 4: Verify the upgrade
+
+Configure `kubectl` to connect to your GKE cluster, replacing `<your-project-id>`
+with your GCP project ID:
+
+```bash
+# gcloud container clusters get-credentials <your-gke-cluster-name> --region <your-region> --project <your-project-id>
+gcloud container clusters get-credentials $(terraform output -raw gke_cluster_name) \
+ --region $(terraform output -raw gke_cluster_location) \
+ --project <your-project-id>
+```
+
+> **Note:** `terraform apply` returns once the Materialize custom resource is updated.
+> The Operator then rolls out the new generation asynchronously, so the new
+> `environmentd` pods may take a few minutes to become ready.
 
 <ol>
 <li>
-<p>Use <code>helm list</code> to find the release name. The sample example
-deployment using the unified Terraform module deploys the Operator in the
-<code>materialize</code> namespace.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm list -n materialize
-</span></span></code></pre></div><p>Retrieve the release name (corresponds to the <code>name_prefix</code> variable
-specified in your <code>terraform.tfvars</code>) associated with the
-<code>materialize-operator</code> <strong>CHART</strong>; for example, <code>simple-demo</code> in the following output:</p>
-<pre tabindex="0"><code class="language-none" data-lang="none">NAME    	    NAMESPACE    REVISION   UPDATED                               STATUS     CHART                         APP VERSION
-simple-demo  materialize  1         2025-12-08 11:39:50.185976 -0500 EST   deployed  materialize-operator-v26.1.0  v26.1.0
-</code></pre></li>
-<li>
-<p>Export your current values to a file to preserve any custom settings:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm get values -n materialize simple-demo -o yaml &gt; my-values.yaml
-</span></span></code></pre></div></li>
-<li>
-<p>Upgrade your Operator. For example, the following upgrades the Operator
-to v26.29.0:</p>
-> **Note:** For major version upgrades, you can **only** upgrade **one** major version
->    at a time. For example, upgrades from **v26**.1.0 to **v27**.3.0 is
->    permitted but **v26**.1.0 to **v28**.0.0 is not.
-
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade -n materialize simple-demo materialize/materialize-operator  <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -f my-values.yaml <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --version v26.29.0
-</span></span></code></pre></div></li>
-<li>
-<p>Verify that the Operator is running:</p>
+<p>Check the status of the <code>materialize</code> namespace:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize get all
 </span></span></code></pre></div></li>
 <li>
-<p>Get the <strong>APP VERSION</strong> of the Operator.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm list -n materialize
-</span></span></code></pre></div><p>The <strong>APP VERSION</strong> will be the value that you will use for upgrading
-Materialize instances.</p>
-</li>
-</ol>
-
-### Step 4: Upgrading Materialize Instances
-
-> **Important:** **Always** upgrade the Materialize Operator **before**
-> upgrading the Materialize instances.
-
-<p><strong>After</strong> you have upgraded your Materialize Operator, upgrade your
-Materialize instance(s) to the <strong>APP Version</strong> of the Operator. When
-upgrading Materialize Instances versions, changes are not automatically
-rolled out by the Operator in order to minimize unexpected downtime and
-avoid connection drops at critical periods. Instead, the upgrade process
-involves two steps:</p>
-<ul>
-<li>First, staging the version change to the Materialize custom resource.</li>
-<li>Second, rolling out the changes via a <code>requestRollout</code> flag.</li>
-</ul>
-<ol>
-<li>
-<p>Find the name of the Materialize instance to upgrade. The sample example
-deployment using the unified Terraform module deploys the Materialie
-instance in the<code>materialize-environment</code> namespace.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl get materialize -n  materialize-environment
-</span></span></code></pre></div><p>In the example deployment, the name of the instance is <code>main</code>.</p>
-<pre tabindex="0"><code class="language-none" data-lang="none">NAME
-main
-</code></pre></li>
-<li>
-<p>Stage, but not rollout, the Materialize instance version upgrade.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main<span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;environmentdImageRef\&#34;: \&#34;docker.io/materialize/environmentd:v26.29.0\&#34;}}&#34;</span>
+<p>Check the status of the <code>materialize-environment</code> namespace:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment get all
 </span></span></code></pre></div></li>
 <li>
-<p>Rollout the Materialize instance version change.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl patch materialize main <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -n materialize-environment <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  --type<span class="o">=</span><span class="s1">&#39;merge&#39;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl"><span class="se"></span>  -p <span class="s2">&#34;{\&#34;spec\&#34;: {\&#34;requestRollout\&#34;: \&#34;</span><span class="k">$(</span>uuidgen<span class="k">)</span><span class="s2">\&#34;}}&#34;</span>
-</span></span></code></pre></div></li>
-<li>
-<p>Verify the upgrade by checking the <code>environmentd</code> events:</p>
+<p>Once a new <code>environmentd</code> is up (may take a few minutes), confirm the
+running <code>environmentd</code> version matches the version you upgraded to. Check
+the <code>Image</code> field in the pod description.</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment describe pod -l <span class="nv">app</span><span class="o">=</span>environmentd
 </span></span></code></pre></div></li>
 </ol>
+<p>If you run into an error during the upgrade, refer to the
+<a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
 
 ## See also
 
@@ -1078,7 +1346,7 @@ If you don't have Helm version 3.2.0+ installed, install. For details, see the
 ### `kubectl`
 
 This tutorial uses `kubectl`. To install, refer to the [`kubectl`
-documentationq](https://kubernetes.io/docs/tasks/tools/).
+documentation](https://kubernetes.io/docs/tasks/tools/).
 
 For help with `kubectl` commands, see [kubectl Quick
 reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/).
@@ -1091,122 +1359,188 @@ deployment does not have a license key configured, contact <a href="https://mate
 ## Upgrade
 
 > **Important:** The following procedure performs a rolling upgrade, where both the old and new
-> Materialize instances are running before the the old instance are removed.
+> Materialize instances are running before the old instances are removed.
 > When performing a rolling upgrade, ensure you have enough resources to support
 > having both the old and new Materialize instances running.
 
-1. Open a Terminal window.
+<ol>
+<li>
+<p>Open a Terminal window.</p>
+</li>
+<li>
+<p>Go to your Materialize working directory.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl"><span class="nb">cd</span> my-local-mz
+</span></span></code></pre></div></li>
+<li>
+<p>Upgrade the Materialize Helm chart.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm repo update materialize
+</span></span></code></pre></div></li>
+<li>
+<p>Get the sample configuration files for the new version.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl"><span class="nv">mz_version</span><span class="o">=</span>v26.32.0
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">curl -o upgrade-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/<span class="nv">$mz_version</span>/misc/helm-charts/operator/values.yaml
+</span></span></code></pre></div><p>If you have previously modified the <code>sample-values.yaml</code> file for your
+deployment, include the changes into the <code>upgrade-values.yaml</code> file.</p>
+</li>
+<li>
+<p>Check the CRD version (<code>v1alpha1</code> or, available starting
+in Materialize v26.30, <code>v1</code>) being used for your Materialize instance.
+To determine which CRD version is in use, run the following command,
+   replacing <instance-name> with your instance name. For the
+   `sample-materialize.yaml` used in this example, the instance name is
+   `12345678-1234-1234-1234-123456789012`:
 
-1. Go to your Materialize working directory.
-
-   ```shell
-   cd my-local-mz
+   ```sh
+   kubectl get materialize <instance-name> -n materialize-environment \
+     -o jsonpath='{.metadata.annotations.kubectl\.kubernetes\.io/last-applied-configuration}' \
+   | python3 -c 'import sys,json; print(json.load(sys.stdin)["apiVersion"])'
    ```
-
-1. Upgrade the Materialize Helm chart.
-
-   ```shell
-   helm repo update materialize
-   ```
-
-1. Get the sample configuration files for the new version.
-
-   ```shell
-   mz_version=v26.29.0
-
-   curl -o upgrade-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
-   ```
-
-   If you have previously modified the `sample-values.yaml` file for your
-   deployment, include the changes into the `upgrade-values.yaml` file.
-
-1. Upgrade the Materialize Operator, specifying the new version and the updated
-   configuration file. Include any additional configurations that you specify
-   for your deployment.
-
-   ```shell
-   helm upgrade my-materialize-operator materialize/materialize-operator \
-   --namespace=materialize \
-   --version v26.29.0 \
-   -f upgrade-values.yaml \
-   --set observability.podMetrics.enabled=true
-   ```
-
-1. Verify that the operator is running:
-
-   ```bash
-   kubectl -n materialize get all
-   ```
-
-   Verify the operator upgrade by checking its events:
-
-   ```bash
-   kubectl -n materialize describe pod -l app.kubernetes.io/name=materialize-operator
-   ```
-
-1. As of v26.0, Self-Managed Materialize requires a license key. If your
-deployment has not been configured with a license key:
-
-   a. Contact [Materialize support](https://materialize.com/docs/support/).
-
-   b. Once you have your license key, run the following command to add it to the `materialize-backend` secret:
-
-      ```bash
-      kubectl -n materialize-environment patch secret materialize-backend -p '{"stringData":{"license_key":"<your license key goes here>"}}' --type=merge
-      ```
-
-1. Create a new `upgrade-materialize.yaml` file, updating the following fields:
-
-   | Field | Description |
-   |-------|-------------|
-   | `environmentdImageRef` | Update the version to the new version. This should be the same as the operator version: `v26.29.0`. |
-   | `requestRollout` or `forceRollout`| Enter a new UUID. Can be generated with `uuidgen`. <br> <ul><li>`requestRollout` triggers a rollout only if changes exist. </li><li>`forceRollout` triggers a rollout even if no changes exist.</li></ul> |
-
-   ```yaml
-   apiVersion: materialize.cloud/v1alpha1
-   kind: Materialize
-   metadata:
-     name: 12345678-1234-1234-1234-123456789012
-     namespace: materialize-environment
-   spec:
-     environmentdImageRef: materialize/environmentd:v26.29.0 # Update version
-     requestRollout: 22222222-2222-2222-2222-222222222222    # Enter a new UUID
-   # forceRollout: 33333333-3333-3333-3333-333333333333    # For forced rollouts
-     rolloutStrategy: WaitUntilReady                         # The mechanism to use when rolling out the new version.
-     backendSecretName: materialize-backend
-   ```
-
-1. Apply the upgrade-materialize.yaml file to your Materialize instance:
-
-   ```shell
-   kubectl apply -f upgrade-materialize.yaml
-   ```
-
-1. Verify that the components are running after the upgrade:
-
-   ```bash
-   kubectl -n materialize-environment get all
-   ```
-
-   Verify upgrade by checking the `balancerd` events:
-
-   ```bash
-   kubectl -n materialize-environment describe pod -l app=balancerd
-   ```
-
-   The **Events** section should list that the new version of the `balancerd`
-   have been pulled.
-
-   Verify the upgrade by checking the `environmentd` events:
-
-   ```bash
-   kubectl -n materialize-environment describe pod -l app=environmentd
-   ```
-
-   The **Events** section should list that the new version of the `environmentd`
-   have been pulled.
-
-1. Open the Materialize Console. The Console should display the new version.
+</p>
+</li>
+<li>
+<p>Upgrade the Materialize Operator, specifying the new version and the updated
+configuration file. Include any additional configurations that you specify
+for your deployment.</p>
+<p>Select the tab for your Materialize CRD API version (<code>v1alpha1</code> or,
+available starting in Materialize v26.30, <code>v1</code>) your deployment
+<strong>currently</strong> uses. This step does not cover <a href="/self-managed-deployments/upgrading/adopting-the-v1-crd/" >migrating from <code>v1alpha1</code>
+to <code>v1</code> (including setting up
+prerequisites)</a>.</p>
+<div class="code-tabs">
+<ul class="nav-tabs"></ul>
+<div class="tab-content">
+<div class="tab-pane" title="CRD v1" id="upgrade-operator-kind-v1">
+<p>If currently using <code>v1</code> (available starting in Materialize v26.30):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade my-materialize-operator materialize/materialize-operator <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--namespace<span class="o">=</span>materialize <span class="se">\
+</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--version v26.32.0 <span class="se">\
+</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>-f upgrade-values.yaml <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--set observability.podMetrics.enabled<span class="o">=</span><span class="nb">true</span> <span class="se">\
+</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--set operator.args.installV1CRD<span class="o">=</span><span class="nb">true</span>
+</span></span></code></pre></div></div>
+<div class="tab-pane" title="CRD v1alpha1" id="upgrade-operator-kind-v1alpha1">
+<p>If currently using <code>v1alpha1</code> (default):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade my-materialize-operator materialize/materialize-operator <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--namespace<span class="o">=</span>materialize <span class="se">\
+</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--version v26.32.0 <span class="se">\
+</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>-f upgrade-values.yaml <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>--set observability.podMetrics.enabled<span class="o">=</span><span class="nb">true</span>
+</span></span></code></pre></div></div>
+</div>
+</div>
+</li>
+<li>
+<p>Verify that the operator is running:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize get all
+</span></span></code></pre></div><p>Verify the operator upgrade by checking its events:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize describe pod -l app.kubernetes.io/name<span class="o">=</span>materialize-operator
+</span></span></code></pre></div></li>
+<li>
+<p>As of v26.0, Self-Managed Materialize requires a license key. If your
+deployment has not been configured with a license key:</p>
+<p>a. Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>.</p>
+<p>b. Once you have your license key, run the following command to add it to the <code>materialize-backend</code> secret:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment patch secret materialize-backend -p <span class="s1">&#39;{&#34;stringData&#34;:{&#34;license_key&#34;:&#34;&lt;your license key goes here&gt;&#34;}}&#39;</span> --type<span class="o">=</span>merge
+</span></span></code></pre></div></li>
+<li>
+<p>Create a new <code>upgrade-materialize.yaml</code> file, updating the following fields:</p>
+<p>Select the tab for the CRD API version your deployment currently uses. This
+step does not cover <a href="/self-managed-deployments/upgrading/adopting-the-v1-crd/" >migrating from <code>v1alpha1</code> to <code>v1</code></a>. (The <code>v1</code> CRD
+API version is available starting in Materialize v26.30.)</p>
+<div class="code-tabs">
+<ul class="nav-tabs"></ul>
+<div class="tab-content">
+<div class="tab-pane" title="CRD v1" id="local-kind-v1">
+<p>If using <code>v1</code>, update the following fields:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Field</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>environmentdImageRef</code></td>
+          <td>Update the version to the new version. This should be the same as the operator version: <code>v26.32.0</code>. Updating this field automatically triggers a rollout.</td>
+      </tr>
+      <tr>
+          <td><code>forceRollout</code></td>
+          <td><strong>Optional.</strong> Set to a new UUID (can be generated with <code>uuidgen</code>) only to force a rollout when no other changes exist.</td>
+      </tr>
+  </tbody>
+</table>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">materialize.cloud/v1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Materialize</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="m">12345678-1234-1234-1234-123456789012</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">materialize-environment</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">environmentdImageRef</span><span class="p">:</span><span class="w"> </span><span class="l">materialize/environmentd:v26.32.0</span><span class="w"> </span><span class="c"># Update version</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># forceRollout: 33333333-3333-3333-3333-333333333333    # For forced rollouts</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">rolloutStrategy</span><span class="p">:</span><span class="w"> </span><span class="l">WaitUntilReady                        </span><span class="w"> </span><span class="c"># The mechanism to use when rolling out the new version.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">backendSecretName</span><span class="p">:</span><span class="w"> </span><span class="l">materialize-backend</span><span class="w">
+</span></span></span></code></pre></div></div>
+<div class="tab-pane" title="CRD v1alpha1" id="local-kind-v1alpha1">
+<p><code>v1alpha1</code> is the default CRD version for the Materialize Helm
+   chart. The Terraform modules default to <code>v1</code> starting in v4.0.0.
+   With <code>v1alpha1</code>, instance rollouts require manually rotating a
+   UUID.</p>
+<p>If using <code>v1alpha1</code>, update the following fields:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Field</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><code>environmentdImageRef</code></td>
+          <td>Update the version to the new version. This should be the same as the operator version: <code>v26.32.0</code>.</td>
+      </tr>
+      <tr>
+          <td><code>requestRollout</code> or <code>forceRollout</code></td>
+          <td>Enter a new UUID. Can be generated with <code>uuidgen</code>. <br> <ul><li><code>requestRollout</code> triggers a rollout only if changes exist. </li><li><code>forceRollout</code> triggers a rollout even if no changes exist.</li></ul></td>
+      </tr>
+  </tbody>
+</table>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l">materialize.cloud/v1alpha1</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l">Materialize</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">metadata</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="m">12345678-1234-1234-1234-123456789012</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">materialize-environment</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">environmentdImageRef</span><span class="p">:</span><span class="w"> </span><span class="l">materialize/environmentd:v26.32.0</span><span class="w"> </span><span class="c"># Update version</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">requestRollout</span><span class="p">:</span><span class="w"> </span><span class="m">22222222-2222-2222-2222-222222222222</span><span class="w">    </span><span class="c"># Enter a new UUID</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c"># forceRollout: 33333333-3333-3333-3333-333333333333    # For forced rollouts</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">rolloutStrategy</span><span class="p">:</span><span class="w"> </span><span class="l">WaitUntilReady                        </span><span class="w"> </span><span class="c"># The mechanism to use when rolling out the new version.</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">backendSecretName</span><span class="p">:</span><span class="w"> </span><span class="l">materialize-backend</span><span class="w">
+</span></span></span></code></pre></div></div>
+</div>
+</div>
+</li>
+<li>
+<p>Apply the upgrade-materialize.yaml file to your Materialize instance:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">kubectl apply -f upgrade-materialize.yaml
+</span></span></code></pre></div></li>
+<li>
+<p>Verify that the components are running after the upgrade:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment get all
+</span></span></code></pre></div><p>Verify upgrade by checking the <code>balancerd</code> events:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment describe pod -l <span class="nv">app</span><span class="o">=</span>balancerd
+</span></span></code></pre></div><p>The <strong>Events</strong> section should list that the new version of the <code>balancerd</code>
+have been pulled.</p>
+<p>Verify the upgrade by checking the <code>environmentd</code> events:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment describe pod -l <span class="nv">app</span><span class="o">=</span>environmentd
+</span></span></code></pre></div><p>The <strong>Events</strong> section should list that the new version of the <code>environmentd</code>
+have been pulled.</p>
+</li>
+<li>
+<p>Open the Materialize Console. The Console should display the new version.</p>
+</li>
+</ol>
 
 ## See also
 

@@ -28,9 +28,13 @@ FROM KAFKA CONNECTION <connection_name> (
   [, START OFFSET ( <partition_offset> [, ...] ) ]
   [, START TIMESTAMP <timestamp> ]
 )
-FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
-  [KEY STRATEGY <key_strategy>]
-  [VALUE STRATEGY <value_strategy>]
+FORMAT AVRO
+    USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
+      [KEY STRATEGY <key_strategy>]
+      [VALUE STRATEGY <value_strategy>]
+  | USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> (
+      SCHEMA NAME = '<schema_name>'
+    )
 [INCLUDE
     KEY [AS <name>]
   | PARTITION [AS <name>]
@@ -60,7 +64,8 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
 | **GROUP ID PREFIX** `<group_id_prefix>` | Optional. The prefix of the consumer group ID to use. See [Monitoring consumer lag](#monitoring-consumer-lag).<br>Default: `materialize-{REGION-ID}-{CONNECTION-ID}-{SOURCE_ID}`  |
 | **START OFFSET** (`<partition_offset>` [, ...]) | Optional. Read partitions from the specified offset. You cannot update the offsets once a source has been created; you will need to recreate the source. Offset values must be zero or positive integers. See [Setting start offsets](#setting-start-offsets) for details.  |
 | **START TIMESTAMP** `<timestamp>` | Optional. Use the specified value to set `START OFFSET` based on the Kafka timestamp. Negative values will be interpreted as relative to the current system time in milliseconds (e.g. `-1000` means 1000 ms ago). See [Time-based offsets](#time-based-offsets) for details.  |
-| `<csr_connection_name>` | The Confluent Schema Registry connection to use in the source.  |
+| `<csr_connection_name>` | The [Confluent Schema Registry connection](/sql/create-connection/#confluent-schema-registry) to use in the source. Applies to both the key and value.  |
+| `<glue_connection_name>` (**SCHEMA NAME** `'<schema_name>'`) | ***Private preview.** This feature is under active development.*  Decode Avro messages using a schema managed in AWS Glue Schema Registry. `<glue_connection_name>` is the [AWS Glue Schema Registry connection](/sql/create-connection/#aws-glue-schema-registry), and `SCHEMA NAME` (**required**) is the name of the schema to read from the connection's registry. The schema is pinned at the time the source is created.  A single `FORMAT AVRO USING AWS GLUE SCHEMA REGISTRY` clause resolves one schema. To set the key and value independently (for example, under `ENVELOPE UPSERT` or `ENVELOPE DEBEZIUM`), specify `KEY FORMAT ... VALUE FORMAT ...` explicitly.  |
 | **KEY STRATEGY** `<key_strategy>` | Optional. Define how an Avro reader schema will be chosen for the message key. \| Strategy \| Description \| \|--------\|-------------\| \| **LATEST** \| (Default) Use the latest writer schema from the schema registry as the reader schema. \| \| **ID** \| Use a specific schema from the registry. \| \| **INLINE** \| Use the inline schema. \|  |
 | **VALUE STRATEGY** `<value_strategy>` | Optional. Define how an Avro reader schema will be chosen for the message value. \| Strategy \| Description \| \|--------\|-------------\| \| **LATEST** \| (Default) Use the latest writer schema from the schema registry as the reader schema. \| \| **ID** \| Use a specific schema from the registry. \| \| **INLINE** \| Use the inline schema. \|  |
 | **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| **KEY [AS \<name\>]** \| Include a column containing the Kafka message key. If the key is encoded using a format that includes schemas, the column will take its name from the schema. For unnamed formats (e.g. `TEXT`), the column will be named `key`. The column can be renamed with the optional **AS** *name* statement. \| **PARTITION [AS \<name\>]** \| Include a `partition` column containing the Kafka message partition. The column can be renamed with the optional **AS** *name* clause. \| **OFFSET [AS \<name\>]** \| Include an `offset` column containing the Kafka message offset. The column can be renamed with the optional **AS** *name* clause. \| **TIMESTAMP [AS \<name\>]** \| Include a `timestamp` column containing the Kafka message timestamp. The column can be renamed with the optional **AS** *name* clause. <br><br>Note that the timestamp of a Kafka message depends on how the topic and its producers are configured. See the [Confluent documentation](https://docs.confluent.io/3.0.0/streams/concepts.html?#time) for details. \| **HEADERS [AS \<name\>]** \| Include a `headers` column containing the Kafka message headers as a list of records of type `(key text, value bytea)`. The column can be renamed with the optional **AS** *name* clause. \| **HEADER \<key\> AS \<name\> [**BYTES**]** \| Include a *name* column containing the Kafka message header *key* parsed as a UTF-8 string. To expose the header value as `bytea`, use the `BYTES` option.  |
@@ -68,13 +73,38 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
+#### Schema registries
+
+Materialize can retrieve Avro schemas from either of two schema registries,
+selected by the `USING` clause:
+
+- **[Confluent Schema Registry](/sql/create-connection/#confluent-schema-registry)**
+  (`USING CONFLUENT SCHEMA REGISTRY`): schemas are looked up by topic using the
+  `TopicNameStrategy`, and the message's embedded schema ID resolves the writer
+  schema at decode time.
+
+- **[AWS Glue Schema Registry](/sql/create-connection/#aws-glue-schema-registry)**
+  (`USING AWS GLUE SCHEMA REGISTRY`) <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
+: schemas are
+  looked up by the `SCHEMA NAME` you provide, and the message's embedded schema
+  version ID resolves the writer schema at decode time. Each `FORMAT AVRO USING
+  AWS GLUE` clause resolves a single schema. To decode keys and values from
+  different schemas (for example, under `ENVELOPE UPSERT` or `ENVELOPE
+  DEBEZIUM`), you must specify `KEY FORMAT ... VALUE FORMAT ...` explicitly.
+
 #### Schema versioning
 
-The _latest_ schema is retrieved using the [`TopicNameStrategy`](https://docs.confluent.io/current/schema-registry/serdes-develop/index.html) strategy at the time the `CREATE SOURCE` statement is issued.
+The schema is resolved when the `CREATE SOURCE` statement is issued. With
+[Confluent Schema Registry](/sql/create-connection/#confluent-schema-registry),
+the _latest_ schema is retrieved using the
+[`TopicNameStrategy`](https://docs.confluent.io/current/schema-registry/serdes-develop/index.html)
+strategy. With [AWS Glue Schema
+Registry](/sql/create-connection/#aws-glue-schema-registry), the latest version
+of the schema named by `SCHEMA NAME` is retrieved.
 
 #### Schema evolution
 
-As long as the writer schema changes in a [compatible way](https://avro.apache.org/docs/++version++/specification/#schema-resolution), Materialize will continue using the original reader schema definition by mapping values from the new to the old schema version. To use the new version of the writer schema in Materialize, you need to **drop and recreate** the source.
+As long as the writer schema changes in a [compatible way](https://avro.apache.org/docs/++version++/specification/#schema-resolution), Materialize will continue using the original reader schema definition by mapping values from the new to the old schema version. To use the new version of the writer schema in Materialize, you need to **drop and recreate** the source. This applies to both Confluent Schema Registry and AWS Glue Schema Registry.
 
 #### Name collision
 
@@ -358,6 +388,7 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 -- AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <conn_name>
 --     [KEY STRATEGY <strategy>]
 --     [VALUE STRATEGY <strategy>]
+-- | AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_conn_name> (SCHEMA NAME = '<schema_name>')
 -- | CSV WITH <num> COLUMNS DELIMITED BY <char>
 -- | JSON | TEXT | BYTES
 -- | PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <conn_name>
@@ -391,8 +422,8 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 | **GROUP ID PREFIX** `<group_id_prefix>` | Optional. The prefix of the consumer group ID to use. See [Monitoring consumer lag](#monitoring-consumer-lag).<br>Default: `materialize-{REGION-ID}-{CONNECTION-ID}-{SOURCE_ID}`  |
 | **START OFFSET** (`<partition_offset>` [, ...]) | Optional. Read partitions from the specified offset. You cannot update the offsets once a source has been created; you will need to recreate the source. Offset values must be zero or positive integers. See [Setting start offsets](#setting-start-offsets) for details.  |
 | **START TIMESTAMP** `<timestamp>` | Optional. Use the specified value to set `START OFFSET` based on the Kafka timestamp. Negative values will be interpreted as relative to the current system time in milliseconds (e.g. `-1000` means 1000 ms ago). See [Time-based offsets](#time-based-offsets) for details.  |
-| **KEY FORMAT** `<key_format_spec>` | **Required.** Set the key encoding explicitly. Supported formats: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `JSON`, `PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `PROTOBUF MESSAGE '<message_name>' USING SCHEMA '<schema_bytes>'`, `TEXT`, `BYTES`.  |
-| **VALUE FORMAT** `<value_format_spec>` | **Required.** Set the value encoding explicitly. Supported formats: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `JSON`, `PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `PROTOBUF MESSAGE '<message_name>' USING SCHEMA '<schema_bytes>'`, `TEXT`, `BYTES`. By default, the message key is decoded using the same format as the message value.  |
+| **KEY FORMAT** `<key_format_spec>` | **Required.** Set the key encoding explicitly. Supported formats: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> (SCHEMA NAME = '<schema_name>')`, `JSON`, `PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `PROTOBUF MESSAGE '<message_name>' USING SCHEMA '<schema_bytes>'`, `TEXT`, `BYTES`.  |
+| **VALUE FORMAT** `<value_format_spec>` | **Required.** Set the value encoding explicitly. Supported formats: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> (SCHEMA NAME = '<schema_name>')`, `JSON`, `PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `PROTOBUF MESSAGE '<message_name>' USING SCHEMA '<schema_bytes>'`, `TEXT`, `BYTES`. By default, the message key is decoded using the same format as the message value.  |
 | **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `KEY [AS <name>]` \| Expose the message key as a column. Composite keys are also supported. The `UPSERT` envelope always includes keys. The `DEBEZIUM` envelope is incompatible with this option. See [Exposing source metadata](#exposing-source-metadata) for details. \| \| `PARTITION [AS <name>]` \| Expose the Kafka partition as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `OFFSET [AS <name>]` \| Expose the Kafka offset as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `TIMESTAMP [AS <name>]` \| Expose the Kafka timestamp as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `HEADERS [AS <name>]` \| Expose all message headers as a column with type `record(key: text, value: bytea?) list`. The `DEBEZIUM` envelope is incompatible with this option. See [Headers](#headers) for details. \| \| `HEADER '<key>' AS <name> [BYTES]` \| Expose a specific message header as a column. The `bytea` value is automatically parsed into a UTF-8 string unless `BYTES` is specified. The `DEBEZIUM` envelope is incompatible with this option. See [Headers](#headers) for details. \|  |
 | **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. See [Append-only envelope](/sql/create-source/kafka/#append-only-envelope) for details. \| \| `DEBEZIUM` \| Decode Kafka messages produced by [Debezium](https://debezium.io/). \| \| `UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]` \| Use the standard key-value convention to support inserts, updates, and deletes. Required to consume [log compacted topics](https://docs.confluent.io/platform/current/kafka/design.html#log-compaction). \|  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
@@ -993,6 +1024,27 @@ CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
 For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
 
+#### AWS Glue Schema Registry
+
+An [AWS Glue Schema Registry connection](/sql/create-connection/#aws-glue-schema-registry)
+authenticates through a separate [AWS connection](/sql/create-connection/#aws),
+which supplies the credentials and region:
+
+```mzsql
+CREATE CONNECTION aws_connection TO AWS (
+    ASSUME ROLE ARN = 'arn:aws:iam::123456789000:role/MaterializeGlue'
+);
+
+CREATE CONNECTION glue_connection TO AWS GLUE SCHEMA REGISTRY (
+    AWS CONNECTION = aws_connection,
+    REGISTRY = 'default-registry'
+);
+```
+
+The AWS connection must be allowed to read schemas from the registry. See
+[Permissions](/sql/create-connection/#glue-permissions) for the required IAM
+actions.
+
 ### Creating a source
 
 **Avro:**
@@ -1003,6 +1055,16 @@ an SSH bastion server to accept connections from Materialize, check [this guide]
 CREATE SOURCE avro_source
   FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
   FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection;
+```
+
+**Using AWS Glue Schema Registry** <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
+
+```mzsql
+CREATE SOURCE avro_source
+  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+  FORMAT AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION glue_connection (
+    SCHEMA NAME = 'test_schema'
+  );
 ```
 
 **JSON:**

@@ -68,7 +68,7 @@ Certificate Authority (CA) rather than self-signed certificates.
 <p>Whe upgrading:</p>
 <ul>
 <li>
-<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/#version-specific-upgrade-notes" >version specific upgrade
+<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/version-notes/" >version-specific upgrade
 notes</a>.</p>
 </li>
 <li>
@@ -81,3 +81,13 @@ to ensure compatibility.</p>
 </li>
 </ul>
 
+## Node pool resizing
+
+The VM type of a Kubernetes node pool is immutable on EKS, AKS, and GKE, so
+changing it triggers a `destroy + create` that fails while Materialize pods are
+still running on the pool. The supported pattern is to add a second pool with
+the new VM type, roll out the Materialize instance so new pods land on it, and
+then drop the old pool.
+
+For the full procedure, see
+[Resize node pools](/self-managed-deployments/deployment-guidelines/resize-node-pools/).

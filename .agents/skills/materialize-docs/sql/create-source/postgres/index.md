@@ -155,6 +155,21 @@ CREATE SOURCE mz_source
   FOR TABLES (schema1.table_1 AS s1_table_1, schema2_table_1 AS s2_table_1);
 ```
 
+### Reading from a physical standby
+
+Materialize can replicate from a PostgreSQL physical standby (read
+replica) instead of the primary, using logical decoding on the standby.
+This requires **PostgreSQL 16+** on both the primary and the standby, since
+earlier versions do not support creating logical replication slots on a
+standby.
+
+When the upstream is a standby, the replication slot is created on the
+standby and Materialize only connects to the standby. Note that slot
+creation on a standby can block until the primary emits a standby snapshot
+(a `RUNNING_XACTS` WAL record). On an idle primary, run
+[`SELECT pg_log_standby_snapshot()`](https://www.postgresql.org/docs/16/functions-admin.html#FUNCTIONS-SNAPSHOT-SYNCHRONIZATION)
+on the primary to unblock source creation.
+
 ### Monitoring source progress
 
 By default, PostgreSQL sources expose progress metadata as a subsource that you

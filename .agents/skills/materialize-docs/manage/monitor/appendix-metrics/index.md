@@ -279,6 +279,16 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_catalog_arc_strong_count</code></td>
+      <td>The number of strong references to the current catalog snapshot: roughly, in-flight users plus a small constant baseline.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_catalog_arc_weak_count</code></td>
+      <td>The number of weak references to the current catalog snapshot: sessions whose snapshot cache points at the current catalog version (older versions are not counted). Drops on catalog changes and recovers as session caches repopulate.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_catalog_collection_entries</code></td>
       <td>Total number of entries, after consolidation, per catalog collection.</td>
       <td><code>collection</code></td>
@@ -299,6 +309,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_catalog_snapshot_cache</code></td>
+      <td>Hits and misses of the session-side catalog snapshot cache. A miss costs a Coordinator round-trip.</td>
+      <td><code>context</code>, <code>result</code></td>
+    </tr>
+    <tr>
       <td><code>mz_catalog_snapshot_consolidations</code></td>
       <td>Count of snapshot consolidation passes.</td>
       <td></td>
@@ -315,17 +330,17 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     </tr>
     <tr>
       <td><code>mz_catalog_snapshot_seconds_bucket</code></td>
-      <td>The time it takes to run `catalog_snapshot` when fetching the catalog.</td>
+      <td>The time it takes to fetch a catalog snapshot from the Coordinator. Only observed on session snapshot cache misses.</td>
       <td><code>context</code>, <code>le</code></td>
     </tr>
     <tr>
       <td><code>mz_catalog_snapshot_seconds_count</code></td>
-      <td>The time it takes to run `catalog_snapshot` when fetching the catalog.</td>
+      <td>The time it takes to fetch a catalog snapshot from the Coordinator. Only observed on session snapshot cache misses.</td>
       <td><code>context</code></td>
     </tr>
     <tr>
       <td><code>mz_catalog_snapshot_seconds_sum</code></td>
-      <td>The time it takes to run `catalog_snapshot` when fetching the catalog.</td>
+      <td>The time it takes to fetch a catalog snapshot from the Coordinator. Only observed on session snapshot cache misses.</td>
       <td><code>context</code></td>
     </tr>
     <tr>
@@ -1162,6 +1177,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_optimizer_e2e_optimization_time_seconds_sum</code></td>
       <td>A histogram of end-to-end optimization times since restart.</td>
       <td><code>object_type</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_optimizer_lowering_literal_constraints_total</code></td>
+      <td>How often the MFP-based literal-constraint detector succeeded, by call site.</td>
+      <td><code>case</code></td>
     </tr>
     <tr>
       <td><code>mz_otel_on_close</code></td>
@@ -2441,6 +2461,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     <tr>
       <td><code>mz_persist_watch_notify_sent</code></td>
       <td>count of watch notifications sent to a non-empty broadcast channel</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_watch_notify_upper_sent</code></td>
+      <td>count of strict shard upper advances signaled to upper waiters</td>
       <td></td>
     </tr>
     <tr>

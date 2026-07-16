@@ -23,6 +23,12 @@ When a user asks about Materialize:
 - **Usage (Self-Managed)**: `administration/usage/index.md`
 - **Usage & billing (Cloud)**: `administration/billing/index.md`
 
+### Architecture Patterns
+Patterns for building with Materialize.
+
+- **Live Context Graph**: `architecture-patterns/live-context-graph/index.md`
+- **Use an ontology table**: `architecture-patterns/ontology/index.md`
+
 ### Concepts
 Learn about the core concepts in Materialize.
 

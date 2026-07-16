@@ -1,5 +1,6 @@
 # CREATE SOURCE: SQL Server
 Connecting Materialize to a SQL Server database for Change Data Capture (CDC).
+> **Public Preview:** This feature is in public preview.
 
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/sql-server/).
 

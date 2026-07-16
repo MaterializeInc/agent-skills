@@ -170,13 +170,22 @@ An active Azure subscription with appropriate permissions to create:
 
 1. Create a `terraform.tfvars` file with the following variables:
 
-   - `subscription_id`: Azure subscription ID
-   - `resource_group_name`: Name for the resource group to create (e.g.
-     `mz-demo-rg`)
-   - `name_prefix`: Prefix for all resource names (e.g., `simple-demo`)
-   - `location`: Azure region for deployment (e.g., `westus2`)
-   - `license_key`: Materialize license key
-   - `tags`: Map of tags to apply to resources
+   | Variable      | Description                 |
+   | -----------   | ----------------------------|
+   | `subscription_id`     | Azure subscription ID. |
+   | `resource_group_name` | Name for the resource group to create (e.g., `mz-demo-rg`). |
+   | `name_prefix`         | Prefix for all resource names (e.g., `simple-demo`). |
+   | `location`            | Azure region for deployment (e.g., `westus2`). |
+   | `license_key`         | Materialize license key. |
+   | `crd_version`         | CRD API version to use for the Materialize instance: `v1` (default starting in TF v4.0.0) or `v1alpha1`. |
+   | `tags`                | Map of tags to apply to resources. |
+
+   > **Tip:** Starting in Materialize Terraform module version v4.0.0, `crd_version`
+   > defaults to [CRD API version
+   > `v1`](/self-managed-deployments/upgrading/adopting-the-v1-crd/). `v1`
+   > requires Materialize v26.30 or greater and is available starting in
+   > Terraform module version v3.1.1. To use `v1alpha1` instead, set
+   > `crd_version = "v1alpha1"`.
 
    ```hcl
    subscription_id     = "your-subscription-id"
@@ -184,6 +193,7 @@ An active Azure subscription with appropriate permissions to create:
    name_prefix         = "simple-demo"
    location            = "westus2"
    license_key         = "your-materialize-license-key"
+   crd_version = "v1"   # Default starting in TF v4.0.0. v1 requires Materialize v26.30+.
    tags = {
      environment = "demo"
    }
@@ -192,7 +202,7 @@ An active Azure subscription with appropriate permissions to create:
    # k8s_apiserver_authorized_networks  = ["x.x.x.x/n", ...]
    ```
 
-   <p><strong>Optional variables</strong>:</p>
+   <p><strong>Additional variables</strong>:</p>
    <ul>
    <li><code>internal_load_balancer</code>: Flag that determines whether the load balancer
    is internal (default) or public.</li>
@@ -268,6 +278,15 @@ An active Azure subscription with appropriate permissions to create:
 
    <p>If you run into an error during deployment, refer to the
    <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
+
+1. Check the CRD version of the Materialize manifest.
+   To check the CRD version of the Materialize manifest that was applied, run
+   the following:
+
+   ```sh
+   terraform state show 'module.materialize_instance.kubectl_manifest.materialize_instance' \
+     | grep -iE 'api_?version|kind'
+   ```
 
 ### Step 5: Connect to Materialize
 

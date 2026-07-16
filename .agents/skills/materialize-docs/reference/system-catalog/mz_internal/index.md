@@ -147,6 +147,27 @@ The `mz_cluster_schedules` table shows the `SCHEDULE` option specified for each 
 | `type`                              | [`text`]     | `on-refresh`, or `manual`. Default: `manual`                   |
 | `refresh_hydration_time_estimate`   | [`interval`] | The interval given in the `HYDRATION TIME ESTIMATE` option.    |
 
+## `mz_cluster_reconfigurations`
+
+The `mz_cluster_reconfigurations` collection shows the latest graceful
+reconfiguration of each managed cluster that has been reconfigured. A
+background `ALTER CLUSTER` writes the record, and it is retained with a
+terminal `status` after it settles, so a row persists after cut-over or
+rollback until a later reconfiguration overwrites it. The realized (current)
+shape is in [`mz_clusters`](../mz_catalog/#mz_clusters).
+
+<!-- RELATION_SPEC mz_internal.mz_cluster_reconfigurations -->
+| Field          | Type             | Meaning                                                        |
+|----------------|------------------|----------------------------------------------------------------|
+| `cluster_id`   | [`text`]         | The ID of the cluster. Corresponds to [`mz_clusters.id`](../mz_catalog/#mz_clusters). |
+| `status`       | [`text`]         | The lifecycle status of the reconfiguration: `in-progress` while the controller converges on the target, then a terminal `finalized`, `timed-out`, `cancelled`, or `resource-exhausted`. The record is retained after it settles, so the latest outcome stays inspectable until a later reconfiguration overwrites it. |
+| `deadline`     | [`mz_timestamp`] | The deadline by which the reconfiguration must complete. After it passes, the `on_timeout` action applies. |
+| `on_timeout`   | [`text`]         | The action applied if `deadline` passes before the target hydrates: `commit` (cut over to the not-yet-hydrated target) or `rollback` (revert to the pre-reconfiguration shape). |
+| `target`       | [`jsonb`]        | The config shape the cluster is reconfiguring to, as JSON: `size`, `replication_factor`, `availability_zones`, and `logging`. The realized (current) shape is in `mz_clusters`. |
+| `changes`      | [`jsonb`]        | The dimensions in which `target` differs from the cluster's realized configuration, as a JSON object holding the target value per changed dimension. Empty (`{}`) once a record settles with its target applied. A rolled-back record keeps the abandoned diff. |
+
+<!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_cluster_auto_scaling_strategies -->
+
 ## `mz_cluster_replica_metrics`
 
 The `mz_cluster_replica_metrics` view gives the last known CPU and RAM utilization statistics
@@ -1428,6 +1449,8 @@ The `mz_webhook_sources` table contains a row for each webhook source in the sys
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_object_oid_alias -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_objects_id_namespace_types -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_console_cluster_utilization_overview -->
+<!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_console_cluster_utilization_overview_3h -->
+<!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_console_cluster_utilization_overview_24h -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_object_arrangement_sizes -->
 <!-- RELATION_SPEC_UNDOCUMENTED mz_internal.mz_object_arrangement_size_history -->
 
