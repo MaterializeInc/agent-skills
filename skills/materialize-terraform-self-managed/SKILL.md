@@ -95,7 +95,7 @@ Every deployment creates two layers:
 
 **Key AWS patterns:**
 - Node autoscaling via Karpenter (not cluster autoscaler)
-- Two Karpenter node classes: generic (t4g.xlarge) and Materialize (r7gd.2xlarge with NVMe swap)
+- Two Karpenter node classes: generic (t4g.xlarge) and Materialize (r8gd.2xlarge with NVMe swap)
 - Storage auth via IRSA (IAM Roles for Service Accounts)
 - NLB for external access on ports 6875 (SQL), 6876 (HTTP), 8080 (console)
 
@@ -133,7 +133,7 @@ Every deployment creates two layers:
 **Key GCP patterns:**
 - HMAC keys for S3-compatible GCS access (these modules use the S3-compatible API)
 - VPC peering for Cloud SQL private access
-- n2-highmem-8 instances for Materialize nodes with local SSD and swap
+- c4a-highmem-8-lssd instances for Materialize nodes with local SSD and swap
 - Secondary IP ranges for pods and services (VPC-native)
 - Requires enabling multiple GCP APIs (container, compute, sqladmin, servicenetworking, etc.)
 
@@ -284,7 +284,7 @@ module "materialize_instance" {
 
 - The `//` separates the repository URL from the module subdirectory. Any module in the repository can be referenced this way.
 - Always pin `ref` to a tag or commit SHA. Never track `main`, or applies become non-reproducible and can pick up breaking changes.
-- To update, bump the `ref`, run `terraform init -upgrade`, and review the plan before applying.
+- To update, first check the [version notes](https://materialize.com/docs/self-managed-deployments/upgrading/version-notes/) for breaking changes between your current `ref` and the target, then bump the `ref`, run `terraform init -upgrade`, and review the plan before applying. See [Upgrading Materialize](#upgrading-materialize) for the full path.
 - Use the relevant `<cloud>/examples/simple/main.tf` as the reference for how the modules compose, then reproduce that composition in your own project with pinned Git sources. This is the pattern Materialize uses for its own internal deployments.
 
 ## Post-Deployment Setup
@@ -356,14 +356,15 @@ kubectl port-forward svc/grafana 3000:80 -n monitoring
 
 ## Upgrading Materialize
 
-1. Upgrade one minor version at a time for versions before v26. From v26+ you can skip minor versions.
-2. Downgrading is not supported.
-3. Upgrade order: operator first, then instances.
+1. Check the [version notes](https://materialize.com/docs/self-managed-deployments/upgrading/version-notes/) for the target version first. Some versions have breaking changes or special upgrade requirements that must be handled before bumping.
+2. Upgrade one minor version at a time for versions before v26. From v26+ you can skip minor versions.
+3. Downgrading is not supported.
+4. Upgrade order: operator first, then instances.
 
 **With Terraform:**
 Update `environmentd_version` (and optionally `operator_version`) in your variables, then `terraform apply`. For v1alpha1, also update `request_rollout` to a new UUID.
 
-For the full upgrade procedure, see the `materialize-docs` skill in this repository at `skills/materialize-docs/self-managed-deployments/upgrading/index.md` (with per-cloud guides in the sibling `upgrade-on-*` directories), or the [online upgrading documentation](https://materialize.com/docs/self-managed-deployments/upgrading/).
+For the full upgrade procedure, see the `materialize-docs` skill in this repository at `skills/materialize-docs/self-managed-deployments/upgrading/index.md` (with per-cloud guides in the sibling `upgrade-on-*` directories), or the [online upgrading documentation](https://materialize.com/docs/self-managed-deployments/upgrading/). Always review the [version notes](https://materialize.com/docs/self-managed-deployments/upgrading/version-notes/) for breaking changes before upgrading.
 
 ## Instance Sizing
 
@@ -371,12 +372,12 @@ Materialize nodes should use memory-optimized instances with NVMe local storage 
 
 | Cloud | Instance Type | vCPUs | Memory | Max cluster size |
 |-------|---------------|-------|--------|------------------|
-| AWS | r7gd.2xlarge | 8 | 64 GiB | ~300cc |
-| AWS | r7gd.4xlarge | 16 | 128 GiB | ~600cc |
-| AWS | r7gd.8xlarge | 32 | 256 GiB | ~1200cc |
-| AWS | r7gd.16xlarge | 64 | 512 GiB | ~3200cc |
+| AWS | r8gd.2xlarge | 8 | 64 GiB | ~300cc |
+| AWS | r8gd.4xlarge | 16 | 128 GiB | ~600cc |
+| AWS | r8gd.8xlarge | 32 | 256 GiB | ~1200cc |
+| AWS | r8gd.16xlarge | 64 | 512 GiB | ~3200cc |
 | Azure | Standard_E4pds_v6 | 4 | 32 GiB | varies |
-| GCP | n2-highmem-8 | 8 | 64 GiB | varies |
+| GCP | c4a-highmem-8-lssd | 8 | 64 GiB | varies |
 
 ARM-based CPUs with a 1:8 vCPU-to-memory ratio and 8:1 local-storage-to-memory ratio are recommended.
 
