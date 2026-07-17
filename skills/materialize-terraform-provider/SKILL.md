@@ -66,7 +66,9 @@ provider "materialize" {
   username = "materialize"
   database = "materialize"
   password = var.mz_password
-  sslmode  = "disable"
+  # Use "require" (or stricter, e.g. "verify-full") against any TLS-enabled
+  # deployment. "disable" is only appropriate for a local, non-TLS instance.
+  sslmode  = "require"
 }
 ```
 
