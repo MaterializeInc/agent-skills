@@ -44,6 +44,23 @@ Materialize documentation for SQL syntax, data ingestion, concepts, and best pra
 </details>
 
 <details>
+<summary><strong>materialize-terraform-provider</strong></summary>
+
+Using the Materialize Terraform provider to manage Materialize resources declaratively, for both Cloud and self-managed deployments.
+
+**Use when:**
+
+- Writing Terraform for Materialize resources (clusters, sources, sinks, connections, views, grants)
+- Configuring the Materialize provider for Cloud or self-managed
+- Importing existing Materialize objects into Terraform state
+- Setting up RBAC, secrets, or network policies via Terraform
+- Troubleshooting Terraform plan/apply issues with `materialize_*` resources
+
+**Covers:** provider configuration, a resource category map, cross-resource patterns, import workflows, and gotchas. Per-resource argument reference intentionally stays in the [auto-generated provider docs](https://registry.terraform.io/providers/MaterializeInc/materialize/latest/docs), which the skill teaches agents to navigate.
+
+</details>
+
+<details>
 <summary><strong>materialize-terraform-self-managed</strong></summary>
 
 Terraform modules for deploying self-managed Materialize on AWS (EKS), Azure (AKS), and GCP (GKE).
@@ -58,7 +75,6 @@ Terraform modules for deploying self-managed Materialize on AWS (EKS), Azure (AK
 
 **Covers:** module layout and variables for all three clouds, backend URL formats, storage authentication support, instance sizing, post-deployment setup, upgrades, and common gotchas from the [materialize-terraform-self-managed](https://github.com/MaterializeInc/materialize-terraform-self-managed) repository.
 
-</details>
 
 <details>
 <summary><strong>mcp-developer-analysis</strong></summary>
@@ -137,6 +153,7 @@ See [LICENSE](LICENSE).
 ## Changelog
 
 - 2026-07-09: Add materialize-terraform-self-managed skill
+- 2026-07-09: Add materialize-terraform-provider skill
 - 2026-05-08: Add MCP client setup playbook to mcp-developer-analysis
 - 2026-05-05: Rename mz-developer-analysis to mcp-developer-analysis
 - 2026-04-28: Add mcp-developer-analysis skill
