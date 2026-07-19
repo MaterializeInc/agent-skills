@@ -105,6 +105,26 @@ ON TABLE <name> [, <name> ...]
 TO <role_name> [, ... ];
 ```
 
+<!-- ================== Network policy syntax ==================  -->
+
+**Network policy:**
+
+For specific network policies:
+
+```mzsql
+GRANT <USAGE | ALL [PRIVILEGES]>
+ON NETWORK POLICY <name> [, ...]
+TO <role_name> [, ... ];
+```
+
+For all network policies:
+
+```mzsql
+GRANT <USAGE | ALL [PRIVILEGES]>
+ON ALL POLICIES
+TO <role_name> [, ... ];
+```
+
 <!-- ==================== Schema syntax =====================  -->
 
 **Schema:**

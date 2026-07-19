@@ -195,7 +195,7 @@ Materialize-provided Terraforms.</p>
 > **Tip:** <p>Whe upgrading:</p>
 > <ul>
 > <li>
-> <p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/#version-specific-upgrade-notes" >version specific upgrade
+> <p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/version-notes/" >version-specific upgrade
 > notes</a>.</p>
 > </li>
 > <li>

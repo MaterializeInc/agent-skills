@@ -183,13 +183,22 @@ A Google account with permission to:
    | `name_prefix` | Set a prefix for all resource names (e.g., `simple-demo`) as well as your release name for the Operator |
    | `region`      | Set the GCP region for the deployment (e.g., `us-central1`).  |
    | `license_key` | Set to your Materialize license key.     |
+   | `crd_version` | CRD API version to use for the Materialize instance: `v1` (default starting in TF v4.0.0) or `v1alpha1`. |
    | `labels`      | Set to the labels to apply to resources. |
 
-   ```bash
+   > **Tip:** Starting in Materialize Terraform module version v4.0.0, `crd_version`
+   > defaults to [CRD API version
+   > `v1`](/self-managed-deployments/upgrading/adopting-the-v1-crd/). `v1`
+   > requires Materialize v26.30 or greater and is available starting in
+   > Terraform module version v3.1.1. To use `v1alpha1` instead, set
+   > `crd_version = "v1alpha1"`.
+
+   ```hcl
    project_id  = "my-gcp-project"
    name_prefix = "simple-demo"
    region      = "us-central1"
    license_key = "your-materialize-license-key"
+   crd_version = "v1"   # Default starting in TF v4.0.0. v1 requires Materialize v26.30+.
    labels = {
      environment = "demo"
      created_by  = "terraform"
@@ -199,7 +208,7 @@ A Google account with permission to:
    # k8s_apiserver_authorized_networks  = ["x.x.x.x/n", ...]
    ```
 
-   <p><strong>Optional variables</strong>:</p>
+   <p><strong>Additional variables</strong>:</p>
    <ul>
    <li><code>internal_load_balancer</code>: Flag that determines whether the load balancer
    is internal (default) or public.</li>
@@ -280,6 +289,15 @@ A Google account with permission to:
 
    <p>If you run into an error during deployment, refer to the
    <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
+
+1. Check the CRD version of the Materialize manifest.
+   To check the CRD version of the Materialize manifest that was applied, run
+   the following:
+
+   ```sh
+   terraform state show 'module.materialize_instance.kubectl_manifest.materialize_instance' \
+     | grep -iE 'api_?version|kind'
+   ```
 
 ### Step 5: Connect to Materialize
 

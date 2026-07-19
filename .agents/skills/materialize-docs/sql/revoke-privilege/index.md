@@ -107,6 +107,26 @@ ON TABLE <name> [, <name> ...]
 FROM <role_name> [, ... ];
 ```
 
+<!-- ================== Network policy syntax ==================  -->
+
+**Network policy:**
+
+For specific network policies:
+
+```mzsql
+REVOKE <USAGE | ALL [PRIVILEGES]>
+ON NETWORK POLICY <name> [, ...]
+FROM <role_name> [, ... ];
+```
+
+For all network policies:
+
+```mzsql
+REVOKE <USAGE | ALL [PRIVILEGES]>
+ON ALL POLICIES
+FROM <role_name> [, ... ];
+```
+
 <!-- ==================== Schema syntax =====================  -->
 
 **Schema:**

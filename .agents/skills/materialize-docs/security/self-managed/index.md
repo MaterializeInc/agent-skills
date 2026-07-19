@@ -254,6 +254,13 @@ following fields:
 The following example Kubernetes manifest includes configuration for
 SASL/SCRAM-SHA-256 authentication:
 
+**v1alpha1:**
+
+<p><code>v1alpha1</code> is the default CRD version for the Materialize Helm
+chart. The Terraform modules default to <code>v1</code> starting in v4.0.0.
+With <code>v1alpha1</code>, instance rollouts require manually rotating a
+UUID.</p>
+
 ```hc {hl_lines="15 25"}
 apiVersion: v1
 kind: Namespace
@@ -277,7 +284,40 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.12.1
+  environmentdImageRef: materialize/environmentd:v26.31.2
+  backendSecretName: materialize-backend
+  authenticatorKind: Sasl
+  requestRollout: 00000000-0000-0000-0000-000000000003 # Enabling auth on an existing instance requires a rollout
+```
+
+**v1:**
+
+<p>The <code>v1</code> CRD is available starting in v26.30. It is opt-in for the Helm chart and the default for the Terraform modules starting in v4.0.0. See <a href="/self-managed-deployments/upgrading/adopting-the-v1-crd/">Adopting the v1 CRD</a> to enable it.</p>
+
+```hc {hl_lines="15 25"}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: materialize-environment
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: materialize-backend
+  namespace: materialize-environment
+stringData:
+  metadata_backend_url: "..."
+  persist_backend_url: "..."
+  license_key: "..."
+  external_login_password_mz_system: "enter_mz_system_password"
+---
+apiVersion: materialize.cloud/v1
+kind: Materialize
+metadata:
+  name: 12345678-1234-1234-1234-123456789012
+  namespace: materialize-environment
+spec:
+  environmentdImageRef: materialize/environmentd:v26.31.2
   backendSecretName: materialize-backend
   authenticatorKind: Sasl
 ```
@@ -300,6 +340,13 @@ To configure Self-Managed Materialize for password authentication, update the fo
 The following example Kubernetes manifest includes configuration for password
 authentication:
 
+**v1alpha1:**
+
+<p><code>v1alpha1</code> is the default CRD version for the Materialize Helm
+chart. The Terraform modules default to <code>v1</code> starting in v4.0.0.
+With <code>v1alpha1</code>, instance rollouts require manually rotating a
+UUID.</p>
+
 ```hc {hl_lines="15 25"}
 apiVersion: v1
 kind: Namespace
@@ -323,7 +370,40 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.12.1
+  environmentdImageRef: materialize/environmentd:v26.31.2
+  backendSecretName: materialize-backend
+  authenticatorKind: Password
+  requestRollout: 00000000-0000-0000-0000-000000000003 # Enabling auth on an existing instance requires a rollout
+```
+
+**v1:**
+
+<p>The <code>v1</code> CRD is available starting in v26.30. It is opt-in for the Helm chart and the default for the Terraform modules starting in v4.0.0. See <a href="/self-managed-deployments/upgrading/adopting-the-v1-crd/">Adopting the v1 CRD</a> to enable it.</p>
+
+```hc {hl_lines="15 25"}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: materialize-environment
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: materialize-backend
+  namespace: materialize-environment
+stringData:
+  metadata_backend_url: "..."
+  persist_backend_url: "..."
+  license_key: "..."
+  external_login_password_mz_system: "enter_mz_system_password"
+---
+apiVersion: materialize.cloud/v1
+kind: Materialize
+metadata:
+  name: 12345678-1234-1234-1234-123456789012
+  namespace: materialize-environment
+spec:
+  environmentdImageRef: materialize/environmentd:v26.31.2
   backendSecretName: materialize-backend
   authenticatorKind: Password
 ```
@@ -608,6 +688,13 @@ following fields:
 The following example Kubernetes manifest includes configuration for OIDC
 authentication:
 
+**v1alpha1:**
+
+<p><code>v1alpha1</code> is the default CRD version for the Materialize Helm
+chart. The Terraform modules default to <code>v1</code> starting in v4.0.0.
+With <code>v1alpha1</code>, instance rollouts require manually rotating a
+UUID.</p>
+
 ```yaml {hl_lines="6-15 26 36-38"}
 apiVersion: v1
 kind: Namespace
@@ -642,7 +729,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.26.0 # Use v26.26.0 or later
+  environmentdImageRef: materialize/environmentd:v26.31.2
   backendSecretName: materialize-backend
   authenticatorKind: Oidc
   requestRollout: 00000000-0000-0000-0000-000000000003 # Switching to Oidc requires a rollout
@@ -652,6 +739,56 @@ spec:
 Apply the updated manifest to your Kubernetes cluster. See
 [Upgrading](/self-managed-deployments/upgrading/#rollout-configuration) for
 details on rollout configuration.
+
+**v1:**
+
+<p>The <code>v1</code> CRD is available starting in v26.30. It is opt-in for the Helm chart and the default for the Terraform modules starting in v4.0.0. See <a href="/self-managed-deployments/upgrading/adopting-the-v1-crd/">Adopting the v1 CRD</a> to enable it.</p>
+
+```yaml {hl_lines="6-15 26 36-37"}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: materialize-environment
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mz-system-params
+  namespace: materialize-environment
+data:
+  # Create an empty system parameter configmap for later steps
+  system-params.json: |
+    {
+    }
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: materialize-backend
+  namespace: materialize-environment
+stringData:
+  metadata_backend_url: "..."
+  persist_backend_url: "..."
+  license_key: "..."
+  external_login_password_mz_system: "enter_mz_system_password"
+---
+apiVersion: materialize.cloud/v1
+kind: Materialize
+metadata:
+  name: 12345678-1234-1234-1234-123456789012
+  namespace: materialize-environment
+spec:
+  environmentdImageRef: materialize/environmentd:v26.31.2
+  backendSecretName: materialize-backend
+  authenticatorKind: Oidc
+  systemParameterConfigmapName: mz-system-params
+```
+
+Apply the updated manifest to your Kubernetes cluster. With the `v1` CRD,
+rollouts trigger automatically when spec fields change, so no `requestRollout`
+is needed. See
+[Upgrading](/self-managed-deployments/upgrading/#rollout-configuration)
+for details on rollout configuration.
 
 > **Warning:** Once enabled, ensure that the `authenticatorKind` field is set for any future version upgrades or rollouts of the Materialize CR. Having it undefined will reset `authenticationKind` to `None`.
 

@@ -8,6 +8,8 @@ supports creating sources from PostgreSQL version 11&#43;.  Once a new source is
 to create the corresponding tables in Materialize and start the data ingestion
 process.
 
+PostgreSQL 16+ is required for connecting Materialize to a physical replica.
+
 ## Prerequisites
 
 To create a source from PostgreSQL 11+, you must first:
@@ -178,6 +180,21 @@ SELECT id, replication_slot FROM mz_internal.mz_postgres_sources;
 > accumulate data so that the source can resume in the future. To avoid
 > unbounded disk space usage, make sure to use [`DROP
 > SOURCE`](/sql/drop-source/) or manually delete the replication slot.
+
+### Reading from a physical standby
+
+Materialize can replicate from a PostgreSQL physical standby (read
+replica) instead of the primary, using logical decoding on the standby.
+This requires **PostgreSQL 16+** on both the primary and the standby, since
+earlier versions do not support creating logical replication slots on a
+standby.
+
+When the upstream is a standby, the replication slot is created on the
+standby and Materialize only connects to the standby. Note that slot
+creation on a standby can block until the primary emits a standby snapshot
+(a `RUNNING_XACTS` WAL record). On an idle primary, run
+[`SELECT pg_log_standby_snapshot()`](https://www.postgresql.org/docs/16/functions-admin.html#FUNCTIONS-SNAPSHOT-SYNCHRONIZATION)
+on the primary to unblock source creation.
 
 ## Examples
 

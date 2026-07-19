@@ -6,6 +6,12 @@ Materialize using the [PostgreSQL source](/sql/create-source/postgres/).
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
+> **Note:** Connecting directly to your primary, as described here, is the recommended
+> setup. In the exceptional case where you can't reconfigure the primary, or need
+> to keep WAL-retention risk off it, you can point Materialize at a dedicated
+> replica instead. See [Ingest from a dedicated PostgreSQL
+> replica](/ingest-data/postgres/logical-replica/).
+
 ## Before you begin
 
 - Make sure you are running PostgreSQL 11 or higher.

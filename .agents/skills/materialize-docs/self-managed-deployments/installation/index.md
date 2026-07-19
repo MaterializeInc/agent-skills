@@ -226,13 +226,10 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    kubectl get nodes --show-labels
    ```
 
-1. Recommended: Install cert-manager
-
-   Cert-manager is used for generating TLS certificates needed by the materialize operator
-   for CRD conversion webhooks. It is currently only required if you enable the v1
-   version of the Materialize CRD by setting `operator.args.installV1CRD=true`
-   when installing the operator, but certificates will become required in a
-   future version of Materialize.
+1. <a name="install-cert-manager" ></a>Install `cert-manager`. `cert-manager` is
+   used for generating TLS certificates needed by the Materialize operator for
+   CRD conversion webhooks if enabling CRD `v1`. To simplify future transition,
+   we recommend installing it even if you are not yet enabling CRD `v1`.
 
    ```shell
    helm install cert-manager oci://quay.io/jetstack/charts/cert-manager \
@@ -247,7 +244,7 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    the Materialize repo:
 
    ```shell
-   mz_version=v26.29.0
+   mz_version=v26.31.2
 
    curl -o sample-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
    curl -o sample-postgres.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/postgres.yaml
@@ -309,13 +306,28 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    1. Install the Materialize Operator. The operator will be installed in the
       `materialize` namespace.
 
-      ```shell
+      <a name="step-enable-v1"></a>
+
+      Starting in v26.30, you can choose between CRD versions: [`v1` (which
+      provides a simplified rollout behavior and is available starting in
+      v26.30)](/self-managed-deployments/upgrading/adopting-the-v1-crd/) and
+      `v1alpha1` (default). The following enables the use of `v1` CRD version by
+      setting `operator.args.installV1CRD=true`. To use `v1` CRD requires
+      `cert-manager`, installed in an [earlier step](#install-cert-manager) in this
+      guide.
+
+      ```shell {hl_lines="5"}
       helm install my-materialize-operator materialize/materialize-operator \
           --namespace=materialize --create-namespace \
-          --version v26.29.0 \
+          --version v26.31.2 \
           --set observability.podMetrics.enabled=true \
+          --set operator.args.installV1CRD=true \
           -f sample-values.yaml
       ```
+
+      Even if using the default `v1alpha1` CRD version, you can still enable the
+      `v1` CRD to simplify the transition to `v1` in the future. However, you can
+      also omit `--set operator.args.installV1CRD=true` if you prefer.
 
    1. Verify the installation and check the status:
 
@@ -424,6 +436,27 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 
 1. Install Materialize into a new `materialize-environment` namespace:
 
+   1. If you [enabled the use of `v1` CRD](#step-enable-v1), update
+      `sample-materialize.yaml` to use it.
+      [`v1`](/self-managed-deployments/upgrading/adopting-the-v1-crd/) provides
+      a simplified rollout behavior. In the `Materialize` resource section of
+      the file (`kind: Materialize`):
+      - Change the `apiVersion` from `materialize.cloud/v1alpha1` to
+        `materialize.cloud/v1`.
+      - Remove the `requestRollout` field, if present.
+
+      ```none{hl_lines=2}
+      ---
+      apiVersion: materialize.cloud/v1     # <-- updated to use v1
+      kind: Materialize
+      metadata:
+         name: 12345678-1234-1234-1234-123456789012
+         namespace: materialize-environment
+      ```
+
+      To use the default `v1alpha1` CRD version instead, leave
+      `sample-materialize.yaml` unchanged.
+
    1. Use the `sample-materialize.yaml` file to create the
       `materialize-environment` namespace and install Materialize:
 
@@ -431,7 +464,7 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
       kubectl apply -f sample-materialize.yaml
       ```
 
-    1. Verify the installation and check the status:
+   1. Verify the installation and check the status:
 
        > **Note:** It may take approximately 1-2 minutes for all resources to appear in the
 >        namespace. Allow up to 90 seconds before verifying resource creation with
@@ -477,6 +510,19 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 
        If you run into an error during deployment, refer to the
        [Troubleshooting](/self-hosted/troubleshooting) guide.
+
+   1. Optional. Check the CRD version being used:
+
+      To determine which CRD version is in use, run the following command,
+      replacing <instance-name> with your instance name. For the
+      `sample-materialize.yaml` used in this example, the instance name is
+      `12345678-1234-1234-1234-123456789012`:
+
+      ```sh
+      kubectl get materialize <instance-name> -n materialize-environment \
+        -o jsonpath='{.metadata.annotations.kubectl\.kubernetes\.io/last-applied-configuration}' \
+      | python3 -c 'import sys,json; print(json.load(sys.stdin)["apiVersion"])'
+      ```
 
 1. Open the Materialize Console in your browser:
 
@@ -694,17 +740,28 @@ An active AWS account with appropriate permissions to create:
 
 1. Create a `terraform.tfvars` file with the following variables:
 
-   - `name_prefix`: Prefix for all resource names (e.g., `simple-demo`)
-   - `aws_region`: AWS region for deployment (e.g., `us-east-1`)
-   - `aws_profile`: AWS CLI profile to use
-   - `license_key`: Materialize license key
-   - `tags`: Map of tags to apply to resources
+   | Variable      | Description                 |
+   | -----------   | ----------------------------|
+   | `name_prefix` | Prefix for all resource names (e.g., `simple-demo`). |
+   | `aws_region`  | AWS region for deployment (e.g., `us-east-1`). |
+   | `aws_profile` | AWS CLI profile to use. |
+   | `license_key` | Materialize license key. |
+   | `crd_version` | CRD API version to use for the Materialize instance: `v1` (default starting in TF v4.0.0) or `v1alpha1`. |
+   | `tags`        | Map of tags to apply to resources. |
+
+   > **Tip:** Starting in Materialize Terraform module version v4.0.0, `crd_version`
+   > defaults to [CRD API version
+   > `v1`](/self-managed-deployments/upgrading/adopting-the-v1-crd/). `v1`
+   > requires Materialize v26.30 or greater and is available starting in
+   > Terraform module version v3.1.1. To use `v1alpha1` instead, set
+   > `crd_version = "v1alpha1"`.
 
    ```hcl
    name_prefix = "simple-demo"
    aws_region  = "us-east-1"
    aws_profile = "your-aws-profile"
    license_key = "your-materialize-license-key"
+   crd_version = "v1"   # Default starting in TF v4.0.0. v1 requires Materialize v26.30+.
    tags = {
      environment = "demo"
    }
@@ -713,7 +770,7 @@ An active AWS account with appropriate permissions to create:
    # k8s_apiserver_authorized_networks  = ["x.x.x.x/n", ...]
    ```
 
-   <p><strong>Optional variables</strong>:</p>
+   <p><strong>Additional variables</strong>:</p>
    <ul>
    <li><code>internal_load_balancer</code>: Flag that determines whether the load balancer
    is internal (default) or public.</li>
@@ -795,6 +852,15 @@ An active AWS account with appropriate permissions to create:
 
    <p>If you run into an error during deployment, refer to the
    <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
+
+1. Check the CRD version of the Materialize manifest.
+   To check the CRD version of the Materialize manifest that was applied, run
+   the following:
+
+   ```sh
+   terraform state show 'module.materialize_instance.kubectl_manifest.materialize_instance' \
+     | grep -iE 'api_?version|kind'
+   ```
 
 ### Step 5: Connect to Materialize
 
@@ -1096,13 +1162,22 @@ An active Azure subscription with appropriate permissions to create:
 
 1. Create a `terraform.tfvars` file with the following variables:
 
-   - `subscription_id`: Azure subscription ID
-   - `resource_group_name`: Name for the resource group to create (e.g.
-     `mz-demo-rg`)
-   - `name_prefix`: Prefix for all resource names (e.g., `simple-demo`)
-   - `location`: Azure region for deployment (e.g., `westus2`)
-   - `license_key`: Materialize license key
-   - `tags`: Map of tags to apply to resources
+   | Variable      | Description                 |
+   | -----------   | ----------------------------|
+   | `subscription_id`     | Azure subscription ID. |
+   | `resource_group_name` | Name for the resource group to create (e.g., `mz-demo-rg`). |
+   | `name_prefix`         | Prefix for all resource names (e.g., `simple-demo`). |
+   | `location`            | Azure region for deployment (e.g., `westus2`). |
+   | `license_key`         | Materialize license key. |
+   | `crd_version`         | CRD API version to use for the Materialize instance: `v1` (default starting in TF v4.0.0) or `v1alpha1`. |
+   | `tags`                | Map of tags to apply to resources. |
+
+   > **Tip:** Starting in Materialize Terraform module version v4.0.0, `crd_version`
+   > defaults to [CRD API version
+   > `v1`](/self-managed-deployments/upgrading/adopting-the-v1-crd/). `v1`
+   > requires Materialize v26.30 or greater and is available starting in
+   > Terraform module version v3.1.1. To use `v1alpha1` instead, set
+   > `crd_version = "v1alpha1"`.
 
    ```hcl
    subscription_id     = "your-subscription-id"
@@ -1110,6 +1185,7 @@ An active Azure subscription with appropriate permissions to create:
    name_prefix         = "simple-demo"
    location            = "westus2"
    license_key         = "your-materialize-license-key"
+   crd_version = "v1"   # Default starting in TF v4.0.0. v1 requires Materialize v26.30+.
    tags = {
      environment = "demo"
    }
@@ -1118,7 +1194,7 @@ An active Azure subscription with appropriate permissions to create:
    # k8s_apiserver_authorized_networks  = ["x.x.x.x/n", ...]
    ```
 
-   <p><strong>Optional variables</strong>:</p>
+   <p><strong>Additional variables</strong>:</p>
    <ul>
    <li><code>internal_load_balancer</code>: Flag that determines whether the load balancer
    is internal (default) or public.</li>
@@ -1194,6 +1270,15 @@ An active Azure subscription with appropriate permissions to create:
 
    <p>If you run into an error during deployment, refer to the
    <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
+
+1. Check the CRD version of the Materialize manifest.
+   To check the CRD version of the Materialize manifest that was applied, run
+   the following:
+
+   ```sh
+   terraform state show 'module.materialize_instance.kubectl_manifest.materialize_instance' \
+     | grep -iE 'api_?version|kind'
+   ```
 
 ### Step 5: Connect to Materialize
 
@@ -1516,13 +1601,22 @@ A Google account with permission to:
    | `name_prefix` | Set a prefix for all resource names (e.g., `simple-demo`) as well as your release name for the Operator |
    | `region`      | Set the GCP region for the deployment (e.g., `us-central1`).  |
    | `license_key` | Set to your Materialize license key.     |
+   | `crd_version` | CRD API version to use for the Materialize instance: `v1` (default starting in TF v4.0.0) or `v1alpha1`. |
    | `labels`      | Set to the labels to apply to resources. |
 
-   ```bash
+   > **Tip:** Starting in Materialize Terraform module version v4.0.0, `crd_version`
+   > defaults to [CRD API version
+   > `v1`](/self-managed-deployments/upgrading/adopting-the-v1-crd/). `v1`
+   > requires Materialize v26.30 or greater and is available starting in
+   > Terraform module version v3.1.1. To use `v1alpha1` instead, set
+   > `crd_version = "v1alpha1"`.
+
+   ```hcl
    project_id  = "my-gcp-project"
    name_prefix = "simple-demo"
    region      = "us-central1"
    license_key = "your-materialize-license-key"
+   crd_version = "v1"   # Default starting in TF v4.0.0. v1 requires Materialize v26.30+.
    labels = {
      environment = "demo"
      created_by  = "terraform"
@@ -1532,7 +1626,7 @@ A Google account with permission to:
    # k8s_apiserver_authorized_networks  = ["x.x.x.x/n", ...]
    ```
 
-   <p><strong>Optional variables</strong>:</p>
+   <p><strong>Additional variables</strong>:</p>
    <ul>
    <li><code>internal_load_balancer</code>: Flag that determines whether the load balancer
    is internal (default) or public.</li>
@@ -1613,6 +1707,15 @@ A Google account with permission to:
 
    <p>If you run into an error during deployment, refer to the
    <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
+
+1. Check the CRD version of the Materialize manifest.
+   To check the CRD version of the Materialize manifest that was applied, run
+   the following:
+
+   ```sh
+   terraform state show 'module.materialize_instance.kubectl_manifest.materialize_instance' \
+     | grep -iE 'api_?version|kind'
+   ```
 
 ### Step 5: Connect to Materialize
 

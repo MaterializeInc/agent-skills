@@ -58,6 +58,13 @@ kubectl apply -f system-params-configmap.yaml
 Reference the ConfigMap in your Materialize custom resource by setting the
 `systemParameterConfigmapName` field to the name of your ConfigMap:
 
+**v1alpha1:**
+
+<p><code>v1alpha1</code> is the default CRD version for the Materialize Helm
+chart. The Terraform modules default to <code>v1</code> starting in v4.0.0.
+With <code>v1alpha1</code>, instance rollouts require manually rotating a
+UUID.</p>
+
 ```yaml {hl_lines="9-10"}
 apiVersion: materialize.cloud/v1alpha1
 kind: Materialize
@@ -65,10 +72,26 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.0.0
+  environmentdImageRef: materialize/environmentd:v26.31.2
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
   requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
+```
+
+**v1:**
+
+<p>The <code>v1</code> CRD is available starting in v26.30. It is opt-in for the Helm chart and the default for the Terraform modules starting in v4.0.0. See <a href="/self-managed-deployments/upgrading/adopting-the-v1-crd/">Adopting the v1 CRD</a> to enable it.</p>
+
+```yaml {hl_lines="9"}
+apiVersion: materialize.cloud/v1
+kind: Materialize
+metadata:
+  name: 12345678-1234-1234-1234-123456789012
+  namespace: materialize-environment
+spec:
+  environmentdImageRef: materialize/environmentd:v26.31.2
+  backendSecretName: materialize-backend
+  systemParameterConfigmapName: mz-system-params
 ```
 
 Apply the updated Materialize resource:
@@ -120,8 +143,31 @@ Alternatively, you can add the `configmap-reload-trigger` annotation to your
 Materialize custom resource YAML and update it whenever you need to force a
 ConfigMap reload:
 
+**v1alpha1:**
+
+<p><code>v1alpha1</code> is the default CRD version for the Materialize Helm
+chart. The Terraform modules default to <code>v1</code> starting in v4.0.0.
+With <code>v1alpha1</code>, instance rollouts require manually rotating a
+UUID.</p>
+
 ```yaml
 apiVersion: materialize.cloud/v1alpha1
+kind: Materialize
+metadata:
+  name: 12345678-1234-1234-1234-123456789012
+  namespace: materialize-environment
+  annotations:
+    configmap-reload-trigger: "1234567890"  # Update this value to force reload
+spec:
+  # ... rest of spec
+```
+
+**v1:**
+
+<p>The <code>v1</code> CRD is available starting in v26.30. It is opt-in for the Helm chart and the default for the Terraform modules starting in v4.0.0. See <a href="/self-managed-deployments/upgrading/adopting-the-v1-crd/">Adopting the v1 CRD</a> to enable it.</p>
+
+```yaml
+apiVersion: materialize.cloud/v1
 kind: Materialize
 metadata:
   name: 12345678-1234-1234-1234-123456789012

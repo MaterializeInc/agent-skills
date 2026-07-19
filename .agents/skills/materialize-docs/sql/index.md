@@ -4060,8 +4060,9 @@ certificates) can be specified as plain `text`, or also stored as secrets.
 An Amazon Web Services (AWS) connection provides Materialize with access to an
 Identity and Access Management (IAM) user or role in your AWS account. You can
 use AWS connections to perform [bulk exports to Amazon S3](/serve-results/s3/),
-perform [authentication with an Amazon MSK cluster](#kafka-aws-connection), or
-perform [authentication with an Amazon RDS MySQL database](#mysql-aws-connection).
+perform [authentication with an Amazon MSK cluster](#kafka-aws-connection),
+perform [authentication with an Amazon RDS MySQL database](#mysql-aws-connection),
+or [authenticate to an AWS Glue Schema Registry](#aws-glue-schema-registry).
 
 ```mzsql
 CREATE CONNECTION <connection_name> TO AWS (
@@ -4563,7 +4564,7 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 
 ##### Default connections {#kafka-privatelink-default}
 
-[Redpanda Cloud](/ingest-data/redpanda/redpanda-cloud/)) does not require
+[Redpanda Cloud](/ingest-data/redpanda/redpanda-cloud/) does not require
 listing every broker individually. In this case, you should specify a
 PrivateLink connection and the port of the bootstrap server instead.
 
@@ -4787,6 +4788,83 @@ CREATE CONNECTION csr_ssh TO CONFLUENT SCHEMA REGISTRY (
     SSH TUNNEL ssh_connection
 );
 ```
+
+### AWS Glue Schema Registry
+
+An AWS Glue Schema Registry connection establishes a link to an [AWS Glue Schema
+Registry]. You can use AWS Glue Schema Registry connections in the `FORMAT`
+clause of [`CREATE SOURCE`] statements to decode Avro-encoded messages whose
+schemas are managed in AWS Glue.
+
+The connection authenticates to AWS through a separate [AWS connection](#aws),
+which supplies the credentials and region. See [AWS](#aws) for how to grant
+Materialize access to your AWS account.
+
+#### Syntax {#glue-syntax}
+
+```mzsql
+CREATE CONNECTION <connection_name> TO AWS GLUE SCHEMA REGISTRY (
+    AWS CONNECTION = <aws_connection_name>,
+    REGISTRY = '<registry_name>'
+)
+[WITH (<with_options>)];
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<connection_name>` | A name for the connection.  |
+| `AWS CONNECTION` | *Value:* object name. Required.  The name of an [AWS connection](#aws) that provides the credentials Materialize uses to authenticate to AWS Glue. The Schema Registry's region is taken from this connection.  |
+| `REGISTRY` | *Value:* `text`. Required.  The name of the AWS Glue Schema Registry to read schemas from (for example, `default-registry`). Must not be empty.  |
+| `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
+
+#### Examples {#glue-example}
+
+```mzsql
+CREATE CONNECTION aws_conn TO AWS (
+    ASSUME ROLE ARN = 'arn:aws:iam::123456789000:role/MaterializeGlue'
+);
+
+CREATE CONNECTION glue_conn TO AWS GLUE SCHEMA REGISTRY (
+    AWS CONNECTION = aws_conn,
+    REGISTRY = 'default-registry'
+);
+```
+
+#### Permissions {#glue-permissions}
+
+The IAM role assumed by the [AWS connection](#aws) must be allowed to read
+schemas from the registry. Materialize uses the following AWS Glue actions:
+
+| Action | When it is used |
+|--------|-----------------|
+| `glue:GetRegistry` | At connection creation, to validate the connection. Only required when `VALIDATE` is `true` (the default). |
+| `glue:GetSchemaVersion` | When a source is created, to pin the schema, and at runtime, to fetch the writer schema for each new schema version encountered. Always required. |
+
+A least-privilege policy scoped to a single registry looks like:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "glue:GetRegistry",
+                "glue:GetSchemaVersion"
+            ],
+            "Resource": [
+                "arn:aws:glue:<region>:<account>:registry/<registry-name>",
+                "arn:aws:glue:<region>:<account>:schema/<registry-name>/*"
+            ]
+        }
+    ]
+}
+```
+
+If you create the connection with `WITH (VALIDATE = false)`, you can omit
+`glue:GetRegistry` and grant only `glue:GetSchemaVersion`. For details on
+creating and authorizing the AWS connection, see [AWS](#aws).
 
 ### MySQL
 
@@ -5329,6 +5407,7 @@ Connection type             | Validated by default |
 AWS                         |                      |
 Kafka                       | ✓                    |
 Confluent Schema Registry   | ✓                    |
+AWS Glue Schema Registry    | ✓                    |
 MySQL                       | ✓                    |
 PostgreSQL                  | ✓                    |
 SSH Tunnel                  |                      |
@@ -5361,6 +5440,7 @@ The privileges required to execute this statement are:
 
 [AWS PrivateLink]: https://aws.amazon.com/privatelink/
 [Confluent Schema Registry]: https://docs.confluent.io/platform/current/schema-registry/index.html#sr-overview
+[AWS Glue Schema Registry]: https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html
 [Kafka]: https://kafka.apache.org
 [MySQL]: https://www.mysql.com/
 [PostgreSQL]: https://www.postgresql.org
@@ -6599,9 +6679,13 @@ FROM KAFKA CONNECTION <connection_name> (
   [, START OFFSET ( <partition_offset> [, ...] ) ]
   [, START TIMESTAMP <timestamp> ]
 )
-FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
-  [KEY STRATEGY <key_strategy>]
-  [VALUE STRATEGY <value_strategy>]
+FORMAT AVRO
+    USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
+      [KEY STRATEGY <key_strategy>]
+      [VALUE STRATEGY <value_strategy>]
+  | USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> (
+      SCHEMA NAME = '<schema_name>'
+    )
 [INCLUDE
     KEY [AS <name>]
   | PARTITION [AS <name>]
@@ -6746,6 +6830,7 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 -- AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <conn_name>
 --     [KEY STRATEGY <strategy>]
 --     [VALUE STRATEGY <strategy>]
+-- | AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_conn_name> (SCHEMA NAME = '<schema_name>')
 -- | CSV WITH <num> COLUMNS DELIMITED BY <char>
 -- | JSON | TEXT | BYTES
 -- | PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <conn_name>
@@ -10643,6 +10728,26 @@ ON TABLE <name> [, <name> ...]
 TO <role_name> [, ... ];
 ```
 
+<!-- ================== Network policy syntax ==================  -->
+
+**Network policy:**
+
+For specific network policies:
+
+```mzsql
+GRANT <USAGE | ALL [PRIVILEGES]>
+ON NETWORK POLICY <name> [, ...]
+TO <role_name> [, ... ];
+```
+
+For all network policies:
+
+```mzsql
+GRANT <USAGE | ALL [PRIVILEGES]>
+ON ALL POLICIES
+TO <role_name> [, ... ];
+```
+
 <!-- ==================== Schema syntax =====================  -->
 
 **Schema:**
@@ -10999,7 +11104,7 @@ the syntax errors that result are not always obvious.
 The current keywords are listed below.
 
 | | | | |
-|--|--|--|--||`ABORT` |`ACCESS` |`ACCOUNT` |`ACTION`||`ADD` |`ADDED` |`ADDRESS` |`ADDRESSES`||`AFTER` |`AGGREGATE` |`AGGREGATION` |`ALIGNED`||`ALL` |`ALTER` |`ANALYSE` |`ANALYSIS`||`ANALYZE` |`AND` |`ANY` |`APPEND`||`APPLY` |`ARITY` |`ARN` |`ARRANGED`||`ARRANGEMENT` |`ARRAY` |`AS` |`ASC`||`ASSERT` |`ASSUME` |`AT` |`AUCTION`||`AUTHORITY` |`AVAILABILITY` |`AVRO` |`AWS`||`BATCH` |`BEGIN` |`BETWEEN` |`BIGINT`||`BILLED` |`BODY` |`BOOLEAN` |`BOTH`||`BPCHAR` |`BROKEN` |`BROKER` |`BROKERS`||`BY` |`BYTES` |`CAPTURE` |`CARDINALITY`||`CASCADE` |`CASE` |`CAST` |`CATALOG`||`CERTIFICATE` |`CHAIN` |`CHAINS` |`CHAR`||`CHARACTER` |`CHARACTERISTICS` |`CHECK` |`CLASS`||`CLIENT` |`CLOCK` |`CLOSE` |`CLUSTER`||`CLUSTERS` |`COALESCE` |`COLLATE` |`COLUMN`||`COLUMNS` |`COMMENT` |`COMMIT` |`COMMITTED`||`COMPACTION` |`COMPATIBILITY` |`COMPRESSION` |`COMPUTE`||`COMPUTECTL` |`CONFIG` |`CONFLUENT` |`CONNECTION`||`CONNECTIONS` |`CONSTRAINT` |`COPY` |`COUNT`||`COUNTER` |`CPU` |`CREATE` |`CREATECLUSTER`||`CREATEDB` |`CREATENETWORKPOLICY` |`CREATEROLE` |`CREATION`||`CREDENTIAL` |`CROSS` |`CSE` |`CSV`||`CURRENT` |`CURSOR` |`DATABASE` |`DATABASES`||`DATUMS` |`DAY` |`DAYS` |`DEALLOCATE`||`DEBEZIUM` |`DEBUG` |`DEBUGGING` |`DEC`||`DECIMAL` |`DECLARE` |`DECODING` |`DECORRELATED`||`DEFAULT` |`DEFAULTS` |`DELETE` |`DELIMITED`||`DELIMITER` |`DELTA` |`DESC` |`DETAILS`||`DIRECTION` |`DISCARD` |`DISK` |`DISTINCT`||`DOC` |`DOT` |`DOUBLE` |`DROP`||`EAGER` |`ELEMENT` |`ELSE` |`ENABLE`||`END` |`ENDPOINT` |`ENFORCED` |`ENVELOPE`||`EQUIVALENCES` |`ERROR` |`ERRORS` |`ESCAPE`||`ESTIMATE` |`EVERY` |`EXCEPT` |`EXCLUDE`||`EXECUTE` |`EXISTS` |`EXPECTED` |`EXPLAIN`||`EXPOSE` |`EXPRESSIONS` |`EXTERNAL` |`EXTRACT`||`FACTOR` |`FALSE` |`FAST` |`FEATURES`||`FETCH` |`FIELDS` |`FILE` |`FILES`||`FILTER` |`FIRST` |`FIXPOINT` |`FLOAT`||`FOLLOWING` |`FOR` |`FOREIGN` |`FORMAT`||`FORWARD` |`FROM` |`FULL` |`FULLNAME`||`FUNCTION` |`FUSION` |`GCP` |`GENERATOR`||`GLUE` |`GRANT` |`GREATEST` |`GROUP`||`GROUPS` |`HAVING` |`HEADER` |`HEADERS`||`HINTS` |`HISTORY` |`HOLD` |`HOST`||`HOUR` |`HOURS` |`HUMANIZED` |`HYDRATION`||`ICEBERG` |`ID` |`IDENTIFIERS` |`IDS`||`IF` |`IGNORE` |`ILIKE` |`IMPLEMENTATIONS`||`IMPORTED` |`IN` |`INCLUDE` |`INDEX`||`INDEXES` |`INFO` |`INHERIT` |`INLINE`||`INNER` |`INPUT` |`INSERT` |`INSIGHTS`||`INSPECT` |`INSTANCE` |`INT` |`INTEGER`||`INTERNAL` |`INTERSECT` |`INTERVAL` |`INTO`||`INTROSPECTION` |`IS` |`ISNULL` |`ISOLATION`||`JOIN` |`JOINS` |`JSON` |`KAFKA`||`KEY` |`KEYS` |`LAST` |`LATERAL`||`LATEST` |`LEADING` |`LEAST` |`LEFT`||`LEGACY` |`LETREC` |`LEVEL` |`LIKE`||`LIMIT` |`LINEAR` |`LIST` |`LOAD`||`LOCAL` |`LOCALLY` |`LOG` |`LOGICAL`||`LOGIN` |`LOWERING` |`MANAGED` |`MANUAL`||`MAP` |`MARKETING` |`MATCHING` |`MATERIALIZE`||`MATERIALIZED` |`MAX` |`MECHANISMS` |`MEMBERSHIP`||`MEMORY` |`MESSAGE` |`METADATA` |`MINUTE`||`MINUTES` |`MOCK` |`MODE` |`MONTH`||`MONTHS` |`MUTUALLY` |`MYSQL` |`NAME`||`NAMES` |`NAMESPACE` |`NATURAL` |`NEGATIVE`||`NETWORK` |`NEW` |`NEXT` |`NFC`||`NFD` |`NFKC` |`NFKD` |`NO`||`NOCREATECLUSTER` |`NOCREATEDB` |`NOCREATEROLE` |`NODE`||`NOINHERIT` |`NOLOGIN` |`NON` |`NONE`||`NORMALIZE` |`NOSUPERUSER` |`NOT` |`NOTICE`||`NOTICES` |`NULL` |`NULLIF` |`NULLS`||`OBJECTS` |`OF` |`OFFSET` |`ON`||`ONLY` |`OPERATOR` |`OPTIMIZED` |`OPTIMIZER`||`OPTIONS` |`OR` |`ORDER` |`ORDINALITY`||`OUTER` |`OVER` |`OWNED` |`OWNER`||`PARTITION` |`PARTITIONS` |`PASSWORD` |`PATH`||`PATTERN` |`PHYSICAL` |`PLAN` |`PLANS`||`POLICIES` |`POLICY` |`PORT` |`POSITION`||`POSTGRES` |`PRECEDING` |`PRECISION` |`PREFIX`||`PREPARE` |`PRIMARY` |`PRIORITIZE` |`PRIVATELINK`||`PRIVILEGES` |`PROGRESS` |`PROJECTION` |`PROTOBUF`||`PROTOCOL` |`PUBLIC` |`PUBLICATION` |`PUSHDOWN`||`QUALIFY` |`QUERY` |`QUOTE` |`RAISE`||`RANGE` |`RATE` |`RAW` |`READ`||`READY` |`REAL` |`REASSIGN` |`RECURSION`||`RECURSIVE` |`REDACTED` |`REDUCE` |`REFERENCE`||`REFERENCES` |`REFRESH` |`REGEX` |`REGION`||`REGISTRY` |`RELATION` |`RENAME` |`REOPTIMIZE`||`REPEATABLE` |`REPLACE` |`REPLACEMENT` |`REPLAN`||`REPLICA` |`REPLICAS` |`REPLICATION` |`RESET`||`RESPECT` |`RESTRICT` |`RETAIN` |`RETURN`||`RETURNING` |`REVOKE` |`RIGHT` |`ROLE`||`ROLES` |`ROLLBACK` |`ROTATE` |`ROUNDS`||`ROW` |`ROWS` |`RULES` |`SASL`||`SCALE` |`SCHEDULE` |`SCHEMA` |`SCHEMAS`||`SCOPE` |`SECOND` |`SECONDS` |`SECRET`||`SECRETS` |`SECURITY` |`SEED` |`SELECT`||`SEQUENCES` |`SERIALIZABLE` |`SERVER` |`SERVICE`||`SESSION` |`SET` |`SHARD` |`SHOW`||`SINK` |`SINKS` |`SIZE` |`SKEW`||`SMALLINT` |`SNAPSHOT` |`SOME` |`SOURCE`||`SOURCES` |`SQL` |`SSH` |`SSL`||`START` |`STDIN` |`STDOUT` |`STORAGE`||`STORAGECTL` |`STRATEGY` |`STRICT` |`STRING`||`STRONG` |`SUBSCRIBE` |`SUBSOURCE` |`SUBSOURCES`||`SUBSTRING` |`SUBTREE` |`SUPERUSER` |`SWAP`||`SYNTAX` |`SYSTEM` |`TABLE` |`TABLES`||`TAIL` |`TEMP` |`TEMPORARY` |`TEST`||`TEXT` |`THEN` |`TICK` |`TIES`||`TIME` |`TIMEOUT` |`TIMESTAMP` |`TIMESTAMPTZ`||`TIMING` |`TO` |`TOKEN` |`TOPIC`||`TPCH` |`TRACE` |`TRAILING` |`TRANSACTION`||`TRANSACTIONAL` |`TRANSFORM` |`TRIM` |`TRUE`||`TUNNEL` |`TYPE` |`TYPES` |`UNBOUNDED`||`UNCOMMITTED` |`UNION` |`UNIQUE` |`UNIT`||`UNKNOWN` |`UNNEST` |`UNTIL` |`UP`||`UPDATE` |`UPSERT` |`URL` |`USAGE`||`USER` |`USERNAME` |`USERS` |`USING`||`VALIDATE` |`VALUE` |`VALUES` |`VARCHAR`||`VARIADIC` |`VARYING` |`VERBOSE` |`VERSION`||`VIEW` |`VIEWS` |`WAIT` |`WAREHOUSE`||`WARNING` |`WEBHOOK` |`WHEN` |`WHERE`||`WHILE` |`WINDOW` |`WIRE` |`WITH`||`WITHIN` |`WITHOUT` |`WORK` |`WORKERS`||`WORKLOAD` |`WRITE` |`YEAR` |`YEARS`||`ZONE` |`ZONES` |&nbsp; |&nbsp;|
+|--|--|--|--||`ABORT` |`ACCESS` |`ACCOUNT` |`ACTION`||`ADD` |`ADDED` |`ADDRESS` |`ADDRESSES`||`AFTER` |`AGGREGATE` |`AGGREGATION` |`ALIGNED`||`ALL` |`ALTER` |`ANALYSE` |`ANALYSIS`||`ANALYZE` |`AND` |`ANY` |`APPEND`||`APPLY` |`ARITY` |`ARN` |`ARRANGED`||`ARRANGEMENT` |`ARRAY` |`AS` |`ASC`||`ASSERT` |`ASSUME` |`AT` |`AUCTION`||`AUTHORITY` |`AVAILABILITY` |`AVRO` |`AWS`||`BATCH` |`BEGIN` |`BETWEEN` |`BIGINT`||`BILLED` |`BODY` |`BOOLEAN` |`BOTH`||`BPCHAR` |`BROKEN` |`BROKER` |`BROKERS`||`BY` |`BYTES` |`CAPTURE` |`CARDINALITY`||`CASCADE` |`CASE` |`CAST` |`CATALOG`||`CERTIFICATE` |`CHAIN` |`CHAINS` |`CHAR`||`CHARACTER` |`CHARACTERISTICS` |`CHECK` |`CLASS`||`CLIENT` |`CLOCK` |`CLOSE` |`CLUSTER`||`CLUSTERS` |`COALESCE` |`COLLATE` |`COLUMN`||`COLUMNS` |`COMMENT` |`COMMIT` |`COMMITTED`||`COMPACTION` |`COMPATIBILITY` |`COMPRESSION` |`COMPUTE`||`COMPUTECTL` |`CONFIG` |`CONFLUENT` |`CONNECTION`||`CONNECTIONS` |`CONSTRAINT` |`COPY` |`CORRELATED`||`COUNT` |`COUNTER` |`CPU` |`CREATE`||`CREATECLUSTER` |`CREATEDB` |`CREATENETWORKPOLICY` |`CREATEROLE`||`CREATION` |`CREDENTIAL` |`CROSS` |`CSE`||`CSV` |`CTE` |`CURRENT` |`CURSOR`||`DATABASE` |`DATABASES` |`DATUMS` |`DAY`||`DAYS` |`DEALLOCATE` |`DEBEZIUM` |`DEBUG`||`DEBUGGING` |`DEC` |`DECIMAL` |`DECLARE`||`DECODING` |`DECORRELATED` |`DEFAULT` |`DEFAULTS`||`DELETE` |`DELIMITED` |`DELIMITER` |`DELTA`||`DESC` |`DETAILS` |`DIRECTION` |`DISCARD`||`DISK` |`DISTINCT` |`DOC` |`DOT`||`DOUBLE` |`DROP` |`EAGER` |`ELEMENT`||`ELSE` |`ENABLE` |`END` |`ENDPOINT`||`ENFORCED` |`ENVELOPE` |`EQUIVALENCES` |`ERROR`||`ERRORS` |`ESCAPE` |`ESTIMATE` |`EVERY`||`EXCEPT` |`EXCLUDE` |`EXECUTE` |`EXISTS`||`EXPECTED` |`EXPLAIN` |`EXPOSE` |`EXPRESSIONS`||`EXTERNAL` |`EXTRACT` |`FACTOR` |`FALSE`||`FAST` |`FEATURES` |`FETCH` |`FIELDS`||`FILE` |`FILES` |`FILTER` |`FIRST`||`FIXED` |`FIXPOINT` |`FLOAT` |`FOLLOWING`||`FOR` |`FOREIGN` |`FORMAT` |`FORWARD`||`FROM` |`FULL` |`FULLNAME` |`FUNCTION`||`FUSION` |`GCP` |`GENERATOR` |`GLUE`||`GRANT` |`GREATEST` |`GROUP` |`GROUPS`||`HAVING` |`HEADER` |`HEADERS` |`HINTS`||`HISTORY` |`HOLD` |`HOST` |`HOUR`||`HOURS` |`HUMANIZED` |`HYDRATION` |`ICEBERG`||`ID` |`IDENTIFIERS` |`IDS` |`IF`||`IGNORE` |`ILIKE` |`IMPLEMENTATIONS` |`IMPORTED`||`IN` |`INCLUDE` |`INDEX` |`INDEXES`||`INFO` |`INHERIT` |`INLINE` |`INNER`||`INPUT` |`INSERT` |`INSIGHTS` |`INSPECT`||`INSTANCE` |`INT` |`INTEGER` |`INTERNAL`||`INTERSECT` |`INTERVAL` |`INTO` |`INTROSPECTION`||`IS` |`ISNULL` |`ISOLATION` |`JOIN`||`JOINS` |`JSON` |`KAFKA` |`KEY`||`KEYS` |`LAST` |`LATERAL` |`LATEST`||`LEADING` |`LEAST` |`LEFT` |`LEGACY`||`LETREC` |`LEVEL` |`LIKE` |`LIMIT`||`LINEAR` |`LIST` |`LOAD` |`LOCAL`||`LOCALLY` |`LOG` |`LOGICAL` |`LOGIN`||`LOWERING` |`MANAGED` |`MANUAL` |`MAP`||`MARKETING` |`MATCHING` |`MATERIALIZE` |`MATERIALIZED`||`MAX` |`MECHANISMS` |`MEMBERSHIP` |`MEMORY`||`MESSAGE` |`METADATA` |`MINUTE` |`MINUTES`||`MOCK` |`MODE` |`MONTH` |`MONTHS`||`MUTUALLY` |`MYSQL` |`NAME` |`NAMES`||`NAMESPACE` |`NATURAL` |`NEGATIVE` |`NETWORK`||`NEW` |`NEXT` |`NFC` |`NFD`||`NFKC` |`NFKD` |`NO` |`NOCREATECLUSTER`||`NOCREATEDB` |`NOCREATEROLE` |`NODE` |`NOINHERIT`||`NOLOGIN` |`NON` |`NONE` |`NORMALIZE`||`NOSUPERUSER` |`NOT` |`NOTICE` |`NOTICES`||`NULL` |`NULLIF` |`NULLS` |`OBJECTS`||`OF` |`OFFSET` |`ON` |`ONLY`||`OPERATOR` |`OPTIMIZED` |`OPTIMIZER` |`OPTIONS`||`OR` |`ORDER` |`ORDINALITY` |`OUTER`||`OVER` |`OWNED` |`OWNER` |`PARTITION`||`PARTITIONS` |`PASSWORD` |`PATH` |`PATTERN`||`PHYSICAL` |`PLAN` |`PLANS` |`POLICIES`||`POLICY` |`PORT` |`POSITION` |`POSTGRES`||`PRECEDING` |`PRECISION` |`PREFIX` |`PREPARE`||`PRIMARY` |`PRIORITIZE` |`PRIVATELINK` |`PRIVILEGES`||`PROGRESS` |`PROJECTION` |`PROTOBUF` |`PROTOCOL`||`PUBLIC` |`PUBLICATION` |`PUSHDOWN` |`QUALIFY`||`QUERY` |`QUOTE` |`RAISE` |`RANGE`||`RATE` |`RAW` |`READ` |`READY`||`REAL` |`REASSIGN` |`RECURSION` |`RECURSIVE`||`REDACTED` |`REDUCE` |`REFERENCE` |`REFERENCES`||`REFRESH` |`REGEX` |`REGION` |`REGISTRY`||`RELATION` |`RENAME` |`REOPTIMIZE` |`REPEATABLE`||`REPLACE` |`REPLACEMENT` |`REPLAN` |`REPLICA`||`REPLICAS` |`REPLICATION` |`RESET` |`RESPECT`||`RESTRICT` |`RETAIN` |`RETURN` |`RETURNING`||`REVOKE` |`RIGHT` |`ROLE` |`ROLES`||`ROLLBACK` |`ROTATE` |`ROUNDS` |`ROW`||`ROWS` |`RULES` |`SASL` |`SCALE`||`SCHEDULE` |`SCHEMA` |`SCHEMAS` |`SCOPE`||`SECOND` |`SECONDS` |`SECRET` |`SECRETS`||`SECURITY` |`SEED` |`SELECT` |`SEQUENCES`||`SERIALIZABLE` |`SERVER` |`SERVICE` |`SESSION`||`SET` |`SHARD` |`SHOW` |`SINK`||`SINKS` |`SIZE` |`SKEW` |`SMALLINT`||`SNAPSHOT` |`SOME` |`SOURCE` |`SOURCES`||`SQL` |`SSH` |`SSL` |`START`||`STDIN` |`STDOUT` |`STORAGE` |`STORAGECTL`||`STRATEGY` |`STRICT` |`STRING` |`STRONG`||`SUBSCRIBE` |`SUBSOURCE` |`SUBSOURCES` |`SUBSTRING`||`SUBTREE` |`SUPERUSER` |`SWAP` |`SYNTAX`||`SYSTEM` |`TABLE` |`TABLES` |`TAIL`||`TEMP` |`TEMPORARY` |`TEST` |`TEXT`||`THEN` |`TICK` |`TIES` |`TIME`||`TIMEOUT` |`TIMESTAMP` |`TIMESTAMPTZ` |`TIMING`||`TO` |`TOKEN` |`TOPIC` |`TPCH`||`TRACE` |`TRAILING` |`TRANSACTION` |`TRANSACTIONAL`||`TRANSFORM` |`TRIM` |`TRUE` |`TUNNEL`||`TYPE` |`TYPES` |`UNBOUNDED` |`UNCOMMITTED`||`UNION` |`UNIQUE` |`UNIT` |`UNKNOWN`||`UNNEST` |`UNTIL` |`UP` |`UPDATE`||`UPSERT` |`URL` |`USAGE` |`USER`||`USERNAME` |`USERS` |`USING` |`VALIDATE`||`VALUE` |`VALUES` |`VARCHAR` |`VARIADIC`||`VARYING` |`VERBOSE` |`VERSION` |`VIEW`||`VIEWS` |`WAIT` |`WAREHOUSE` |`WARNING`||`WEBHOOK` |`WHEN` |`WHERE` |`WHILE`||`WINDOW` |`WIRE` |`WITH` |`WITHIN`||`WITHOUT` |`WORK` |`WORKERS` |`WORKLOAD`||`WRITE` |`YEAR` |`YEARS` |`ZONE`||`ZONES` |&nbsp; |&nbsp; |&nbsp;|
 
 ---
 
@@ -11424,6 +11529,26 @@ granted through the matching `GRANT ALL ON TABLE` shorthand.
 ```mzsql
 REVOKE <SELECT | INSERT | UPDATE | DELETE | ALL [PRIVILEGES]> [, ...]
 ON TABLE <name> [, <name> ...]
+FROM <role_name> [, ... ];
+```
+
+<!-- ================== Network policy syntax ==================  -->
+
+**Network policy:**
+
+For specific network policies:
+
+```mzsql
+REVOKE <USAGE | ALL [PRIVILEGES]>
+ON NETWORK POLICY <name> [, ...]
+FROM <role_name> [, ... ];
+```
+
+For all network policies:
+
+```mzsql
+REVOKE <USAGE | ALL [PRIVILEGES]>
+ON ALL POLICIES
 FROM <role_name> [, ... ];
 ```
 
