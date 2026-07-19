@@ -2464,11 +2464,6 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
-      <td><code>mz_persist_watch_notify_upper_sent</code></td>
-      <td>count of strict shard upper advances signaled to upper waiters</td>
-      <td></td>
-    </tr>
-    <tr>
       <td><code>mz_persist_watch_notify_wait_finished</code></td>
       <td>count of watch wait calls resolved</td>
       <td></td>

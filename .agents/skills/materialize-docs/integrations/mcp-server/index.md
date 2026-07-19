@@ -28,9 +28,6 @@ and support the MCP `initialize`, `tools/list`, and `tools/call` methods.
 
 ## See also
 
-- [Use an ontology table](/architecture-patterns/ontology/) to curate join
-  relationships that agents query through the `query` tool before writing
-  multi-table SQL.
 - [MCP Server
   Troubleshooting](/integrations/mcp-server/mcp-server-troubleshooting/)
 - [Appendix: MCP Server (Python)](/integrations/mcp-server/llm) for locally-run,
@@ -1259,6 +1256,14 @@ curl -X POST <baseURL>/api/mcp/agent \
 
 ## Start querying
 
+Once connected to the MCP server, you can query your curated data products using
+either natural language or SQL:
+
+- *Via `materialize-agent`: What data products can I query?*
+- *SELECT * FROM mcp_product_performance LIMIT 5;*
+- *What's the `total_revenue` for product 42?*
+- *Perform a Pareto analysis on my products.*
+
 > **Warning:** By default, the [`query` tool](/integrations/mcp-server/mcp-agent-tools/#query)
 > is **enabled**. This tool allows arbitrary `SELECT` queries (including joins) on
 > **all** objects for which the agent has the appropriate privileges (`SELECT` on
@@ -1268,22 +1273,8 @@ curl -X POST <baseURL>/api/mcp/agent \
 > to `false`. See [Agent endpoint
 > configuration](/integrations/mcp-server/mcp-agent-config/).
 
-> **Tip:** Because the `query` tool can join across objects, consider maintaining an
-> [ontology table](/architecture-patterns/ontology/): a curated catalog of the
-> join relationships in your schema that the agent can query to confirm exact join
-> keys before writing multi-table SQL.
-
-Once connected to the MCP server, you can query your curated data products using
-either natural language or SQL:
-
-- *Via `materialize-agent`: What data products can I query?*
-- *SELECT * FROM mcp_product_performance LIMIT 5;*
-- *What's the `total_revenue` for product 42?*
-- *Perform a Pareto analysis on my products.*
-
 ## Related pages
 
-- [Use an ontology table](/architecture-patterns/ontology/)
 - [`materialize-agent` MCP Server available
   tools](/integrations/mcp-server/mcp-agent-tools/)
 - [`materialize-agent` MCP Server
@@ -1734,10 +1725,6 @@ curl -X POST <baseURL>/api/mcp/developer \
 
 ## Start asking questions
 
-> **Tip:** When the agent reads your user objects with the `query` tool, an [ontology
-> table](/architecture-patterns/ontology/) of curated join relationships in your
-> schema helps it confirm exact join keys before writing multi-table SQL.
-
 Once connected to the MCP server, you can ask natural language questions like:
 
 | Question | What the agent does | Tool |
@@ -1770,7 +1757,6 @@ The privileges required to use the `materialize-developer` MCP server are:
 
 ## Related pages
 
-- [Use an ontology table](/architecture-patterns/ontology/)
 - [`materialize-developer` MCP Server available
   tools](/integrations/mcp-server/mcp-developer-tools/)
 - [`materialize-developer` MCP Server

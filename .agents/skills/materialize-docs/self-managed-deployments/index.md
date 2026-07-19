@@ -169,7 +169,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.32.0
+  environmentdImageRef: materialize/environmentd:v26.31.2
 # ... additional fields omitted for brevity
 ```
 
@@ -184,7 +184,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.32.0
+  environmentdImageRef: materialize/environmentd:v26.31.2
 # ... additional fields omitted for brevity
 ```
 
@@ -424,7 +424,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.32.0
+  environmentdImageRef: materialize/environmentd:v26.31.2
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
   requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
@@ -441,7 +441,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.32.0
+  environmentdImageRef: materialize/environmentd:v26.31.2
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
 ```
@@ -1280,7 +1280,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.32.0&quot;</code>
+<code>&quot;v26.33.0&quot;</code>
 </td>
 </tr>
 
@@ -1797,7 +1797,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.32.0&quot;</code>
+**Default**: <code>&quot;v26.33.0&quot;</code>
 
 The tag/version of the operator image to be used
 
@@ -1932,7 +1932,6 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
-| v26.32 | v26.32 | v26.32 | 2026-07-10 | See <a href="/releases/#v26320" >v26.32 release notes</a> |
 | v26.31.2 | v26.31.2 | v26.31.2 | 2026-07-08 | See <a href="/releases/#v26312" >v26.31.2 release notes</a> |
 | v26.31 | v26.31 | v26.31 | 2026-07-03 | See <a href="/releases/#v26310" >v26.31 release notes</a> |
 | v26.30.1 | v26.30.1 | v26.30.1 | 2026-06-26 | See <a href="/releases/#v26301" >v26.30.1 release notes</a> |
@@ -2248,7 +2247,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.32.0
+  --version v26.31.2
 ```
 
 ## Upgrading Materialize Instances

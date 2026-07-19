@@ -14891,7 +14891,9 @@ Rows that compare equal will be ordered in an unspecified way.</p>
 <p>See also <a href="/transform-data/idiomatic-materialize-sql/top-k/" >Idiomatic Materialize SQL: Top-K</a>.</p>
 ### System information functionsFunctions that return information about the system.#### `mz_environment_id() -> text`
 
-Returns a string containing a <code>uuid</code> uniquely identifying the Materialize environment.#### `mz_uptime() -> interval`
+Returns a string containing a <code>uuid</code> uniquely identifying the Materialize environment.
+
+**Note:** This function is [unmaterializable](#unmaterializable-functions).#### `mz_uptime() -> interval`
 
 Returns the length of time that the materialized process has been running.
 

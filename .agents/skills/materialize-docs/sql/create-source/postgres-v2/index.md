@@ -1,6 +1,5 @@
 # CREATE SOURCE: PostgreSQL (New Syntax)
 Creates a new source from PostgreSQL 11+.
-> **Public Preview:** This feature is in public preview.
 
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/postgres/).
 

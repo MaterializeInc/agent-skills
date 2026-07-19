@@ -3583,8 +3583,6 @@ addition to dropping any state that Materialize previously had for the table.
 
 ## CREATE SOURCE: PostgreSQL (New Syntax)
 
-> **Public Preview:** This feature is in public preview.
-
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/postgres/).
 
 Creates a new source from PostgreSQL.  Materialize
@@ -3866,8 +3864,6 @@ For more information, see [`CREATE TABLE`](/sql/create-table/).
 ---
 
 ## CREATE SOURCE: SQL Server
-
-> **Public Preview:** This feature is in public preview.
 
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/sql-server/).
 

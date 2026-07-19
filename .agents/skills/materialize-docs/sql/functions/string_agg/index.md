@@ -34,10 +34,8 @@ _delimiter_  | `text`  | The value to precede each concatenated value.
 
 `string_agg` returns a [`text`](/sql/types/text) value.
 
-Any `ORDER BY` applied before the aggregate function is evaluated, such as in
-a feeding subquery, is ignored. Unless `ORDER BY` is included in the aggregate
-function call itself, the order in which the values are aggregated is
-unspecified.
+This function always executes on the data from `value` as if it were sorted in ascending order before the function call. Any specified ordering is
+ignored. If you need to perform aggregation in a specific order, you must specify `ORDER BY` within the aggregate function call itself. Otherwise incoming rows are not guaranteed any order.
 
 ### Usage in dataflows
 
@@ -57,6 +55,49 @@ CREATE VIEW bar AS SELECT string_agg(foo_view.bar, ',');
 ```
 
 ## Examples
+
+```mzsql
+SELECT string_agg(column1, column2)
+FROM (
+    VALUES ('z', ' !'), ('a', ' @'), ('m', ' #')
+);
+```
+```nofmt
+ string_agg
+------------
+ a #m !z
+```
+
+Note that in the following example, the `ORDER BY` of the subquery feeding into `string_agg` gets ignored.
+
+```mzsql
+SELECT column1, column2
+FROM (
+    VALUES ('z', ' !'), ('a', ' @'), ('m', ' #')
+) ORDER BY column1 DESC;
+```
+```nofmt
+ column1 | column2
+---------+---------
+ z       |  !
+ m       |  #
+ a       |  @
+```
+
+```mzsql
+SELECT string_agg(column1, column2)
+FROM (
+    SELECT column1, column2
+    FROM (
+        VALUES ('z', ' !'), ('a', ' @'), ('m', ' #')
+    ) f ORDER BY column1 DESC
+) g;
+```
+```nofmt
+ string_agg
+------------
+ a #m !z
+```
 
 ```mzsql
 SELECT string_agg(b, ',' ORDER BY a DESC) FROM table;

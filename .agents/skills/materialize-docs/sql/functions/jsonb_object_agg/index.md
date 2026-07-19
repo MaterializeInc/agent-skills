@@ -38,10 +38,8 @@ pair is retained in the output.
 
 If `keys` is null for any input row, that entry pair will be dropped.
 
-Any `ORDER BY` applied before the aggregate function is evaluated, such as in
-a feeding subquery, is ignored. Unless `ORDER BY` is included in the aggregate
-function call itself, the order in which the values are aggregated is
-unspecified.
+This function always executes on the data from `value` as if it were sorted in ascending order before the function call. Any specified ordering is
+ignored. If you need to perform aggregation in a specific order, you must specify `ORDER BY` within the aggregate function call itself. Otherwise incoming rows are not guaranteed any order.
 
 ### Usage in dataflows
 
