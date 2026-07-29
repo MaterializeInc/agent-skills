@@ -9,7 +9,6 @@ of materializing the view.
 ## Syntax
 
 **CREATE VIEW:**
-### Create view
 To create a view:
 
 ```mzsql
@@ -27,7 +26,6 @@ CREATE [TEMP|TEMPORARY] VIEW [IF NOT EXISTS] <view_name>[(<col_ident>, ...)] AS
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) that defines the view.  |
 
 **CREATE OR REPLACE VIEW:**
-### Create or replace view
 To create, or if a view exists with the same name, replace it with the view
 defined in this statement:
 

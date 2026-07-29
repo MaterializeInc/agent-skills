@@ -111,7 +111,8 @@ visible to a transaction during its execution.
 
 ## Supported isolation levels
 
-Materialize accepts the following isolation levels:
+Materialize accepts the following isolation levels for your SQL transactions
+against Materialize:
 
 | Isolation level | Behavior in Materialize |
 | --- | --- |

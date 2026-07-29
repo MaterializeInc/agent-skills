@@ -12,6 +12,9 @@ with Materialize.
 |-------|------------------|-------------|
 | `mcp-developer-analysis` | Exact catalog schemas, diagnostic workflows, remediation runbooks, and guardrails for known pitfalls (cluster-scoped queries, uint8 ID mismatches, etc.). | Operational introspection and troubleshooting via the `materialize-developer` server. Examples: *"why is my materialized view stale?"*, *"what can I optimize to save costs?"*, *"is my source healthy?"* |
 | `materialize-docs` | Comprehensive Materialize documentation, including SQL syntax, idiomatic patterns, data ingestion, concepts, and best practices (400+ reference files). | Authoring view definitions, learning concepts, looking up patterns. Useful with either MCP server. Examples: *"show me how to deduplicate a stream"*, *"what's the idiomatic top-K pattern?"*, *"how do I create a Kafka source?"* |
+| `materialize-dbt` | dbt-materialize adapter usage: materializations, profile configuration, index creation, blue/green deployments, and testing. | Managing Materialize pipelines with dbt. Examples: *"write a dbt model for a materialized view"*, *"how do I do a blue/green deployment with dbt?"* |
+| `materialize-terraform-provider` | Provider configuration for Cloud and self-managed, navigation into the provider's auto-generated resource reference, cross-resource patterns, import workflows, and gotchas. | Managing Materialize resources declaratively with Terraform. Examples: *"create a Kafka source with Terraform"*, *"import my existing clusters into Terraform state"*, *"set up RBAC grants in Terraform"* |
+| `materialize-terraform-self-managed` | Module layout and variables for deploying self-managed Materialize on AWS, Azure, and GCP: networking, Kubernetes, backend URL formats, instance sizing, upgrades, and gotchas. | Deploying or operating self-managed Materialize infrastructure with Terraform. Examples: *"deploy Materialize on EKS"*, *"what instance types should Materialize nodes use?"*, *"upgrade my self-managed Materialize"* |
 
 ## MCP servers
 
@@ -28,10 +31,11 @@ and support the MCP `initialize`, `tools/list`, and `tools/call` methods.
 
 ## See also
 
+- [Use an ontology table](/architecture-patterns/ontology/) to curate join
+  relationships that agents query through the `query` tool before writing
+  multi-table SQL.
 - [MCP Server
   Troubleshooting](/integrations/mcp-server/mcp-server-troubleshooting/)
-- [Appendix: MCP Server (Python)](/integrations/mcp-server/llm) for locally-run,
-  separate MCP Server.
 
 ---
 
@@ -261,117 +265,6 @@ ALTER ROLE my_agent RESET restrict_to_user_objects;
 
 ---
 
-## Appendix: MCP Server (Python)
-
-> **Disambiguation:** This page provides information on the locally-run, separate MCP Server. For documentation on using the new built-in MCP Server endpoints, see: - [MCP Server for Developer](/integrations/mcp-server/mcp-developer/) 
-
-The [Model Context Protocol (MCP) Server for Materialize](https://materialize.com/blog/materialize-turns-views-into-tools-for-agents/) lets large language models (LLMs) call your indexed views as real-time tools.
-The MCP Server automatically turns any indexed view with a comment into a callable, typed interface that LLMs can use to fetch structured, up-to-date answers—directly from the database.
-
-These tools behave like stable APIs.
-They're governed by your SQL privileges, kept fresh by Materialize's incremental view maintenance, and ready to power applications that rely on live context instead of static embeddings or unpredictable prompt chains.
-
-## Get Started
-
-We recommend using [uv](https://docs.astral.sh/uv/) to install and run the server.
-It provides fast, reliable Python environments with dependency resolution that matches pip.
-
-If you don't have uv installed, you can install it first:
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-To install and launch the MCP Server for Materialize:
-
-```bash
-uv venv
-uv pip install mcp-materialize-agents
-uv run mcp_materialize_agents
-```
-
-You can configure it using CLI flags or environment variables:
-
-| Flag              | Env Var             | Default                                               | Description                                   |
-| ----------------- | ------------------- | ----------------------------------------------------- | --------------------------------------------- |
-| `--mz-dsn`        | `MZ_DSN`            | `postgres://materialize@localhost:6875/materialize`   | Materialize connection string                 |
-| `--transport`     | `MCP_TRANSPORT`     | `stdio`                                               | Communication mode (`stdio`, `sse`, or `http`) |
-| `--host`          | `MCP_HOST`          | `0.0.0.0`                                             | Host for `sse` and `http` modes               |
-| `--port`          | `MCP_PORT`          | `3001` (sse), `8001` (http)                           | Port for `sse` and `http` modes               |
-| `--pool-min-size` | `MCP_POOL_MIN_SIZE` | `1`                                                   | Minimum DB pool size                          |
-| `--pool-max-size` | `MCP_POOL_MAX_SIZE` | `10`                                                  | Maximum DB pool size                          |
-| `--log-level`     | `MCP_LOG_LEVEL`     | `INFO`                                                | Logging verbosity                             |
-
-## Define Tools
-
-Any view in Materialize can become a callable tool as long as it meets a few requirements to ensure that the tool is fast to query, safe to expose, and easy for language models to use correctly.
-
-- [The view is indexed.](#1-define-and-index)
-- [The view includes a top level comment.](#2-comment)
-- [The role used to run the MCP Server must have required privileges.](#3-set-rbac-permissions)
-
-### 1. Define and Index
-
-You must create at least one [index](/concepts/indexes/) on the view. The columns in the index define the required input fields for the tool.
-
-You can index a single column:
-
-```mzsql
-CREATE INDEX ON payment_status_summary (order_id);
-```
-
-Or multiple columns:
-
-```mzsql
-CREATE INDEX ON payment_status_summary (user_id, order_id);
-```
-
-Every indexed column becomes part of the tool's input schema.
-
-### 2. Comment
-
-The view must include a top-level comment that is used as the tool's description.
-Comments should be descriptive as they help the model reason about what the tool does and when to use it.
-You can optionally add a comment on any of the indexed columns to improve the tool's schema with descriptions for each field.
-
-```mzsql
-COMMENT ON VIEW payment_status_summary IS
-  'Given a user ID and order ID, return the current payment status and last update time.
-   Use this tool to drive user-facing payment tracking.';
-
-COMMENT ON COLUMN payment_status_summary.user_id IS
-  'The ID of the user who placed the order';
-
-COMMENT ON COLUMN payment_status_summary.order_id IS
-  'The unique identifier for the order';
-```
-
-### 3. Set RBAC Permissions
-
-The database role used to run the MCP Server must:
-
-* Have `USAGE` privileges on the database and schema the view is in.
-* Have `SELECT` privileges on the view.
-* Have `USAGE` privileges on the cluster where the index is installed.
-
-```mzsql
-GRANT USAGE on DATABASE materialize TO mcp_server_role;
-GRANT USAGE on SCHEMA materialize.public TO mcp_server_role;
-GRANT SELECT ON payment_status_summary TO mcp_server_role;
-GRANT USAGE ON CLUSTER mcp_cluster TO mcp_server_role;
-```
-
-## Related Pages
-
-* [Coding Agent Skills](/integrations/coding-agent-skills/)
-* [CREATE VIEW](/sql/create-view)
-* [CREATE INDEX](/sql/create-index)
-* [COMMENT ON](/sql/comment-on)
-* [CREATE ROLE](/sql/create-role)
-* [GRANT PRIVILEGE](/sql/grant-privilege)
-
----
-
 ## Developer endpoint configuration
 
 ## Available configuration parameters
@@ -544,7 +437,7 @@ external server is required.
 
 The `materialize-agent` MCP server lets AI agents query business-facing data
 products over HTTP. You can connect an MCP-compatible client (such as Claude
-Code, Claude Desktop, or Cursor) to the MCP server and ask the agent to discover
+Code, Claude Cowork, or Cursor) to the MCP server and ask the agent to discover
 and query your data products using either natural language or SQL:
 
 - *SELECT * FROM mcp_product_performance LIMIT 5;*
@@ -817,8 +710,13 @@ URL: `<baseURL>/api/mcp/agent`.
 
 **Self-Managed:**
 
-Self-Managed deployments using OAuth require SSO, which uses TLS. Get your MCP
-server URL from the Materialize Console:
+Self-Managed deployments using OAuth require SSO, which uses TLS. Your
+identity provider may also need additional configuration for MCP clients, such
+as a pre-registered OAuth client if your IdP does not support anonymous
+dynamic client registration. See [Connecting MCP
+clients](/security/self-managed/sso/#connecting-mcp-clients).
+
+Get your MCP server URL from the Materialize Console:
 
 1. Log in via the Materialize Console.
 
@@ -850,14 +748,29 @@ In the following, replace `<baseURL>` with the MCP server URL from [Step
      "<baseURL>/api/mcp/agent"
    ```
 
+   For Self-Managed deployments using OAuth with a pre-registered OIDC
+   client, add `--client-id` and `--callback-port`:
+
+   ```sh
+   claude mcp add --transport http "materialize-agent" \
+     "<baseURL>/api/mcp/agent" \
+     --client-id <YOUR_CLIENT_ID> --callback-port 8080
+   ```
+
+   The `--callback-port` value must match the port in the
+   `http://localhost:<port>/callback` redirect URI registered on the OIDC
+   client. See [Connecting MCP
+   clients](/security/self-managed/sso/#connecting-mcp-clients) for
+   the full IdP configuration.
+
 1. Restart Claude Code. On first connection, your browser opens to complete
    sign-in and connect.
 
 1. Upon successful connection, you can [Start querying](#start-querying).
 
-**Claude Desktop/Chrome:**
+**Claude Cowork/Chrome:**
 
-To configure Claude Desktop/Chrome, add a custom connector. The exact steps
+To configure Claude Cowork/Chrome, add a custom connector. The exact steps
 depend on your Claude plan; for example:
 
 - **Organization settings** → **Connectors** → **Add** → **Custom** → **Web**,
@@ -1174,28 +1087,49 @@ When connecting to the MCP server, the MCP-compatible client needs:
 
 1. Restart Claude Code to pick up the new setting.
 
-**Claude Desktop:**
+**Claude Cowork:**
 
-1. Add the `materialize-agent` MCP server entry to your Claude Desktop
+Claude Cowork's `claude_desktop_config.json` does not connect to a remote MCP
+server directly. Use the
+[`mcp-remote`](https://www.npmjs.com/package/mcp-remote) bridge, which runs
+locally and forwards requests to the `materialize-agent` MCP server over HTTP.
+`mcp-remote` is invoked with `npx` and requires [Node.js](https://nodejs.org/).
+
+> **Note:** [`mcp-remote`](https://github.com/geelen/mcp-remote) is a third-party,
+> community-maintained tool. It is not maintained by Anthropic or Materialize.
+> Your MCP token is passed to it on each launch. The configuration below pins a
+> specific version rather than pulling the latest release. Review the tool and
+> update the pinned version as appropriate for your environment.
+
+1. Add the `materialize-agent` MCP server entry to your Claude Cowork
    configuration (`claude_desktop_config.json`).
    - When merging into an existing `mcpServers` object, remember to add commas
      between entries.
    - If the `mcpServers` field does not already exist, add it as well.
-   - For older Claude Desktop versions, you may need to include the transport
-     `"type": "http",` as well as part of the `materialize-agent` entry.
 
-   ```json {hl_lines="3-8"}
+   ```json {hl_lines="3-14"}
    {
      "mcpServers": {
        "materialize-agent": {
-         "url": "<baseURL>/api/mcp/agent",
-         "headers": {
-           "Authorization": "Basic <mcp-token>"
+         "command": "npx",
+         "args": [
+           "-y", "mcp-remote@0.1.38",
+           "<baseURL>/api/mcp/agent",
+           "--header", "Authorization:${AUTH_HEADER}"
+         ],
+         "env": {
+           "AUTH_HEADER": "Basic <mcp-token>"
          }
        }
      }
    }
    ```
+
+   The `Authorization` header value is passed through the `AUTH_HEADER`
+   environment variable. This avoids a known `mcp-remote` issue where a space in
+   a `--header` argument (such as the space in `Basic <mcp-token>`) is
+   mishandled on some platforms. The colon in `"Authorization:${AUTH_HEADER}"`
+   has no trailing space.
 
    Update the `<baseURL>` and `<mcp-token>` placeholders with your values:
 
@@ -1205,7 +1139,7 @@ When connecting to the MCP server, the MCP-compatible client needs:
    | **Self-Managed** | Replace with your value | Replace with your value |
    | **Emulator**     | `http://localhost:6876` | Replace with your value |
 
-1. Restart Claude Desktop to pick up the new setting.
+1. Restart Claude Cowork to pick up the new setting.
 
 **Cursor:**
 
@@ -1256,14 +1190,6 @@ curl -X POST <baseURL>/api/mcp/agent \
 
 ## Start querying
 
-Once connected to the MCP server, you can query your curated data products using
-either natural language or SQL:
-
-- *Via `materialize-agent`: What data products can I query?*
-- *SELECT * FROM mcp_product_performance LIMIT 5;*
-- *What's the `total_revenue` for product 42?*
-- *Perform a Pareto analysis on my products.*
-
 > **Warning:** By default, the [`query` tool](/integrations/mcp-server/mcp-agent-tools/#query)
 > is **enabled**. This tool allows arbitrary `SELECT` queries (including joins) on
 > **all** objects for which the agent has the appropriate privileges (`SELECT` on
@@ -1273,8 +1199,22 @@ either natural language or SQL:
 > to `false`. See [Agent endpoint
 > configuration](/integrations/mcp-server/mcp-agent-config/).
 
+> **Tip:** Because the `query` tool can join across objects, consider maintaining an
+> [ontology table](/architecture-patterns/ontology/): a curated catalog of the
+> join relationships in your schema that the agent can query to confirm exact join
+> keys before writing multi-table SQL.
+
+Once connected to the MCP server, you can query your curated data products using
+either natural language or SQL:
+
+- *Via `materialize-agent`: What data products can I query?*
+- *SELECT * FROM mcp_product_performance LIMIT 5;*
+- *What's the `total_revenue` for product 42?*
+- *Perform a Pareto analysis on my products.*
+
 ## Related pages
 
+- [Use an ontology table](/architecture-patterns/ontology/)
 - [`materialize-agent` MCP Server available
   tools](/integrations/mcp-server/mcp-agent-tools/)
 - [`materialize-agent` MCP Server
@@ -1299,7 +1239,7 @@ process or external server is required.
 
 ## Overview
 
-You can connect an MCP-compatible client (such as Claude Code, Claude Desktop,
+You can connect an MCP-compatible client (such as Claude Code, Claude Cowork,
 or Cursor) to the MCP server to:
 
 - Ask questions about the Materialize system
@@ -1350,8 +1290,13 @@ server URL: `<baseURL>/api/mcp/developer`.
 
 **Self-Managed:**
 
-Self-Managed deployments using OAuth require SSO, which uses TLS. Get your MCP
-server URL from the Materialize Console:
+Self-Managed deployments using OAuth require SSO, which uses TLS. Your
+identity provider may also need additional configuration for MCP clients, such
+as a pre-registered OAuth client if your IdP does not support anonymous
+dynamic client registration. See [Connecting MCP
+clients](/security/self-managed/sso/#connecting-mcp-clients).
+
+Get your MCP server URL from the Materialize Console:
 
 1. Log in via the Materialize Console.
 1. Click the **Connect** link (lower-left corner) to open the **Connect** modal
@@ -1382,6 +1327,21 @@ your MCP client. The `materialize-developer` MCP server URL has the form:
      <baseURL>/api/mcp/developer
    ```
 
+   For Self-Managed deployments using OAuth with a pre-registered OIDC
+   client, add `--client-id` and `--callback-port`:
+
+   ```sh
+   claude mcp add --transport http materialize-developer \
+     <baseURL>/api/mcp/developer \
+     --client-id <YOUR_CLIENT_ID> --callback-port 8080
+   ```
+
+   The `--callback-port` value must match the port in the
+   `http://localhost:<port>/callback` redirect URI registered on the OIDC
+   client. See [Connecting MCP
+   clients](/security/self-managed/sso/#connecting-mcp-clients) for
+   the full IdP configuration.
+
    Update the `<baseURL>` placeholder with your value:
 
    | Deployment   |  `<baseURL>`                                                     |
@@ -1395,9 +1355,9 @@ your MCP client. The `materialize-developer` MCP server URL has the form:
 1. Upon successful connection, you can [Start asking
    questions](#start-asking-questions).
 
-**Claude Desktop/Chrome:**
+**Claude Cowork/Chrome:**
 
-To configure Claude Desktop/Chrome, add a custom connector. The exact steps
+To configure Claude Cowork/Chrome, add a custom connector. The exact steps
 depend on your Claude plan; for example:
 
 - **Organization settings** → **Connectors** → **Add** → **Custom** → **Web**,
@@ -1637,28 +1597,50 @@ where `http://localhost:6876` is your base URL.
 1. Upon successful connection, you can [Start asking
    questions](#start-asking-questions).
 
-**Claude Desktop:**
+**Claude Cowork:**
 
-1. Add the `materialize-developer` MCP server entry to your Claude Desktop
+Claude Cowork's `claude_desktop_config.json` does not connect to a remote MCP
+server directly. Use the
+[`mcp-remote`](https://www.npmjs.com/package/mcp-remote) bridge, which runs
+locally and forwards requests to the `materialize-developer` MCP server over
+HTTP. `mcp-remote` is invoked with `npx` and requires
+[Node.js](https://nodejs.org/).
+
+> **Note:** [`mcp-remote`](https://github.com/geelen/mcp-remote) is a third-party,
+> community-maintained tool. It is not maintained by Anthropic or Materialize.
+> Your MCP token is passed to it on each launch. The configuration below pins a
+> specific version rather than pulling the latest release. Review the tool and
+> update the pinned version as appropriate for your environment.
+
+1. Add the `materialize-developer` MCP server entry to your Claude Cowork
    configuration (`claude_desktop_config.json`).
    - When merging into an existing `mcpServers` object, remember to add commas
      between entries.
    - If the `mcpServers` field does not already exist, add it as well.
-   - For older Claude Desktop versions, you may need to include the transport
-     `"type": "http",` as well as part of the `materialize-developer` entry.
 
-   ```json {hl_lines="3-8"}
+   ```json {hl_lines="3-14"}
    {
      "mcpServers": {
        "materialize-developer": {
-         "url": "<baseURL>/api/mcp/developer",
-         "headers": {
-           "Authorization": "Basic <mcp-token>"
+         "command": "npx",
+         "args": [
+           "-y", "mcp-remote@0.1.38",
+           "<baseURL>/api/mcp/developer",
+           "--header", "Authorization:${AUTH_HEADER}"
+         ],
+         "env": {
+           "AUTH_HEADER": "Basic <mcp-token>"
          }
        }
      }
    }
    ```
+
+   The `Authorization` header value is passed through the `AUTH_HEADER`
+   environment variable. This avoids a known `mcp-remote` issue where a space in
+   a `--header` argument (such as the space in `Basic <mcp-token>`) is
+   mishandled on some platforms. The colon in `"Authorization:${AUTH_HEADER}"`
+   has no trailing space.
 
    Update the `<baseURL>` and `<mcp-token>` placeholders with your values:
 
@@ -1668,7 +1650,7 @@ where `http://localhost:6876` is your base URL.
    | **Self-Managed** | Replace with your value | Replace with your value |
    | **Emulator**     | `http://localhost:6876` | Replace with your value |
 
-1. Restart Claude Desktop to pick up the new setting.
+1. Restart Claude Cowork to pick up the new setting.
 
 1. Upon successful connection, you can [Start asking
    questions](#start-asking-questions).
@@ -1725,6 +1707,10 @@ curl -X POST <baseURL>/api/mcp/developer \
 
 ## Start asking questions
 
+> **Tip:** When the agent reads your user objects with the `query` tool, an [ontology
+> table](/architecture-patterns/ontology/) of curated join relationships in your
+> schema helps it confirm exact join keys before writing multi-table SQL.
+
 Once connected to the MCP server, you can ask natural language questions like:
 
 | Question | What the agent does | Tool |
@@ -1757,6 +1743,7 @@ The privileges required to use the `materialize-developer` MCP server are:
 
 ## Related pages
 
+- [Use an ontology table](/architecture-patterns/ontology/)
 - [`materialize-developer` MCP Server available
   tools](/integrations/mcp-server/mcp-developer-tools/)
 - [`materialize-developer` MCP Server
@@ -1838,4 +1825,21 @@ echo '<your-base64-token>' | base64 --decode
 ```
 
 Make sure the decoded output matches `user:password` exactly.
+
+## OAuth sign-in fails (Self-Managed)
+
+**Symptom:** The browser sign-in fails at the identity provider (for example,
+with a registration error or `invalid_scope`), or sign-in completes but the
+client reports that the credentials were rejected on connect.
+
+**Cause:** OAuth for Self-Managed deployments relies on your SSO identity
+provider. Most enterprise IdPs need additional configuration for MCP clients,
+such as a pre-registered OAuth client, an authentication claim in access
+tokens, and the authorization server audience in `oidc_audience`.
+
+**Fix:** See the [SSO troubleshooting
+table](/security/self-managed/sso/#troubleshooting) for the specific symptoms
+and resolutions, and the [Connecting MCP
+clients](/security/self-managed/sso/#connecting-mcp-clients) section for the
+full IdP configuration requirements.
 

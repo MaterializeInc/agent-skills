@@ -49,31 +49,15 @@ cannot serve queries. That is, queries issued to the snapshotting source (and
 its subsources) will return after the snapshotting completes (unless the user
 breaks out of the query).
 
-<p>Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
-the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#available-sizes" >size of your ingestion cluster</a>.</p>
-<p>We&rsquo;ve observed the following approximate snapshot rates from PostgreSQL:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Cluster Size</th>
-          <th>Snapshot Rate</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>25 cc</td>
-          <td>~20 MB/s</td>
-      </tr>
-      <tr>
-          <td>100 cc</td>
-          <td>~50 MB/s</td>
-      </tr>
-      <tr>
-          <td>800 cc</td>
-          <td>~200 MB/s</td>
-      </tr>
-  </tbody>
-</table>
+Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
+the upstream database, the number of tables (more tables can be parallelized in Postgres), and the [size of your ingestion cluster](/sql/create-cluster/#available-sizes).
+
+We've observed the following approximate snapshot rates from PostgreSQL:
+| Cluster Size | Snapshot Rate |
+|--------------|---------------|
+| 25 cc | ~20 MB/s |
+| 100 cc | ~50 MB/s |
+| 800 cc | ~200 MB/s |
 
 To determine whether your source has completed ingesting the initial snapshot,
 you can query the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
@@ -95,48 +79,34 @@ monitor its progress. See [Monitoring data ingestion](/ingest-data/monitoring-da
 
 ## How do I speed up the snapshotting process?
 
-<p>Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
-the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#available-sizes" >size of your ingestion cluster</a>.</p>
-<p>We&rsquo;ve observed the following approximate snapshot rates from PostgreSQL:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Cluster Size</th>
-          <th>Snapshot Rate</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>25 cc</td>
-          <td>~20 MB/s</td>
-      </tr>
-      <tr>
-          <td>100 cc</td>
-          <td>~50 MB/s</td>
-      </tr>
-      <tr>
-          <td>800 cc</td>
-          <td>~200 MB/s</td>
-      </tr>
-  </tbody>
-</table>
+Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
+the upstream database, the number of tables (more tables can be parallelized in Postgres), and the [size of your ingestion cluster](/sql/create-cluster/#available-sizes).
+
+We've observed the following approximate snapshot rates from PostgreSQL:
+| Cluster Size | Snapshot Rate |
+|--------------|---------------|
+| 25 cc | ~20 MB/s |
+| 100 cc | ~50 MB/s |
+| 800 cc | ~200 MB/s |
 
 To speed up the snapshotting process, you can scale up the [size of the cluster
 ](/sql/alter-cluster/#alter-cluster-size) used for snapshotting, then scale it
 back down once the snapshot completes.
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">ALTER</span><span class="w"> </span><span class="k">CLUSTER</span><span class="w"> </span><span class="o">&lt;</span><span class="n">cluster_name</span><span class="o">&gt;</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="k">SIZE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">new_size</span><span class="o">&gt;</span><span class="w"> </span><span class="p">);</span><span class="w">
-</span></span></span></code></pre></div><blockquote>
-<p><strong>Note:</strong> Resizing a cluster with sources requires the cluster to restart. This operation
-incurs downtime for the duration it takes for all objects in the cluster to
-<a href="/ingest-data/#hydration" >hydrate</a>.
-You might want to let the new-sized replica hydrate before shutting down the
-current replica. See <a href="/sql/alter-cluster/#zero-downtime-cluster-resizing" >zero-downtime cluster
-resizing</a> about automating
-this process.</p>
-</blockquote>
-<p>Once the initial snapshot has completed, you can resize the cluster for steady
-state.</p>
+```sql
+ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
+```
+
+> **Note:** Resizing a cluster with sources requires the cluster to restart. This operation
+> incurs downtime for the duration it takes for all objects in the cluster to
+> [hydrate](/ingest-data/#hydration).
+> You might want to let the new-sized replica hydrate before shutting down the
+> current replica. See the [resizing
+> process](/sql/alter-cluster/#resizing-process) about automating
+> this process.
+
+Once the initial snapshot has completed, you can resize the cluster for steady
+state.
 
 For upsert sources, a larger cluster can not only speed up snapshotting, but may
 also be necessary to support increased memory usage during the process. For more

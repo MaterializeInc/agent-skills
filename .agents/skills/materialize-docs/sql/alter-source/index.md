@@ -12,8 +12,6 @@ Use `ALTER SOURCE` to:
 
 **Add subsource:**
 
-### Add subsource
-
 To add the specified upstream table(s) to the specified PostgreSQL/MySQL/SQL Server source:
 
 ```mzsql
@@ -40,8 +38,6 @@ ALTER SOURCE [IF EXISTS] <name>
 
 **Rename:**
 
-### Rename
-
 To rename a source:
 
 ```mzsql
@@ -56,8 +52,6 @@ ALTER SOURCE <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a source:
 
@@ -74,8 +68,6 @@ To change the owner of a source, you must be the owner of the source and have
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
 
 **(Re)Set retain history config:**
-
-### (Re)Set retain history config
 
 To set the retention history for a source:
 
@@ -101,8 +93,6 @@ ALTER SOURCE [IF EXISTS] <name>  RESET (RETAIN HISTORY);
 | `<name>` | The name of the source you want to alter.  |
 
 **(Re)Set timestamp interval:**
-
-### (Re)Set timestamp interval
 
 To set the timestamp interval for a source:
 

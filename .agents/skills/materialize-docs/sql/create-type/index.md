@@ -7,7 +7,6 @@ see [SQL Data Types: Custom types](../types/#custom-types).
 ## Syntax
 
 **Row type:**
-### Row type
 
 ```mzsql
 CREATE TYPE <type_name> AS (<field_name> <field_type>, ...);
@@ -21,7 +20,6 @@ CREATE TYPE <type_name> AS (<field_name> <field_type>, ...);
 | `<field_type>` | The data type of a field indicated by `field_name`.  |
 
 **List type:**
-### List type
 
 ```mzsql
 CREATE TYPE <type_name> AS LIST (ELEMENT TYPE = <element_type>);
@@ -34,7 +32,6 @@ CREATE TYPE <type_name> AS LIST (ELEMENT TYPE = <element_type>);
 | `<element_type>` | Creates a custom [`list`](/sql/types/list) whose elements are of `<element_type>`.  |
 
 **Map type:**
-### Map type
 
 ```mzsql
 CREATE TYPE <type_name> AS MAP (KEY TYPE = <key_type>, VALUE TYPE = <value_type>);

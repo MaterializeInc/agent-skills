@@ -14,7 +14,6 @@ default privilege.
 ## Syntax
 
 **GRANT:**
-### GRANT
 
 `ALTER DEFAULT PRIVILEGES` defines default privileges that will be applied to
 objects created by a role in the future. It does not affect any existing
@@ -48,7 +47,6 @@ ALTER DEFAULT PRIVILEGES
 | **TO** `<target_role>` | The role who will be granted the default privilege. Use the `PUBLIC` pseudo-role to grant privileges to all roles.  |
 
 **REVOKE:**
-### REVOKE
 
 > **Note:** `ALTER DEFAULT PRIVILEGES` cannot be used to revoke the default owner privileges
 > on objects. Those privileges must be revoked manually after the object is

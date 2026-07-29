@@ -64,6 +64,15 @@ If you want to use `jq` and do not have `jq` installed, install.
 
 ### License key
 
+Starting in v26.0, Self-Managed Materialize requires a license key.
+
+| License key type | Deployment type | Action |
+| --- | --- | --- |
+| Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
+| Community | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
+| Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
+| Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
+
 ## A. Authenticate with Azure
 
 1. Open a Terminal window.
@@ -158,20 +167,20 @@ deploys a sample infrastructure on Azure with the following components:
    MY_ORGANIZATION=<enter-your-organization>
    ```
 
-1. Clone your forked repo and checkout the `v0.8.38` tag. For example,
+1. Clone your forked repo and checkout the `v0.8.42` tag. For example,
 
    - If cloning via SSH (substitute `YOUR_ORGANIZATION` with your organization's
      name):
 
      ```bash
-     git clone --depth 1 -b v0.8.38 git@github.com:${MY_ORGANIZATION}/terraform-azurerm-materialize.git
+     git clone --depth 1 -b v0.8.42 git@github.com:${MY_ORGANIZATION}/terraform-azurerm-materialize.git
      ```
 
    - If cloning via HTTPS (substitute `YOUR_ORGANIZATION` with your
      organization's name):
 
      ```bash
-     git clone --depth 1 -b v0.8.38 https://github.com/${MY_ORGANIZATION}/terraform-azurerm-materialize.git
+     git clone --depth 1 -b v0.8.42 https://github.com/${MY_ORGANIZATION}/terraform-azurerm-materialize.git
      ```
 
 1. Go to the `examples/simple` folder in the Materialize Terraform repo

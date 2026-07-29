@@ -165,17 +165,17 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     </tr>
     <tr>
       <td><code>mz_arrangement_sizes_collection_time_seconds_bucket</code></td>
-      <td>Seconds to read mz_object_arrangement_sizes and prepare history-table updates for one snapshot.</td>
+      <td>Seconds to read mz_object_arrangement_sizes and prepare history records for one snapshot.</td>
       <td><code>le</code></td>
     </tr>
     <tr>
       <td><code>mz_arrangement_sizes_collection_time_seconds_count</code></td>
-      <td>Seconds to read mz_object_arrangement_sizes and prepare history-table updates for one snapshot.</td>
+      <td>Seconds to read mz_object_arrangement_sizes and prepare history records for one snapshot.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_arrangement_sizes_collection_time_seconds_sum</code></td>
-      <td>Seconds to read mz_object_arrangement_sizes and prepare history-table updates for one snapshot.</td>
+      <td>Seconds to read mz_object_arrangement_sizes and prepare history records for one snapshot.</td>
       <td></td>
     </tr>
     <tr>
@@ -319,8 +319,18 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
-      <td><code>mz_catalog_snapshot_latency_seconds</code></td>
-      <td>Total latency for fetching a snapshot of the durable catalog.</td>
+      <td><code>mz_catalog_snapshot_latency_seconds_bucket</code></td>
+      <td>Latency for fetching a snapshot of the durable catalog.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_catalog_snapshot_latency_seconds_count</code></td>
+      <td>Latency for fetching a snapshot of the durable catalog.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_catalog_snapshot_latency_seconds_sum</code></td>
+      <td>Latency for fetching a snapshot of the durable catalog.</td>
       <td></td>
     </tr>
     <tr>
@@ -349,14 +359,39 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
-      <td><code>mz_catalog_sync_latency_seconds</code></td>
-      <td>Total latency for syncing the in-memory state of the durable catalog with the persisted contents.</td>
+      <td><code>mz_catalog_sync_latency_seconds_bucket</code></td>
+      <td>Latency for syncing the in-memory state of the durable catalog with the persisted contents.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_catalog_sync_latency_seconds_count</code></td>
+      <td>Latency for syncing the in-memory state of the durable catalog with the persisted contents.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_catalog_sync_latency_seconds_sum</code></td>
+      <td>Latency for syncing the in-memory state of the durable catalog with the persisted contents.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_catalog_syncs</code></td>
       <td>Count of catalog syncs.</td>
       <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_catalog_transact_phase_seconds_bucket</code></td>
+      <td>Wall time of the individual phases of a coordinator catalog transaction, to attribute where transact time is spent. Phases overlap and do not sum to mz_catalog_transact_seconds. The transact phase includes the durable catalog sync and commit.</td>
+      <td><code>le</code>, <code>phase</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_catalog_transact_phase_seconds_count</code></td>
+      <td>Wall time of the individual phases of a coordinator catalog transaction, to attribute where transact time is spent. Phases overlap and do not sum to mz_catalog_transact_seconds. The transact phase includes the durable catalog sync and commit.</td>
+      <td><code>phase</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_catalog_transact_phase_seconds_sum</code></td>
+      <td>Wall time of the individual phases of a coordinator catalog transaction, to attribute where transact time is spent. Phases overlap and do not sum to mz_catalog_transact_seconds. The transact phase includes the durable catalog sync and commit.</td>
+      <td><code>phase</code></td>
     </tr>
     <tr>
       <td><code>mz_catalog_transact_seconds_bucket</code></td>
@@ -374,8 +409,18 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>method</code></td>
     </tr>
     <tr>
-      <td><code>mz_catalog_transaction_commit_latency_seconds</code></td>
-      <td>Total latency for committing a durable catalog transactions.</td>
+      <td><code>mz_catalog_transaction_commit_latency_seconds_bucket</code></td>
+      <td>Latency for committing a durable catalog transaction.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_catalog_transaction_commit_latency_seconds_count</code></td>
+      <td>Latency for committing a durable catalog transaction.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_catalog_transaction_commit_latency_seconds_sum</code></td>
+      <td>Latency for committing a durable catalog transaction.</td>
       <td></td>
     </tr>
     <tr>
@@ -481,6 +526,131 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     <tr>
       <td><code>mz_column_pager_skip_decisions_total</code></td>
       <td>Pager decisions that kept the chunk resident.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_admissions_budget_total</code></td>
+      <td>Evicted chunks re-admitted to compressed-but-resident by an admitting read out of free budget headroom.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_admissions_denied_total</code></td>
+      <td>Admitting reads that found neither budget headroom nor a clean victim and were served as a plain decompress instead.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_admissions_steal_total</code></td>
+      <td>Evicted chunks re-admitted by an admitting read stealing the slot of a clean backed victim of the same size class.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_eager_backs_total</code></td>
+      <td>Chunks eagerly compressed to compressed-but-resident by idle spill threads; their later eviction is a pure page release.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_evictions_cheap_total</code></td>
+      <td>Evictions of already-backed chunks: physical pages released with no compression or extent write.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_evictions_compress_total</code></td>
+      <td>Evictions that compressed a chunk into a new swap-backed extent.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_extent_arena_fallbacks_total</code></td>
+      <td>Extent writes that fell back to the heap because their extent-arena class had no free slot. Heap-backed extents are never paged out.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_extent_bytes_written_total</code></td>
+      <td>Compressed bytes written into swap-backed extents.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_extent_pageout_incomplete_total</code></td>
+      <td>Pageout passes whose residency observation found pages still resident. Climbing steadily means pages cannot reach the swap device.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_extent_pageouts_total</code></td>
+      <td>Extents pushed to the swap device by RSS-target enforcement.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_extent_resident_bytes</code></td>
+      <td>Allocation bytes of compressed extents currently resident (the compressed-but-resident tier), bounded by the pool RSS target.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_extent_unreclaimable_bytes</code></td>
+      <td>Allocation bytes of resident extents the RSS target cannot push out (retry-capped and heap-fallback extents). Climbing steadily means pages cannot reach the swap device.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_frees_total</code></td>
+      <td>Chunks freed from the buffer pool.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_inserts_total</code></td>
+      <td>Chunks inserted into the buffer pool.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_live_chunks</code></td>
+      <td>Live pool chunks, whatever their residency: for backlog-shaped consumers, the un-drained backlog in chunks.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_oversize_bytes</code></td>
+      <td>Bytes held by oversize chunks that bypass pool paging.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_oversize_payloads_total</code></td>
+      <td>Inserts that went to unpageable heap chunks because the payload was larger than the largest size class.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_resident_bytes</code></td>
+      <td>Uncompressed bytes resident in the buffer pool.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_slot_exhausted_fallbacks_total</code></td>
+      <td>Inserts that fell back to unpageable heap chunks because their size class had no free slot.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_spill_cancelled_total</code></td>
+      <td>Compressions cancelled by a concurrent free, whatever their origin (budget eviction or eager backing), so this can exceed the scheduled count.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_spill_in_flight</code></td>
+      <td>Spill entries queued or being processed.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_spill_scheduled_total</code></td>
+      <td>Evictions handed to buffer-pool spill threads.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_warm_bytes</code></td>
+      <td>Class bytes of free slots kept warm for fault-free reuse; RSS exceeds resident bytes by up to this bounded amount.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_warm_reuses_total</code></td>
+      <td>Slot allocations served from the warm list: no page faults, no kernel page zeroing.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_pool_writes_elided_total</code></td>
+      <td>Backing writes elided: chunks freed while unbacked or while queued for a spill thread, dead before their compression completed.</td>
       <td></td>
     </tr>
     <tr>
@@ -700,17 +870,17 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     </tr>
     <tr>
       <td><code>mz_group_commit_catalog_upper_seconds_bucket</code></td>
-      <td>The time it takes to advance the catalog shard upper during group commit.</td>
+      <td>The time it takes to advance the catalog shard upper for a txns-shard write (group commits and table register/forget).</td>
       <td><code>le</code></td>
     </tr>
     <tr>
       <td><code>mz_group_commit_catalog_upper_seconds_count</code></td>
-      <td>The time it takes to advance the catalog shard upper during group commit.</td>
+      <td>The time it takes to advance the catalog shard upper for a txns-shard write (group commits and table register/forget).</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_group_commit_catalog_upper_seconds_sum</code></td>
-      <td>The time it takes to advance the catalog shard upper during group commit.</td>
+      <td>The time it takes to advance the catalog shard upper for a txns-shard write (group commits and table register/forget).</td>
       <td></td>
     </tr>
     <tr>
@@ -2461,6 +2631,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     <tr>
       <td><code>mz_persist_watch_notify_sent</code></td>
       <td>count of watch notifications sent to a non-empty broadcast channel</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_watch_notify_upper_sent</code></td>
+      <td>count of strict shard upper advances signaled to upper waiters</td>
       <td></td>
     </tr>
     <tr>

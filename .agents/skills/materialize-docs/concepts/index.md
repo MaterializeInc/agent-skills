@@ -175,19 +175,14 @@ hardware that cause a replica to become unreachable. As long as one replica of
 the cluster remains available, the cluster can continue to maintain dataflows
 and serve queries.
 
-> **Note:** <ul>
-> <li>
-> <p>Each replica incurs cost, calculated as <code>cluster size * replication factor</code> per second. See <a href="/administration/billing/" >Usage &amp;
-> billing</a> for more details.</p>
-> </li>
-> <li>
-> <p>Increasing the replication factor does <strong>not</strong> increase the cluster&rsquo;s work
-> capacity. Replicas are exact copies of one another: each replica must do
-> exactly the same work as all the other replicas of the cluster(i.e., maintain
-> the same dataflows and process the same queries). To increase the capacity of
-> a cluster, you must increase its size.</p>
-> </li>
-> </ul>
+> **Note:** - Each replica incurs cost, calculated as `cluster size *
+>   replication factor` per second. See [Usage &
+>   billing](/administration/billing/) for more details.
+> - Increasing the replication factor does **not** increase the cluster's work
+>   capacity. Replicas are exact copies of one another: each replica must do
+>   exactly the same work as all the other replicas of the cluster(i.e., maintain
+>   the same dataflows and process the same queries). To increase the capacity of
+>   a cluster, you must increase its size.
 
 Materialize automatically assigns names to replicas (e.g., `r1`, `r2`). You can
 view information about individual replicas in the Materialize console and the
@@ -197,17 +192,12 @@ system catalog.
 
 When provisioning replicas,
 
-<ul>
-<li>
-<p>For clusters sized <strong>up to and including <code>3200cc</code></strong>, Materialize guarantees
-that all provisioned replicas in a cluster are distributed across the
-underlying cloud provider&rsquo;s availability zones.</p>
-</li>
-<li>
-<p>For clusters sized <strong>above <code>3200cc</code></strong>, even distribution of replicas
-across availability zones <strong>cannot</strong> be guaranteed.</p>
-</li>
-</ul>
+- For clusters sized **up to and including `3200cc`**, Materialize guarantees
+  that all provisioned replicas in a cluster are distributed across the
+  underlying cloud provider's availability zones.
+
+- For clusters sized **above `3200cc`**, even distribution of replicas
+  across availability zones **cannot** be guaranteed.
 
 <a name="sizing-your-clusters"></a>
 
@@ -222,6 +212,12 @@ resources available and can therefore process data faster and handle larger data
 volumes.
 
 As your workload changes, you can [resize a cluster](/sql/alter-cluster/).
+
+To handle the temporary compute increases during hydration, you can
+configure an [autoscaling
+strategy](/sql/alter-cluster/#speed-up-hydration-by-autoscaling-to-a-larger-size)
+that provisions an extra burst replica at a larger size while the cluster has
+un-hydrated objects.
 
 > **Tip:** To gauge the performance and utilization of your clusters, use the
 > [**Environment Overview** page in the Materialize Console](/console/monitoring/).
@@ -573,7 +569,7 @@ results from memory.
 > **Tip:** Except for when used with a [sink](/serve-results/sink/),
 > [subscribe](/sql/subscribe/), or [temporal
 > filters](/transform-data/patterns/temporal-filters/), avoid creating
-> materialized views on a shared cluster used for both compute/transformat
+> materialized views on a shared cluster used for both compute/transform
 > operations and serving queries. Use indexed views instead.
 
 **1-tier architecture:**
@@ -593,7 +589,7 @@ results from memory.
 > **Tip:** Except for when used with a [sink](/serve-results/sink/),
 > [subscribe](/sql/subscribe/), or [temporal
 > filters](/transform-data/patterns/temporal-filters/), avoid creating
-> materialized views on a shared cluster used for both compute/transformat
+> materialized views on a shared cluster used for both compute/transform
 > operations and serving queries. Use indexed views instead.
 
 ### Indexes and query optimizations
@@ -1066,7 +1062,7 @@ results from memory.
 > **Tip:** Except for when used with a [sink](/serve-results/sink/),
 > [subscribe](/sql/subscribe/), or [temporal
 > filters](/transform-data/patterns/temporal-filters/), avoid creating
-> materialized views on a shared cluster used for both compute/transformat
+> materialized views on a shared cluster used for both compute/transform
 > operations and serving queries. Use indexed views instead.
 
 **1-tier architecture:**
@@ -1086,7 +1082,7 @@ results from memory.
 > **Tip:** Except for when used with a [sink](/serve-results/sink/),
 > [subscribe](/sql/subscribe/), or [temporal
 > filters](/transform-data/patterns/temporal-filters/), avoid creating
-> materialized views on a shared cluster used for both compute/transformat
+> materialized views on a shared cluster used for both compute/transform
 > operations and serving queries. Use indexed views instead.
 
 ## General information

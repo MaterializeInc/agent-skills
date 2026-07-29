@@ -9,8 +9,6 @@ Use `ALTER SCHEMA` to:
 
 **Swap with:**
 
-### Swap with
-
 To swap the name of a schema with that of another schema:
 
 ```mzsql
@@ -24,8 +22,6 @@ ALTER SCHEMA <schema1> SWAP WITH <schema2>;
 | `<schema2>` | The name of the other schema you want to swap with.  |
 
 **Rename schema:**
-
-### Rename schema
 
 To rename a schema:
 
@@ -41,8 +37,6 @@ ALTER SCHEMA <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner to:**
-
-### Change owner to
 
 To change the owner of a schema:
 

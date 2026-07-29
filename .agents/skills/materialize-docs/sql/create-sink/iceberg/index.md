@@ -45,7 +45,7 @@ WITH (COMMIT INTERVAL = '<interval>')
 | **KEY** ( `<key_col>` [, ...] ) | The columns that uniquely identify rows. Materialize validates that the key is unique unless `NOT ENFORCED` is specified.  |
 | **NOT ENFORCED** | Optional. Disable validation of key uniqueness. Use only when you have outside knowledge that the key is unique.  |
 | **MODE UPSERT** | Indicates that the sink uses upsert semantics based on the `KEY`.  |
-| **COMMIT INTERVAL** `'<interval>'` | How frequently to commit snapshots to Iceberg (e.g., `'60s'`, `'5m'`). See [Commit interval tradeoffs](#commit-interval-tradeoffs).  |
+| **COMMIT INTERVAL** `'<interval>'` | How frequently to commit snapshots to Iceberg (e.g., `'1m'`, `'5m'`). Must be at least `'1s'`. See [Commit interval tradeoffs](#commit-interval-tradeoffs).  |
 
 **MODE APPEND:**
 
@@ -72,7 +72,7 @@ WITH (COMMIT INTERVAL = '<interval>')
 | **NAMESPACE** `'<namespace>'` | The Iceberg namespace (database) containing the table.  |
 | **TABLE** `'<table>'` | The name of the unpartitioned Iceberg table to write to. If the table doesn't exist, Materialize creates it automatically. For details, see [Iceberg table creation](/sql/create-sink/iceberg/#iceberg-table-creation).  |
 | **MODE APPEND** | Writes all changes as data rows instead of using Iceberg delete files. Two extra columns are appended to the Iceberg table: `_mz_diff` (`int`, `+1` for inserts, `-1` for deletes) and `_mz_timestamp` (`long`). An update produces two rows: one with `_mz_diff = -1` (old values) and one with `_mz_diff = +1` (new values). No `KEY` clause is permitted. See [Append mode](#append-mode).  |
-| **COMMIT INTERVAL** `'<interval>'` | How frequently to commit snapshots to Iceberg (e.g., `'60s'`, `'5m'`). See [Commit interval tradeoffs](#commit-interval-tradeoffs).  |
+| **COMMIT INTERVAL** `'<interval>'` | How frequently to commit snapshots to Iceberg (e.g., `'1m'`, `'5m'`). Must be at least `'1s'`. See [Commit interval tradeoffs](#commit-interval-tradeoffs).  |
 
 ## Details
 
@@ -116,7 +116,7 @@ properties (`mz-frontier` and `mz-sink-version`).
 
 The `COMMIT INTERVAL` setting involves tradeoffs between latency and efficiency:
 
-| Shorter intervals (e.g., < `60s`) | Longer intervals (e.g., `5m`) |
+| Shorter intervals (e.g., < `1m`) | Longer intervals (e.g., `5m`) |
 |---------------------------------|-------------------------------|
 | Lower latency - data visible sooner | Higher latency - data takes longer to appear |
 | More small files - can degrade query performance | Fewer, larger files - better query performance |
@@ -124,10 +124,13 @@ The `COMMIT INTERVAL` setting involves tradeoffs between latency and efficiency:
 | Higher S3 write costs (more PUT requests) | Lower S3 write costs |
 
 **Recommendations:**
-- For production: `60s` to `5m`
+- For production: `1m` to `5m`
 - For batch analytics: `5m` to `15m`
 
-> **Note:** Outside of development environments, commit intervals should be at least `60s`.
+Starting in v26.34, you can change the commit interval of an existing sink with
+[`ALTER SINK`](/sql/alter-sink/).
+
+> **Note:** Outside of development environments, commit intervals should be at least `1m`.
 > Short commit intervals increase catalog overhead and produce many small files.
 > Small files will result in degraded query performance. It also increases load on
 > the Iceberg metadata, which can result in a degraded catalog and non-responsive

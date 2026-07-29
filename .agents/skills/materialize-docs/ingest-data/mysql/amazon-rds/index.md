@@ -418,24 +418,18 @@ network to allow traffic from the bastion host.
 
 **Self-Managed:**
 
-<p>Configure your network to allow Materialize to connect to your database. For
-example, you can:</p>
-<ul>
-<li>
-<p><strong>Allow Materialize IPs:</strong> Configure your database&rsquo;s security group to allow
-connections from Materialize.</p>
-</li>
-<li>
-<p><strong>Use an SSH tunnel:</strong> Use an SSH tunnel to connect Materialize to the
-database.</p>
-</li>
-</ul>
-<div class="note">
-  <strong class="gutter">NOTE:</strong>
-  <p>The steps to allow Materialize to connect to your database  depends on your
-  deployment setup. Refer to your company’s network/security policies and
-  procedures.</p>
-</div>
+Configure your network to allow Materialize to connect to your database. For
+example, you can:
+
+- **Allow Materialize IPs:** Configure your database's security group to allow
+    connections from Materialize.
+
+- **Use an SSH tunnel:** Use an SSH tunnel to connect Materialize to the
+  database.
+
+> **Note:** The steps to allow Materialize to connect to your database  depends on your
+> deployment setup. Refer to your company’s network/security policies and
+> procedures.
 
 **Allow Materialize IPs:**
 
@@ -728,16 +722,14 @@ details for Materialize to use:
 
 ### 3. Start ingesting data
 
-{{< tabs >}}
+{{< tabs level=4 >}}
 {{< tab "New Syntax" >}}
-#### New syntax
 
 {{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="create-source" %}}
 {{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 
 {{< tab "Legacy Syntax" >}}
-#### Legacy syntax
 
 {{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="create-source-legacy" %}}
 {{% include-example file="examples/ingest_data/mysql/create_source_cloud" example="create-source-options-legacy" %}}
@@ -913,39 +905,8 @@ updated schema from the corresponding upstream table.
 
 ### Supported types
 
-Materialize natively supports the following MySQL types:
-
-<ul style="column-count: 3">
-<li><code>bigint</code></li>
-<li><code>binary</code></li>
-<li><code>bit</code></li>
-<li><code>blob</code></li>
-<li><code>boolean</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>datetime</code></li>
-<li><code>decimal</code></li>
-<li><code>double</code></li>
-<li><code>float</code></li>
-<li><code>int</code></li>
-<li><code>json</code></li>
-<li><code>longblob</code></li>
-<li><code>longtext</code></li>
-<li><code>mediumblob</code></li>
-<li><code>mediumint</code></li>
-<li><code>mediumtext</code></li>
-<li><code>numeric</code></li>
-<li><code>real</code></li>
-<li><code>smallint</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>tinyblob</code></li>
-<li><code>tinyint</code></li>
-<li><code>tinytext</code></li>
-<li><code>varbinary</code></li>
-<li><code>varchar</code></li>
-</ul>
+<p>Materialize natively supports the following MySQL types:</p>
+<ul style="column-count: 3"><li><code>bigint</code></li><li><code>binary</code></li><li><code>bit</code></li><li><code>blob</code></li><li><code>boolean</code></li><li><code>char</code></li><li><code>date</code></li><li><code>datetime</code></li><li><code>decimal</code></li><li><code>double</code></li><li><code>float</code></li><li><code>int</code></li><li><code>json</code></li><li><code>longblob</code></li><li><code>longtext</code></li><li><code>mediumblob</code></li><li><code>mediumint</code></li><li><code>mediumtext</code></li><li><code>numeric</code></li><li><code>real</code></li><li><code>smallint</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>tinyblob</code></li><li><code>tinyint</code></li><li><code>tinytext</code></li><li><code>varbinary</code></li><li><code>varchar</code></li></ul>
 
 When replicating tables that contain the **unsupported [data
 types](/sql/types/)**, you can:

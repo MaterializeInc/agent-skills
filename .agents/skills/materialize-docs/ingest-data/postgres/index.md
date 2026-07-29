@@ -35,15 +35,13 @@ common PostgreSQL hosted services.
 
 To help you get started, the following integration guides are available:
 
-<ul>
-<li><a href="/ingest-data/postgres/alloydb/" >AlloyDB for PostgreSQL</a></li>
-<li><a href="/ingest-data/postgres/amazon-aurora/" >Amazon Aurora for PostgreSQL</a></li>
-<li><a href="/ingest-data/postgres/amazon-rds/" >Amazon RDS for PostgreSQL</a></li>
-<li><a href="/ingest-data/postgres/azure-db/" >Azure DB for PostgreSQL</a></li>
-<li><a href="/ingest-data/postgres/cloud-sql/" >Google Cloud SQL for PostgreSQL</a></li>
-<li><a href="/ingest-data/postgres/neon/" >Neon</a></li>
-<li><a href="/ingest-data/postgres/self-hosted/" >Self-hosted PostgreSQL</a></li>
-</ul>
+- [AlloyDB for PostgreSQL](/ingest-data/postgres/alloydb/)
+- [Amazon Aurora for PostgreSQL](/ingest-data/postgres/amazon-aurora/)
+- [Amazon RDS for PostgreSQL](/ingest-data/postgres/amazon-rds/)
+- [Azure DB for PostgreSQL](/ingest-data/postgres/azure-db/)
+- [Google Cloud SQL for PostgreSQL](/ingest-data/postgres/cloud-sql/)
+- [Neon](/ingest-data/postgres/neon/)
+- [Self-hosted PostgreSQL](/ingest-data/postgres/self-hosted/)
 
 ## Considerations
 
@@ -94,36 +92,7 @@ publication, ensure that you remove the table/subsource from the source
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 <p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
 possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
 treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
@@ -963,24 +932,18 @@ to assist you in setting up this proxy and generating a connection string that
 can be utilized with Materialize. Further down, we will provide you with a
 tailored approach specific to integrating Materialize.
 
-<p>Configure your network to allow Materialize to connect to your database. For
-example, you can:</p>
-<ul>
-<li>
-<p><strong>Allow Materialize IPs:</strong> Configure your database&rsquo;s security group to allow
-connections from Materialize.</p>
-</li>
-<li>
-<p><strong>Use an SSH tunnel:</strong> Use an SSH tunnel to connect Materialize to the
-database.</p>
-</li>
-</ul>
-<div class="note">
-  <strong class="gutter">NOTE:</strong>
-  <p>The steps to allow Materialize to connect to your database  depends on your
-  deployment setup. Refer to your company’s network/security policies and
-  procedures.</p>
-</div>
+Configure your network to allow Materialize to connect to your database. For
+example, you can:
+
+- **Allow Materialize IPs:** Configure your database's security group to allow
+    connections from Materialize.
+
+- **Use an SSH tunnel:** Use an SSH tunnel to connect Materialize to the
+  database.
+
+> **Note:** The steps to allow Materialize to connect to your database  depends on your
+> deployment setup. Refer to your company’s network/security policies and
+> procedures.
 
 **Allow Materialize IPs:**
 
@@ -1165,16 +1128,14 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 [Snapshotting considerations](#snapshotting) for more information.
 {{< /tip >}}
 
-{{< tabs >}}
+{{< tabs level=4 >}}
 {{< tab "Legacy Syntax" >}}
-#### Legacy syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source-legacy" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 
 {{< tab "New Syntax" >}}
-#### New syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
@@ -1392,36 +1353,7 @@ publication, ensure that you remove the table/subsource from the source
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 <p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
 possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
 treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
@@ -1827,24 +1759,18 @@ network to allow traffic from the bastion host.
 
 **Self-Managed:**
 
-<p>Configure your network to allow Materialize to connect to your database. For
-example, you can:</p>
-<ul>
-<li>
-<p><strong>Allow Materialize IPs:</strong> Configure your database&rsquo;s security group to allow
-connections from Materialize.</p>
-</li>
-<li>
-<p><strong>Use an SSH tunnel:</strong> Use an SSH tunnel to connect Materialize to the
-database.</p>
-</li>
-</ul>
-<div class="note">
-  <strong class="gutter">NOTE:</strong>
-  <p>The steps to allow Materialize to connect to your database  depends on your
-  deployment setup. Refer to your company’s network/security policies and
-  procedures.</p>
-</div>
+Configure your network to allow Materialize to connect to your database. For
+example, you can:
+
+- **Allow Materialize IPs:** Configure your database's security group to allow
+    connections from Materialize.
+
+- **Use an SSH tunnel:** Use an SSH tunnel to connect Materialize to the
+  database.
+
+> **Note:** The steps to allow Materialize to connect to your database  depends on your
+> deployment setup. Refer to your company’s network/security policies and
+> procedures.
 
 **Allow Materialize IPs:**
 
@@ -2145,16 +2071,14 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 [Snapshotting considerations](#snapshotting) for more information.
 {{< /tip >}}
 
-{{< tabs >}}
+{{< tabs level=4 >}}
 {{< tab "Legacy Syntax" >}}
-#### Legacy syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source-legacy" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 
 {{< tab "New Syntax" >}}
-#### New syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
@@ -2372,36 +2296,7 @@ publication, ensure that you remove the table/subsource from the source
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 <p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
 possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
 treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
@@ -2858,24 +2753,18 @@ network to allow traffic from the bastion host.
 
 **Self-Managed:**
 
-<p>Configure your network to allow Materialize to connect to your database. For
-example, you can:</p>
-<ul>
-<li>
-<p><strong>Allow Materialize IPs:</strong> Configure your database&rsquo;s security group to allow
-connections from Materialize.</p>
-</li>
-<li>
-<p><strong>Use an SSH tunnel:</strong> Use an SSH tunnel to connect Materialize to the
-database.</p>
-</li>
-</ul>
-<div class="note">
-  <strong class="gutter">NOTE:</strong>
-  <p>The steps to allow Materialize to connect to your database  depends on your
-  deployment setup. Refer to your company’s network/security policies and
-  procedures.</p>
-</div>
+Configure your network to allow Materialize to connect to your database. For
+example, you can:
+
+- **Allow Materialize IPs:** Configure your database's security group to allow
+    connections from Materialize.
+
+- **Use an SSH tunnel:** Use an SSH tunnel to connect Materialize to the
+  database.
+
+> **Note:** The steps to allow Materialize to connect to your database  depends on your
+> deployment setup. Refer to your company’s network/security policies and
+> procedures.
 
 **Allow Materialize IPs:**
 
@@ -3193,16 +3082,14 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 [Snapshotting considerations](#snapshotting) for more information.
 {{< /tip >}}
 
-{{< tabs >}}
+{{< tabs level=4 >}}
 {{< tab "Legacy Syntax" >}}
-#### Legacy syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source-legacy" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 
 {{< tab "New Syntax" >}}
-#### New syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
@@ -3420,36 +3307,7 @@ publication, ensure that you remove the table/subsource from the source
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 <p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
 possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
 treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
@@ -3729,24 +3587,18 @@ to serve as your SSH bastion host.
 
 **Self-Managed:**
 
-<p>Configure your network to allow Materialize to connect to your database. For
-example, you can:</p>
-<ul>
-<li>
-<p><strong>Allow Materialize IPs:</strong> Configure your database&rsquo;s security group to allow
-connections from Materialize.</p>
-</li>
-<li>
-<p><strong>Use an SSH tunnel:</strong> Use an SSH tunnel to connect Materialize to the
-database.</p>
-</li>
-</ul>
-<div class="note">
-  <strong class="gutter">NOTE:</strong>
-  <p>The steps to allow Materialize to connect to your database  depends on your
-  deployment setup. Refer to your company’s network/security policies and
-  procedures.</p>
-</div>
+Configure your network to allow Materialize to connect to your database. For
+example, you can:
+
+- **Allow Materialize IPs:** Configure your database's security group to allow
+    connections from Materialize.
+
+- **Use an SSH tunnel:** Use an SSH tunnel to connect Materialize to the
+  database.
+
+> **Note:** The steps to allow Materialize to connect to your database  depends on your
+> deployment setup. Refer to your company’s network/security policies and
+> procedures.
 
 **Allow Materialize IPs:**
 
@@ -3930,16 +3782,14 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 [Snapshotting considerations](#snapshotting) for more information.
 {{< /tip >}}
 
-{{< tabs >}}
+{{< tabs level=4 >}}
 {{< tab "Legacy Syntax" >}}
-#### Legacy syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source-legacy" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 
 {{< tab "New Syntax" >}}
-#### New syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
@@ -4157,36 +4007,7 @@ publication, ensure that you remove the table/subsource from the source
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 <p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
 possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
 treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
@@ -4466,24 +4287,18 @@ bastion host.
 
 **Self-Managed:**
 
-<p>Configure your network to allow Materialize to connect to your database. For
-example, you can:</p>
-<ul>
-<li>
-<p><strong>Allow Materialize IPs:</strong> Configure your database&rsquo;s security group to allow
-connections from Materialize.</p>
-</li>
-<li>
-<p><strong>Use an SSH tunnel:</strong> Use an SSH tunnel to connect Materialize to the
-database.</p>
-</li>
-</ul>
-<div class="note">
-  <strong class="gutter">NOTE:</strong>
-  <p>The steps to allow Materialize to connect to your database  depends on your
-  deployment setup. Refer to your company’s network/security policies and
-  procedures.</p>
-</div>
+Configure your network to allow Materialize to connect to your database. For
+example, you can:
+
+- **Allow Materialize IPs:** Configure your database's security group to allow
+    connections from Materialize.
+
+- **Use an SSH tunnel:** Use an SSH tunnel to connect Materialize to the
+  database.
+
+> **Note:** The steps to allow Materialize to connect to your database  depends on your
+> deployment setup. Refer to your company’s network/security policies and
+> procedures.
 
 **Allow Materialize IPs:**
 
@@ -4666,16 +4481,14 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 [Snapshotting considerations](#snapshotting) for more information.
 {{< /tip >}}
 
-{{< tabs >}}
+{{< tabs level=4 >}}
 {{< tab "Legacy Syntax" >}}
-#### Legacy syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source-legacy" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 
 {{< tab "New Syntax" >}}
-#### New syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
@@ -4893,36 +4706,7 @@ publication, ensure that you remove the table/subsource from the source
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 <p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
 possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
 treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
@@ -5328,16 +5112,14 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 [Snapshotting considerations](#snapshotting) for more information.
 {{< /tip >}}
 
-{{< tabs >}}
+{{< tabs level=4 >}}
 {{< tab "Legacy Syntax" >}}
-#### Legacy syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source-legacy" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 
 {{< tab "New Syntax" >}}
-#### New syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
@@ -5555,36 +5337,7 @@ publication, ensure that you remove the table/subsource from the source
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 <p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
 possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
 treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
@@ -6024,24 +5777,18 @@ traffic from the bastion host.
 
 **Self-Managed:**
 
-<p>Configure your network to allow Materialize to connect to your database. For
-example, you can:</p>
-<ul>
-<li>
-<p><strong>Allow Materialize IPs:</strong> Configure your database&rsquo;s security group to allow
-connections from Materialize.</p>
-</li>
-<li>
-<p><strong>Use an SSH tunnel:</strong> Use an SSH tunnel to connect Materialize to the
-database.</p>
-</li>
-</ul>
-<div class="note">
-  <strong class="gutter">NOTE:</strong>
-  <p>The steps to allow Materialize to connect to your database  depends on your
-  deployment setup. Refer to your company’s network/security policies and
-  procedures.</p>
-</div>
+Configure your network to allow Materialize to connect to your database. For
+example, you can:
+
+- **Allow Materialize IPs:** Configure your database's security group to allow
+    connections from Materialize.
+
+- **Use an SSH tunnel:** Use an SSH tunnel to connect Materialize to the
+  database.
+
+> **Note:** The steps to allow Materialize to connect to your database  depends on your
+> deployment setup. Refer to your company’s network/security policies and
+> procedures.
 
 **Allow Materialize IPs:**
 
@@ -6261,16 +6008,14 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 [Snapshotting considerations](#snapshotting) for more information.
 {{< /tip >}}
 
-{{< tabs >}}
+{{< tabs level=4 >}}
 {{< tab "Legacy Syntax" >}}
-#### Legacy syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source-legacy" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 
 {{< tab "New Syntax" >}}
-#### New syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
@@ -6488,36 +6233,7 @@ publication, ensure that you remove the table/subsource from the source
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 <p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
 possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
 treated as <code>text</code>; i.e., will not have the expected PostgreSQL type

@@ -212,18 +212,20 @@ If the cluster hosting the source restarts during snapshotting (e.g., because it
 ran out of memory), you can scale up to a [larger
 size](/sql/alter-cluster/#alter-cluster-size) to complete the operation.
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">ALTER</span><span class="w"> </span><span class="k">CLUSTER</span><span class="w"> </span><span class="o">&lt;</span><span class="n">cluster_name</span><span class="o">&gt;</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="k">SIZE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">new_size</span><span class="o">&gt;</span><span class="w"> </span><span class="p">);</span><span class="w">
-</span></span></span></code></pre></div><blockquote>
-<p><strong>Note:</strong> Resizing a cluster with sources requires the cluster to restart. This operation
-incurs downtime for the duration it takes for all objects in the cluster to
-<a href="/ingest-data/#hydration" >hydrate</a>.
-You might want to let the new-sized replica hydrate before shutting down the
-current replica. See <a href="/sql/alter-cluster/#zero-downtime-cluster-resizing" >zero-downtime cluster
-resizing</a> about automating
-this process.</p>
-</blockquote>
-<p>Once the initial snapshot has completed, you can resize the cluster for steady
-state.</p>
+```sql
+ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
+```
+
+> **Note:** Resizing a cluster with sources requires the cluster to restart. This operation
+> incurs downtime for the duration it takes for all objects in the cluster to
+> [hydrate](/ingest-data/#hydration).
+> You might want to let the new-sized replica hydrate before shutting down the
+> current replica. See the [resizing
+> process](/sql/alter-cluster/#resizing-process) about automating
+> this process.
+
+Once the initial snapshot has completed, you can resize the cluster for steady
+state.
 
 #### Right-size the cluster for steady-state
 
@@ -240,8 +242,8 @@ ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
 > incurs downtime for the duration it takes for all objects in the cluster to
 > [hydrate](#hydration).
 > You might want to let the new-sized replica hydrate before shutting down the
-> current replica. See [zero-downtime cluster
-> resizing](/sql/alter-cluster/#zero-downtime-cluster-resizing) about automating
+> current replica. See the [resizing
+> process](/sql/alter-cluster/#resizing-process) about automating
 > this process.
 
 ## See also
@@ -2100,39 +2102,8 @@ updated schema from the corresponding upstream table.
 
 ### Supported types
 
-Materialize natively supports the following MySQL types:
-
-<ul style="column-count: 3">
-<li><code>bigint</code></li>
-<li><code>binary</code></li>
-<li><code>bit</code></li>
-<li><code>blob</code></li>
-<li><code>boolean</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>datetime</code></li>
-<li><code>decimal</code></li>
-<li><code>double</code></li>
-<li><code>float</code></li>
-<li><code>int</code></li>
-<li><code>json</code></li>
-<li><code>longblob</code></li>
-<li><code>longtext</code></li>
-<li><code>mediumblob</code></li>
-<li><code>mediumint</code></li>
-<li><code>mediumtext</code></li>
-<li><code>numeric</code></li>
-<li><code>real</code></li>
-<li><code>smallint</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>tinyblob</code></li>
-<li><code>tinyint</code></li>
-<li><code>tinytext</code></li>
-<li><code>varbinary</code></li>
-<li><code>varchar</code></li>
-</ul>
+<p>Materialize natively supports the following MySQL types:</p>
+<ul style="column-count: 3"><li><code>bigint</code></li><li><code>binary</code></li><li><code>bit</code></li><li><code>blob</code></li><li><code>boolean</code></li><li><code>char</code></li><li><code>date</code></li><li><code>datetime</code></li><li><code>decimal</code></li><li><code>double</code></li><li><code>float</code></li><li><code>int</code></li><li><code>json</code></li><li><code>longblob</code></li><li><code>longtext</code></li><li><code>mediumblob</code></li><li><code>mediumint</code></li><li><code>mediumtext</code></li><li><code>numeric</code></li><li><code>real</code></li><li><code>smallint</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>tinyblob</code></li><li><code>tinyint</code></li><li><code>tinytext</code></li><li><code>varbinary</code></li><li><code>varchar</code></li></ul>
 
 When replicating tables that contain the **unsupported [data
 types](/sql/types/)**, you can:
@@ -2224,15 +2195,13 @@ common PostgreSQL hosted services.
 
 To help you get started, the following integration guides are available:
 
-<ul>
-<li><a href="/ingest-data/postgres/alloydb/" >AlloyDB for PostgreSQL</a></li>
-<li><a href="/ingest-data/postgres/amazon-aurora/" >Amazon Aurora for PostgreSQL</a></li>
-<li><a href="/ingest-data/postgres/amazon-rds/" >Amazon RDS for PostgreSQL</a></li>
-<li><a href="/ingest-data/postgres/azure-db/" >Azure DB for PostgreSQL</a></li>
-<li><a href="/ingest-data/postgres/cloud-sql/" >Google Cloud SQL for PostgreSQL</a></li>
-<li><a href="/ingest-data/postgres/neon/" >Neon</a></li>
-<li><a href="/ingest-data/postgres/self-hosted/" >Self-hosted PostgreSQL</a></li>
-</ul>
+- [AlloyDB for PostgreSQL](/ingest-data/postgres/alloydb/)
+- [Amazon Aurora for PostgreSQL](/ingest-data/postgres/amazon-aurora/)
+- [Amazon RDS for PostgreSQL](/ingest-data/postgres/amazon-rds/)
+- [Azure DB for PostgreSQL](/ingest-data/postgres/azure-db/)
+- [Google Cloud SQL for PostgreSQL](/ingest-data/postgres/cloud-sql/)
+- [Neon](/ingest-data/postgres/neon/)
+- [Self-hosted PostgreSQL](/ingest-data/postgres/self-hosted/)
 
 ## Considerations
 
@@ -2283,36 +2252,7 @@ publication, ensure that you remove the table/subsource from the source
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 <p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
 possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
 treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
@@ -3209,6 +3149,7 @@ Data Capture (CDC) support.
 
 ## Integration Guides
 
+- [Azure SQL Database](/ingest-data/sql-server/azure-db/)
 - [Self-hosted SQL Server](/ingest-data/sql-server/self-hosted/)
 
 ## Considerations
@@ -3250,71 +3191,19 @@ table.
 
 ### Supported types
 
-<p>Materialize natively supports the following SQL Server types:</p>
-<ul style="column-count: 3">
-<li><code>tinyint</code></li>
-<li><code>smallint</code></li>
-<li><code>int</code></li>
-<li><code>bigint</code></li>
-<li><code>real</code></li>
-<li><code>double precision</code></li>
-<li><code>float</code></li>
-<li><code>bit</code></li>
-<li><code>decimal</code></li>
-<li><code>numeric</code></li>
-<li><code>money</code></li>
-<li><code>smallmoney</code></li>
-<li><code>char</code></li>
-<li><code>nchar</code></li>
-<li><code>varchar</code></li>
-<li><code>varchar(max)</code></li>
-<li><code>nvarchar</code></li>
-<li><code>nvarchar(max)</code></li>
-<li><code>sysname</code></li>
-<li><code>binary</code></li>
-<li><code>varbinary</code></li>
-<li><code>json</code></li>
-<li><code>date</code></li>
-<li><code>time</code></li>
-<li><code>smalldatetime</code></li>
-<li><code>datetime</code></li>
-<li><code>datetime2</code></li>
-<li><code>datetimeoffset</code></li>
-<li><code>uniqueidentifier</code></li>
-</ul>
+Materialize natively supports the following SQL Server types:
 
-<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is possible via the <a href="/sql/create-source/sql-server/#handling-unsupported-types" ><code>EXCLUDE COLUMNS</code> option</a> for the
-following types:</p>
-<ul style="column-count: 3">
-<li><code>text</code></li>
-<li><code>ntext</code></li>
-<li><code>image</code></li>
-<li><code>varbinary(max)</code></li>
-</ul>
-<p>Columns with the specified types need to be excluded because <a href="https://learn.microsoft.com/en-us/sql/relational-databases/system-tables/cdc-capture-instance-ct-transact-sql?view=sql-server-2017#large-object-data-types" >SQL Server does not provide
-the &ldquo;before&rdquo;</a>
-value when said column is updated.</p>
-<p>To replicate tables that contain the following unsupported data types:</p>
-<ul>
-<li><code>text</code></li>
-<li><code>ntext</code></li>
-<li><code>image</code></li>
-<li><code>varbinary(max)</code></li>
-</ul>
-<p>You can use either the <code>TEXT COLUMNS</code> or the <code>EXCLUDE COLUMNS</code> option.</p>
-<ul>
-<li>For <code>text</code> and <code>ntext</code> columns:
-<ul>
-<li>You can use <code>TEXT COLUMNS</code> to expose them as varchar and nvarchar, respectively.</li>
-<li>You can use <code>EXCLUDE COLUMNS</code> to omit them from replication.</li>
-</ul>
-</li>
-<li>For <code>image</code> and <code>varbinary(max)</code> columns:
-<ul>
-<li>You can use <code>EXCLUDE COLUMNS</code>.</li>
-</ul>
-</li>
-</ul>
+<ul style="column-count: 3"><li><code>tinyint</code></li><li><code>smallint</code></li><li><code>int</code></li><li><code>bigint</code></li><li><code>real</code></li><li><code>double precision</code></li><li><code>float</code></li><li><code>bit</code></li><li><code>decimal</code></li><li><code>numeric</code></li><li><code>money</code></li><li><code>smallmoney</code></li><li><code>char</code></li><li><code>nchar</code></li><li><code>varchar</code></li><li><code>varchar(max)</code></li><li><code>nvarchar</code></li><li><code>nvarchar(max)</code></li><li><code>sysname</code></li><li><code>binary</code></li><li><code>varbinary</code></li><li><code>json</code></li><li><code>date</code></li><li><code>time</code></li><li><code>smalldatetime</code></li><li><code>datetime</code></li><li><code>datetime2</code></li><li><code>datetimeoffset</code></li><li><code>uniqueidentifier</code></li></ul>
+
+To replicate tables that contain the following unsupported data types, you can
+use either the `TEXT COLUMNS` or the `EXCLUDE COLUMNS` option:
+
+| Unsupported type | Supported option(s)                                         |
+| ---------------- | ----------------------------------------------------------- |
+| `text`           | `TEXT COLUMNS` (exposed as `varchar`) or `EXCLUDE COLUMNS`  |
+| `ntext`          | `TEXT COLUMNS` (exposed as `nvarchar`) or `EXCLUDE COLUMNS` |
+| `image`          | `EXCLUDE COLUMNS`                                           |
+| `varbinary(max)` | `EXCLUDE COLUMNS`                                           |
 
 ### Timestamp Rounding
 
@@ -4107,31 +3996,15 @@ cannot serve queries. That is, queries issued to the snapshotting source (and
 its subsources) will return after the snapshotting completes (unless the user
 breaks out of the query).
 
-<p>Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
-the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#available-sizes" >size of your ingestion cluster</a>.</p>
-<p>We&rsquo;ve observed the following approximate snapshot rates from PostgreSQL:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Cluster Size</th>
-          <th>Snapshot Rate</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>25 cc</td>
-          <td>~20 MB/s</td>
-      </tr>
-      <tr>
-          <td>100 cc</td>
-          <td>~50 MB/s</td>
-      </tr>
-      <tr>
-          <td>800 cc</td>
-          <td>~200 MB/s</td>
-      </tr>
-  </tbody>
-</table>
+Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
+the upstream database, the number of tables (more tables can be parallelized in Postgres), and the [size of your ingestion cluster](/sql/create-cluster/#available-sizes).
+
+We've observed the following approximate snapshot rates from PostgreSQL:
+| Cluster Size | Snapshot Rate |
+|--------------|---------------|
+| 25 cc | ~20 MB/s |
+| 100 cc | ~50 MB/s |
+| 800 cc | ~200 MB/s |
 
 To determine whether your source has completed ingesting the initial snapshot,
 you can query the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
@@ -4153,48 +4026,34 @@ monitor its progress. See [Monitoring data ingestion](/ingest-data/monitoring-da
 
 ## How do I speed up the snapshotting process?
 
-<p>Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
-the upstream database, the number of tables (more tables can be parallelized in Postgres), and the <a href="/sql/create-cluster/#available-sizes" >size of your ingestion cluster</a>.</p>
-<p>We&rsquo;ve observed the following approximate snapshot rates from PostgreSQL:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Cluster Size</th>
-          <th>Snapshot Rate</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td>25 cc</td>
-          <td>~20 MB/s</td>
-      </tr>
-      <tr>
-          <td>100 cc</td>
-          <td>~50 MB/s</td>
-      </tr>
-      <tr>
-          <td>800 cc</td>
-          <td>~200 MB/s</td>
-      </tr>
-  </tbody>
-</table>
+Snapshotting can take anywhere from a few minutes to several hours, depending on the size of your dataset,
+the upstream database, the number of tables (more tables can be parallelized in Postgres), and the [size of your ingestion cluster](/sql/create-cluster/#available-sizes).
+
+We've observed the following approximate snapshot rates from PostgreSQL:
+| Cluster Size | Snapshot Rate |
+|--------------|---------------|
+| 25 cc | ~20 MB/s |
+| 100 cc | ~50 MB/s |
+| 800 cc | ~200 MB/s |
 
 To speed up the snapshotting process, you can scale up the [size of the cluster
 ](/sql/alter-cluster/#alter-cluster-size) used for snapshotting, then scale it
 back down once the snapshot completes.
 
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">ALTER</span><span class="w"> </span><span class="k">CLUSTER</span><span class="w"> </span><span class="o">&lt;</span><span class="n">cluster_name</span><span class="o">&gt;</span><span class="w"> </span><span class="k">SET</span><span class="w"> </span><span class="p">(</span><span class="w"> </span><span class="k">SIZE</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">new_size</span><span class="o">&gt;</span><span class="w"> </span><span class="p">);</span><span class="w">
-</span></span></span></code></pre></div><blockquote>
-<p><strong>Note:</strong> Resizing a cluster with sources requires the cluster to restart. This operation
-incurs downtime for the duration it takes for all objects in the cluster to
-<a href="/ingest-data/#hydration" >hydrate</a>.
-You might want to let the new-sized replica hydrate before shutting down the
-current replica. See <a href="/sql/alter-cluster/#zero-downtime-cluster-resizing" >zero-downtime cluster
-resizing</a> about automating
-this process.</p>
-</blockquote>
-<p>Once the initial snapshot has completed, you can resize the cluster for steady
-state.</p>
+```sql
+ALTER CLUSTER <cluster_name> SET ( SIZE = <new_size> );
+```
+
+> **Note:** Resizing a cluster with sources requires the cluster to restart. This operation
+> incurs downtime for the duration it takes for all objects in the cluster to
+> [hydrate](/ingest-data/#hydration).
+> You might want to let the new-sized replica hydrate before shutting down the
+> current replica. See the [resizing
+> process](/sql/alter-cluster/#resizing-process) about automating
+> this process.
+
+Once the initial snapshot has completed, you can resize the cluster for steady
+state.
 
 For upsert sources, a larger cluster can not only speed up snapshotting, but may
 also be necessary to support increased memory usage during the process. For more

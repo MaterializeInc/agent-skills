@@ -28,6 +28,10 @@ In Materialize, role-based access control (RBAC) governs access to **database
 objects** through privileges granted to [database
 roles](./manage-roles/).
 
+> **Tip:** You can manage database role membership from your identity provider by
+> [syncing IdP groups to database
+> roles](/security/cloud/users-service-accounts/sync-idp-groups/).
+
 ## Roles and privileges
 
 In Materialize, a database role is created:
@@ -289,6 +293,16 @@ all systems in your organization.
 
 To configure SSO for your Materialize organization, follow [this step-by-step
 guide](./sso/).
+
+## Group sync
+
+As an **Organization admin**, you can provision groups from your identity
+provider via SCIM and map them to existing Materialize database roles, so that
+database role membership is managed from your identity provider. Roles you
+grant manually are not affected by sync.
+
+To configure group sync for your Materialize organization, see [Sync identity
+provider groups to database roles](./sync-idp-groups/).
 
 ## See also
 

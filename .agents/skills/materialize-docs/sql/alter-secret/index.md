@@ -10,8 +10,6 @@ Use `ALTER SECRET` to:
 
 **Change value:**
 
-### Change value
-
 To change the value of a secret:
 
 ```mzsql
@@ -25,8 +23,6 @@ ALTER SECRET [IF EXISTS] <name> AS <value>;
 | `<value>` | The new value for the secret. The _value_ expression may not reference any relations, and must be implicitly castable to `bytea`.  |
 
 **Rename:**
-
-### Rename
 
 To rename a secret:
 
@@ -42,8 +38,6 @@ ALTER SECRET [IF EXISTS] <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a secret:
 

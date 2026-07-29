@@ -8,8 +8,6 @@
 
 **Cloud:**
 
-### Cloud
-
 The following syntax is used to alter a role in Materialize Cloud.
 
 ```mzsql
@@ -39,7 +37,6 @@ Instead, Materialize Cloud uses system level privileges. See [GRANT
 PRIVILEGE](../grant-privilege) for more details.
 
 **Self-Managed:**
-### Self-Managed
 
 The following syntax is used to alter a role in Materialize Self-Managed.
 

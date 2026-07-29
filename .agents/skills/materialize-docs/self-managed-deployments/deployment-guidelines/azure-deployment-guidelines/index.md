@@ -6,7 +6,7 @@ As a general guideline, we recommend:
 
 - ARM-based CPU.
 - A 1:8 ratio of vCPU to GiB memory.
-- An 8:1 ratio of GiB local instance storage to GiB memory when using swap.
+- At least a 2:1 ratio of GiB local instance storage to GiB memory when using swap.
 
 ### Recommended Azure VM Types with Local NVMe Disks
 
@@ -36,13 +36,9 @@ significantly degrade performance and is not supported.
 ### Swap support
 
 **New Terraform:**
-#### New Terraform
-
 The new Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure/examples/simple) supports configuring swap out of the box.
 
 **Legacy Terraform:**
-#### Legacy Terraform
-
 The Legacy Terraform provider, adds preliminary swap support in v0.6.1, via the [`swap_enabled`](https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#input_swap_enabled) variable.
 With this change, the Terraform:
   - Creates a node group for Materialize.
@@ -65,21 +61,16 @@ Certificate Authority (CA) rather than self-signed certificates.
 
 ## Upgrading guideline
 
-<p>Whe upgrading:</p>
-<ul>
-<li>
-<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/version-notes/" >version-specific upgrade
-notes</a>.</p>
-</li>
-<li>
-<p><strong>Always</strong> upgrade the operator <strong>first</strong> and ensure version compatibility
-between the operator and the Materialize instance you are upgrading to.</p>
-</li>
-<li>
-<p><strong>Always</strong> upgrade your Materialize instances <strong>after</strong> upgrading the operator
-to ensure compatibility.</p>
-</li>
-</ul>
+Whe upgrading:
+
+- **Always** check the [version-specific upgrade
+  notes](/self-managed-deployments/upgrading/version-notes/).
+
+- **Always** upgrade the operator **first** and ensure version compatibility
+  between the operator and the Materialize instance you are upgrading to.
+
+- **Always** upgrade your Materialize instances **after** upgrading the operator
+  to ensure compatibility.
 
 ## Node pool resizing
 

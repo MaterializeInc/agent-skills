@@ -9,6 +9,12 @@ CREATE CLUSTER <cluster_name> (
     SIZE = <text>
     [, REPLICATION FACTOR = <int>]
     [, MANAGED = <bool>]
+    [, AUTO SCALING STRATEGY = (
+        ON HYDRATION (
+            HYDRATION SIZE = <text>
+            [, LINGER DURATION = <interval>]
+        )
+    )]
 );
 
 ```
@@ -19,6 +25,7 @@ CREATE CLUSTER <cluster_name> (
 | `SIZE` | The size of the resource allocations for the cluster.  For valid size values, see [Available sizes](#available-sizes).  |
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. See [Replication factor](#replication-factor) for details.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  <a name="unmanaged-clusters"></a>  Specify `FALSE` to create an **unmanaged** cluster. With unmanaged clusters, you need to manually manage the cluster's replicas using the the [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) and [`DROP CLUSTER REPLICA`](/sql/drop-cluster-replica) commands. When creating an unmanaged cluster, you must specify the `REPLICAS` option as well.  {{< tip >}} When getting started with Materialize, we recommend starting with managed clusters. {{</ tip >}}  Default: `TRUE`  |
+| `AUTO SCALING STRATEGY` | Optional. While the cluster has un-hydrated objects, provisions an extra burst replica at a larger size to speed up hydration. The steady-size replicas will continue to run, and hydrate in parallel. Once a steady-size replica hydrates and catches up with the burst, the burst replica is retired. This helps optimize costs while speeding up hydration. Only available on managed clusters.  Specify a single `ON HYDRATION` sub-policy, which supports the following options:  \| Option \| Description \| \|--------\|-------------\| \| `HYDRATION SIZE` \| The size of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration. For valid size values, see [Available sizes](#available-sizes). \| \| `LINGER DURATION` \| Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`. \|  |
 
 ## Details
 
@@ -171,12 +178,81 @@ See also:
 #### Cluster resizing
 
 You can change the size of a cluster to respond to changes in your workload
-using [`ALTER CLUSTER`](/sql/alter-cluster). Depending on the type of objects
-the cluster is hosting, this operation **might incur downtime**.
+using [`ALTER CLUSTER`](/sql/alter-cluster).
+
+As of **v26.35**, resizing is graceful and incurs **no downtime**: Materialize
+provisions new replicas at the target size, waits for them to hydrate, then
+retires the old ones. See [Monitoring a
+resize](/sql/alter-cluster/#monitoring-a-resize).
+
+In versions before v26.35, resizing could incur downtime, and zero-downtime
+resizing required the `WAIT UNTIL READY` option.
 
 See the reference documentation for [`ALTER
-CLUSTER`](/sql/alter-cluster#zero-downtime-cluster-resizing) for more details
+CLUSTER`](/sql/alter-cluster/#resizing) for more details
 on cluster resizing.
+
+### Autoscaling
+
+> **Public Preview:** This feature is in public preview.
+
+When you create an index, materialized view, or Kafka upsert source, or when a
+cluster restarts, the cluster must
+[hydrate](/concepts/clusters/#consider-hydration-requirements) the affected
+objects before they can serve results. Hydration reads the input data
+and rebuilds in-memory state, and its speed scales with the cluster
+[size](#available-sizes).
+
+The `AUTO SCALING STRATEGY (ON HYDRATION)` option lets a cluster **automatically
+provision an extra burst replica at the configured `HYDRATION SIZE` while it has
+un-hydrated objects**. This speeds up hydration without manually scaling the
+cluster up before hydration and back down afterward. The steady-size replicas
+continue hydrating in parallel, and once one of them catches up with the burst,
+the burst replica lingers for the `LINGER DURATION` and is then removed. The
+burst replica is an ordinary cluster replica, billed only for the time it is
+provisioned. See [Usage & billing](/administration/billing/) for details.
+
+`AUTO SCALING STRATEGY (ON HYDRATION)` is particularly useful for [blue/green
+deployments](/manage/blue-green/), where a new cluster must hydrate before the
+cutover. It is only available on **managed clusters**, and cannot be combined
+with a cluster `SCHEDULE` other than the default `MANUAL`.
+
+For example, the following cluster can provision a burst replica of size `800cc`:
+
+```mzsql
+CREATE CLUSTER fast_start (
+    SIZE = '100cc',
+    AUTO SCALING STRATEGY = (
+        ON HYDRATION (
+            HYDRATION SIZE = '800cc',
+            LINGER DURATION = '15s'
+        )
+    )
+);
+```
+
+You can specify the following options:
+
+Option | Description
+-------|------------
+`HYDRATION SIZE` | The [size](#available-sizes) of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration.
+`LINGER DURATION` | Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`.
+
+Provisioning the burst replica requires enough compute capacity to run it. In
+Materialize Self-Managed, this means your Kubernetes cluster must have enough
+spare resources (for example, available nodes) to schedule the burst replica.
+
+The burst is best-effort and never blocks the cluster: if the burst replica
+cannot be provisioned, the steady-size replicas still come up and hydrate as
+usual, as long as there are enough resources for them.
+
+To remove the autoscaling strategy from a cluster, use `ALTER CLUSTER ... RESET
+(AUTO SCALING STRATEGY)` or set an empty strategy with `AUTO SCALING STRATEGY =
+()`.
+
+You can inspect the configured strategy and any in-flight burst in the
+[`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
+catalog view.
 
 ### Replication factor
 

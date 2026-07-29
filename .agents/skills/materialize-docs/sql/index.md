@@ -280,16 +280,20 @@ general, you will not need to manually perform this operation.
 
 **Set a configuration:**
 
-### Set a configuration
-
 To set a cluster configuration:
 
 ```mzsql
 ALTER CLUSTER <cluster_name>
 SET (
-    SIZE = <text>
+    [SIZE = <text>]
     [, REPLICATION FACTOR = <int>]
     [, MANAGED = <bool>]
+    [, AUTO SCALING STRATEGY = (
+        ON HYDRATION (
+            HYDRATION SIZE = <text>
+            [, LINGER DURATION = <interval>]
+        )
+    )]
 )
 [WITH ( <with_option>[,...])]
 ;
@@ -299,21 +303,20 @@ SET (
 | Syntax element | Description |
 | --- | --- |
 | `<cluster_name>` | The name of the cluster you want to alter.  |
-| `SIZE` | <a name="alter-cluster-size"></a> The size of the resource allocations for the cluster. For valid size values, see [Available sizes](#available-sizes). {{< warning >}} Changing the size of a cluster may incur downtime. For more information, see [Resizing considerations](#resizing). {{< /warning >}} Not available for `ALTER CLUSTER ... RESET` since there is no default `SIZE` value. |
-| `REPLICATION FACTOR` | Optional.The number of replicas to provision for the cluster. Each replica of the cluster provisions a new pool of compute resources to perform exactly the same computations on exactly the same data. For more information, see [Replication factor considerations](#replication-factor).  Default: `1`  |
+| `SIZE` | <a name="alter-cluster-size"></a> Optional. The size of the resource allocations for the cluster. For valid size values, see [Available sizes](#available-sizes). {{< warning >}} Changing the size of a cluster may incur downtime. For more information, see [Resizing considerations](#resizing). {{< /warning >}} Not available for `ALTER CLUSTER ... RESET` since there is no default `SIZE` value. |
+| `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. Each replica of the cluster provisions a new pool of compute resources to perform exactly the same computations on exactly the same data. For more information, see [Replication factor considerations](#replication-factor).  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  If `FALSE`, enables the use of the <em>deprecated</em> [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) command.  Default: `TRUE`  |
-| `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under activedevelopment.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* A fixed duration to wait for the new replicas to be ready. This option can lead to downtime. As such, we recommend using the `WAIT UNTIL READY` option instead.\|  |
+| `AUTO SCALING STRATEGY` | Optional. While the cluster has un-hydrated objects, provisions an extra burst replica at a larger size to speed up hydration. The steady-size replicas will continue to run, and hydrate in parallel. Once a steady-size replica hydrates and catches up with the burst, the burst replica is retired. This helps optimize costs while speeding up hydration. Only available on managed clusters.  Specify a single `ON HYDRATION` sub-policy, which supports the following options:  \| Option \| Description \| \|--------\|-------------\| \| `HYDRATION SIZE` \| The size of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration. For valid size values, see [Available sizes](#available-sizes). \| \| `LINGER DURATION` \| Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`. \|  Set an empty strategy (`AUTO SCALING STRATEGY = ()`) to disable autoscaling.  |
+| `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under active development.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* A fixed duration to wait for the new replicas to be ready. This option can lead to downtime. As such, we recommend using the `WAIT UNTIL READY` option instead.\|  |
 
 **Reset to default:**
-
-### Reset to default
 
 To reset a cluster configuration back to its default value:
 
 ```mzsql
 ALTER CLUSTER <cluster_name>
 RESET (
-    REPLICATION FACTOR | MANAGED,
+    REPLICATION FACTOR | MANAGED | AUTO SCALING STRATEGY,
     ...
 )
 ;
@@ -325,10 +328,9 @@ RESET (
 | `<cluster_name>` | The name of the cluster you want to alter.  |
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  Default: `TRUE`  |
+| `AUTO SCALING STRATEGY` | Optional. Resetting removes any autoscaling strategy from the cluster.  Default: no autoscaling strategy.  |
 
 **Rename:**
-
-### Rename
 
 To rename a cluster:
 
@@ -346,8 +348,6 @@ ALTER CLUSTER <cluster_name> RENAME TO <new_cluster_name>;
 
 **Change owner:**
 
-### Change owner
-
 To change the owner of a cluster:
 
 ```mzsql
@@ -363,8 +363,6 @@ To change the owner, you must have ownership of the cluster and membership in
 the `<new_owner_role>`. See also [Required privileges](#required-privileges).
 
 **Swap with:**
-
-### Swap with
 
 > **Important:** Information about the `SWAP WITH` operation is provided for completeness.  The
 > `SWAP WITH` operation is used for blue/green deployments. In general, you will
@@ -469,13 +467,77 @@ system catalog table.
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
 > time. You should not rely on them for any kind of capacity planning.
 
-#### Downtime
+#### Downtime considerations for v26.35 or after
+Starting in v26.35, ALTER CLUSTER <name> SET (SIZE = ...) by default resizes
+the cluster gracefully and without downtime. For example:
 
-Resizing operation can incur downtime unless used with WAIT UNTIL READY option.
-See [zero-downtime cluster resizing](#zero-downtime-cluster-resizing) for
-details.
+```mzsql
+ALTER CLUSTER c1 SET (SIZE = '100cc');
+```
 
-#### Zero-downtime cluster resizing
+##### Resizing process
+The resize proceeds in the background, allowing the command to return
+immediately.
+
+During a graceful resize, Materialize:
+1. Provisions new replicas at the target size, alongside the current replicas.
+2. Waits for the new replicas to
+   [hydrate](/concepts/clusters/#consider-hydration-requirements).
+3. Retires the old replicas.
+
+Throughout, the cluster keeps serving queries, first from the old replicas,
+then from both sets as the new replicas come up, so the resize incurs no
+downtime.
+
+If the new replicas do not hydrate within the reconfiguration timeout (24 hours
+by default), Materialize rolls back the resize and the cluster keeps its current
+size. To customize the timeout behavior, use the `WAIT UNTIL READY` or `WAIT FOR` options.
+The resize still proceeds in the background.
+
+- `WAIT UNTIL READY (TIMEOUT = ..., ON TIMEOUT = ...)` sets the timeout for the
+  resize. On timeout, `ON TIMEOUT` selects whether to `COMMIT` (retire the old
+  replicas and proceed with the not-yet-hydrated new ones, which can cause
+  downtime) or `ROLLBACK` (keep the current size). Default: `ROLLBACK`.
+
+  ```mzsql
+  ALTER CLUSTER c1
+  SET (SIZE = '100cc') WITH (WAIT UNTIL READY (TIMEOUT = '10m'));
+  ```
+
+- `WAIT FOR '<duration>'` sets the timeout and commits when it expires,
+  regardless of hydration status, which can cause downtime. Prefer
+  `WAIT UNTIL READY`.
+
+See [Monitoring a resize](#monitoring-a-resize) to track progress and
+[cancel](#monitoring-a-resize) an in-flight resize.
+
+##### Monitoring a resize
+You can monitor a resize through the following:
+
+- The `activity` column of [`SHOW CLUSTERS`](/sql/show-clusters/), which
+  summarizes any in-flight reconfiguration or hydration burst, and is `NULL`
+  when the cluster is steady.
+
+- [`mz_internal.mz_cluster_reconfigurations`](/reference/system-catalog/mz_internal/#mz_cluster_reconfigurations),
+  which shows the target shape, deadline, timeout action, and lifecycle status
+  of the latest reconfiguration.
+
+- [`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies),
+  which shows any in-flight hydration burst.
+
+- [`mz_internal.mz_hydration_statuses`](/reference/system-catalog/mz_internal/#mz_hydration_statuses),
+  which shows per-object hydration status.
+
+- The audit log
+  ([`mz_catalog.mz_audit_events`](/reference/system-catalog/mz_catalog/#mz_audit_events)),
+  which records each reconfiguration transition.
+
+##### Cancel a resize
+To **cancel** an in-flight resize, reissue `ALTER CLUSTER` with the cluster's
+current size. Materialize drops the pending replicas and keeps the current
+configuration.
+
+#### Downtime considerations for v26.34 or before
 
 You can use the `WAIT UNTIL READY` option to perform a zero-downtime resizing,
 which incurs **no downtime**. Instead of restarting the cluster, this approach
@@ -499,6 +561,76 @@ cause a rollback — no size change will take effect in that case.
 > stable.
 > Any interruption will cause a cancellation, no cluster changes will take
 > effect.
+
+### Speed up hydration by autoscaling to a larger size
+
+Beyond a one-off resize, you can configure a standing **autoscaling strategy**
+so the cluster provisions a burst replica at a larger size on its own whenever
+it has un-hydrated objects. You can set the strategy when you first create the cluster
+with `CREATE CLUSTER ... (AUTO SCALING STRATEGY = ...)`, or add it to an
+existing cluster with `ALTER CLUSTER ... SET (AUTO SCALING STRATEGY = ...)`. The
+example below uses `CREATE CLUSTER`; see [Configure
+autoscaling](#configure-autoscaling) for the `ALTER CLUSTER` form.
+
+> **Public Preview:** This feature is in public preview.
+
+When you create an index, materialized view, or Kafka upsert source, or when a
+cluster restarts, the cluster must
+[hydrate](/concepts/clusters/#consider-hydration-requirements) the affected
+objects before they can serve results. Hydration reads the input data
+and rebuilds in-memory state, and its speed scales with the cluster
+[size](#available-sizes).
+
+The `AUTO SCALING STRATEGY (ON HYDRATION)` option lets a cluster **automatically
+provision an extra burst replica at the configured `HYDRATION SIZE` while it has
+un-hydrated objects**. This speeds up hydration without manually scaling the
+cluster up before hydration and back down afterward. The steady-size replicas
+continue hydrating in parallel, and once one of them catches up with the burst,
+the burst replica lingers for the `LINGER DURATION` and is then removed. The
+burst replica is an ordinary cluster replica, billed only for the time it is
+provisioned. See [Usage & billing](/administration/billing/) for details.
+
+`AUTO SCALING STRATEGY (ON HYDRATION)` is particularly useful for [blue/green
+deployments](/manage/blue-green/), where a new cluster must hydrate before the
+cutover. It is only available on **managed clusters**, and cannot be combined
+with a cluster `SCHEDULE` other than the default `MANUAL`.
+
+For example, the following cluster can provision a burst replica of size `800cc`:
+
+```mzsql
+CREATE CLUSTER fast_start (
+    SIZE = '100cc',
+    AUTO SCALING STRATEGY = (
+        ON HYDRATION (
+            HYDRATION SIZE = '800cc',
+            LINGER DURATION = '15s'
+        )
+    )
+);
+```
+
+You can specify the following options:
+
+Option | Description
+-------|------------
+`HYDRATION SIZE` | The [size](#available-sizes) of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration.
+`LINGER DURATION` | Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`.
+
+Provisioning the burst replica requires enough compute capacity to run it. In
+Materialize Self-Managed, this means your Kubernetes cluster must have enough
+spare resources (for example, available nodes) to schedule the burst replica.
+
+The burst is best-effort and never blocks the cluster: if the burst replica
+cannot be provisioned, the steady-size replicas still come up and hydrate as
+usual, as long as there are enough resources for them.
+
+To remove the autoscaling strategy from a cluster, use `ALTER CLUSTER ... RESET
+(AUTO SCALING STRATEGY)` or set an empty strategy with `AUTO SCALING STRATEGY =
+()`.
+
+You can inspect the configured strategy and any in-flight burst in the
+[`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
+catalog view.
 
 ### Replication factor
 
@@ -577,31 +709,71 @@ tolerance](#replication-factor-and-fault-tolerance), not its work capacity.
 
 ### Resizing
 
-You can alter the cluster size with **no downtime** (i.e., [zero-downtime
-cluster resizing](#zero-downtime-cluster-resizing)) by running the `ALTER
-CLUSTER` command with the `WAIT UNTIL READY` [option](#syntax):
+By default, altering the cluster size is graceful and incurs **no downtime**.
+The command returns immediately and the resize proceeds in the background. See
+[Resizing process](#resizing-process) and
+[Monitoring a resize](#monitoring-a-resize).
+
+```mzsql
+ALTER CLUSTER c1 SET (SIZE = '100cc');
+```
+
+To customize the timeout and what happens when it expires, use the `WAIT UNTIL
+READY` [option](#syntax):
 
 ```mzsql
 ALTER CLUSTER c1
-SET (SIZE '100cc') WITH (WAIT UNTIL READY (TIMEOUT = '10m', ON TIMEOUT = 'COMMIT'));
+SET (SIZE = '100cc') WITH (WAIT UNTIL READY (TIMEOUT = '10m', ON TIMEOUT = 'ROLLBACK'));
 ```
 
-> **Note:** Using `WAIT UNTIL READY` requires that the session remain open: you need to
-> make sure the Console tab remains open or that your `psql` connection remains
-> stable.
-> Any interruption will cause a cancellation, no cluster changes will take
-> effect.
+### Configure autoscaling
 
-Alternatively, you can alter the cluster size immediately, without waiting, by
-running the `ALTER CLUSTER` command:
+To [speed up hydration](#speed-up-hydration-by-autoscaling-to-a-larger-size),
+configure an autoscaling strategy that provisions a burst replica at a larger
+size while the cluster has un-hydrated objects:
 
 ```mzsql
-ALTER CLUSTER c1 SET (SIZE '100cc');
+ALTER CLUSTER c1 SET (
+    AUTO SCALING STRATEGY = (
+        ON HYDRATION (HYDRATION SIZE = '800cc', LINGER DURATION = '15s')
+    )
+);
 ```
 
-This will incur downtime when the cluster contains objects that need
-re-hydration before they are ready. This includes indexes, materialized views,
-and some types of sources.
+To remove the strategy:
+
+```mzsql
+ALTER CLUSTER c1 RESET (AUTO SCALING STRATEGY);
+```
+
+To inspect the configured strategy and any in-flight burst, query
+[`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies).
+The `strategy` column holds the configured policy, and the `state` column holds
+the in-flight burst details, or `NULL` when no burst is running:
+
+```mzsql
+SELECT
+    c.name AS cluster,
+    s.strategy->'on_hydration'->>'hydration_size' AS hydration_size,
+    (s.strategy->'on_hydration'->'linger_duration'->>'secs')::int AS linger_seconds,
+    s.state->'burst'->>'burst_size' AS inflight_burst_size
+FROM mz_internal.mz_cluster_auto_scaling_strategies AS s
+JOIN mz_clusters AS c ON c.id = s.cluster_id;
+```
+
+```nofmt
+ cluster | hydration_size | linger_seconds | inflight_burst_size
+---------+----------------+----------------+---------------------
+ c1      | 800cc          |             15 |
+```
+
+Here, `c1` is configured to provision an `800cc` burst replica that lingers 15
+seconds, and no burst is currently running (`inflight_burst_size` is `NULL`).
+While a burst is in flight, `inflight_burst_size` reports the burst replica's
+size.
+
+[`SHOW CLUSTERS`](/sql/show-clusters/) also summarizes any in-flight hydration
+burst in its `activity` column.
 
 ### Converting unmanaged to managed clusters
 
@@ -629,8 +801,8 @@ compute-specific settings. If needed, these can be set explicitly.
 ## See also
 
 - [`CREATE CLUSTER`](/sql/create-cluster/)
-- [`CREATE SINK`](/sql/create-sink/)
-- [`SHOW SINKS`](/sql/show-sinks)
+- [`SHOW CLUSTERS`](/sql/show-clusters/)
+- [`DROP CLUSTER`](/sql/drop-cluster/)
 
 ---
 
@@ -643,8 +815,6 @@ Use `ALTER CLUSTER REPLICA` to:
 ## Syntax
 
 **Rename:**
-
-### Rename
 
 To rename a cluster replica:
 
@@ -661,8 +831,6 @@ ALTER CLUSTER REPLICA <name> RENAME TO <new_name>;
 > **Note:** You cannot rename replicas in system clusters.
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a cluster replica:
 
@@ -715,8 +883,6 @@ Use `ALTER CONNECTION` to:
 
 **SET/DROP/RESET options:**
 
-### SET/DROP/RESET options
-
 To modify connection parameters:
 
 ```mzsql
@@ -741,8 +907,6 @@ ALTER CONNECTION [IF EXISTS] <name>
 
 **ROTATE KEYS:**
 
-### ROTATE KEYS
-
 To rotate SSH tunnel connection key pairs:
 
 ```mzsql
@@ -756,8 +920,6 @@ ALTER CONNECTION [IF EXISTS] <name> ROTATE KEYS;
 | `<name>` | The identifier of the SSH tunnel connection.  |
 
 **Rename:**
-
-### Rename
 
 To rename a connection
 
@@ -773,8 +935,6 @@ ALTER CONNECTION <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a connection:
 
@@ -866,8 +1026,6 @@ Use `ALTER DATABASE` to:
 
 **Rename:**
 
-### Rename
-
 To rename a database:
 
 ```mzsql
@@ -882,8 +1040,6 @@ ALTER DATABASE <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a database:
 
@@ -925,7 +1081,6 @@ default privilege.
 ## Syntax
 
 **GRANT:**
-### GRANT
 
 `ALTER DEFAULT PRIVILEGES` defines default privileges that will be applied to
 objects created by a role in the future. It does not affect any existing
@@ -959,7 +1114,6 @@ ALTER DEFAULT PRIVILEGES
 | **TO** `<target_role>` | The role who will be granted the default privilege. Use the `PUBLIC` pseudo-role to grant privileges to all roles.  |
 
 **REVOKE:**
-### REVOKE
 
 > **Note:** `ALTER DEFAULT PRIVILEGES` cannot be used to revoke the default owner privileges
 > on objects. Those privileges must be revoked manually after the object is
@@ -1092,8 +1246,6 @@ Use `ALTER INDEX` to:
 
 **Rename:**
 
-### Rename
-
 To rename an index:
 
 ```mzsql
@@ -1136,8 +1288,6 @@ Use `ALTER MATERIALIZED VIEW` to:
 
 **Rename:**
 
-### Rename
-
 To rename a materialized view:
 
 ```mzsql
@@ -1152,8 +1302,6 @@ ALTER MATERIALIZED VIEW <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a materialized view:
 
@@ -1170,8 +1318,6 @@ To change the owner of a materialized view, you must be the owner of the materia
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
 
 **(Re)Set retain history config:**
-
-### (Re)Set retain history config
 
 To set the retention history for a materialized view:
 
@@ -1197,8 +1343,6 @@ ALTER MATERIALIZED VIEW <name> RESET (RETAIN HISTORY);
 | `<name>` | The name of the materialized view you want to alter.  |
 
 **Replace materialized view:**
-
-### Replace materialized view
 
 > **Public Preview:** This feature is in public preview.
 
@@ -1452,8 +1596,6 @@ ALTER SYSTEM SET network_policy = office_access_policy;
 
 **Cloud:**
 
-### Cloud
-
 The following syntax is used to alter a role in Materialize Cloud.
 
 ```mzsql
@@ -1483,7 +1625,6 @@ Instead, Materialize Cloud uses system level privileges. See [GRANT
 PRIVILEGE](../grant-privilege) for more details.
 
 **Self-Managed:**
-### Self-Managed
 
 The following syntax is used to alter a role in Materialize Self-Managed.
 
@@ -1637,8 +1778,6 @@ Use `ALTER SCHEMA` to:
 
 **Swap with:**
 
-### Swap with
-
 To swap the name of a schema with that of another schema:
 
 ```mzsql
@@ -1652,8 +1791,6 @@ ALTER SCHEMA <schema1> SWAP WITH <schema2>;
 | `<schema2>` | The name of the other schema you want to swap with.  |
 
 **Rename schema:**
-
-### Rename schema
 
 To rename a schema:
 
@@ -1669,8 +1806,6 @@ ALTER SCHEMA <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner to:**
-
-### Change owner to
 
 To change the owner of a schema:
 
@@ -1741,8 +1876,6 @@ Use `ALTER SECRET` to:
 
 **Change value:**
 
-### Change value
-
 To change the value of a secret:
 
 ```mzsql
@@ -1756,8 +1889,6 @@ ALTER SECRET [IF EXISTS] <name> AS <value>;
 | `<value>` | The new value for the secret. The _value_ expression may not reference any relations, and must be implicitly castable to `bytea`.  |
 
 **Rename:**
-
-### Rename
 
 To rename a secret:
 
@@ -1773,8 +1904,6 @@ ALTER SECRET [IF EXISTS] <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a secret:
 
@@ -1854,6 +1983,7 @@ The privileges required to execute this statement are:
 Use `ALTER SINK` to:
 - Change the relation you want to sink from. This is useful in the context of
 [blue/green deployments](/manage/dbt/blue-green-deployments/).
+- Change the commit interval of an [Iceberg sink](/sql/create-sink/iceberg/).
 - Rename a sink.
 - Change owner of a sink.
 
@@ -1874,6 +2004,24 @@ ALTER SINK <name> SET FROM <relation_name>;
 | --- | --- |
 | `<name>`  | The name of the sink you want to change.  |
 | `<relation_name>`  | The name of the relation you want to sink from.  |
+
+**Change commit interval:**
+
+### Change commit interval
+
+*Available starting in v26.34**
+
+To change the commit interval of an [Iceberg sink](/sql/create-sink/iceberg/):
+
+```mzsql
+ALTER SINK <name> SET (COMMIT INTERVAL = '<interval>');
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<name>`  | The name of the sink you want to change.  |
+| `<interval>`  | The new commit interval, for example `'1m'`. Only [Iceberg sinks](/sql/create-sink/iceberg/) support a commit interval.  |
 
 **Rename:**
 
@@ -2000,6 +2148,20 @@ See [Example: Handle cutover scenarios](#handle-cutover-scenarios).
 
 - Alternatively, ensure that both the old and the new relations have identical
 keyspaces to avoid the scenario.
+
+### Changing the commit interval
+
+Starting in v26.34, you can change the commit interval of an existing sink.
+Changing the commit interval restarts the sink with the new setting. Any data
+that was buffered but not yet committed at the time of the change is committed
+immediately after the restart. All subsequent commits follow the new interval.
+
+Setting the commit interval to its current value is a no-op and does not restart the sink.
+However, values are compared textually rather than by duration.
+For example, setting `'1m'` when the current value is `'60s'` counts as a change and restarts the sink.
+
+See [Commit interval tradeoffs](/sql/create-sink/iceberg/#commit-interval-tradeoffs)
+for guidance on choosing a value.
 
 ### Catalog objects
 
@@ -2165,8 +2327,6 @@ Use `ALTER SOURCE` to:
 
 **Add subsource:**
 
-### Add subsource
-
 To add the specified upstream table(s) to the specified PostgreSQL/MySQL/SQL Server source:
 
 ```mzsql
@@ -2193,8 +2353,6 @@ ALTER SOURCE [IF EXISTS] <name>
 
 **Rename:**
 
-### Rename
-
 To rename a source:
 
 ```mzsql
@@ -2209,8 +2367,6 @@ ALTER SOURCE <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a source:
 
@@ -2227,8 +2383,6 @@ To change the owner of a source, you must be the owner of the source and have
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
 
 **(Re)Set retain history config:**
-
-### (Re)Set retain history config
 
 To set the retention history for a source:
 
@@ -2254,8 +2408,6 @@ ALTER SOURCE [IF EXISTS] <name>  RESET (RETAIN HISTORY);
 | `<name>` | The name of the source you want to alter.  |
 
 **(Re)Set timestamp interval:**
-
-### (Re)Set timestamp interval
 
 To set the timestamp interval for a source:
 
@@ -2409,7 +2561,7 @@ Name                                        | Default value             |  Descr
 `emit_trace_id_notice`                      | `false`                   | Boolean flag indicating whether to send a `notice` specifying the trace ID, when available.                                                                            | Yes
 `enable_rbac_checks`                        | `true`                    | Boolean flag indicating whether to apply RBAC checks before executing statements.                                                                                      | Yes
 `enable_session_rbac_checks`                | `false`                   | Boolean flag indicating whether RBAC is enabled for the current session.                                                                                               | No
-`extra_float_digits`                        | `3`                       | Boolean flag indicating whether to adjust the number of digits displayed for floating-point values.                                                                    | Yes
+`extra_float_digits`                        | `1`                       | Adjusts the number of digits displayed for floating-point values.                                                                                                      | Yes
 `failpoints`                                |                           | Allows failpoints to be dynamically activated.                                                                                                                         | No
 `idle_in_transaction_session_timeout`       | `120s`                    | The maximum allowed duration that a session can sit idle in a transaction before being terminated. If this value is specified without units, it is taken as milliseconds (`ms`). A value of zero disables the timeout. | Yes
 `integer_datetimes`                         | `true`                    | Boolean flag indicating whether the server uses 64-bit-integer dates and times.                                                                                        | No
@@ -2510,7 +2662,7 @@ Name                                        | Default value             |  Descr
 `emit_trace_id_notice`                      | `false`                   | Boolean flag indicating whether to send a `notice` specifying the trace ID, when available.                                                                            | Yes
 `enable_rbac_checks`                        | `true`                    | Boolean flag indicating whether to apply RBAC checks before executing statements.                                                                                      | Yes
 `enable_session_rbac_checks`                | `false`                   | Boolean flag indicating whether RBAC is enabled for the current session.                                                                                               | No
-`extra_float_digits`                        | `3`                       | Boolean flag indicating whether to adjust the number of digits displayed for floating-point values.                                                                    | Yes
+`extra_float_digits`                        | `1`                       | Adjusts the number of digits displayed for floating-point values.                                                                                                      | Yes
 `failpoints`                                |                           | Allows failpoints to be dynamically activated.                                                                                                                         | No
 `idle_in_transaction_session_timeout`       | `120s`                    | The maximum allowed duration that a session can sit idle in a transaction before being terminated. If this value is specified without units, it is taken as milliseconds (`ms`). A value of zero disables the timeout. | Yes
 `integer_datetimes`                         | `true`                    | Boolean flag indicating whether the server uses 64-bit-integer dates and times.                                                                                        | No
@@ -2575,8 +2727,6 @@ Use `ALTER TABLE` to:
 
 **Rename:**
 
-### Rename
-
 To rename a table:
 
 ```mzsql
@@ -2591,8 +2741,6 @@ ALTER TABLE <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a table:
 
@@ -2609,8 +2757,6 @@ To change the owner of a table, you must be the owner of the table and have
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
 
 **(Re)Set retain history config:**
-
-### (Re)Set retain history config
 
 To set the retention history for a user-populated table:
 
@@ -2657,8 +2803,6 @@ Use `ALTER TYPE` to:
 
 **Rename:**
 
-### Rename
-
 To rename a type:
 
 ```mzsql
@@ -2673,8 +2817,6 @@ ALTER TYPE <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a type:
 
@@ -2712,8 +2854,6 @@ Use `ALTER VIEW` to:
 
 **Rename:**
 
-### Rename
-
 To rename a view:
 
 ```mzsql
@@ -2728,8 +2868,6 @@ ALTER VIEW <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a view:
 
@@ -2946,8 +3084,9 @@ In Materialize, a DDL-only transaction block is a transaction that can contain
 multiple DDL statements. The following DDL statements are allowed in DDL-only
 transactions:
 
-- [`ALTER ... RENAME`](/sql/alter-schema/#rename-schema) (e.g., `ALTER TABLE ... RENAME`, `ALTER SCHEMA ... RENAME`)
-- [`ALTER ... SWAP`](/sql/alter-schema/#swap-with) (e.g., `ALTER SCHEMA ... SWAP`)
+- `ALTER ... RENAME` (e.g., [`ALTER TABLE ... RENAME`](/sql/alter-table/),
+  [`ALTER SCHEMA ... RENAME`](/sql/alter-schema/))
+- `ALTER ... SWAP` (e.g., [`ALTER SCHEMA ... SWAP`](/sql/alter-schema/))
 - [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/)
 - [`CREATE SOURCE`](/sql/create-source/)
 
@@ -3297,6 +3436,14 @@ When importing parquet files, entire row groups are held in memory at once, so e
 Materialize instance has enough available memory to accomodate your parquet files. If you are
 encountering memory issues, and are unable to reduce the sizes of your row groups, please [contact support](/support/).
 
+### Atomicity
+
+`COPY FROM` is atomic. When you copy from a location that contains multiple
+files, Materialize stages the data from every file and commits it in a single
+transaction. If any part of the operation fails, for example a file cannot be
+read or a row cannot be parsed, the entire `COPY FROM` fails and no data is
+committed. You are never left with some files ingested and others missing.
+
 ## Examples
 
 ### From STDIN
@@ -3597,6 +3744,12 @@ CREATE CLUSTER <cluster_name> (
     SIZE = <text>
     [, REPLICATION FACTOR = <int>]
     [, MANAGED = <bool>]
+    [, AUTO SCALING STRATEGY = (
+        ON HYDRATION (
+            HYDRATION SIZE = <text>
+            [, LINGER DURATION = <interval>]
+        )
+    )]
 );
 
 ```
@@ -3607,6 +3760,7 @@ CREATE CLUSTER <cluster_name> (
 | `SIZE` | The size of the resource allocations for the cluster.  For valid size values, see [Available sizes](#available-sizes).  |
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. See [Replication factor](#replication-factor) for details.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  <a name="unmanaged-clusters"></a>  Specify `FALSE` to create an **unmanaged** cluster. With unmanaged clusters, you need to manually manage the cluster's replicas using the the [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) and [`DROP CLUSTER REPLICA`](/sql/drop-cluster-replica) commands. When creating an unmanaged cluster, you must specify the `REPLICAS` option as well.  {{< tip >}} When getting started with Materialize, we recommend starting with managed clusters. {{</ tip >}}  Default: `TRUE`  |
+| `AUTO SCALING STRATEGY` | Optional. While the cluster has un-hydrated objects, provisions an extra burst replica at a larger size to speed up hydration. The steady-size replicas will continue to run, and hydrate in parallel. Once a steady-size replica hydrates and catches up with the burst, the burst replica is retired. This helps optimize costs while speeding up hydration. Only available on managed clusters.  Specify a single `ON HYDRATION` sub-policy, which supports the following options:  \| Option \| Description \| \|--------\|-------------\| \| `HYDRATION SIZE` \| The size of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration. For valid size values, see [Available sizes](#available-sizes). \| \| `LINGER DURATION` \| Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`. \|  |
 
 ## Details
 
@@ -3759,12 +3913,81 @@ See also:
 #### Cluster resizing
 
 You can change the size of a cluster to respond to changes in your workload
-using [`ALTER CLUSTER`](/sql/alter-cluster). Depending on the type of objects
-the cluster is hosting, this operation **might incur downtime**.
+using [`ALTER CLUSTER`](/sql/alter-cluster).
+
+As of **v26.35**, resizing is graceful and incurs **no downtime**: Materialize
+provisions new replicas at the target size, waits for them to hydrate, then
+retires the old ones. See [Monitoring a
+resize](/sql/alter-cluster/#monitoring-a-resize).
+
+In versions before v26.35, resizing could incur downtime, and zero-downtime
+resizing required the `WAIT UNTIL READY` option.
 
 See the reference documentation for [`ALTER
-CLUSTER`](/sql/alter-cluster#zero-downtime-cluster-resizing) for more details
+CLUSTER`](/sql/alter-cluster/#resizing) for more details
 on cluster resizing.
+
+### Autoscaling
+
+> **Public Preview:** This feature is in public preview.
+
+When you create an index, materialized view, or Kafka upsert source, or when a
+cluster restarts, the cluster must
+[hydrate](/concepts/clusters/#consider-hydration-requirements) the affected
+objects before they can serve results. Hydration reads the input data
+and rebuilds in-memory state, and its speed scales with the cluster
+[size](#available-sizes).
+
+The `AUTO SCALING STRATEGY (ON HYDRATION)` option lets a cluster **automatically
+provision an extra burst replica at the configured `HYDRATION SIZE` while it has
+un-hydrated objects**. This speeds up hydration without manually scaling the
+cluster up before hydration and back down afterward. The steady-size replicas
+continue hydrating in parallel, and once one of them catches up with the burst,
+the burst replica lingers for the `LINGER DURATION` and is then removed. The
+burst replica is an ordinary cluster replica, billed only for the time it is
+provisioned. See [Usage & billing](/administration/billing/) for details.
+
+`AUTO SCALING STRATEGY (ON HYDRATION)` is particularly useful for [blue/green
+deployments](/manage/blue-green/), where a new cluster must hydrate before the
+cutover. It is only available on **managed clusters**, and cannot be combined
+with a cluster `SCHEDULE` other than the default `MANUAL`.
+
+For example, the following cluster can provision a burst replica of size `800cc`:
+
+```mzsql
+CREATE CLUSTER fast_start (
+    SIZE = '100cc',
+    AUTO SCALING STRATEGY = (
+        ON HYDRATION (
+            HYDRATION SIZE = '800cc',
+            LINGER DURATION = '15s'
+        )
+    )
+);
+```
+
+You can specify the following options:
+
+Option | Description
+-------|------------
+`HYDRATION SIZE` | The [size](#available-sizes) of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration.
+`LINGER DURATION` | Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`.
+
+Provisioning the burst replica requires enough compute capacity to run it. In
+Materialize Self-Managed, this means your Kubernetes cluster must have enough
+spare resources (for example, available nodes) to schedule the burst replica.
+
+The burst is best-effort and never blocks the cluster: if the burst replica
+cannot be provisioned, the steady-size replicas still come up and hydrate as
+usual, as long as there are enough resources for them.
+
+To remove the autoscaling strategy from a cluster, use `ALTER CLUSTER ... RESET
+(AUTO SCALING STRATEGY)` or set an empty strategy with `AUTO SCALING STRATEGY =
+()`.
+
+You can inspect the configured strategy and any in-flight burst in the
+[`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
+catalog view.
 
 ### Replication factor
 
@@ -4791,10 +5014,12 @@ CREATE CONNECTION csr_ssh TO CONFLUENT SCHEMA REGISTRY (
 
 ### AWS Glue Schema Registry
 
+> **Public Preview:** This feature is in public preview.
+
 An AWS Glue Schema Registry connection establishes a link to an [AWS Glue Schema
 Registry]. You can use AWS Glue Schema Registry connections in the `FORMAT`
-clause of [`CREATE SOURCE`] statements to decode Avro-encoded messages whose
-schemas are managed in AWS Glue.
+clause of [`CREATE SOURCE`] statements to decode Avro-encoded messages, and of
+[`CREATE SINK`] statements to encode them, with schemas managed in AWS Glue.
 
 The connection authenticates to AWS through a separate [AWS connection](#aws),
 which supplies the credentials and region. See [AWS](#aws) for how to grant
@@ -4815,7 +5040,7 @@ CREATE CONNECTION <connection_name> TO AWS GLUE SCHEMA REGISTRY (
 | --- | --- |
 | `<connection_name>` | A name for the connection.  |
 | `AWS CONNECTION` | *Value:* object name. Required.  The name of an [AWS connection](#aws) that provides the credentials Materialize uses to authenticate to AWS Glue. The Schema Registry's region is taken from this connection.  |
-| `REGISTRY` | *Value:* `text`. Required.  The name of the AWS Glue Schema Registry to read schemas from (for example, `default-registry`). Must not be empty.  |
+| `REGISTRY` | *Value:* `text`. Required.  The name of the AWS Glue Schema Registry to use (for example, `default-registry`). Sources read schemas from the registry, and sinks register schemas in it. The registry must already exist. Must not be empty.  |
 | `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `VALIDATE` \| `boolean` \| Whether [connection validation](#connection-validation) should be performed on connection creation. Default: `true`. \|  |
 
 #### Examples {#glue-example}
@@ -4833,15 +5058,21 @@ CREATE CONNECTION glue_conn TO AWS GLUE SCHEMA REGISTRY (
 
 #### Permissions {#glue-permissions}
 
-The IAM role assumed by the [AWS connection](#aws) must be allowed to read
-schemas from the registry. Materialize uses the following AWS Glue actions:
+The IAM role assumed by the [AWS connection](#aws) must be allowed to access the
+registry. Sources only read. Sinks also register schemas. Materialize uses the
+following AWS Glue actions:
 
 | Action | When it is used |
 |--------|-----------------|
 | `glue:GetRegistry` | At connection creation, to validate the connection. Only required when `VALIDATE` is `true` (the default). |
-| `glue:GetSchemaVersion` | When a source is created, to pin the schema, and at runtime, to fetch the writer schema for each new schema version encountered. Always required. |
+| `glue:GetSchemaVersion` | Source: when the source is created, to pin the schema, and at runtime, to fetch the writer schema for each new schema version encountered. Sink: to poll a newly registered schema version until it becomes available. Always required. |
+| `glue:GetSchemaByDefinition` | Sink, to find an existing version matching the schema being registered. |
+| `glue:RegisterSchemaVersion` | Sink, to add a version to an existing schema. |
+| `glue:CreateSchema` | Sink, to create a schema on its first publish. |
+| `glue:GetSchema` | Sink, to read an existing schema's compatibility level and warn when it differs from the requested one. Optional. |
 
-A least-privilege policy scoped to a single registry looks like:
+A least-privilege policy for a source, scoped to a single registry, grants only
+the read actions:
 
 ```json
 {
@@ -4862,9 +5093,35 @@ A least-privilege policy scoped to a single registry looks like:
 }
 ```
 
+A sink additionally needs the schema-write actions on the same resources:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "glue:GetRegistry",
+                "glue:GetSchemaVersion",
+                "glue:GetSchemaByDefinition",
+                "glue:RegisterSchemaVersion",
+                "glue:CreateSchema",
+                "glue:GetSchema"
+            ],
+            "Resource": [
+                "arn:aws:glue:<region>:<account>:registry/<registry-name>",
+                "arn:aws:glue:<region>:<account>:schema/<registry-name>/*"
+            ]
+        }
+    ]
+}
+```
+
 If you create the connection with `WITH (VALIDATE = false)`, you can omit
-`glue:GetRegistry` and grant only `glue:GetSchemaVersion`. For details on
-creating and authorizing the AWS connection, see [AWS](#aws).
+`glue:GetRegistry`. The registry itself must already exist. Materialize sinks
+create and version schemas within it but never create the registry. For details
+on creating and authorizing the AWS connection, see [AWS](#aws).
 
 ### MySQL
 
@@ -5520,7 +5777,6 @@ Because indexes are scoped to a single cluster, they are most useful for acceler
 ## Syntax
 
 **CREATE INDEX:**
-### Create index
 
 Create an index using the specified columns as the index key.
 
@@ -5542,7 +5798,6 @@ ON <obj_name> [USING <method>] (<col_expr>, ...)
 | `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
 **CREATE DEFAULT INDEX:**
-### Create default index
 
 Create a default index using a set of columns that uniquely identify each row.
 If this set of columns cannot be inferred, all columns are used.
@@ -5785,8 +6040,6 @@ offers lower latency for direct querying within that cluster.
 
 **CREATE MATERIALIZED VIEW:**
 
-### Create materialized view
-
 ```mzsql
 CREATE MATERIALIZED VIEW [IF NOT EXISTS] <view_name>
 [(<col_ident>, ...)]
@@ -5806,8 +6059,6 @@ AS <select_stmt>;
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) whose results you want to maintain incrementally updated.  |
 
 **CREATE REPLACEMENT MATERIALIZED VIEW:**
-
-### Create replacement materialized view
 
 > **Public Preview:** This feature is in public preview.
 
@@ -6114,8 +6365,6 @@ the system.
 
 **Cloud:**
 
-### Cloud
-
 The following syntax is used to create a role in Materialize Cloud.
 
 ```mzsql
@@ -6140,7 +6389,6 @@ Instead, Materialize uses system level privileges. See [GRANT
 PRIVILEGE](../grant-privilege) for more details.
 
 **Self-Managed:**
-### Self-Managed
 
 The following syntax is used to create a role in Materialize Self-Managed.
 
@@ -6372,16 +6620,25 @@ INTO KAFKA CONNECTION <connection_name> (
 )
 [KEY ( <key_col1> [, ...] ) [NOT ENFORCED]]
 [HEADERS <headers_column>]
-FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name> [
-  (
-    [AVRO KEY FULLNAME '<avro_key_fullname>']
-    [, AVRO VALUE FULLNAME '<avro_value_fullname>']
-    [, NULL DEFAULTS <null_defaults>]
-    [, DOC ON <doc_on_option> [, ...]]
-    [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
-    [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
-  )
-]
+FORMAT AVRO
+    USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name> [
+      (
+        [AVRO KEY FULLNAME '<avro_key_fullname>']
+        [, AVRO VALUE FULLNAME '<avro_value_fullname>']
+        [, NULL DEFAULTS <null_defaults>]
+        [, DOC ON <doc_on_option> [, ...]]
+        [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
+        [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
+      )
+    ]
+  | USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> [
+      (
+        [KEY SCHEMA NAME '<key_schema_name>']
+        [, VALUE SCHEMA NAME '<value_schema_name>']
+        [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
+        [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
+      )
+    ]
 [ENVELOPE DEBEZIUM | UPSERT]
 [WITH (SNAPSHOT = <snapshot>)]
 
@@ -6461,6 +6718,14 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 --       [, AVRO VALUE FULLNAME '<avro_value_fullname>']
 --       [, NULL DEFAULTS <null_defaults>]
 --       [, DOC ON <doc_on_option> [, ...]]
+--       [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
+--       [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
+--     )
+-- ]
+-- | AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> [
+--     (
+--       [KEY SCHEMA NAME '<key_schema_name>']
+--       [, VALUE SCHEMA NAME '<value_schema_name>']
 --       [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
 --       [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
 --     )
@@ -7039,7 +7304,7 @@ CREATE [TEMP|TEMPORARY] TABLE [IF NOT EXISTS] <table_name> (
 | `<column_type>` |  The type of the column. For supported types, see [SQL data types](/sql/types/).  |
 | **NOT NULL** | *Optional.* If specified, disallow  _NULL_ values for the column. Columns without this constraint can contain _NULL_ values.  |
 | **DEFAULT <default_expr>** | *Optional.* If specified, use the `<default_expr>` as the default value for the column. If not specified, `NULL` is used as the default value.  |
-| **WITH (<with_option>[,...])** |  The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION BY (<column> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \| \| `RETAIN HISTORY <duration>` \| *Optional.* ***Private preview.** This option has known performance or stability issues and is under active development.* <br>If specified, Materialize retains historical data for the specified duration, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period).<br>Accepts positive [interval](/sql/types/interval/) values (e.g., `'1hr'`).\|  |
+| **WITH (<with_option>[,...])** |  The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION BY (<column> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \| \| `RETAIN HISTORY <duration>` \| *Optional.* ***Private preview.** This option has known performance or stability issues and is under active development.* <br>If specified, Materialize retains historical data for the specified duration, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period).<br>Accepts positive [interval](/sql/types/interval/) values (e.g., `'1hr'`).\|  |
 
 **PostgreSQL source table:**
 ### PostgreSQL source table
@@ -7065,11 +7330,11 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 
 | Syntax element | Description |
 | --- | --- |
-| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}  |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}  |
 | `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
 | **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
-| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
+| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
 
 For an example, see [Create a table (PostgreSQL
 source)](/sql/create-table/#create-a-table-postgresql-source).
@@ -7098,11 +7363,11 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 
 | Syntax element | Description |
 | --- | --- |
-| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}  |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}  |
 | `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
 | **(REFERENCE <upstream_schema>.<upstream_table>)** |  The fully-qualified name of the upstream MySQL table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
-| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, decode data as `text` for the listed column(s), such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
+| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, decode data as `text` for the listed column(s), such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
 
 **SQL Server source table:**
 ### SQL Server source table
@@ -7128,11 +7393,11 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 
 | Syntax element | Description |
 | --- | --- |
-| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}  |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}  |
 | `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
 | **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
-| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
+| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
 
 ## Read-write tables
 
@@ -7167,9 +7432,9 @@ guidelines](/sql/identifiers/#naming-restrictions).
 
 ### Read-only tables
 
-Source-populated tables are <strong>read-only</strong> tables. Users <strong>cannot</strong> perform write
+Source-populated tables are **read-only** tables. Users **cannot** perform write
 operations
-(<a href="/sql/insert/" ><code>INSERT</code></a>/<a href="/sql/update/" ><code>UPDATE</code></a>/<a href="/sql/delete/" ><code>DELETE</code></a>) on
+([`INSERT`](/sql/insert/)/[`UPDATE`](/sql/update/)/[`DELETE`](/sql/delete/)) on
 these tables.
 
 ### DDL transaction block
@@ -7179,10 +7444,11 @@ use within a [transaction block](/sql/begin/#ddl-only-transactions).
 
 ### Source-populated tables and snapshotting
 
-<p>Creating the tables from sources starts the <a href="/ingest-data/#snapshotting" >snapshotting</a> process. Snapshotting syncs the
+Creating the tables from sources starts the [snapshotting](/ingest-data/#snapshotting) process. Snapshotting syncs the
 currently available data into Materialize. Because the initial snapshot is
 persisted in the storage layer atomically (i.e., at the same ingestion
-timestamp), you are not able to query the table until snapshotting is complete.</p>
+timestamp), you are not able to query the table until snapshotting is complete.
+
 > **Note:** During the snapshotting, the data ingestion for the existing tables for the same
 > source is temporarily blocked. As such, if possible, you can resize the cluster
 > to speed up the snapshotting process and once the process finishes, resize the
@@ -7194,39 +7460,9 @@ timestamp), you are not able to query the table until snapshotting is complete.<
 **PostgreSQL:**
 #### PostgreSQL types
 
-Materialize natively supports the following PostgreSQL types (including the
-array type for each of the types):
-
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<p>Materialize natively supports the following PostgreSQL types (including the
+array type for each of the types):</p>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 
 Replicating tables that contain **unsupported [data types](/sql/types/)** is
 possible via the `TEXT COLUMNS` option. The specified columns will be
@@ -7247,39 +7483,8 @@ output.
 **MySQL:**
 #### MySQL types
 
-Materialize natively supports the following MySQL types:
-
-<ul style="column-count: 3">
-<li><code>bigint</code></li>
-<li><code>binary</code></li>
-<li><code>bit</code></li>
-<li><code>blob</code></li>
-<li><code>boolean</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>datetime</code></li>
-<li><code>decimal</code></li>
-<li><code>double</code></li>
-<li><code>float</code></li>
-<li><code>int</code></li>
-<li><code>json</code></li>
-<li><code>longblob</code></li>
-<li><code>longtext</code></li>
-<li><code>mediumblob</code></li>
-<li><code>mediumint</code></li>
-<li><code>mediumtext</code></li>
-<li><code>numeric</code></li>
-<li><code>real</code></li>
-<li><code>smallint</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>tinyblob</code></li>
-<li><code>tinyint</code></li>
-<li><code>tinytext</code></li>
-<li><code>varbinary</code></li>
-<li><code>varchar</code></li>
-</ul>
+<p>Materialize natively supports the following MySQL types:</p>
+<ul style="column-count: 3"><li><code>bigint</code></li><li><code>binary</code></li><li><code>bit</code></li><li><code>blob</code></li><li><code>boolean</code></li><li><code>char</code></li><li><code>date</code></li><li><code>datetime</code></li><li><code>decimal</code></li><li><code>double</code></li><li><code>float</code></li><li><code>int</code></li><li><code>json</code></li><li><code>longblob</code></li><li><code>longtext</code></li><li><code>mediumblob</code></li><li><code>mediumint</code></li><li><code>mediumtext</code></li><li><code>numeric</code></li><li><code>real</code></li><li><code>smallint</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>tinyblob</code></li><li><code>tinyint</code></li><li><code>tinytext</code></li><li><code>varbinary</code></li><li><code>varchar</code></li></ul>
 
 When replicating tables that contain the **unsupported [data
 types](/sql/types/)**, you can:
@@ -7314,71 +7519,19 @@ decode the affected columns as `text`. The zero values for `date`,
 **SQL Server:**
 #### SQL Server types
 
-<p>Materialize natively supports the following SQL Server types:</p>
-<ul style="column-count: 3">
-<li><code>tinyint</code></li>
-<li><code>smallint</code></li>
-<li><code>int</code></li>
-<li><code>bigint</code></li>
-<li><code>real</code></li>
-<li><code>double precision</code></li>
-<li><code>float</code></li>
-<li><code>bit</code></li>
-<li><code>decimal</code></li>
-<li><code>numeric</code></li>
-<li><code>money</code></li>
-<li><code>smallmoney</code></li>
-<li><code>char</code></li>
-<li><code>nchar</code></li>
-<li><code>varchar</code></li>
-<li><code>varchar(max)</code></li>
-<li><code>nvarchar</code></li>
-<li><code>nvarchar(max)</code></li>
-<li><code>sysname</code></li>
-<li><code>binary</code></li>
-<li><code>varbinary</code></li>
-<li><code>json</code></li>
-<li><code>date</code></li>
-<li><code>time</code></li>
-<li><code>smalldatetime</code></li>
-<li><code>datetime</code></li>
-<li><code>datetime2</code></li>
-<li><code>datetimeoffset</code></li>
-<li><code>uniqueidentifier</code></li>
-</ul>
+Materialize natively supports the following SQL Server types:
 
-<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is possible via the <a href="/sql/create-source/sql-server/#handling-unsupported-types" ><code>EXCLUDE COLUMNS</code> option</a> for the
-following types:</p>
-<ul style="column-count: 3">
-<li><code>text</code></li>
-<li><code>ntext</code></li>
-<li><code>image</code></li>
-<li><code>varbinary(max)</code></li>
-</ul>
-<p>Columns with the specified types need to be excluded because <a href="https://learn.microsoft.com/en-us/sql/relational-databases/system-tables/cdc-capture-instance-ct-transact-sql?view=sql-server-2017#large-object-data-types" >SQL Server does not provide
-the &ldquo;before&rdquo;</a>
-value when said column is updated.</p>
-<p>To replicate tables that contain the following unsupported data types:</p>
-<ul>
-<li><code>text</code></li>
-<li><code>ntext</code></li>
-<li><code>image</code></li>
-<li><code>varbinary(max)</code></li>
-</ul>
-<p>You can use either the <code>TEXT COLUMNS</code> or the <code>EXCLUDE COLUMNS</code> option.</p>
-<ul>
-<li>For <code>text</code> and <code>ntext</code> columns:
-<ul>
-<li>You can use <code>TEXT COLUMNS</code> to expose them as varchar and nvarchar, respectively.</li>
-<li>You can use <code>EXCLUDE COLUMNS</code> to omit them from replication.</li>
-</ul>
-</li>
-<li>For <code>image</code> and <code>varbinary(max)</code> columns:
-<ul>
-<li>You can use <code>EXCLUDE COLUMNS</code>.</li>
-</ul>
-</li>
-</ul>
+<ul style="column-count: 3"><li><code>tinyint</code></li><li><code>smallint</code></li><li><code>int</code></li><li><code>bigint</code></li><li><code>real</code></li><li><code>double precision</code></li><li><code>float</code></li><li><code>bit</code></li><li><code>decimal</code></li><li><code>numeric</code></li><li><code>money</code></li><li><code>smallmoney</code></li><li><code>char</code></li><li><code>nchar</code></li><li><code>varchar</code></li><li><code>varchar(max)</code></li><li><code>nvarchar</code></li><li><code>nvarchar(max)</code></li><li><code>sysname</code></li><li><code>binary</code></li><li><code>varbinary</code></li><li><code>json</code></li><li><code>date</code></li><li><code>time</code></li><li><code>smalldatetime</code></li><li><code>datetime</code></li><li><code>datetime2</code></li><li><code>datetimeoffset</code></li><li><code>uniqueidentifier</code></li></ul>
+
+To replicate tables that contain the following unsupported data types, you can
+use either the `TEXT COLUMNS` or the `EXCLUDE COLUMNS` option:
+
+| Unsupported type | Supported option(s)                                         |
+| ---------------- | ----------------------------------------------------------- |
+| `text`           | `TEXT COLUMNS` (exposed as `varchar`) or `EXCLUDE COLUMNS`  |
+| `ntext`          | `TEXT COLUMNS` (exposed as `nvarchar`) or `EXCLUDE COLUMNS` |
+| `image`          | `EXCLUDE COLUMNS`                                           |
+| `varbinary(max)` | `EXCLUDE COLUMNS`                                           |
 
 ### Handling table schema changes
 
@@ -7550,13 +7703,13 @@ COMMIT;
 
 ```
 {{< include-md
-file="shared-content/create-table-from-source-snapshotting.md" >}}
+file="content/headless/create-table-from-source-snapshotting.md" >}}
 
-{{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}
+{{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}
 
-Source-populated tables are <strong>read-only</strong> tables. Users <strong>cannot</strong> perform write
+Source-populated tables are **read-only** tables. Users **cannot** perform write
 operations
-(<a href="/sql/insert/" ><code>INSERT</code></a>/<a href="/sql/update/" ><code>UPDATE</code></a>/<a href="/sql/delete/" ><code>DELETE</code></a>) on
+([`INSERT`](/sql/insert/)/[`UPDATE`](/sql/update/)/[`DELETE`](/sql/delete/)) on
 these tables.
 
 Once the snapshotting process completes and the table is in the running state, you can query the table:
@@ -7586,7 +7739,6 @@ see [SQL Data Types: Custom types](../types/#custom-types).
 ## Syntax
 
 **Row type:**
-### Row type
 
 ```mzsql
 CREATE TYPE <type_name> AS (<field_name> <field_type>, ...);
@@ -7600,7 +7752,6 @@ CREATE TYPE <type_name> AS (<field_name> <field_type>, ...);
 | `<field_type>` | The data type of a field indicated by `field_name`.  |
 
 **List type:**
-### List type
 
 ```mzsql
 CREATE TYPE <type_name> AS LIST (ELEMENT TYPE = <element_type>);
@@ -7613,7 +7764,6 @@ CREATE TYPE <type_name> AS LIST (ELEMENT TYPE = <element_type>);
 | `<element_type>` | Creates a custom [`list`](/sql/types/list) whose elements are of `<element_type>`.  |
 
 **Map type:**
-### Map type
 
 ```mzsql
 CREATE TYPE <type_name> AS MAP (KEY TYPE = <key_type>, VALUE TYPE = <value_type>);
@@ -7743,7 +7893,6 @@ of materializing the view.
 ## Syntax
 
 **CREATE VIEW:**
-### Create view
 To create a view:
 
 ```mzsql
@@ -7761,7 +7910,6 @@ CREATE [TEMP|TEMPORARY] VIEW [IF NOT EXISTS] <view_name>[(<col_ident>, ...)] AS
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) that defines the view.  |
 
 **CREATE OR REPLACE VIEW:**
-### Create or replace view
 To create, or if a view exists with the same name, replace it with the view
 defined in this statement:
 
@@ -10360,7 +10508,7 @@ INTO KAFKA CONNECTION <connection_name> (
 | **TOPIC CONFIG** `<topic_config>` | Optional. Any topic-level configs to use when creating the Kafka topic (if the Kafka topic does not already exist). See the [Kafka documentation](https://kafka.apache.org/documentation/#topicconfigs) for available configs.  |
 | **KEY** ( `<key_column>` [, ...] ) [**NOT ENFORCED**] | Optional. A list of columns to use as the Kafka message key. If unspecified, the Kafka key is left unset. When using the upsert envelope, the key must be unique. Use **NOT ENFORCED** to disable validation of key uniqueness. See [Upsert key selection](/sql/create-sink/kafka/#upsert-key-selection) for details.  |
 | **HEADERS** `<headers_column>` | Optional. A column containing headers to add to each Kafka message emitted by the sink. The column must be of type `map[text => text]` or `map[text => bytea]`. See [Headers](/sql/create-sink/kafka/#headers) for details.  |
-| **FORMAT** `<sink_format_spec>` | Optional. Specifies the format to use for both keys and values: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `JSON`, `TEXT`, or `BYTES`. See [Formats](/sql/create-sink/kafka/#formats) for details.  |
+| **FORMAT** `<sink_format_spec>` | Optional. Specifies the format to use for both keys and values: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name>`, `JSON`, `TEXT`, or `BYTES`. See [Formats](/sql/create-sink/kafka/#formats) for details.  |
 | **KEY FORMAT** `<sink_format_spec>` **VALUE FORMAT** `<sink_format_spec>` | Optional. Specifies the key format and value formats separately. See [Formats](/sql/create-sink/kafka/#formats) for details.  |
 | **ENVELOPE** (`DEBEZIUM` \| `UPSERT`) | Optional. Specifies how changes to the sink's upstream relation are mapped to Kafka messages. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `DEBEZIUM` \| The generated schemas have a [Debezium-style diff envelope](/sql/create-sink/kafka/#debezium) to capture changes in the input view or source. \| \| `UPSERT` \| The sink emits data with [upsert semantics](/sql/create-sink/kafka/#upsert). Requires a unique key specified using the `KEY` option. \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `SNAPSHOT = <snapshot>` \| Default: `true`. Whether to emit the consolidated results of the query before the sink was created at the start of the sink. To see only results after the sink is created, specify `WITH (SNAPSHOT = false)`. \|  |
@@ -10639,8 +10787,6 @@ role(s)](/sql/create-role/).
 > runtime effect. They're stored so that a later `REVOKE ALL ON TABLE` can
 > clear every privilege previously granted through the same shorthand.
 
-<!-- ============ CLUSTER syntax ==============  -->
-
 **Cluster:**
 
 For specific cluster(s):
@@ -10658,8 +10804,6 @@ GRANT <USAGE | CREATE | ALL [PRIVILEGES]> [, ... ]
 ON ALL CLUSTERS
 TO <role_name> [, ... ];
 ```
-
-<!-- ================== Connection syntax ======================  -->
 
 **Connection:**
 
@@ -10680,8 +10824,6 @@ ON ALL CONNECTIONS
 TO <role_name> [, ... ];
 ```
 
-<!-- ================== Database syntax =====================  -->
-
 **Database:**
 
 For specific database(s):
@@ -10699,8 +10841,6 @@ GRANT <USAGE | CREATE | ALL [PRIVILEGES]> [, ... ]
 ON ALL DATABASES
 TO <role_name> [, ... ];
 ```
-
-<!-- =============== Materialized view syntax ===================  -->
 
 **Materialized view/view/source:**
 
@@ -10728,8 +10868,6 @@ ON TABLE <name> [, <name> ...]
 TO <role_name> [, ... ];
 ```
 
-<!-- ================== Network policy syntax ==================  -->
-
 **Network policy:**
 
 For specific network policies:
@@ -10747,8 +10885,6 @@ GRANT <USAGE | ALL [PRIVILEGES]>
 ON ALL POLICIES
 TO <role_name> [, ... ];
 ```
-
-<!-- ==================== Schema syntax =====================  -->
 
 **Schema:**
 
@@ -10768,8 +10904,6 @@ ON ALL SCHEMAS [IN DATABASE <name> [, <name> ...]]
 TO <role_name> [, ... ];
 ```
 
-<!-- ==================== Secret syntax =====================  -->
-
 **Secret:**
 
 For specific secret(s):
@@ -10788,8 +10922,6 @@ ON ALL SECRET [IN DATABASE <name> [, <name> ...]]
 TO <role_name> [, ... ];
 ```
 
-<!-- ==================== System syntax =====================  -->
-
 **System:**
 
 ```mzsql
@@ -10797,8 +10929,6 @@ GRANT <CREATEROLE | CREATEDB | CREATECLUSTER | CREATENETWORKPOLICY | ALL [PRIVIL
 ON SYSTEM
 TO <role_name> [, ... ];
 ```
-
-<!-- ==================== Type syntax =======================  -->
 
 **Type:**
 
@@ -10818,8 +10948,6 @@ ON ALL TYPES
   [ IN <SCHEMA|DATABASE> <name> [, <name> ...] ]
 TO <role_name> [, ... ];
 ```
-
-<!-- ======================= Table syntax =====================  -->
 
 **Table:**
 
@@ -11104,7 +11232,7 @@ the syntax errors that result are not always obvious.
 The current keywords are listed below.
 
 | | | | |
-|--|--|--|--||`ABORT` |`ACCESS` |`ACCOUNT` |`ACTION`||`ADD` |`ADDED` |`ADDRESS` |`ADDRESSES`||`AFTER` |`AGGREGATE` |`AGGREGATION` |`ALIGNED`||`ALL` |`ALTER` |`ANALYSE` |`ANALYSIS`||`ANALYZE` |`AND` |`ANY` |`APPEND`||`APPLY` |`ARITY` |`ARN` |`ARRANGED`||`ARRANGEMENT` |`ARRAY` |`AS` |`ASC`||`ASSERT` |`ASSUME` |`AT` |`AUCTION`||`AUTHORITY` |`AVAILABILITY` |`AVRO` |`AWS`||`BATCH` |`BEGIN` |`BETWEEN` |`BIGINT`||`BILLED` |`BODY` |`BOOLEAN` |`BOTH`||`BPCHAR` |`BROKEN` |`BROKER` |`BROKERS`||`BY` |`BYTES` |`CAPTURE` |`CARDINALITY`||`CASCADE` |`CASE` |`CAST` |`CATALOG`||`CERTIFICATE` |`CHAIN` |`CHAINS` |`CHAR`||`CHARACTER` |`CHARACTERISTICS` |`CHECK` |`CLASS`||`CLIENT` |`CLOCK` |`CLOSE` |`CLUSTER`||`CLUSTERS` |`COALESCE` |`COLLATE` |`COLUMN`||`COLUMNS` |`COMMENT` |`COMMIT` |`COMMITTED`||`COMPACTION` |`COMPATIBILITY` |`COMPRESSION` |`COMPUTE`||`COMPUTECTL` |`CONFIG` |`CONFLUENT` |`CONNECTION`||`CONNECTIONS` |`CONSTRAINT` |`COPY` |`CORRELATED`||`COUNT` |`COUNTER` |`CPU` |`CREATE`||`CREATECLUSTER` |`CREATEDB` |`CREATENETWORKPOLICY` |`CREATEROLE`||`CREATION` |`CREDENTIAL` |`CROSS` |`CSE`||`CSV` |`CTE` |`CURRENT` |`CURSOR`||`DATABASE` |`DATABASES` |`DATUMS` |`DAY`||`DAYS` |`DEALLOCATE` |`DEBEZIUM` |`DEBUG`||`DEBUGGING` |`DEC` |`DECIMAL` |`DECLARE`||`DECODING` |`DECORRELATED` |`DEFAULT` |`DEFAULTS`||`DELETE` |`DELIMITED` |`DELIMITER` |`DELTA`||`DESC` |`DETAILS` |`DIRECTION` |`DISCARD`||`DISK` |`DISTINCT` |`DOC` |`DOT`||`DOUBLE` |`DROP` |`EAGER` |`ELEMENT`||`ELSE` |`ENABLE` |`END` |`ENDPOINT`||`ENFORCED` |`ENVELOPE` |`EQUIVALENCES` |`ERROR`||`ERRORS` |`ESCAPE` |`ESTIMATE` |`EVERY`||`EXCEPT` |`EXCLUDE` |`EXECUTE` |`EXISTS`||`EXPECTED` |`EXPLAIN` |`EXPOSE` |`EXPRESSIONS`||`EXTERNAL` |`EXTRACT` |`FACTOR` |`FALSE`||`FAST` |`FEATURES` |`FETCH` |`FIELDS`||`FILE` |`FILES` |`FILTER` |`FIRST`||`FIXED` |`FIXPOINT` |`FLOAT` |`FOLLOWING`||`FOR` |`FOREIGN` |`FORMAT` |`FORWARD`||`FROM` |`FULL` |`FULLNAME` |`FUNCTION`||`FUSION` |`GCP` |`GENERATOR` |`GLUE`||`GRANT` |`GREATEST` |`GROUP` |`GROUPS`||`HAVING` |`HEADER` |`HEADERS` |`HINTS`||`HISTORY` |`HOLD` |`HOST` |`HOUR`||`HOURS` |`HUMANIZED` |`HYDRATION` |`ICEBERG`||`ID` |`IDENTIFIERS` |`IDS` |`IF`||`IGNORE` |`ILIKE` |`IMPLEMENTATIONS` |`IMPORTED`||`IN` |`INCLUDE` |`INDEX` |`INDEXES`||`INFO` |`INHERIT` |`INLINE` |`INNER`||`INPUT` |`INSERT` |`INSIGHTS` |`INSPECT`||`INSTANCE` |`INT` |`INTEGER` |`INTERNAL`||`INTERSECT` |`INTERVAL` |`INTO` |`INTROSPECTION`||`IS` |`ISNULL` |`ISOLATION` |`JOIN`||`JOINS` |`JSON` |`KAFKA` |`KEY`||`KEYS` |`LAST` |`LATERAL` |`LATEST`||`LEADING` |`LEAST` |`LEFT` |`LEGACY`||`LETREC` |`LEVEL` |`LIKE` |`LIMIT`||`LINEAR` |`LIST` |`LOAD` |`LOCAL`||`LOCALLY` |`LOG` |`LOGICAL` |`LOGIN`||`LOWERING` |`MANAGED` |`MANUAL` |`MAP`||`MARKETING` |`MATCHING` |`MATERIALIZE` |`MATERIALIZED`||`MAX` |`MECHANISMS` |`MEMBERSHIP` |`MEMORY`||`MESSAGE` |`METADATA` |`MINUTE` |`MINUTES`||`MOCK` |`MODE` |`MONTH` |`MONTHS`||`MUTUALLY` |`MYSQL` |`NAME` |`NAMES`||`NAMESPACE` |`NATURAL` |`NEGATIVE` |`NETWORK`||`NEW` |`NEXT` |`NFC` |`NFD`||`NFKC` |`NFKD` |`NO` |`NOCREATECLUSTER`||`NOCREATEDB` |`NOCREATEROLE` |`NODE` |`NOINHERIT`||`NOLOGIN` |`NON` |`NONE` |`NORMALIZE`||`NOSUPERUSER` |`NOT` |`NOTICE` |`NOTICES`||`NULL` |`NULLIF` |`NULLS` |`OBJECTS`||`OF` |`OFFSET` |`ON` |`ONLY`||`OPERATOR` |`OPTIMIZED` |`OPTIMIZER` |`OPTIONS`||`OR` |`ORDER` |`ORDINALITY` |`OUTER`||`OVER` |`OWNED` |`OWNER` |`PARTITION`||`PARTITIONS` |`PASSWORD` |`PATH` |`PATTERN`||`PHYSICAL` |`PLAN` |`PLANS` |`POLICIES`||`POLICY` |`PORT` |`POSITION` |`POSTGRES`||`PRECEDING` |`PRECISION` |`PREFIX` |`PREPARE`||`PRIMARY` |`PRIORITIZE` |`PRIVATELINK` |`PRIVILEGES`||`PROGRESS` |`PROJECTION` |`PROTOBUF` |`PROTOCOL`||`PUBLIC` |`PUBLICATION` |`PUSHDOWN` |`QUALIFY`||`QUERY` |`QUOTE` |`RAISE` |`RANGE`||`RATE` |`RAW` |`READ` |`READY`||`REAL` |`REASSIGN` |`RECURSION` |`RECURSIVE`||`REDACTED` |`REDUCE` |`REFERENCE` |`REFERENCES`||`REFRESH` |`REGEX` |`REGION` |`REGISTRY`||`RELATION` |`RENAME` |`REOPTIMIZE` |`REPEATABLE`||`REPLACE` |`REPLACEMENT` |`REPLAN` |`REPLICA`||`REPLICAS` |`REPLICATION` |`RESET` |`RESPECT`||`RESTRICT` |`RETAIN` |`RETURN` |`RETURNING`||`REVOKE` |`RIGHT` |`ROLE` |`ROLES`||`ROLLBACK` |`ROTATE` |`ROUNDS` |`ROW`||`ROWS` |`RULES` |`SASL` |`SCALE`||`SCHEDULE` |`SCHEMA` |`SCHEMAS` |`SCOPE`||`SECOND` |`SECONDS` |`SECRET` |`SECRETS`||`SECURITY` |`SEED` |`SELECT` |`SEQUENCES`||`SERIALIZABLE` |`SERVER` |`SERVICE` |`SESSION`||`SET` |`SHARD` |`SHOW` |`SINK`||`SINKS` |`SIZE` |`SKEW` |`SMALLINT`||`SNAPSHOT` |`SOME` |`SOURCE` |`SOURCES`||`SQL` |`SSH` |`SSL` |`START`||`STDIN` |`STDOUT` |`STORAGE` |`STORAGECTL`||`STRATEGY` |`STRICT` |`STRING` |`STRONG`||`SUBSCRIBE` |`SUBSOURCE` |`SUBSOURCES` |`SUBSTRING`||`SUBTREE` |`SUPERUSER` |`SWAP` |`SYNTAX`||`SYSTEM` |`TABLE` |`TABLES` |`TAIL`||`TEMP` |`TEMPORARY` |`TEST` |`TEXT`||`THEN` |`TICK` |`TIES` |`TIME`||`TIMEOUT` |`TIMESTAMP` |`TIMESTAMPTZ` |`TIMING`||`TO` |`TOKEN` |`TOPIC` |`TPCH`||`TRACE` |`TRAILING` |`TRANSACTION` |`TRANSACTIONAL`||`TRANSFORM` |`TRIM` |`TRUE` |`TUNNEL`||`TYPE` |`TYPES` |`UNBOUNDED` |`UNCOMMITTED`||`UNION` |`UNIQUE` |`UNIT` |`UNKNOWN`||`UNNEST` |`UNTIL` |`UP` |`UPDATE`||`UPSERT` |`URL` |`USAGE` |`USER`||`USERNAME` |`USERS` |`USING` |`VALIDATE`||`VALUE` |`VALUES` |`VARCHAR` |`VARIADIC`||`VARYING` |`VERBOSE` |`VERSION` |`VIEW`||`VIEWS` |`WAIT` |`WAREHOUSE` |`WARNING`||`WEBHOOK` |`WHEN` |`WHERE` |`WHILE`||`WINDOW` |`WIRE` |`WITH` |`WITHIN`||`WITHOUT` |`WORK` |`WORKERS` |`WORKLOAD`||`WRITE` |`YEAR` |`YEARS` |`ZONE`||`ZONES` |&nbsp; |&nbsp; |&nbsp;|
+|--|--|--|--||`ABORT` |`ACCESS` |`ACCOUNT` |`ACTION`||`ADD` |`ADDED` |`ADDRESS` |`ADDRESSES`||`AFTER` |`AGGREGATE` |`AGGREGATION` |`ALIGNED`||`ALL` |`ALTER` |`ANALYSE` |`ANALYSIS`||`ANALYZE` |`AND` |`ANY` |`APPEND`||`APPLY` |`ARITY` |`ARN` |`ARRANGED`||`ARRANGEMENT` |`ARRAY` |`AS` |`ASC`||`ASSERT` |`ASSUME` |`AT` |`AUCTION`||`AUTHORITY` |`AUTO` |`AVAILABILITY` |`AVRO`||`AWS` |`BATCH` |`BEGIN` |`BETWEEN`||`BIGINT` |`BILLED` |`BODY` |`BOOLEAN`||`BOTH` |`BPCHAR` |`BROKEN` |`BROKER`||`BROKERS` |`BY` |`BYTES` |`CAPTURE`||`CARDINALITY` |`CASCADE` |`CASE` |`CAST`||`CATALOG` |`CERTIFICATE` |`CHAIN` |`CHAINS`||`CHAR` |`CHARACTER` |`CHARACTERISTICS` |`CHECK`||`CLASS` |`CLIENT` |`CLOCK` |`CLOSE`||`CLUSTER` |`CLUSTERS` |`COALESCE` |`COLLATE`||`COLUMN` |`COLUMNS` |`COMMENT` |`COMMIT`||`COMMITTED` |`COMPACTION` |`COMPATIBILITY` |`COMPRESSION`||`COMPUTE` |`COMPUTECTL` |`CONFIG` |`CONFLUENT`||`CONNECTION` |`CONNECTIONS` |`CONSTRAINT` |`COPY`||`CORRELATED` |`COUNT` |`COUNTER` |`CPU`||`CREATE` |`CREATECLUSTER` |`CREATEDB` |`CREATENETWORKPOLICY`||`CREATEROLE` |`CREATION` |`CREDENTIAL` |`CROSS`||`CSE` |`CSV` |`CTE` |`CURRENT`||`CURSOR` |`DATABASE` |`DATABASES` |`DATUMS`||`DAY` |`DAYS` |`DEALLOCATE` |`DEBEZIUM`||`DEBUG` |`DEBUGGING` |`DEC` |`DECIMAL`||`DECLARE` |`DECODING` |`DECORRELATED` |`DEFAULT`||`DEFAULTS` |`DELETE` |`DELIMITED` |`DELIMITER`||`DELTA` |`DESC` |`DETAILS` |`DIRECTION`||`DISCARD` |`DISK` |`DISTINCT` |`DOC`||`DOT` |`DOUBLE` |`DROP` |`DURATION`||`EAGER` |`ELEMENT` |`ELSE` |`ENABLE`||`END` |`ENDPOINT` |`ENFORCED` |`ENVELOPE`||`EQUIVALENCES` |`ERROR` |`ERRORS` |`ESCAPE`||`ESTIMATE` |`EVERY` |`EXCEPT` |`EXCLUDE`||`EXECUTE` |`EXISTS` |`EXPECTED` |`EXPERIMENTAL`||`EXPLAIN` |`EXPOSE` |`EXPRESSIONS` |`EXTERNAL`||`EXTRACT` |`FACTOR` |`FALSE` |`FAST`||`FEATURES` |`FETCH` |`FIELDS` |`FILE`||`FILES` |`FILTER` |`FIRST` |`FIXED`||`FIXPOINT` |`FLOAT` |`FOLLOWING` |`FOR`||`FOREIGN` |`FORMAT` |`FORWARD` |`FROM`||`FULL` |`FULLNAME` |`FUNCTION` |`FUSION`||`GCP` |`GENERATOR` |`GLUE` |`GRANT`||`GREATEST` |`GROUP` |`GROUPS` |`HAVING`||`HEADER` |`HEADERS` |`HINTS` |`HISTORY`||`HOLD` |`HOST` |`HOUR` |`HOURS`||`HUMANIZED` |`HYDRATION` |`ICEBERG` |`ID`||`IDENTIFIERS` |`IDS` |`IF` |`IGNORE`||`ILIKE` |`IMPLEMENTATIONS` |`IMPORTED` |`IN`||`INCLUDE` |`INDEX` |`INDEXES` |`INFO`||`INHERIT` |`INLINE` |`INNER` |`INPUT`||`INSERT` |`INSIGHTS` |`INSPECT` |`INSTANCE`||`INT` |`INTEGER` |`INTERNAL` |`INTERSECT`||`INTERVAL` |`INTO` |`INTROSPECTION` |`IS`||`ISNULL` |`ISOLATION` |`JOIN` |`JOINS`||`JSON` |`KAFKA` |`KEY` |`KEYS`||`LAST` |`LATERAL` |`LATEST` |`LEADING`||`LEAST` |`LEFT` |`LEGACY` |`LETREC`||`LEVEL` |`LIKE` |`LIMIT` |`LINEAR`||`LINGER` |`LIST` |`LOAD` |`LOCAL`||`LOCALLY` |`LOG` |`LOGICAL` |`LOGIN`||`LOWERING` |`MANAGED` |`MANUAL` |`MAP`||`MARKETING` |`MATCHING` |`MATERIALIZE` |`MATERIALIZED`||`MAX` |`MECHANISMS` |`MEMBERSHIP` |`MEMORY`||`MESSAGE` |`METADATA` |`MINUTE` |`MINUTES`||`MOCK` |`MODE` |`MONTH` |`MONTHS`||`MUTUALLY` |`MYSQL` |`NAME` |`NAMES`||`NAMESPACE` |`NATURAL` |`NEGATIVE` |`NETWORK`||`NEW` |`NEXT` |`NFC` |`NFD`||`NFKC` |`NFKD` |`NO` |`NOCREATECLUSTER`||`NOCREATEDB` |`NOCREATEROLE` |`NODE` |`NOINHERIT`||`NOLOGIN` |`NON` |`NONE` |`NORMALIZE`||`NOSUPERUSER` |`NOT` |`NOTICE` |`NOTICES`||`NULL` |`NULLIF` |`NULLS` |`OBJECTS`||`OF` |`OFFSET` |`ON` |`ONLY`||`OPERATOR` |`OPTIMIZED` |`OPTIMIZER` |`OPTIONS`||`OR` |`ORDER` |`ORDINALITY` |`OUTER`||`OVER` |`OWNED` |`OWNER` |`PARTITION`||`PARTITIONS` |`PASSWORD` |`PATH` |`PATTERN`||`PHYSICAL` |`PLAN` |`PLANS` |`POLICIES`||`POLICY` |`PORT` |`POSITION` |`POSTGRES`||`PRECEDING` |`PRECISION` |`PREFIX` |`PREPARE`||`PRIMARY` |`PRIORITIZE` |`PRIVATELINK` |`PRIVILEGES`||`PROGRESS` |`PROJECTION` |`PROTOBUF` |`PROTOCOL`||`PUBLIC` |`PUBLICATION` |`PUSHDOWN` |`QUALIFY`||`QUERY` |`QUOTE` |`RAISE` |`RANGE`||`RATE` |`RAW` |`READ` |`READY`||`REAL` |`REASSIGN` |`RECURSION` |`RECURSIVE`||`REDACTED` |`REDUCE` |`REFERENCE` |`REFERENCES`||`REFRESH` |`REGEX` |`REGION` |`REGISTRY`||`RELATION` |`RENAME` |`REOPTIMIZE` |`REPEATABLE`||`REPLACE` |`REPLACEMENT` |`REPLAN` |`REPLICA`||`REPLICAS` |`REPLICATION` |`RESET` |`RESPECT`||`RESTRICT` |`RETAIN` |`RETURN` |`RETURNING`||`REVOKE` |`RIGHT` |`ROLE` |`ROLES`||`ROLLBACK` |`ROTATE` |`ROUNDS` |`ROW`||`ROWS` |`RULES` |`SASL` |`SCALE`||`SCALING` |`SCHEDULE` |`SCHEMA` |`SCHEMAS`||`SCOPE` |`SECOND` |`SECONDS` |`SECRET`||`SECRETS` |`SECURITY` |`SEED` |`SELECT`||`SEQUENCES` |`SERIALIZABLE` |`SERVER` |`SERVICE`||`SESSION` |`SET` |`SHARD` |`SHOW`||`SINK` |`SINKS` |`SIZE` |`SKEW`||`SMALLINT` |`SNAPSHOT` |`SOME` |`SOURCE`||`SOURCES` |`SQL` |`SSH` |`SSL`||`START` |`STDIN` |`STDOUT` |`STORAGE`||`STORAGECTL` |`STRATEGY` |`STRICT` |`STRING`||`STRONG` |`SUBSCRIBE` |`SUBSOURCE` |`SUBSOURCES`||`SUBSTRING` |`SUBTREE` |`SUPERUSER` |`SWAP`||`SYNTAX` |`SYSTEM` |`TABLE` |`TABLES`||`TAIL` |`TEMP` |`TEMPORARY` |`TEST`||`TEXT` |`THEN` |`TICK` |`TIES`||`TIME` |`TIMEOUT` |`TIMESTAMP` |`TIMESTAMPTZ`||`TIMING` |`TO` |`TOKEN` |`TOPIC`||`TPCH` |`TRACE` |`TRAILING` |`TRANSACTION`||`TRANSACTIONAL` |`TRANSFORM` |`TRIM` |`TRUE`||`TUNNEL` |`TYPE` |`TYPES` |`UNBOUNDED`||`UNCOMMITTED` |`UNION` |`UNIQUE` |`UNIT`||`UNKNOWN` |`UNNEST` |`UNTIL` |`UP`||`UPDATE` |`UPSERT` |`URL` |`USAGE`||`USER` |`USERNAME` |`USERS` |`USING`||`VALIDATE` |`VALUE` |`VALUES` |`VARCHAR`||`VARIADIC` |`VARYING` |`VERBOSE` |`VERSION`||`VIEW` |`VIEWS` |`WAIT` |`WAREHOUSE`||`WARNING` |`WEBHOOK` |`WHEN` |`WHERE`||`WHILE` |`WINDOW` |`WIRE` |`WITH`||`WITHIN` |`WITHOUT` |`WORK` |`WORKERS`||`WORKLOAD` |`WRITE` |`YEAR` |`YEARS`||`ZONE` |`ZONES` |&nbsp; |&nbsp;|
 
 ---
 
@@ -11356,7 +11484,7 @@ Name                                        | Default value             |  Descr
 `emit_trace_id_notice`                      | `false`                   | Boolean flag indicating whether to send a `notice` specifying the trace ID, when available.                                                                            | Yes
 `enable_rbac_checks`                        | `true`                    | Boolean flag indicating whether to apply RBAC checks before executing statements.                                                                                      | Yes
 `enable_session_rbac_checks`                | `false`                   | Boolean flag indicating whether RBAC is enabled for the current session.                                                                                               | No
-`extra_float_digits`                        | `3`                       | Boolean flag indicating whether to adjust the number of digits displayed for floating-point values.                                                                    | Yes
+`extra_float_digits`                        | `1`                       | Adjusts the number of digits displayed for floating-point values.                                                                                                      | Yes
 `failpoints`                                |                           | Allows failpoints to be dynamically activated.                                                                                                                         | No
 `idle_in_transaction_session_timeout`       | `120s`                    | The maximum allowed duration that a session can sit idle in a transaction before being terminated. If this value is specified without units, it is taken as milliseconds (`ms`). A value of zero disables the timeout. | Yes
 `integer_datetimes`                         | `true`                    | Boolean flag indicating whether the server uses 64-bit-integer dates and times.                                                                                        | No
@@ -11441,8 +11569,6 @@ be used to indicate that the privileges should be revoked from all roles
 > granted through the same shorthand, including the non-applicable ones that
 > have no runtime effect.
 
-<!-- ============ CLUSTER syntax ==============  -->
-
 **Cluster:**
 
 For specific cluster(s):
@@ -11463,8 +11589,6 @@ FROM <role_name> [, ... ]
 ;
 ```
 
-<!-- ================== Connection syntax ======================  -->
-
 **Connection:**
 
 For specific connection(s):
@@ -11484,8 +11608,6 @@ ON ALL CONNECTIONS
 FROM <role_name> [, ... ];
 ```
 
-<!-- ================== Database syntax =====================  -->
-
 **Database:**
 
 For specific database(s):
@@ -11503,8 +11625,6 @@ REVOKE <USAGE | CREATE | ALL [PRIVILEGES]> [, ... ]
 ON ALL DATABASES
 FROM <role_name> [, ... ];
 ```
-
-<!-- =============== Materialized view syntax ===================  -->
 
 **Materialized view/view/source:**
 
@@ -11532,8 +11652,6 @@ ON TABLE <name> [, <name> ...]
 FROM <role_name> [, ... ];
 ```
 
-<!-- ================== Network policy syntax ==================  -->
-
 **Network policy:**
 
 For specific network policies:
@@ -11551,8 +11669,6 @@ REVOKE <USAGE | ALL [PRIVILEGES]>
 ON ALL POLICIES
 FROM <role_name> [, ... ];
 ```
-
-<!-- ==================== Schema syntax =====================  -->
 
 **Schema:**
 
@@ -11572,8 +11688,6 @@ ON ALL SCHEMAS [IN DATABASE <name> [, <name> ...]]
 FROM <role_name> [, ... ];
 ```
 
-<!-- ==================== Secret syntax =====================  -->
-
 **Secret:**
 
 For specific secret(s):
@@ -11592,8 +11706,6 @@ ON ALL SECRET [IN DATABASE <name> [, <name> ...]]
 FROM <role_name> [, ... ];
 ```
 
-<!-- ==================== System syntax =====================  -->
-
 **System:**
 
 ```mzsql
@@ -11601,8 +11713,6 @@ REVOKE <CREATEROLE | CREATEDB | CREATECLUSTER | CREATENETWORKPOLICY | ALL [PRIVI
 ON SYSTEM
 FROM <role_name> [, ... ];
 ```
-
-<!-- ==================== Type syntax =======================  -->
 
 **Type:**
 
@@ -11622,8 +11732,6 @@ ON ALL TYPES
   [ IN <SCHEMA|DATABASE> <name> [, <name> ...] ]
 FROM <role_name> [, ... ];
 ```
-
-<!-- ======================= Table syntax =====================  -->
 
 **Table:**
 
@@ -12137,7 +12245,7 @@ Name                                        | Default value             |  Descr
 `emit_trace_id_notice`                      | `false`                   | Boolean flag indicating whether to send a `notice` specifying the trace ID, when available.                                                                            | Yes
 `enable_rbac_checks`                        | `true`                    | Boolean flag indicating whether to apply RBAC checks before executing statements.                                                                                      | Yes
 `enable_session_rbac_checks`                | `false`                   | Boolean flag indicating whether RBAC is enabled for the current session.                                                                                               | No
-`extra_float_digits`                        | `3`                       | Boolean flag indicating whether to adjust the number of digits displayed for floating-point values.                                                                    | Yes
+`extra_float_digits`                        | `1`                       | Adjusts the number of digits displayed for floating-point values.                                                                                                      | Yes
 `failpoints`                                |                           | Allows failpoints to be dynamically activated.                                                                                                                         | No
 `idle_in_transaction_session_timeout`       | `120s`                    | The maximum allowed duration that a session can sit idle in a transaction before being terminated. If this value is specified without units, it is taken as milliseconds (`ms`). A value of zero disables the timeout. | Yes
 `integer_datetimes`                         | `true`                    | Boolean flag indicating whether the server uses 64-bit-integer dates and times.                                                                                        | No
@@ -12278,7 +12386,7 @@ Name                                        | Default value             |  Descr
 `emit_trace_id_notice`                      | `false`                   | Boolean flag indicating whether to send a `notice` specifying the trace ID, when available.                                                                            | Yes
 `enable_rbac_checks`                        | `true`                    | Boolean flag indicating whether to apply RBAC checks before executing statements.                                                                                      | Yes
 `enable_session_rbac_checks`                | `false`                   | Boolean flag indicating whether RBAC is enabled for the current session.                                                                                               | No
-`extra_float_digits`                        | `3`                       | Boolean flag indicating whether to adjust the number of digits displayed for floating-point values.                                                                    | Yes
+`extra_float_digits`                        | `1`                       | Adjusts the number of digits displayed for floating-point values.                                                                                                      | Yes
 `failpoints`                                |                           | Allows failpoints to be dynamically activated.                                                                                                                         | No
 `idle_in_transaction_session_timeout`       | `120s`                    | The maximum allowed duration that a session can sit idle in a transaction before being terminated. If this value is specified without units, it is taken as milliseconds (`ms`). A value of zero disables the timeout. | Yes
 `integer_datetimes`                         | `true`                    | Boolean flag indicating whether the server uses 64-bit-integer dates and times.                                                                                        | No
@@ -12424,6 +12532,17 @@ Syntax element                | Description
 **LIKE** \<pattern\>          | If specified, only show clusters that match the pattern.
 **WHERE** <condition(s)>      | If specified, only show clusters that match the condition(s).
 
+## Output
+
+`SHOW CLUSTERS` returns the following columns:
+
+Column      | Description
+------------|------------
+`name`      | The name of the cluster.
+`replicas`  | The cluster's replicas and their sizes.
+`activity`  | A summary of any in-flight [resize](/sql/alter-cluster/#monitoring-a-resize) or [hydration burst](/sql/alter-cluster/#speed-up-hydration-by-autoscaling-to-a-larger-size) on the cluster, or `NULL` when the cluster is steady.
+`comment`   | Any [comment](/sql/comment-on/) on the cluster.
+
 ## Pre-installed clusters
 
 When you enable a Materialize region, several clusters that are used to improve
@@ -12525,6 +12644,19 @@ SHOW CLUSTERS LIKE 'auction_%';
       name                  replicas
 --------------------- | ------------------
  auction_house        |  r1 (25cc)
+```
+
+While a cluster is being [resized](/sql/alter-cluster/#monitoring-a-resize) or
+is running a [hydration
+burst](/sql/alter-cluster/#speed-up-hydration-by-autoscaling-to-a-larger-size), the
+`activity` column summarizes the in-flight operation:
+
+```nofmt
+      name          |  replicas   |             activity
+--------------------+-------------+----------------------------------
+ auction_house      |  r1 (25cc)  | reconfiguring size to 200cc
+ billing            |  r1 (100cc) | hydration burst at 800cc
+ default            |  r1 (25cc)  |
 ```
 
 ## Related pages
@@ -14891,9 +15023,7 @@ Rows that compare equal will be ordered in an unspecified way.</p>
 <p>See also <a href="/transform-data/idiomatic-materialize-sql/top-k/" >Idiomatic Materialize SQL: Top-K</a>.</p>
 ### System information functionsFunctions that return information about the system.#### `mz_environment_id() -> text`
 
-Returns a string containing a <code>uuid</code> uniquely identifying the Materialize environment.
-
-**Note:** This function is [unmaterializable](#unmaterializable-functions).#### `mz_uptime() -> interval`
+Returns a string containing a <code>uuid</code> uniquely identifying the Materialize environment.#### `mz_uptime() -> interval`
 
 Returns the length of time that the materialized process has been running.
 

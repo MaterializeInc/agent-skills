@@ -55,7 +55,7 @@ CREATE [TEMP|TEMPORARY] TABLE [IF NOT EXISTS] <table_name> (
 | `<column_type>` |  The type of the column. For supported types, see [SQL data types](/sql/types/).  |
 | **NOT NULL** | *Optional.* If specified, disallow  _NULL_ values for the column. Columns without this constraint can contain _NULL_ values.  |
 | **DEFAULT <default_expr>** | *Optional.* If specified, use the `<default_expr>` as the default value for the column. If not specified, `NULL` is used as the default value.  |
-| **WITH (<with_option>[,...])** |  The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION BY (<column> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \| \| `RETAIN HISTORY <duration>` \| *Optional.* ***Private preview.** This option has known performance or stability issues and is under active development.* <br>If specified, Materialize retains historical data for the specified duration, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period).<br>Accepts positive [interval](/sql/types/interval/) values (e.g., `'1hr'`).\|  |
+| **WITH (<with_option>[,...])** |  The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION BY (<column> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \| \| `RETAIN HISTORY <duration>` \| *Optional.* ***Private preview.** This option has known performance or stability issues and is under active development.* <br>If specified, Materialize retains historical data for the specified duration, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period).<br>Accepts positive [interval](/sql/types/interval/) values (e.g., `'1hr'`).\|  |
 
 **PostgreSQL source table:**
 ### PostgreSQL source table
@@ -81,11 +81,11 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 
 | Syntax element | Description |
 | --- | --- |
-| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}  |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}  |
 | `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
 | **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
-| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
+| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
 
 For an example, see [Create a table (PostgreSQL
 source)](/sql/create-table/#create-a-table-postgresql-source).
@@ -114,11 +114,11 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 
 | Syntax element | Description |
 | --- | --- |
-| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}  |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}  |
 | `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
 | **(REFERENCE <upstream_schema>.<upstream_table>)** |  The fully-qualified name of the upstream MySQL table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
-| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, decode data as `text` for the listed column(s), such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
+| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, decode data as `text` for the listed column(s), such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
 
 **SQL Server source table:**
 ### SQL Server source table
@@ -144,11 +144,11 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 
 | Syntax element | Description |
 | --- | --- |
-| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}  |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}  |
 | `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
 | **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
-| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="shared-content/partition-by-option-description.md" >}} \|  |
+| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
 
 ## Read-write tables
 
@@ -183,9 +183,9 @@ guidelines](/sql/identifiers/#naming-restrictions).
 
 ### Read-only tables
 
-Source-populated tables are <strong>read-only</strong> tables. Users <strong>cannot</strong> perform write
+Source-populated tables are **read-only** tables. Users **cannot** perform write
 operations
-(<a href="/sql/insert/" ><code>INSERT</code></a>/<a href="/sql/update/" ><code>UPDATE</code></a>/<a href="/sql/delete/" ><code>DELETE</code></a>) on
+([`INSERT`](/sql/insert/)/[`UPDATE`](/sql/update/)/[`DELETE`](/sql/delete/)) on
 these tables.
 
 ### DDL transaction block
@@ -195,10 +195,11 @@ use within a [transaction block](/sql/begin/#ddl-only-transactions).
 
 ### Source-populated tables and snapshotting
 
-<p>Creating the tables from sources starts the <a href="/ingest-data/#snapshotting" >snapshotting</a> process. Snapshotting syncs the
+Creating the tables from sources starts the [snapshotting](/ingest-data/#snapshotting) process. Snapshotting syncs the
 currently available data into Materialize. Because the initial snapshot is
 persisted in the storage layer atomically (i.e., at the same ingestion
-timestamp), you are not able to query the table until snapshotting is complete.</p>
+timestamp), you are not able to query the table until snapshotting is complete.
+
 > **Note:** During the snapshotting, the data ingestion for the existing tables for the same
 > source is temporarily blocked. As such, if possible, you can resize the cluster
 > to speed up the snapshotting process and once the process finishes, resize the
@@ -210,39 +211,9 @@ timestamp), you are not able to query the table until snapshotting is complete.<
 **PostgreSQL:**
 #### PostgreSQL types
 
-Materialize natively supports the following PostgreSQL types (including the
-array type for each of the types):
-
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<p>Materialize natively supports the following PostgreSQL types (including the
+array type for each of the types):</p>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 
 Replicating tables that contain **unsupported [data types](/sql/types/)** is
 possible via the `TEXT COLUMNS` option. The specified columns will be
@@ -263,39 +234,8 @@ output.
 **MySQL:**
 #### MySQL types
 
-Materialize natively supports the following MySQL types:
-
-<ul style="column-count: 3">
-<li><code>bigint</code></li>
-<li><code>binary</code></li>
-<li><code>bit</code></li>
-<li><code>blob</code></li>
-<li><code>boolean</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>datetime</code></li>
-<li><code>decimal</code></li>
-<li><code>double</code></li>
-<li><code>float</code></li>
-<li><code>int</code></li>
-<li><code>json</code></li>
-<li><code>longblob</code></li>
-<li><code>longtext</code></li>
-<li><code>mediumblob</code></li>
-<li><code>mediumint</code></li>
-<li><code>mediumtext</code></li>
-<li><code>numeric</code></li>
-<li><code>real</code></li>
-<li><code>smallint</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>tinyblob</code></li>
-<li><code>tinyint</code></li>
-<li><code>tinytext</code></li>
-<li><code>varbinary</code></li>
-<li><code>varchar</code></li>
-</ul>
+<p>Materialize natively supports the following MySQL types:</p>
+<ul style="column-count: 3"><li><code>bigint</code></li><li><code>binary</code></li><li><code>bit</code></li><li><code>blob</code></li><li><code>boolean</code></li><li><code>char</code></li><li><code>date</code></li><li><code>datetime</code></li><li><code>decimal</code></li><li><code>double</code></li><li><code>float</code></li><li><code>int</code></li><li><code>json</code></li><li><code>longblob</code></li><li><code>longtext</code></li><li><code>mediumblob</code></li><li><code>mediumint</code></li><li><code>mediumtext</code></li><li><code>numeric</code></li><li><code>real</code></li><li><code>smallint</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>tinyblob</code></li><li><code>tinyint</code></li><li><code>tinytext</code></li><li><code>varbinary</code></li><li><code>varchar</code></li></ul>
 
 When replicating tables that contain the **unsupported [data
 types](/sql/types/)**, you can:
@@ -330,71 +270,19 @@ decode the affected columns as `text`. The zero values for `date`,
 **SQL Server:**
 #### SQL Server types
 
-<p>Materialize natively supports the following SQL Server types:</p>
-<ul style="column-count: 3">
-<li><code>tinyint</code></li>
-<li><code>smallint</code></li>
-<li><code>int</code></li>
-<li><code>bigint</code></li>
-<li><code>real</code></li>
-<li><code>double precision</code></li>
-<li><code>float</code></li>
-<li><code>bit</code></li>
-<li><code>decimal</code></li>
-<li><code>numeric</code></li>
-<li><code>money</code></li>
-<li><code>smallmoney</code></li>
-<li><code>char</code></li>
-<li><code>nchar</code></li>
-<li><code>varchar</code></li>
-<li><code>varchar(max)</code></li>
-<li><code>nvarchar</code></li>
-<li><code>nvarchar(max)</code></li>
-<li><code>sysname</code></li>
-<li><code>binary</code></li>
-<li><code>varbinary</code></li>
-<li><code>json</code></li>
-<li><code>date</code></li>
-<li><code>time</code></li>
-<li><code>smalldatetime</code></li>
-<li><code>datetime</code></li>
-<li><code>datetime2</code></li>
-<li><code>datetimeoffset</code></li>
-<li><code>uniqueidentifier</code></li>
-</ul>
+Materialize natively supports the following SQL Server types:
 
-<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is possible via the <a href="/sql/create-source/sql-server/#handling-unsupported-types" ><code>EXCLUDE COLUMNS</code> option</a> for the
-following types:</p>
-<ul style="column-count: 3">
-<li><code>text</code></li>
-<li><code>ntext</code></li>
-<li><code>image</code></li>
-<li><code>varbinary(max)</code></li>
-</ul>
-<p>Columns with the specified types need to be excluded because <a href="https://learn.microsoft.com/en-us/sql/relational-databases/system-tables/cdc-capture-instance-ct-transact-sql?view=sql-server-2017#large-object-data-types" >SQL Server does not provide
-the &ldquo;before&rdquo;</a>
-value when said column is updated.</p>
-<p>To replicate tables that contain the following unsupported data types:</p>
-<ul>
-<li><code>text</code></li>
-<li><code>ntext</code></li>
-<li><code>image</code></li>
-<li><code>varbinary(max)</code></li>
-</ul>
-<p>You can use either the <code>TEXT COLUMNS</code> or the <code>EXCLUDE COLUMNS</code> option.</p>
-<ul>
-<li>For <code>text</code> and <code>ntext</code> columns:
-<ul>
-<li>You can use <code>TEXT COLUMNS</code> to expose them as varchar and nvarchar, respectively.</li>
-<li>You can use <code>EXCLUDE COLUMNS</code> to omit them from replication.</li>
-</ul>
-</li>
-<li>For <code>image</code> and <code>varbinary(max)</code> columns:
-<ul>
-<li>You can use <code>EXCLUDE COLUMNS</code>.</li>
-</ul>
-</li>
-</ul>
+<ul style="column-count: 3"><li><code>tinyint</code></li><li><code>smallint</code></li><li><code>int</code></li><li><code>bigint</code></li><li><code>real</code></li><li><code>double precision</code></li><li><code>float</code></li><li><code>bit</code></li><li><code>decimal</code></li><li><code>numeric</code></li><li><code>money</code></li><li><code>smallmoney</code></li><li><code>char</code></li><li><code>nchar</code></li><li><code>varchar</code></li><li><code>varchar(max)</code></li><li><code>nvarchar</code></li><li><code>nvarchar(max)</code></li><li><code>sysname</code></li><li><code>binary</code></li><li><code>varbinary</code></li><li><code>json</code></li><li><code>date</code></li><li><code>time</code></li><li><code>smalldatetime</code></li><li><code>datetime</code></li><li><code>datetime2</code></li><li><code>datetimeoffset</code></li><li><code>uniqueidentifier</code></li></ul>
+
+To replicate tables that contain the following unsupported data types, you can
+use either the `TEXT COLUMNS` or the `EXCLUDE COLUMNS` option:
+
+| Unsupported type | Supported option(s)                                         |
+| ---------------- | ----------------------------------------------------------- |
+| `text`           | `TEXT COLUMNS` (exposed as `varchar`) or `EXCLUDE COLUMNS`  |
+| `ntext`          | `TEXT COLUMNS` (exposed as `nvarchar`) or `EXCLUDE COLUMNS` |
+| `image`          | `EXCLUDE COLUMNS`                                           |
+| `varbinary(max)` | `EXCLUDE COLUMNS`                                           |
 
 ### Handling table schema changes
 
@@ -566,13 +454,13 @@ COMMIT;
 
 ```
 {{< include-md
-file="shared-content/create-table-from-source-snapshotting.md" >}}
+file="content/headless/create-table-from-source-snapshotting.md" >}}
 
-{{< include-md file="shared-content/create-table-if-not-exists-tip.md" >}}
+{{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}
 
-Source-populated tables are <strong>read-only</strong> tables. Users <strong>cannot</strong> perform write
+Source-populated tables are **read-only** tables. Users **cannot** perform write
 operations
-(<a href="/sql/insert/" ><code>INSERT</code></a>/<a href="/sql/update/" ><code>UPDATE</code></a>/<a href="/sql/delete/" ><code>DELETE</code></a>) on
+([`INSERT`](/sql/insert/)/[`UPDATE`](/sql/update/)/[`DELETE`](/sql/delete/)) on
 these tables.
 
 Once the snapshotting process completes and the table is in the running state, you can query the table:

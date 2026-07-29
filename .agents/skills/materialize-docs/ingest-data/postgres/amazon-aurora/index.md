@@ -306,24 +306,18 @@ network to allow traffic from the bastion host.
 
 **Self-Managed:**
 
-<p>Configure your network to allow Materialize to connect to your database. For
-example, you can:</p>
-<ul>
-<li>
-<p><strong>Allow Materialize IPs:</strong> Configure your database&rsquo;s security group to allow
-connections from Materialize.</p>
-</li>
-<li>
-<p><strong>Use an SSH tunnel:</strong> Use an SSH tunnel to connect Materialize to the
-database.</p>
-</li>
-</ul>
-<div class="note">
-  <strong class="gutter">NOTE:</strong>
-  <p>The steps to allow Materialize to connect to your database  depends on your
-  deployment setup. Refer to your company’s network/security policies and
-  procedures.</p>
-</div>
+Configure your network to allow Materialize to connect to your database. For
+example, you can:
+
+- **Allow Materialize IPs:** Configure your database's security group to allow
+    connections from Materialize.
+
+- **Use an SSH tunnel:** Use an SSH tunnel to connect Materialize to the
+  database.
+
+> **Note:** The steps to allow Materialize to connect to your database  depends on your
+> deployment setup. Refer to your company’s network/security policies and
+> procedures.
 
 **Allow Materialize IPs:**
 
@@ -624,16 +618,14 @@ statistics are up to date by running PostgreSQL `ANALYZE`.  See
 [Snapshotting considerations](#snapshotting) for more information.
 {{< /tip >}}
 
-{{< tabs >}}
+{{< tabs level=4 >}}
 {{< tab "Legacy Syntax" >}}
-#### Legacy syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source-legacy" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
 {{< /tab >}}
 
 {{< tab "New Syntax" >}}
-#### New syntax
 
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="create-source" %}}
 {{% include-example file="examples/ingest_data/postgres/create_source_cloud" example="schema-changes" %}}
@@ -851,36 +843,7 @@ publication, ensure that you remove the table/subsource from the source
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
-<ul style="column-count: 3">
-<li><code>bool</code></li>
-<li><code>bpchar</code></li>
-<li><code>bytea</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>daterange</code></li>
-<li><code>float4</code></li>
-<li><code>float8</code></li>
-<li><code>int2</code></li>
-<li><code>int2vector</code></li>
-<li><code>int4</code></li>
-<li><code>int4range</code></li>
-<li><code>int8</code></li>
-<li><code>int8range</code></li>
-<li><code>interval</code></li>
-<li><code>json</code></li>
-<li><code>jsonb</code></li>
-<li><code>numeric</code></li>
-<li><code>numrange</code></li>
-<li><code>oid</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>timestamptz</code></li>
-<li><code>tsrange</code></li>
-<li><code>tstzrange</code></li>
-<li><code>uuid</code></li>
-<li><code>varchar</code></li>
-</ul>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
 <p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
 possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
 treated as <code>text</code>; i.e., will not have the expected PostgreSQL type

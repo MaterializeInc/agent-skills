@@ -31,16 +31,25 @@ INTO KAFKA CONNECTION <connection_name> (
 )
 [KEY ( <key_col1> [, ...] ) [NOT ENFORCED]]
 [HEADERS <headers_column>]
-FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name> [
-  (
-    [AVRO KEY FULLNAME '<avro_key_fullname>']
-    [, AVRO VALUE FULLNAME '<avro_value_fullname>']
-    [, NULL DEFAULTS <null_defaults>]
-    [, DOC ON <doc_on_option> [, ...]]
-    [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
-    [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
-  )
-]
+FORMAT AVRO
+    USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name> [
+      (
+        [AVRO KEY FULLNAME '<avro_key_fullname>']
+        [, AVRO VALUE FULLNAME '<avro_value_fullname>']
+        [, NULL DEFAULTS <null_defaults>]
+        [, DOC ON <doc_on_option> [, ...]]
+        [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
+        [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
+      )
+    ]
+  | USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> [
+      (
+        [KEY SCHEMA NAME '<key_schema_name>']
+        [, VALUE SCHEMA NAME '<value_schema_name>']
+        [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
+        [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
+      )
+    ]
 [ENVELOPE DEBEZIUM | UPSERT]
 [WITH (SNAPSHOT = <snapshot>)]
 
@@ -120,6 +129,14 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 --       [, AVRO VALUE FULLNAME '<avro_value_fullname>']
 --       [, NULL DEFAULTS <null_defaults>]
 --       [, DOC ON <doc_on_option> [, ...]]
+--       [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
+--       [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
+--     )
+-- ]
+-- | AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> [
+--     (
+--       [KEY SCHEMA NAME '<key_schema_name>']
+--       [, VALUE SCHEMA NAME '<value_schema_name>']
 --       [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
 --       [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
 --     )
@@ -261,7 +278,7 @@ WITH (COMMIT INTERVAL = '<interval>')
 | **KEY** ( `<key_col>` [, ...] ) | The columns that uniquely identify rows. Materialize validates that the key is unique unless `NOT ENFORCED` is specified.  |
 | **NOT ENFORCED** | Optional. Disable validation of key uniqueness. Use only when you have outside knowledge that the key is unique.  |
 | **MODE UPSERT** | Indicates that the sink uses upsert semantics based on the `KEY`.  |
-| **COMMIT INTERVAL** `'<interval>'` | How frequently to commit snapshots to Iceberg (e.g., `'60s'`, `'5m'`). See [Commit interval tradeoffs](#commit-interval-tradeoffs).  |
+| **COMMIT INTERVAL** `'<interval>'` | How frequently to commit snapshots to Iceberg (e.g., `'1m'`, `'5m'`). Must be at least `'1s'`. See [Commit interval tradeoffs](#commit-interval-tradeoffs).  |
 
 **MODE APPEND:**
 
@@ -288,7 +305,7 @@ WITH (COMMIT INTERVAL = '<interval>')
 | **NAMESPACE** `'<namespace>'` | The Iceberg namespace (database) containing the table.  |
 | **TABLE** `'<table>'` | The name of the unpartitioned Iceberg table to write to. If the table doesn't exist, Materialize creates it automatically. For details, see [Iceberg table creation](/sql/create-sink/iceberg/#iceberg-table-creation).  |
 | **MODE APPEND** | Writes all changes as data rows instead of using Iceberg delete files. Two extra columns are appended to the Iceberg table: `_mz_diff` (`int`, `+1` for inserts, `-1` for deletes) and `_mz_timestamp` (`long`). An update produces two rows: one with `_mz_diff = -1` (old values) and one with `_mz_diff = +1` (new values). No `KEY` clause is permitted. See [Append mode](#append-mode).  |
-| **COMMIT INTERVAL** `'<interval>'` | How frequently to commit snapshots to Iceberg (e.g., `'60s'`, `'5m'`). See [Commit interval tradeoffs](#commit-interval-tradeoffs).  |
+| **COMMIT INTERVAL** `'<interval>'` | How frequently to commit snapshots to Iceberg (e.g., `'1m'`, `'5m'`). Must be at least `'1s'`. See [Commit interval tradeoffs](#commit-interval-tradeoffs).  |
 
 ## Details
 
@@ -332,7 +349,7 @@ properties (`mz-frontier` and `mz-sink-version`).
 
 The `COMMIT INTERVAL` setting involves tradeoffs between latency and efficiency:
 
-| Shorter intervals (e.g., < `60s`) | Longer intervals (e.g., `5m`) |
+| Shorter intervals (e.g., < `1m`) | Longer intervals (e.g., `5m`) |
 |---------------------------------|-------------------------------|
 | Lower latency - data visible sooner | Higher latency - data takes longer to appear |
 | More small files - can degrade query performance | Fewer, larger files - better query performance |
@@ -340,10 +357,13 @@ The `COMMIT INTERVAL` setting involves tradeoffs between latency and efficiency:
 | Higher S3 write costs (more PUT requests) | Lower S3 write costs |
 
 **Recommendations:**
-- For production: `60s` to `5m`
+- For production: `1m` to `5m`
 - For batch analytics: `5m` to `15m`
 
-> **Note:** Outside of development environments, commit intervals should be at least `60s`.
+Starting in v26.34, you can change the commit interval of an existing sink with
+[`ALTER SINK`](/sql/alter-sink/).
+
+> **Note:** Outside of development environments, commit intervals should be at least `1m`.
 > Short commit intervals increase catalog overhead and produce many small files.
 > Small files will result in degraded query performance. It also increases load on
 > the Iceberg metadata, which can result in a degraded catalog and non-responsive
@@ -614,16 +634,25 @@ INTO KAFKA CONNECTION <connection_name> (
 )
 [KEY ( <key_col1> [, ...] ) [NOT ENFORCED]]
 [HEADERS <headers_column>]
-FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name> [
-  (
-    [AVRO KEY FULLNAME '<avro_key_fullname>']
-    [, AVRO VALUE FULLNAME '<avro_value_fullname>']
-    [, NULL DEFAULTS <null_defaults>]
-    [, DOC ON <doc_on_option> [, ...]]
-    [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
-    [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
-  )
-]
+FORMAT AVRO
+    USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name> [
+      (
+        [AVRO KEY FULLNAME '<avro_key_fullname>']
+        [, AVRO VALUE FULLNAME '<avro_value_fullname>']
+        [, NULL DEFAULTS <null_defaults>]
+        [, DOC ON <doc_on_option> [, ...]]
+        [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
+        [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
+      )
+    ]
+  | USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> [
+      (
+        [KEY SCHEMA NAME '<key_schema_name>']
+        [, VALUE SCHEMA NAME '<value_schema_name>']
+        [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
+        [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
+      )
+    ]
 [ENVELOPE DEBEZIUM | UPSERT]
 [WITH (SNAPSHOT = <snapshot>)]
 
@@ -647,12 +676,15 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name> [
 | **KEY** ( `<key_col1>` [, ...] ) [**NOT ENFORCED**] | Optional. A list of columns to use as the Kafka message key. If unspecified, the Kafka key is left unset. When using the upsert envelope, the key must be unique. Use **NOT ENFORCED** to disable validation of key uniqueness. See [Upsert key selection](#upsert-key-selection) for details.  |
 | **HEADERS** `<headers_column>` | Optional. A column containing headers to add to each Kafka message emitted by the sink. The column must be of type `map[text => text]` or `map[text => bytea]`. See [Headers](#headers) for details.  |
 | **FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION** `<csr_connection_name>` | Encode messages using Avro format with schemas published to the Confluent Schema Registry.  |
-| **AVRO KEY FULLNAME** `'<avro_key_fullname>'` | Optional. Default: `row`. Sets the Avro fullname on the generated key schema, if a `KEY` is specified. When used, a value must be specified for `AVRO VALUE FULLNAME`.  |
-| **AVRO VALUE FULLNAME** `'<avro_value_fullname>'` | Optional. Default: `envelope`. Sets the Avro fullname on the generated value schema. When `KEY` is specified, `AVRO KEY FULLNAME` must additionally be specified.  |
-| **NULL DEFAULTS** `<null_defaults>` | Optional. Default: `false`. Whether to automatically default nullable fields to `null` in the generated schemas.  |
-| **DOC ON** `<doc_on_option>` [, ...] | Optional. Add a documentation comment to the generated Avro schemas.  \| Option \| Description \| \|--------\|-------------\| \| `TYPE <type_name>` \| Names a SQL type or relation, e.g. `my_app.point`. \| \| `COLUMN <column_name>` \| Names a column of a SQL type or relation, e.g. `my_app.point.x`. \|  The `KEY` and `VALUE` options specify whether the comment applies to the key schema or the value schema. If neither `KEY` or `VALUE` is specified, the comment applies to both types of schemas.  See [Avro schema documentation](#avro-schema-documentation) for details on how documentation comments are added to the generated Avro schemas.  |
-| **KEY COMPATIBILITY LEVEL** `'<key_compatibility_level>'` | Optional. If specified, set the [Compatibility Level](https://docs.confluent.io/platform/7.6/schema-registry/fundamentals/schema-evolution.html#schema-evolution-and-compatibility) for the generated key schema to one of: `BACKWARD`, `BACKWARD_TRANSITIVE`, `FORWARD`, `FORWARD_TRANSITIVE`, `FULL`, `FULL_TRANSITIVE`, `NONE`.  |
-| **VALUE COMPATIBILITY LEVEL** `'<value_compatibility_level>'` | Optional. If specified, set the [Compatibility Level](https://docs.confluent.io/platform/7.6/schema-registry/fundamentals/schema-evolution.html#schema-evolution-and-compatibility) for the generated value schema to one of: `BACKWARD`, `BACKWARD_TRANSITIVE`, `FORWARD`, `FORWARD_TRANSITIVE`, `FULL`, `FULL_TRANSITIVE`, `NONE`.  |
+| **FORMAT AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION** `<glue_connection_name>` | ***Private preview.** This feature is under active development.*  Encode messages using Avro format with schemas registered in the AWS Glue Schema Registry named by the [AWS Glue Schema Registry connection](/sql/create-connection/#aws-glue-schema-registry). The registry must already exist. Only the `KEY SCHEMA NAME`, `VALUE SCHEMA NAME`, `KEY COMPATIBILITY LEVEL`, and `VALUE COMPATIBILITY LEVEL` options are supported. See [Avro](#avro) for details.  |
+| **AVRO KEY FULLNAME** `'<avro_key_fullname>'` | Optional, Confluent Schema Registry only. Default: `row`. Sets the Avro fullname on the generated key schema, if a `KEY` is specified. When used, a value must be specified for `AVRO VALUE FULLNAME`.  |
+| **AVRO VALUE FULLNAME** `'<avro_value_fullname>'` | Optional, Confluent Schema Registry only. Default: `envelope`. Sets the Avro fullname on the generated value schema. When `KEY` is specified, `AVRO KEY FULLNAME` must additionally be specified.  |
+| **NULL DEFAULTS** `<null_defaults>` | Optional, Confluent Schema Registry only. Default: `false`. Whether to automatically default nullable fields to `null` in the generated schemas.  |
+| **KEY SCHEMA NAME** `'<key_schema_name>'` | Optional, AWS Glue Schema Registry only. The name under which the key schema is registered, if a `KEY` is specified. Default: `<topic>-key`.  |
+| **VALUE SCHEMA NAME** `'<value_schema_name>'` | Optional, AWS Glue Schema Registry only. The name under which the value schema is registered. Default: `<topic>-value`.  |
+| **DOC ON** `<doc_on_option>` [, ...] | Optional, Confluent Schema Registry only. Add a documentation comment to the generated Avro schemas.  \| Option \| Description \| \|--------\|-------------\| \| `TYPE <type_name>` \| Names a SQL type or relation, e.g. `my_app.point`. \| \| `COLUMN <column_name>` \| Names a column of a SQL type or relation, e.g. `my_app.point.x`. \|  The `KEY` and `VALUE` options specify whether the comment applies to the key schema or the value schema. If neither `KEY` or `VALUE` is specified, the comment applies to both types of schemas.  See [Avro schema documentation](#avro-schema-documentation) for details on how documentation comments are added to the generated Avro schemas.  |
+| **KEY COMPATIBILITY LEVEL** `'<key_compatibility_level>'` | Optional. If specified, set the [Compatibility Level](https://docs.confluent.io/platform/7.6/schema-registry/fundamentals/schema-evolution.html#schema-evolution-and-compatibility) for the generated key schema to one of: `BACKWARD`, `BACKWARD_TRANSITIVE`, `FORWARD`, `FORWARD_TRANSITIVE`, `FULL`, `FULL_TRANSITIVE`, `NONE`. With AWS Glue, the level is applied only when the sink creates the schema and maps to the [Glue equivalent](#avro).  |
+| **VALUE COMPATIBILITY LEVEL** `'<value_compatibility_level>'` | Optional. If specified, set the [Compatibility Level](https://docs.confluent.io/platform/7.6/schema-registry/fundamentals/schema-evolution.html#schema-evolution-and-compatibility) for the generated value schema to one of: `BACKWARD`, `BACKWARD_TRANSITIVE`, `FORWARD`, `FORWARD_TRANSITIVE`, `FULL`, `FULL_TRANSITIVE`, `NONE`. With AWS Glue, the level is applied only when the sink creates the schema and maps to the [Glue equivalent](#avro).  |
 | **ENVELOPE** `<envelope>` | Optional. Specifies how changes to the sink's upstream relation are mapped to Kafka messages. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `DEBEZIUM` \| The generated schemas have a [Debezium-style diff envelope](#debezium-envelope) to capture changes in the input view or source. \| \| `UPSERT` \| The sink emits data with [upsert semantics](#upsert-envelope). Requires a unique key specified using the `KEY` option. \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `SNAPSHOT = <snapshot>` \| Default: `true`. Whether to emit the consolidated results of the query before the sink was created at the start of the sink. To see only results after the sink is created, specify `WITH (SNAPSHOT = false)`. \|  |
 
@@ -775,6 +807,14 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 --       [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
 --     )
 -- ]
+-- | AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> [
+--     (
+--       [KEY SCHEMA NAME '<key_schema_name>']
+--       [, VALUE SCHEMA NAME '<value_schema_name>']
+--       [, KEY COMPATIBILITY LEVEL '<key_compatibility_level>']
+--       [, VALUE COMPATIBILITY LEVEL '<value_compatibility_level>']
+--     )
+-- ]
 -- | JSON | TEXT | BYTES
 [ENVELOPE DEBEZIUM | UPSERT]
 [WITH (SNAPSHOT = <snapshot>)]
@@ -798,8 +838,8 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 | **TOPIC CONFIG** `<topic_config>` | Optional. Any topic-level configs to use when creating the Kafka topic (if the Kafka topic does not already exist). See the [Kafka documentation](https://kafka.apache.org/documentation/#topicconfigs) for available configs.<br>Default: empty.  |
 | **KEY** ( `<key_col1>` [, ...] ) [**NOT ENFORCED**] | Optional. A list of columns to use as the Kafka message key. If unspecified, the Kafka key is left unset. When using the upsert envelope, the key must be unique. Use **NOT ENFORCED** to disable validation of key uniqueness. See [Upsert key selection](#upsert-key-selection) for details.  |
 | **HEADERS** `<headers_column>` | Optional. A column containing headers to add to each Kafka message emitted by the sink. The column must be of type `map[text => text]` or `map[text => bytea]`. See [Headers](#headers) for details.  |
-| **KEY FORMAT** `<key_format>` | Set the key encoding explicitly. Supported formats: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `JSON`, `TEXT`, `BYTES`.  |
-| **VALUE FORMAT** `<value_format>` | Set the value encoding explicitly. Supported formats: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `JSON`, `TEXT`, `BYTES`.  |
+| **KEY FORMAT** `<key_format>` | Set the key encoding explicitly. Supported formats: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name>`, `JSON`, `TEXT`, `BYTES`.  |
+| **VALUE FORMAT** `<value_format>` | Set the value encoding explicitly. Supported formats: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name>`, `JSON`, `TEXT`, `BYTES`.  |
 | **ENVELOPE** `<envelope>` | Optional. Specifies how changes to the sink's upstream relation are mapped to Kafka messages. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `DEBEZIUM` \| The generated schemas have a [Debezium-style diff envelope](#debezium-envelope) to capture changes in the input view or source. \| \| `UPSERT` \| The sink emits data with [upsert semantics](#upsert-envelope). Requires a unique key specified using the `KEY` option. \|  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `SNAPSHOT = <snapshot>` \| Default: `true`. Whether to emit the consolidated results of the query before the sink was created at the start of the sink. To see only results after the sink is created, specify `WITH (SNAPSHOT = false)`. \|  |
 
@@ -859,7 +899,7 @@ For example, consider a table with two columns named `col-a` and `col@a`.
 Materialize will use the names `col_a` and `col_a1`, respectively, in the
 generated Avro schema.
 
-When using a Confluent Schema Registry:
+#### Using Confluent Schema Registry
 
   * Materialize will automatically publish Avro schemas for the key, if present,
     and the value to the registry.
@@ -873,6 +913,55 @@ When using a Confluent Schema Registry:
     by using the [`NULL DEFAULTS` option](#syntax).
 
   * You can [add `doc` fields](#avro-schema-documentation) to the Avro schemas.
+
+  * You can set the compatibility level for a subject with the `KEY COMPATIBILITY
+    LEVEL` and `VALUE COMPATIBILITY LEVEL` [options](#schema-compatibility-levels).
+    The level is applied only when the subject has no compatibility level yet. If
+    the subject already has one, it is left unchanged.
+
+#### Using [AWS Glue Schema Registry](/sql/create-connection/#aws-glue-schema-registry)
+
+> **Public Preview:** This feature is in public preview.
+
+  * Materialize registers Avro schemas for the key, if present, and the value in
+    the registry named by the connection. The registry must already exist.
+
+  * By default, each schema is named after the topic (`<topic>-value`, and
+    `<topic>-key` when a key is present). You can override these with the
+    `KEY SCHEMA NAME` and `VALUE SCHEMA NAME` options.
+
+  * You can set the compatibility level applied to a newly created schema with
+    the `KEY COMPATIBILITY LEVEL` and `VALUE COMPATIBILITY LEVEL`
+    [options](#syntax), defaulting to `BACKWARD` when omitted. The level is set
+    only when Materialize creates the schema. If the schema already exists, the
+    sink adds a new version to it and leaves its compatibility level unchanged.
+
+  * The `AVRO ... FULLNAME`, `NULL DEFAULTS`, and `doc` options are not supported.
+
+##### Compatibility levels
+
+To specify compatibility levels, use the Confluent compatibility level names shown
+below. The table also shows the equivalent AWS Glue compatibility levels for
+reference. AWS Glue's `DISABLED` compatibility level has no equivalent Confluent
+compatibility level and is not supported.
+
+Compatibility level | AWS Glue equivalent
+--------------------|--------------------
+`BACKWARD`          | `BACKWARD`
+`BACKWARD_TRANSITIVE` | `BACKWARD_ALL`
+`FORWARD`           | `FORWARD`
+`FORWARD_TRANSITIVE` | `FORWARD_ALL`
+`FULL`              | `FULL`
+`FULL_TRANSITIVE`   | `FULL_ALL`
+`NONE`              | `NONE`
+
+#### Publishing Schemas
+
+With either registry, Materialize publishes the schemas when the sink starts
+running, not when you run `CREATE SINK`. The schema names and definitions are not
+validated against the registry at `CREATE SINK` time, so registry errors (for
+example a name that collides with an incompatible existing schema) surface once
+the sink starts publishing rather than at creation.
 
 SQL types are converted to Avro types according to the following conversion
 table:
@@ -1129,8 +1218,8 @@ By default, Materialize assigns a partition to each message using the following
 strategy:
 
   1. Encode the message's key in the specified format.
-  2. If the format uses a Confluent Schema Registry, strip out the
-     schema ID from the encoded bytes.
+  2. If the format uses a schema registry (Confluent or AWS Glue), strip out
+     the header carrying the schema ID from the encoded bytes.
   3. Hash the remaining encoded bytes using [SeaHash].
   4. Divide the hash value by the topic's partition count and assign the
      remainder as the message's partition.
@@ -1215,10 +1304,10 @@ Create           | Topic            | The specified `TOPIC` option
 
 ## Kafka transaction markers
 
-Materialize uses <a href="https://www.confluent.io/blog/transactions-apache-kafka/" >Kafka
-transactions</a>. When
-Kafka transactions are used, special control messages known as <strong>transaction
-markers</strong> are published to the topic. Transaction markers inform both the broker
+Materialize uses [Kafka
+transactions](https://www.confluent.io/blog/transactions-apache-kafka/). When
+Kafka transactions are used, special control messages known as **transaction
+markers** are published to the topic. Transaction markers inform both the broker
 and clients about the status of a transaction. When a topic is read using a
 standard Kafka consumer, these markers are not exposed to the application, which
 can give the impression that some offsets are being skipped.
@@ -1342,7 +1431,9 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 );
 ```
 
-#### Confluent Schema Registry
+#### Schema Registry
+
+**Confluent:**
 
 **SSL:**
 
@@ -1373,11 +1464,26 @@ CREATE CONNECTION csr_basic_http
   PASSWORD = SECRET csr_password;
 ```
 
+**AWS Glue:**
+
+> **Public Preview:** This feature is in public preview.
+
+```mzsql
+CREATE CONNECTION aws_conn TO AWS (
+    ASSUME ROLE ARN = 'arn:aws:iam::123456789000:role/MaterializeGlue'
+);
+
+CREATE CONNECTION glue_conn TO AWS GLUE SCHEMA REGISTRY (
+    AWS CONNECTION = aws_conn,
+    REGISTRY = 'my-registry'
+);
+```
+
 ### Creating a sink
 
 #### Upsert envelope
 
-**Avro:**
+**Avro Confluent:**
 
 ```mzsql
 CREATE SINK avro_sink
@@ -1387,6 +1493,29 @@ CREATE SINK avro_sink
   FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
   ENVELOPE UPSERT;
 ```
+
+**Avro AWS Glue:**
+
+> **Public Preview:** This feature is in public preview.
+
+The registry named by the connection must already exist. The IAM role assumed
+by the AWS connection must have the schema-write permissions listed under [AWS
+Glue Schema Registry](/sql/create-connection/#aws-glue-schema-registry).
+
+```mzsql
+CREATE SINK glue_sink
+  IN CLUSTER my_io_cluster
+  FROM <source, table or mview>
+  INTO KAFKA CONNECTION kafka_connection (
+    TOPIC 'test_avro_topic'
+  )
+  KEY (key_col)
+  FORMAT AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION glue_conn
+  ENVELOPE UPSERT;
+```
+
+See [Avro](#avro) for the schema-name defaults and how compatibility levels map
+to their AWS Glue equivalents.
 
 **JSON:**
 
@@ -1401,7 +1530,7 @@ CREATE SINK json_sink
 
 #### Debezium envelope
 
-**Avro:**
+**Avro Confluent:**
 
 ```mzsql
 CREATE SINK avro_sink
@@ -1410,6 +1539,29 @@ CREATE SINK avro_sink
   FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
   ENVELOPE DEBEZIUM;
 ```
+
+**Avro AWS Glue:**
+
+> **Public Preview:** This feature is in public preview.
+
+The registry named by the connection must already exist. The IAM role assumed
+by the AWS connection must have the schema-write permissions listed under [AWS
+Glue Schema Registry](/sql/create-connection/#aws-glue-schema-registry).
+
+```mzsql
+CREATE SINK glue_sink
+  IN CLUSTER my_io_cluster
+  FROM <source, table or mview>
+  INTO KAFKA CONNECTION kafka_connection (
+    TOPIC 'test_avro_topic'
+  )
+  KEY (key_col)
+  FORMAT AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION glue_conn
+  ENVELOPE DEBEZIUM;
+```
+
+See [Avro](#avro) for the schema-name defaults and how compatibility levels map
+to their AWS Glue equivalents.
 
 #### Topic configuration
 
@@ -1429,12 +1581,14 @@ CREATE SINK custom_topic_sink
 
 #### Schema compatibility levels
 
+**Avro Confluent:**
+
 ```mzsql
 CREATE SINK compatibility_level_sink
   IN CLUSTER my_io_cluster
   FROM <source, table or mview>
   INTO KAFKA CONNECTION kafka_connection (
-    TOPIC 'test_avro_topic',
+    TOPIC 'test_avro_topic'
   )
   FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection (
     KEY COMPATIBILITY LEVEL 'BACKWARD',
@@ -1442,6 +1596,28 @@ CREATE SINK compatibility_level_sink
   )
   ENVELOPE UPSERT;
 ```
+
+**Avro AWS Glue:**
+
+> **Public Preview:** This feature is in public preview.
+
+```mzsql
+CREATE SINK compatibility_level_sink
+  IN CLUSTER my_io_cluster
+  FROM <source, table or mview>
+  INTO KAFKA CONNECTION kafka_connection (
+    TOPIC 'test_avro_topic'
+  )
+  KEY (key_col)
+  FORMAT AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION glue_conn (
+    KEY COMPATIBILITY LEVEL 'BACKWARD',
+    VALUE COMPATIBILITY LEVEL 'FULL'
+  )
+  ENVELOPE UPSERT;
+```
+
+See [Avro](#avro) for the schema-name defaults and how compatibility levels map
+to their AWS Glue equivalents.
 
 #### Documentation comments
 

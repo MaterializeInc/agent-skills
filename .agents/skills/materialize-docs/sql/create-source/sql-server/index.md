@@ -11,6 +11,11 @@ and [`SNAPSHOT` transaction isolation](https://learn.microsoft.com/en-us/dotnet/
 for the database that you would like to replicate. Then [create a connection](#creating-a-connection)
 in Materialize that specifies access and authentication parameters.
 
+> **Note:** The exact configuration steps depend on your SQL Server deployment. For
+> step-by-step instructions, see the integration guides for
+> [Azure SQL Database](/ingest-data/sql-server/azure-db/) and
+> [self-hosted or managed SQL Server](/ingest-data/sql-server/self-hosted/).
+
 ## Syntax
 
 ```mzsql
@@ -150,71 +155,19 @@ table.
 
 ### Supported types
 
-<p>Materialize natively supports the following SQL Server types:</p>
-<ul style="column-count: 3">
-<li><code>tinyint</code></li>
-<li><code>smallint</code></li>
-<li><code>int</code></li>
-<li><code>bigint</code></li>
-<li><code>real</code></li>
-<li><code>double precision</code></li>
-<li><code>float</code></li>
-<li><code>bit</code></li>
-<li><code>decimal</code></li>
-<li><code>numeric</code></li>
-<li><code>money</code></li>
-<li><code>smallmoney</code></li>
-<li><code>char</code></li>
-<li><code>nchar</code></li>
-<li><code>varchar</code></li>
-<li><code>varchar(max)</code></li>
-<li><code>nvarchar</code></li>
-<li><code>nvarchar(max)</code></li>
-<li><code>sysname</code></li>
-<li><code>binary</code></li>
-<li><code>varbinary</code></li>
-<li><code>json</code></li>
-<li><code>date</code></li>
-<li><code>time</code></li>
-<li><code>smalldatetime</code></li>
-<li><code>datetime</code></li>
-<li><code>datetime2</code></li>
-<li><code>datetimeoffset</code></li>
-<li><code>uniqueidentifier</code></li>
-</ul>
+Materialize natively supports the following SQL Server types:
 
-<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is possible via the <a href="/sql/create-source/sql-server/#handling-unsupported-types" ><code>EXCLUDE COLUMNS</code> option</a> for the
-following types:</p>
-<ul style="column-count: 3">
-<li><code>text</code></li>
-<li><code>ntext</code></li>
-<li><code>image</code></li>
-<li><code>varbinary(max)</code></li>
-</ul>
-<p>Columns with the specified types need to be excluded because <a href="https://learn.microsoft.com/en-us/sql/relational-databases/system-tables/cdc-capture-instance-ct-transact-sql?view=sql-server-2017#large-object-data-types" >SQL Server does not provide
-the &ldquo;before&rdquo;</a>
-value when said column is updated.</p>
-<p>To replicate tables that contain the following unsupported data types:</p>
-<ul>
-<li><code>text</code></li>
-<li><code>ntext</code></li>
-<li><code>image</code></li>
-<li><code>varbinary(max)</code></li>
-</ul>
-<p>You can use either the <code>TEXT COLUMNS</code> or the <code>EXCLUDE COLUMNS</code> option.</p>
-<ul>
-<li>For <code>text</code> and <code>ntext</code> columns:
-<ul>
-<li>You can use <code>TEXT COLUMNS</code> to expose them as varchar and nvarchar, respectively.</li>
-<li>You can use <code>EXCLUDE COLUMNS</code> to omit them from replication.</li>
-</ul>
-</li>
-<li>For <code>image</code> and <code>varbinary(max)</code> columns:
-<ul>
-<li>You can use <code>EXCLUDE COLUMNS</code>.</li>
-</ul>
-</li>
-</ul>
+<ul style="column-count: 3"><li><code>tinyint</code></li><li><code>smallint</code></li><li><code>int</code></li><li><code>bigint</code></li><li><code>real</code></li><li><code>double precision</code></li><li><code>float</code></li><li><code>bit</code></li><li><code>decimal</code></li><li><code>numeric</code></li><li><code>money</code></li><li><code>smallmoney</code></li><li><code>char</code></li><li><code>nchar</code></li><li><code>varchar</code></li><li><code>varchar(max)</code></li><li><code>nvarchar</code></li><li><code>nvarchar(max)</code></li><li><code>sysname</code></li><li><code>binary</code></li><li><code>varbinary</code></li><li><code>json</code></li><li><code>date</code></li><li><code>time</code></li><li><code>smalldatetime</code></li><li><code>datetime</code></li><li><code>datetime2</code></li><li><code>datetimeoffset</code></li><li><code>uniqueidentifier</code></li></ul>
+
+To replicate tables that contain the following unsupported data types, you can
+use either the `TEXT COLUMNS` or the `EXCLUDE COLUMNS` option:
+
+| Unsupported type | Supported option(s)                                         |
+| ---------------- | ----------------------------------------------------------- |
+| `text`           | `TEXT COLUMNS` (exposed as `varchar`) or `EXCLUDE COLUMNS`  |
+| `ntext`          | `TEXT COLUMNS` (exposed as `nvarchar`) or `EXCLUDE COLUMNS` |
+| `image`          | `EXCLUDE COLUMNS`                                           |
+| `varbinary(max)` | `EXCLUDE COLUMNS`                                           |
 
 ### Timestamp Rounding
 
@@ -324,7 +277,9 @@ an SSH bastion server to accept connections from Materialize, check
 
 ### Creating a source {#create-source-example}
 
-You **must** enable Change Data Capture, see [Enable Change Data Capture SQL Server Instructions](/ingest-data/sql-server/self-hosted/#a-configure-sql-server).
+You **must** enable Change Data Capture. See the setup instructions for
+[Azure SQL Database](/ingest-data/sql-server/azure-db/#a-configure-azure-sql-database)
+or [self-hosted SQL Server](/ingest-data/sql-server/self-hosted/#a-configure-sql-server).
 
 Once CDC is enabled for all of the relevant tables, you can create a `SOURCE` in
 Materialize to begin replicating data!

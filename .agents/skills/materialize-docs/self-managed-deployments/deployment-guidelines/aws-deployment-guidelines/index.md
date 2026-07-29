@@ -9,7 +9,7 @@ As a general guideline, we recommend:
 
 - ARM-based CPU
 - A 1:8 ratio of vCPU to GiB memory.
-- A 8:1 ratio of GiB local instance storage to GiB memory when using swap.
+- At least a 2:1 ratio of GiB local instance storage to GiB memory when using swap.
 
 When operating in AWS, we recommend the following instances:
 
@@ -60,21 +60,41 @@ Certificate Authority (CA) rather than self-signed certificates.
 
 ## Upgrading guideline
 
-<p>Whe upgrading:</p>
-<ul>
-<li>
-<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/version-notes/" >version-specific upgrade
-notes</a>.</p>
-</li>
-<li>
-<p><strong>Always</strong> upgrade the operator <strong>first</strong> and ensure version compatibility
-between the operator and the Materialize instance you are upgrading to.</p>
-</li>
-<li>
-<p><strong>Always</strong> upgrade your Materialize instances <strong>after</strong> upgrading the operator
-to ensure compatibility.</p>
-</li>
-</ul>
+Whe upgrading:
+
+- **Always** check the [version-specific upgrade
+  notes](/self-managed-deployments/upgrading/version-notes/).
+
+- **Always** upgrade the operator **first** and ensure version compatibility
+  between the operator and the Materialize instance you are upgrading to.
+
+- **Always** upgrade your Materialize instances **after** upgrading the operator
+  to ensure compatibility.
+
+## Karpenter node expiry
+
+We recommend setting `expire_after` to `Never` on the Materialize nodepool
+since node expiry is not a voluntary disruption. With any other value,
+Karpenter removes nodes that reach their configured lifetime even if they run
+pods annotated with `karpenter.sh/do-not-disrupt`. This can cause downtime
+unless you gracefully roll the nodes first. The [Materialize Terraform
+modules](https://github.com/MaterializeInc/materialize-terraform-self-managed)
+default `expire_after` to `Never`.
+
+## Karpenter termination grace period
+
+We recommend leaving `termination_grace_period` unset on nodepools that run
+Materialize workloads. When this value is set, Karpenter terminates nodes after
+the configured grace period following any change to the nodepool
+configuration, even if they run pods annotated with
+`karpenter.sh/do-not-disrupt`.
+
+Before v6.0.0, the modules set `termination_grace_period` to `300s`. If you are
+using a version earlier than v6.0.0, upgrade to v6.0.0 using the [v6.0.0
+upgrade
+notes](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/v6.0.0/README.md#v600).
+Starting in v6.0.0, the Materialize Terraform modules leave
+`termination_grace_period` unset by default.
 
 ## Node pool resizing
 

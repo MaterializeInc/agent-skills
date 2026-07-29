@@ -1,5 +1,6 @@
 # CREATE SOURCE: SQL Server
 Connecting Materialize to a SQL Server database for Change Data Capture (CDC).
+> **Public Preview:** This feature is in public preview.
 
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/sql-server/).
 
@@ -21,6 +22,11 @@ for the database that you would like to replicate.
 - [Create a connection to SQL
   Server](#prerequisite-creating-a-connection-to-sql-server) in Materialize.
   - The connection setup depends on your network security configuration.
+
+> **Note:** The exact configuration steps depend on your SQL Server deployment. For
+> step-by-step instructions, see the integration guides for
+> [Azure SQL Database](/ingest-data/sql-server/azure-db/) and
+> [self-hosted or managed SQL Server](/ingest-data/sql-server/self-hosted/).
 
 ## Syntax
 
@@ -62,38 +68,9 @@ With the new syntax, after a SQL Server source is created, you [`CREATE TABLE
 FROM SOURCE`](/sql/create-table/) to create a corresponding table in
 Matererialize and start ingesting data.
 
-<p>Materialize natively supports the following SQL Server types:</p>
-<ul style="column-count: 3">
-<li><code>tinyint</code></li>
-<li><code>smallint</code></li>
-<li><code>int</code></li>
-<li><code>bigint</code></li>
-<li><code>real</code></li>
-<li><code>double precision</code></li>
-<li><code>float</code></li>
-<li><code>bit</code></li>
-<li><code>decimal</code></li>
-<li><code>numeric</code></li>
-<li><code>money</code></li>
-<li><code>smallmoney</code></li>
-<li><code>char</code></li>
-<li><code>nchar</code></li>
-<li><code>varchar</code></li>
-<li><code>varchar(max)</code></li>
-<li><code>nvarchar</code></li>
-<li><code>nvarchar(max)</code></li>
-<li><code>sysname</code></li>
-<li><code>binary</code></li>
-<li><code>varbinary</code></li>
-<li><code>json</code></li>
-<li><code>date</code></li>
-<li><code>time</code></li>
-<li><code>smalldatetime</code></li>
-<li><code>datetime</code></li>
-<li><code>datetime2</code></li>
-<li><code>datetimeoffset</code></li>
-<li><code>uniqueidentifier</code></li>
-</ul>
+Materialize natively supports the following SQL Server types:
+
+<ul style="column-count: 3"><li><code>tinyint</code></li><li><code>smallint</code></li><li><code>int</code></li><li><code>bigint</code></li><li><code>real</code></li><li><code>double precision</code></li><li><code>float</code></li><li><code>bit</code></li><li><code>decimal</code></li><li><code>numeric</code></li><li><code>money</code></li><li><code>smallmoney</code></li><li><code>char</code></li><li><code>nchar</code></li><li><code>varchar</code></li><li><code>varchar(max)</code></li><li><code>nvarchar</code></li><li><code>nvarchar(max)</code></li><li><code>sysname</code></li><li><code>binary</code></li><li><code>varbinary</code></li><li><code>json</code></li><li><code>date</code></li><li><code>time</code></li><li><code>smalldatetime</code></li><li><code>datetime</code></li><li><code>datetime2</code></li><li><code>datetimeoffset</code></li><li><code>uniqueidentifier</code></li></ul>
 
 For more information, including strategies for handling unsupported types,
 see [`CREATE TABLE FROM SOURCE`](/sql/create-table/).
@@ -182,7 +159,9 @@ an SSH bastion server to accept connections from Materialize, check
 
 #### Creating the source in Materialize
 
-You **must** enable Change Data Capture, see [Enable Change Data Capture SQL Server Instructions](/ingest-data/sql-server/self-hosted/#a-configure-sql-server).
+You **must** enable Change Data Capture. See the setup instructions for
+[Azure SQL Database](/ingest-data/sql-server/azure-db/#a-configure-azure-sql-database)
+or [self-hosted SQL Server](/ingest-data/sql-server/self-hosted/#a-configure-sql-server).
 
 Once CDC is enabled for all of the tables you wish to create subsources for, you can create a `SOURCE` in
 Materialize to begin replicating data!
