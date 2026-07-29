@@ -95,6 +95,29 @@ Analyze a Materialize environment via the MCP Developer endpoint, and/or configu
 
 </details>
 
+## Claude Code Plugins
+
+This repo also doubles as a [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces), for capabilities that go beyond what a portable skill can express — such as registering a language server.
+
+```
+/plugin marketplace add MaterializeInc/agent-skills
+```
+
+<details>
+<summary><strong>mz-sql-lsp</strong></summary>
+
+Registers the `mz-deploy` language server for `.sql` files, so Claude's LSP tool can resolve go-to-definition, hover, and document/workspace symbols across an mz-deploy project instead of grepping. Bundles a skill that teaches Claude when to use it.
+
+```
+/plugin install mz-sql-lsp@materialize
+```
+
+**Requires** `mz-deploy` on `PATH`, and one setting on enable: the directory containing `project.toml`, relative to your repository root.
+
+See [plugins/mz-sql-lsp](plugins/mz-sql-lsp/README.md) for configuration and troubleshooting.
+
+</details>
+
 ## Usage
 
 Skills are automatically available once installed. The agent will use them when relevant tasks are detected.
@@ -152,6 +175,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-07-29: Add mz-sql-lsp Claude Code plugin
 - 2026-07-09: Add materialize-terraform-self-managed skill
 - 2026-07-09: Add materialize-terraform-provider skill
 - 2026-05-08: Add MCP client setup playbook to mcp-developer-analysis
