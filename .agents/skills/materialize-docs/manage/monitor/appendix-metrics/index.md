@@ -75,7 +75,7 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     </tr>
     <tr>
       <td><code>environmentd_needs_update</code></td>
-      <td>Count of organizations in this cluster which are running outdated pod templates</td>
+      <td>Count of organizations in this cluster which are running outdated pod templates. Only the operator replica holding the leadership lease reconciles, so the others report zero.</td>
       <td></td>
     </tr>
     <tr>
@@ -106,6 +106,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     <tr>
       <td><code>mz_active_copy_tos</code></td>
       <td>The number of active COPY TO queries.</td>
+      <td><code>session_type</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_active_internal_subscribes</code></td>
+      <td>The number of active internal subscribes, which serve frontend-sequenced read-then-write.</td>
       <td><code>session_type</code></td>
     </tr>
     <tr>
@@ -3727,6 +3732,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_webhook_validation_reduce_failures</code></td>
       <td>Count of how many times we&#39;ve failed to reduce a webhook source&#39;s CHECK statement.</td>
       <td><code>reason</code></td>
+    </tr>
+    <tr>
+      <td><code>orchestratord_is_leader</code></td>
+      <td>Whether this operator replica holds the controller leadership lease, and is therefore the replica reconciling. Summed across the replicas this should be 1. A sustained 0 means no replica can take the lease, for instance because the service account lacks permission on leases, and the operator is reconciling nothing.</td>
+      <td></td>
     </tr>
     <tr>
       <td><code>outer_join_lowering_cases</code></td>

@@ -53,7 +53,7 @@ deployment does not have a license key configured, contact [Materialize support]
 </span></span></code></pre></div></li>
 <li>
 <p>Get the sample configuration files for the new version.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl"><span class="nv">mz_version</span><span class="o">=</span>v26.34.1
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl"><span class="nv">mz_version</span><span class="o">=</span>v26.36.0
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">curl -o upgrade-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/<span class="nv">$mz_version</span>/misc/helm-charts/operator/values.yaml
 </span></span></code></pre></div><p>If you have previously modified the <code>sample-values.yaml</code> file for your
@@ -90,7 +90,7 @@ prerequisites)</a>.</p>
 <p>If currently using <code>v1</code> (available starting in Materialize v26.30):</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade my-materialize-operator materialize/materialize-operator <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>--namespace<span class="o">=</span>materialize <span class="se">\
-</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--version v26.34.1 <span class="se">\
+</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--version v26.36.0 <span class="se">\
 </span></span></span><span class="line hl"><span class="cl"><span class="se"></span>-f upgrade-values.yaml <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>--set observability.podMetrics.enabled<span class="o">=</span><span class="nb">true</span> <span class="se">\
 </span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--set operator.args.installV1CRD<span class="o">=</span><span class="nb">true</span>
@@ -99,7 +99,7 @@ prerequisites)</a>.</p>
 <p>If currently using <code>v1alpha1</code> (default):</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade my-materialize-operator materialize/materialize-operator <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>--namespace<span class="o">=</span>materialize <span class="se">\
-</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--version v26.34.1 <span class="se">\
+</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--version v26.36.0 <span class="se">\
 </span></span></span><span class="line hl"><span class="cl"><span class="se"></span>-f upgrade-values.yaml <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>--set observability.podMetrics.enabled<span class="o">=</span><span class="nb">true</span>
 </span></span></code></pre></div></div>
@@ -139,7 +139,7 @@ API version is available starting in Materialize v26.30.)</p>
   <tbody>
       <tr>
           <td><code>environmentdImageRef</code></td>
-          <td>Update the version to the new version. This should be the same as the operator version: <code>v26.34.1</code>. Updating this field automatically triggers a rollout.</td>
+          <td>Update the version to the new version. This should be the same as the operator version: <code>v26.36.0</code>. Updating this field automatically triggers a rollout.</td>
       </tr>
       <tr>
           <td><code>forceRollout</code></td>
@@ -153,7 +153,7 @@ API version is available starting in Materialize v26.30.)</p>
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="m">12345678-1234-1234-1234-123456789012</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">materialize-environment</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">environmentdImageRef</span><span class="p">:</span><span class="w"> </span><span class="l">materialize/environmentd:v26.34.1</span><span class="w"> </span><span class="c"># Update version</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">environmentdImageRef</span><span class="p">:</span><span class="w"> </span><span class="l">materialize/environmentd:v26.36.0</span><span class="w"> </span><span class="c"># Update version</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># forceRollout: 33333333-3333-3333-3333-333333333333    # For forced rollouts</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">rolloutStrategy</span><span class="p">:</span><span class="w"> </span><span class="l">WaitUntilReady                        </span><span class="w"> </span><span class="c"># The mechanism to use when rolling out the new version.</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">backendSecretName</span><span class="p">:</span><span class="w"> </span><span class="l">materialize-backend</span><span class="w">
@@ -174,7 +174,7 @@ API version is available starting in Materialize v26.30.)</p>
   <tbody>
       <tr>
           <td><code>environmentdImageRef</code></td>
-          <td>Update the version to the new version. This should be the same as the operator version: <code>v26.34.1</code>.</td>
+          <td>Update the version to the new version. This should be the same as the operator version: <code>v26.36.0</code>.</td>
       </tr>
       <tr>
           <td><code>requestRollout</code> or <code>forceRollout</code></td>
@@ -188,7 +188,7 @@ API version is available starting in Materialize v26.30.)</p>
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="m">12345678-1234-1234-1234-123456789012</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">materialize-environment</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">environmentdImageRef</span><span class="p">:</span><span class="w"> </span><span class="l">materialize/environmentd:v26.34.1</span><span class="w"> </span><span class="c"># Update version</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">environmentdImageRef</span><span class="p">:</span><span class="w"> </span><span class="l">materialize/environmentd:v26.36.0</span><span class="w"> </span><span class="c"># Update version</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">requestRollout</span><span class="p">:</span><span class="w"> </span><span class="m">22222222-2222-2222-2222-222222222222</span><span class="w">    </span><span class="c"># Enter a new UUID</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c"># forceRollout: 33333333-3333-3333-3333-333333333333    # For forced rollouts</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">rolloutStrategy</span><span class="p">:</span><span class="w"> </span><span class="l">WaitUntilReady                        </span><span class="w"> </span><span class="c"># The mechanism to use when rolling out the new version.</span><span class="w">

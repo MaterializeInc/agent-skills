@@ -364,7 +364,35 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorcloudproviderprovidersgcp'><code>operator.cloudProvider.providers.gcp</code></a></td>
 <td>
-<code>{&quot;enabled&quot;:false}</code>
+<code>{&quot;enabled&quot;:false,&quot;nodeUpgradeRolloutTrigger&quot;:{&quot;clusterLocation&quot;:&quot;&quot;,&quot;clusterName&quot;:&quot;&quot;,&quot;enabled&quot;:false,&quot;notificationSubscription&quot;:&quot;&quot;,&quot;watchedNodePools&quot;:[]}}</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcloudproviderprovidersgcpnodeupgraderollouttriggerclusterlocation'><code>operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.clusterLocation</code></a></td>
+<td>
+<code>&quot;&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcloudproviderprovidersgcpnodeupgraderollouttriggerclustername'><code>operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.clusterName</code></a></td>
+<td>
+<code>&quot;&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcloudproviderprovidersgcpnodeupgraderollouttriggernotificationsubscription'><code>operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.notificationSubscription</code></a></td>
+<td>
+<code>&quot;&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcloudproviderprovidersgcpnodeupgraderollouttriggerwatchednodepools'><code>operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.watchedNodePools</code></a></td>
+<td>
+<code>[]</code>
 </td>
 </tr>
 
@@ -476,7 +504,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.34.1&quot;</code>
+<code>&quot;v26.36.0&quot;</code>
 </td>
 </tr>
 
@@ -484,6 +512,27 @@ To configure the Materialize operator, you can:
 <td><a href='#operatornodeselector'><code>operator.nodeSelector</code></a></td>
 <td>
 
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorpoddisruptionbudgetenabled'><code>operator.podDisruptionBudget.enabled</code></a></td>
+<td>
+<code>true</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorpoddisruptionbudgetmaxunavailable'><code>operator.podDisruptionBudget.maxUnavailable</code></a></td>
+<td>
+<code>1</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorreplicas'><code>operator.replicas</code></a></td>
+<td>
+<code>2</code>
 </td>
 </tr>
 
@@ -526,6 +575,13 @@ To configure the Materialize operator, you can:
 <td><a href='#schedulername'><code>schedulerName</code></a></td>
 <td>
 <code>nil</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#serviceaccountannotations'><code>serviceAccount.annotations</code></a></td>
+<td>
+<code>{}</code>
 </td>
 </tr>
 
@@ -917,9 +973,33 @@ ARN of the IAM role for environmentd
 
 #### operator.cloudProvider.providers.gcp
 
-**Default**: <code>{&quot;enabled&quot;:false}</code>
+**Default**: <code>{&quot;enabled&quot;:false,&quot;nodeUpgradeRolloutTrigger&quot;:{&quot;clusterLocation&quot;:&quot;&quot;,&quot;clusterName&quot;:&quot;&quot;,&quot;enabled&quot;:false,&quot;notificationSubscription&quot;:&quot;&quot;,&quot;watchedNodePools&quot;:[]}}</code>
 
-GCP Configuration (placeholder for future use)
+GCP Configuration
+
+#### operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.clusterLocation
+
+**Default**: <code>&quot;&quot;</code>
+
+The location (region or zone) of the GKE cluster.
+
+#### operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.clusterName
+
+**Default**: <code>&quot;&quot;</code>
+
+The name of the GKE cluster.
+
+#### operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.notificationSubscription
+
+**Default**: <code>&quot;&quot;</code>
+
+The Pub/Sub subscription receiving GKE cluster notifications for this cluster, in <code>projects/{project}/subscriptions/{subscription}</code> form. The cluster must be configured to publish upgrade notifications to the corresponding topic, and the operator&rsquo;s service account must be able to subscribe to it and to read the cluster&rsquo;s node pools.
+
+#### operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.watchedNodePools
+
+**Default**: <code>[]</code>
+
+The node pools to watch. An empty list watches all node pools.
 
 #### operator.cloudProvider.region
 
@@ -993,7 +1073,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.34.1&quot;</code>
+**Default**: <code>&quot;v26.36.0&quot;</code>
 
 The tag/version of the operator image to be used
 
@@ -1002,6 +1082,24 @@ The tag/version of the operator image to be used
 **Default**: 
 
 Node selector to use for the operator pod
+
+#### operator.podDisruptionBudget.enabled
+
+**Default**: <code>true</code>
+
+Whether to create a PodDisruptionBudget for the operator. Only created when <code>replicas</code> is greater than 1, since a budget over a single replica either blocks node drains or protects nothing.
+
+#### operator.podDisruptionBudget.maxUnavailable
+
+**Default**: <code>1</code>
+
+Maximum number of operator pods that may be unavailable at once during voluntary disruptions. Expressed as a maximum rather than a minimum so that node drains are never blocked outright, they are only serialized.
+
+#### operator.replicas
+
+**Default**: <code>2</code>
+
+Number of operator replicas. The operator uses leader election so that only one replica reconciles at a time. Running more than one replica avoids downtime of the CRD conversion webhook during rollouts and node drains.
 
 #### operator.resources.limits
 
@@ -1044,6 +1142,12 @@ Whether to create necessary RBAC roles and bindings
 Optionally use a non-default kubernetes scheduler.
 
 ### `serviceAccount` parameters
+
+#### serviceAccount.annotations
+
+**Default**: <code>{}</code>
+
+Annotations to add to the service account, e.g. <code>iam.gke.io/gcp-service-account</code> to link it to a GCP service account via workload identity.
 
 #### serviceAccount.create
 

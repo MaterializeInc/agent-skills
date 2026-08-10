@@ -588,7 +588,7 @@ Value must be in units accepted by Go
 <em><strong>Array&lt;<a href='#iok8sapicorev1resourceclaim'>io.k8s.api.core.v1.ResourceClaim</a>&gt;</strong></em>
 
 <p><p>Claims lists the names of resources, defined in spec.resourceClaims, that are used by this container.</p>
-<p>This is an alpha field and requires enabling the DynamicResourceAllocation feature gate.</p>
+<p>This field depends on the DynamicResourceAllocation feature gate.</p>
 <p>This field is immutable. It can only be set for containers.</p>
 </p>
 
@@ -666,7 +666,7 @@ Value must be in units accepted by Go
 <td>
 <em><strong>String</strong></em>
 
-<p>Name of the environment variable. Must be a C_IDENTIFIER.</p>
+<p>Name of the environment variable. May consist of any printable ASCII characters except &lsquo;=&rsquo;.</p>
 
 </td>
 </tr>
@@ -720,6 +720,16 @@ Value must be in units accepted by Go
 <em><strong><a href='#iok8sapicorev1objectfieldselector'>io.k8s.api.core.v1.ObjectFieldSelector</a></strong></em>
 
 <p>Selects a field of the pod: supports metadata.name, metadata.namespace, <code>metadata.labels['&lt;KEY&gt;']</code>, <code>metadata.annotations['&lt;KEY&gt;']</code>, spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP, status.podIPs.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>fileKeyRef</code></td>
+<td></td>
+<td>
+<em><strong><a href='#iok8sapicorev1filekeyselector'>io.k8s.api.core.v1.FileKeySelector</a></strong></em>
+
+<p>FileKeyRef selects a key of the env file. Requires the EnvFiles feature gate to be enabled.</p>
 
 </td>
 </tr>
@@ -826,6 +836,61 @@ Value must be in units accepted by Go
 <em><strong>io.k8s.apimachinery.pkg.api.resource.Quantity</strong></em>
 
 <p>Specifies the output format of the exposed resources, defaults to &ldquo;1&rdquo;</p>
+
+</td>
+</tr>
+</tbody>
+</table>
+
+#### io.k8s.api.core.v1.FileKeySelector
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>key</code></td>
+<td>✅</td>
+<td>
+<em><strong>String</strong></em>
+
+<p>The key within the env file. An invalid key will prevent the pod from starting. The keys defined within a source may consist of any printable ASCII characters except &lsquo;=&rsquo;. During Alpha stage of the EnvFiles feature gate, the key size is limited to 128 characters.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td>✅</td>
+<td>
+<em><strong>String</strong></em>
+
+<p>The path within the volume from which to select the file. Must be relative and may not contain the &lsquo;..&rsquo; path or start with &lsquo;..&rsquo;.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>volumeName</code></td>
+<td>✅</td>
+<td>
+<em><strong>String</strong></em>
+
+<p>The name of the volume mount containing the env file.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>optional</code></td>
+<td></td>
+<td>
+<em><strong>Bool</strong></em>
+
+<p><p>Specify whether the file or its key must be defined. If the file or key does not exist, then the env var is not published. If optional is set to true and the specified key does not exist, the environment variable will not be set in the Pod&rsquo;s containers.</p>
+<p>If optional is set to false and the specified key does not exist, an error will be returned during Pod creation.</p>
+</p>
 
 </td>
 </tr>

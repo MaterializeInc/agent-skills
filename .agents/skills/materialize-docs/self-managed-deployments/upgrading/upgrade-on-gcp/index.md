@@ -1,5 +1,5 @@
 # Upgrade on GCP
-Upgrade Materialize on GCP using the new Terraform module.
+Upgrade Materialize on GCP using the Terraform module.
 The following tutorial upgrades your Materialize deployment running on Google
 Kubernetes Engine (GKE). The tutorial assumes you have installed the
 example on [Install on

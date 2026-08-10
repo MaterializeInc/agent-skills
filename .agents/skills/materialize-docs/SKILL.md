@@ -45,6 +45,7 @@ Best practices for ingesting data into Materialize from external systems.
 
 - **Amazon EventBridge**: `ingest-data/webhooks/amazon-eventbridge/index.md`
 - **AWS PrivateLink connections (Cloud-only)**: `ingest-data/network-security/privatelink/index.md`
+- **Change a webhook source's included headers**: `ingest-data/webhooks/change-included-headers/index.md`
 - **CockroachDB CDC using Kafka and Changefeeds**: `ingest-data/cdc-cockroachdb/index.md`
 - **Debezium**: `ingest-data/debezium/index.md`
 - **Fivetran**: `ingest-data/fivetran/index.md`
@@ -52,8 +53,7 @@ Best practices for ingesting data into Materialize from external systems.
 - **Kafka**: `ingest-data/kafka/index.md`
 - **MongoDB**: `ingest-data/mongodb/index.md`
 - **Monitoring data ingestion**: `ingest-data/monitoring-data-ingestion/index.md`
-- **MySQL**: `ingest-data/mysql/index.md`
-- _(and 12 more files in this section)_
+- _(and 13 more files in this section)_
 
 ### Manage Materialize
 
@@ -84,6 +84,7 @@ Learn how to efficiently transform data using Materialize SQL.
 - **Dataflow troubleshooting**: `transform-data/dataflow-troubleshooting/index.md`
 - **FAQ: Indexes**: `transform-data/faq/index.md`
 - **Freshness troubleshooting**: `transform-data/freshness-troubleshooting/index.md`
+- **How to monitor freshness in Materialize**: `transform-data/monitor-freshness/index.md`
 - **Idiomatic Materialize SQL**: `transform-data/idiomatic-materialize-sql/index.md`
 - **Optimization**: `transform-data/optimization/index.md`
 - **Patterns**: `transform-data/patterns/index.md`

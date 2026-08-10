@@ -1,7 +1,5 @@
 # CREATE SOURCE: SQL Server
 Connecting Materialize to a SQL Server database for Change Data Capture (CDC).
-> **Public Preview:** This feature is in public preview.
-
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/sql-server/).
 
 Creates a new source from SQL Server.  Materialize
@@ -62,6 +60,9 @@ changes without downtime.
 
 See [Guide: Handle upstream schema changes with zero downtime](/ingest-data/sql-server/source-versioning/) for details.
 
+See also [Handling upstream operations](#handling-upstream-operations) for
+additional upstream operation considerations.
+
 #### Supported types
 
 With the new syntax, after a SQL Server source is created, you [`CREATE TABLE
@@ -71,6 +72,13 @@ Matererialize and start ingesting data.
 Materialize natively supports the following SQL Server types:
 
 <ul style="column-count: 3"><li><code>tinyint</code></li><li><code>smallint</code></li><li><code>int</code></li><li><code>bigint</code></li><li><code>real</code></li><li><code>double precision</code></li><li><code>float</code></li><li><code>bit</code></li><li><code>decimal</code></li><li><code>numeric</code></li><li><code>money</code></li><li><code>smallmoney</code></li><li><code>char</code></li><li><code>nchar</code></li><li><code>varchar</code></li><li><code>varchar(max)</code></li><li><code>nvarchar</code></li><li><code>nvarchar(max)</code></li><li><code>sysname</code></li><li><code>binary</code></li><li><code>varbinary</code></li><li><code>json</code></li><li><code>date</code></li><li><code>time</code></li><li><code>smalldatetime</code></li><li><code>datetime</code></li><li><code>datetime2</code></li><li><code>datetimeoffset</code></li><li><code>uniqueidentifier</code></li></ul>
+
+#### `char` and `nchar` columns
+
+To preserve values exactly as SQL Server returns them, `char` and `nchar` columns
+are replicated as `text` rather than fixed-length. SQL Server and Materialize
+measure fixed-length character types differently, so replicating as text avoids
+truncation and padding mismatches.
 
 For more information, including strategies for handling unsupported types,
 see [`CREATE TABLE FROM SOURCE`](/sql/create-table/).
@@ -102,6 +110,92 @@ FROM <src_name>_progress;
 The reported `lsn` should increase as Materialize consumes **new** CDC events
 from the upstream SQL Server database. For more details on monitoring source
 ingestion progress and debugging related issues, see [Troubleshooting](/ops/troubleshooting/).
+
+## Handling upstream operations
+
+This section describes how changes to upstream tables that Materialize ingests
+affect the corresponding Materialize tables.
+
+### Adding a column
+
+When you add a new column to your upstream table, Materialize continues to
+ingest only the existing columns.
+
+To incorporate the new column:
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/sql-server-v2/) syntax, create a new table from
+the source. See [Handle upstream column addition](/ingest-data/sql-server/source-versioning/#handle-upstream-column-addition).
+
+- If using the legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/sql-server/) syntax that creates subsources, use [`DROP
+SOURCE`](/sql/drop-source/) to drop the affected subsource, and then add the
+table back to the source using [`ALTER SOURCE ... ADD
+SUBSOURCE`](/sql/alter-source/). The re-added subsource includes the new column.
+
+### Dropping a column
+
+Dropping columns that Materialize does not ingest (for example, columns added
+after the source was created, or columns that are excluded) is supported. As
+these columns were never ingested, you can drop them without issue.
+
+If your Materialize source ingests a column, dropping that column from your
+upstream table puts the affected table into an error state.
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/sql-server-v2/) syntax, you can safely drop a
+column by first ignoring it in Materialize. See [Handle upstream column
+drop](/ingest-data/sql-server/source-versioning/#handle-upstream-column-drop).
+
+- If using legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/sql-server/) syntax, use [`DROP SOURCE`](/sql/drop-source/) to drop the affected
+subsource, and then add the table back to the source using [`ALTER
+SOURCE ... ADD SUBSOURCE`](/sql/alter-source/).
+
+### Changing constraints
+
+Materialize ignores foreign key and `CHECK` constraint changes. You can add or
+drop them without affecting ingestion.
+
+Adding a `UNIQUE` constraint does not affect ingestion. Dropping a `UNIQUE`
+constraint puts the affected table into an error state.
+
+SQL Server does not allow dropping a `PRIMARY KEY` from a table while change data
+capture is enabled on it. A primary key that existed when Materialize began
+ingesting the table therefore cannot be dropped upstream.
+
+Adding or removing a `NOT NULL` constraint on an ingested column requires an
+upstream `ALTER COLUMN`, which puts the affected table into an error state. See
+[Changing a column's data type](#changing-a-columns-data-type).
+### Changing a column's data type
+
+Any upstream `ALTER COLUMN` on an ingested column puts the affected Materialize
+table into an error state. This covers every `ALTER COLUMN` operation, not just
+data-type changes. Changing a column's collation, sparseness, masking, or
+nullability all error the table the same way. Ingestion for that table stops,
+and you must drop and recreate the table in Materialize to resume ingestion.
+
+### Renaming a column
+
+Renaming a column that Materialize ingests puts the affected table into an error
+state. Ingestion for that table stops, and you must drop and recreate the table
+in Materialize to resume ingestion.
+
+### Removing a capture instance
+
+SQL Server allows up to two capture instances to exist for a table at once.
+Materialize ingests from one of them.
+
+Removing the capture instance that Materialize is using puts the affected table
+into an error state. Removing a capture instance that Materialize is not using does not affect
+ingestion.
+
+### Table-level operations
+
+The following upstream operations put the affected table into an error state.
+Ingestion for that table stops, and you must drop and recreate the affected
+table in Materialize to resume:
+
+- Dropping a table (`DROP TABLE`).
+- Renaming a table or moving it to a different schema.
 
 ## Example
 

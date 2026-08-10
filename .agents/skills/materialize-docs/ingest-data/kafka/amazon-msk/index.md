@@ -834,14 +834,36 @@ multiple [`CREATE SOURCE`](/sql/create-source/kafka/) statements. By default,
 the source will be created in the active cluster; to use a different cluster,
 use the `IN CLUSTER` clause.
 
+**Legacy Syntax:**
+
+With the legacy syntax, the source decodes the topic directly and is itself
+queryable. Picking up an upstream schema change requires dropping and recreating
+the source, which incurs downtime.
+
 ```mzsql
 CREATE SOURCE json_source
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
-  FORMAT JSON;
+    FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+    FORMAT JSON;
 ```
 
-If the command executes without an error and outputs _CREATE SOURCE_, it means
-that you have successfully connected Materialize to your cluster.
+**New Syntax:**
+
+With the new syntax, create a source for the topic and then a table that decodes
+it. Each table pins its own reader schema, which lets you pick up upstream schema
+changes without downtime. For details, see [Handle upstream schema changes with
+zero downtime](/ingest-data/kafka/source-versioning/).
+
+```mzsql
+CREATE SOURCE json_source
+    FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic');
+
+CREATE TABLE json_table
+    FROM SOURCE json_source
+    FORMAT JSON;
+```
+
+If the command executes without an error, it means that you have successfully
+connected Materialize to your cluster.
 
 ## Related pages
 

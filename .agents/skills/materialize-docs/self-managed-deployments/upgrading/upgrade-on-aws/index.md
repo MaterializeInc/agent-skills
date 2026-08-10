@@ -1,5 +1,5 @@
 # Upgrade on AWS
-Upgrade Materialize on AWS using the new Terraform module.
+Upgrade Materialize on AWS using the Terraform module.
 The following tutorial upgrades your Materialize deployment running on AWS
 Elastic Kubernetes Service (EKS). The tutorial assumes you have installed the
 example on [Install on

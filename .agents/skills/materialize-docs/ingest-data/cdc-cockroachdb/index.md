@@ -151,16 +151,37 @@ guidance.
 ### 3. Start ingesting data
 
 1. Use the [`CREATE SOURCE`](/sql/create-source/kafka/) command to connect Materialize
-   to your Kafka broker and start ingesting data from the target topic:
+   to your Kafka broker and start ingesting data from the target topic.
+   CockroachDB's default envelope structure for changefeed messages is
+   compatible with the Debezium format, so you can use `ENVELOPE DEBEZIUM` to
+   interpret the data:
+
+   **Legacy Syntax:**
+
+   With the legacy syntax, the source decodes the topic directly and is itself
+   queryable. Picking up an upstream schema change requires dropping and recreating
+   the source, which incurs downtime.
 
    ```mzsql
    CREATE SOURCE kafka_repl
-     IN CLUSTER ingest_kafka
-     FROM KAFKA CONNECTION kafka_connection (TOPIC 'my_table')
-     -- CockroachDB's default envelope structure for changefeed messages is
-     -- compatible with the Debezium format, so you can use ENVELOPE DEBEZIUM
-     -- to interpret the data.
-     ENVELOPE DEBEZIUM;
+       FROM KAFKA CONNECTION kafka_connection (TOPIC 'my_table')
+       FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection ENVELOPE DEBEZIUM;
+   ```
+
+   **New Syntax:**
+
+   With the new syntax, create a source for the topic and then a table that decodes
+   it. Each table pins its own reader schema, which lets you pick up upstream schema
+   changes without downtime. For details, see [Handle upstream schema changes with
+   zero downtime](/ingest-data/kafka/source-versioning/).
+
+   ```mzsql
+   CREATE SOURCE kafka_repl
+       FROM KAFKA CONNECTION kafka_connection (TOPIC 'my_table');
+
+   CREATE TABLE my_table
+       FROM SOURCE kafka_repl
+       FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection ENVELOPE DEBEZIUM;
    ```
 
     By default, the source will be created in the active cluster; to use a

@@ -3740,7 +3740,7 @@ writer settings:
 ## Syntax
 
 ```mzsql
-CREATE CLUSTER <cluster_name> (
+CREATE CLUSTER [IF NOT EXISTS] <cluster_name> (
     SIZE = <text>
     [, REPLICATION FACTOR = <int>]
     [, MANAGED = <bool>]
@@ -3756,6 +3756,7 @@ CREATE CLUSTER <cluster_name> (
 
 | Syntax element | Description |
 | --- | --- |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if a cluster with the same name already exists. Instead, issue a notice and skip the cluster creation. Note that the existing cluster is left untouched, its configuration is not updated to match the statement.  |
 | `<cluster_name>` | A name for the cluster.  |
 | `SIZE` | The size of the resource allocations for the cluster.  For valid size values, see [Available sizes](#available-sizes).  |
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. See [Replication factor](#replication-factor) for details.  Default: `1`  |
@@ -4131,7 +4132,7 @@ cluster](/sql/create-cluster/#unmanaged-clusters).
 ## Syntax
 
 ```mzsql
-CREATE CLUSTER REPLICA <cluster_name>.<replica_name> (
+CREATE CLUSTER REPLICA [IF NOT EXISTS] <cluster_name>.<replica_name> (
     SIZE = <text>
 );
 
@@ -4139,6 +4140,7 @@ CREATE CLUSTER REPLICA <cluster_name>.<replica_name> (
 
 | Syntax element | Description |
 | --- | --- |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if a replica with the same name already exists on the cluster. Instead, issue a notice and skip the replica creation. Note that the existing replica is left untouched, its configuration is not updated to match the statement.  |
 | `<cluster_name>` | The cluster you want to attach a replica to.  |
 | `<replica_name>` | A name for this replica.  |
 | `SIZE` | The size of the resource allocations for the cluster.  For valid size values, see [Available sizes](#available-sizes).  |
@@ -6839,6 +6841,13 @@ data source.
 <!--"Docs Note: Using include-example shortcode instead of include-syntax since only want the code snippet on this page."
 -->
 
+### New syntax
+
+The new `CREATE SOURCE` syntax allows Materialize to handle certain upstream
+schema changes, specifically adding or dropping columns, without downtime. It is
+used in conjunction with the new [`CREATE TABLE ... FROM
+SOURCE`](/sql/create-table/) syntax.
+
 **PostgreSQL (New):**
 
 To create a source from an external PostgreSQL:
@@ -6852,6 +6861,75 @@ FROM POSTGRES CONNECTION <connection_name> (PUBLICATION '<publication_name>')
 ```
 
 For details, see [CREATE SOURCE: PostgreSQL (New Syntax)](/sql/create-source/postgres-v2/).
+
+**MySQL (New):**
+
+To create a source from an external MySQL database:
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <source_name>
+[IN CLUSTER <cluster_name>]
+FROM MYSQL CONNECTION <connection_name>
+[WITH ( <with_option> [, ...] )]
+;
+
+```
+
+For details, see [CREATE SOURCE: MySQL (New Syntax)](/sql/create-source/mysql-v2/).
+
+**SQL Server (New):**
+
+<no value>```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM SQL SERVER CONNECTION <connection_name>
+[WITH ( <with_option> [, ...] )]
+
+```
+
+For details, see [CREATE SOURCE: SQL Server (New Syntax)](/sql/create-source/sql-server-v2/).
+
+**Kafka/Redpanda (New):**
+
+<no value>```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM KAFKA CONNECTION <connection_name> (
+  TOPIC '<topic>'
+  [, GROUP ID PREFIX '<group_id_prefix>']
+  [, START OFFSET ( <partition_offset> [, ...] ) ]
+  [, START TIMESTAMP <timestamp> ]
+)
+[EXPOSE PROGRESS AS <progress_subsource_name>]
+[WITH ( <with_option> [, ...] )];
+
+```
+
+For details, see [CREATE SOURCE: Kafka/Redpanda (New Syntax)](/sql/create-source/kafka-v2/).
+
+**Webhook:**
+
+<no value>```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM WEBHOOK
+  BODY FORMAT <TEXT | JSON [ARRAY] | BYTES>
+  [INCLUDE HEADER <header_name> AS <column_alias> [BYTES] |
+   INCLUDE HEADERS [ ( [NOT] <header_name> [, [NOT] <header_name> ... ] ) ]
+  ][...]
+  [CHECK (
+      [WITH ( <BODY|HEADERS|SECRET <secret_name>> [AS <alias>] [BYTES] [, ...])]
+      <check_expression>
+    )
+  ]
+
+```
+
+For details, see [CREATE SOURCE: Webhook](/sql/create-source/webhook/).
+
+### Legacy syntax
+
+The legacy `CREATE SOURCE` syntax requires downtime to handle upstream schema
+changes. Prefer the [new syntax](#new-syntax) for new sources where available.
 
 **PostgreSQL (Legacy):**
 
@@ -6870,20 +6948,6 @@ FROM POSTGRES CONNECTION <connection_name> (
 ```
 
 For details, see [CREATE SOURCE: PostgreSQL (Legacy)](/sql/create-source/postgres/).
-
-**MySQL (New):**
-
-To create a source from an external MySQL database:
-```mzsql
-CREATE SOURCE [IF NOT EXISTS] <source_name>
-[IN CLUSTER <cluster_name>]
-FROM MYSQL CONNECTION <connection_name>
-[WITH ( <with_option> [, ...] )]
-;
-
-```
-
-For details, see [CREATE SOURCE: MySQL (New Syntax)](/sql/create-source/mysql-v2/).
 
 **MySQL (Legacy):**
 
@@ -6904,18 +6968,6 @@ FROM MYSQL CONNECTION <connection_name> [
 
 For details, see [CREATE SOURCE: MySQL (Legacy)](/sql/create-source/mysql/).
 
-**SQL Server (New):**
-
-<no value>```mzsql
-CREATE SOURCE [IF NOT EXISTS] <src_name>
-[IN CLUSTER <cluster_name>]
-FROM SQL SERVER CONNECTION <connection_name>
-[WITH ( <with_option> [, ...] )]
-
-```
-
-For details, see [CREATE SOURCE: SQL Server (New Syntax)](/sql/create-source/sql-server-v2/).
-
 **SQL Server (Legacy):**
 
 <no value>```mzsql
@@ -6931,7 +6983,7 @@ FROM SQL SERVER CONNECTION <connection_name>
 
 For details, see [CREATE SOURCE: SQL Server(Legacy)](/sql/create-source/sql-server/).
 
-**Kafka/Redpanda:**
+**Kafka/Redpanda (Legacy):**
 
 **Format Avro:**
 
@@ -7119,7 +7171,7 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 
 ```
 
-For details, see [CREATE SOURCE: Kafka/Redpanda](/sql/create-source/kafka/).
+For details, see [CREATE SOURCE: Kafka/Redpanda (Legacy Syntax)](/sql/create-source/kafka/).
 
 **Webhook:**
 
@@ -7252,36 +7304,30 @@ some burst capacity.
 `CREATE TABLE` defines a table that is persisted in durable storage.
 
 In Materialize, you can create:
-- Read-write tables. With read-write tables, users can read ([`SELECT`]) and
-  write to the tables ([`INSERT`], [`UPDATE`], [`DELETE`]).
+
+- [Read-write tables](/sql/create-table/user-populated/). With read-write
+  tables, users can read ([`SELECT`]) and write to the tables ([`INSERT`],
+  [`UPDATE`], [`DELETE`]).
 
 - Read-only tables from sources that use the new syntax:
-  [PostgreSQL](/sql/create-source/postgres-v2/),
-  [MySQL](/sql/create-source/mysql-v2/), and
-  [SQL Server](/sql/create-source/sql-server-v2/). Users cannot write
-  ([`INSERT`], [`UPDATE`], [`DELETE`]) to these tables. These tables are
-  populated by [data ingestion from a
-  source](/ingest-data/). 
-
-Tables in Materialize are similar to tables in standard relational databases:
-they consist of rows and columns where the columns are fixed when the table is
-created.
-
-Tables can be joined with other tables, materialized views, views, and
-subsources; and you can create views/materialized views/indexes on tables.
+  [PostgreSQL](/sql/create-table/postgres/),
+  [MySQL](/sql/create-table/mysql/),
+  [SQL Server](/sql/create-table/sql-server/), and
+  [Kafka/Redpanda](/sql/create-table/kafka/). Users cannot write ([`INSERT`],
+  [`UPDATE`], [`DELETE`]) to these tables. These tables are populated by [data
+  ingestion from a source](/ingest-data/).
+  You must be on **v26+** to use the new syntax.
 
 [//]: # "TODO(morsapaes) Bring back When to use a table? once there's more
 clarity around best practices."
 
-## Syntax
+## Syntax summary
 
 **Read-write table:**
-### Read-write table
 
 To create a new read-write table (i.e., users can perform
 [`SELECT`](/sql/select/), [`INSERT`](/sql/insert/),
 [`UPDATE`](/sql/update/), and [`DELETE`](/sql/delete/) operations):
-
 ```mzsql
 CREATE [TEMP|TEMPORARY] TABLE [IF NOT EXISTS] <table_name> (
   <column_name> <column_type> [NOT NULL][DEFAULT <default_expr>]
@@ -7295,27 +7341,13 @@ CREATE [TEMP|TEMPORARY] TABLE [IF NOT EXISTS] <table_name> (
 
 ```
 
-| Syntax element | Description |
-| --- | --- |
-| **TEMP** / **TEMPORARY** | *Optional.* If specified, mark the table as temporary.  Temporary tables are: - Automatically dropped at the end of the session; - Not visible to other connections; - Created in the special `mz_temp` schema.  Temporary tables may depend upon other temporary database objects, but non-temporary tables may not depend on temporary objects.  |
-| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  |
-| `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
-| `<column_name>` |  The name of a column to be created in the new table. Names for columns must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
-| `<column_type>` |  The type of the column. For supported types, see [SQL data types](/sql/types/).  |
-| **NOT NULL** | *Optional.* If specified, disallow  _NULL_ values for the column. Columns without this constraint can contain _NULL_ values.  |
-| **DEFAULT <default_expr>** | *Optional.* If specified, use the `<default_expr>` as the default value for the column. If not specified, `NULL` is used as the default value.  |
-| **WITH (<with_option>[,...])** |  The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION BY (<column> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \| \| `RETAIN HISTORY <duration>` \| *Optional.* ***Private preview.** This option has known performance or stability issues and is under active development.* <br>If specified, Materialize retains historical data for the specified duration, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period).<br>Accepts positive [interval](/sql/types/interval/) values (e.g., `'1hr'`).\|  |
+For details, see [CREATE TABLE: Read-write
+table](/sql/create-table/user-populated/).
 
 **PostgreSQL source table:**
-### PostgreSQL source table
-
-> **Public Preview:** This feature is in public preview.
-
-> **Note:** You must be on **v26+** to use the new syntax.
 
 To create a read-only table from a [source](/sql/create-source/) connected
 (via native connector) to an external PostgreSQL:
-
 ```mzsql
 CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <upstream_table>)
 [WITH (
@@ -7326,29 +7358,17 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 )]
 ;
 
-```
+```{{< include-md
+file="content/headless/create-table-from-source-snapshotting.md"
+>}}
 
-| Syntax element | Description |
-| --- | --- |
-| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}  |
-| `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
-| `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
-| **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
-| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
-
-For an example, see [Create a table (PostgreSQL
-source)](/sql/create-table/#create-a-table-postgresql-source).
+For details, see [CREATE TABLE: PostgreSQL source
+table](/sql/create-table/postgres/).
 
 **MySQL source table:**
-### MySQL source table
-
-> **Public Preview:** This feature is in public preview.
-
-> **Note:** You must be on **v26.25+** to use the new syntax.
 
 To create a read-only table from a [source](/sql/create-source/) connected
 (via native connector) to an external MySQL database:
-
 ```mzsql
 CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <upstream_schema>.<upstream_table>)
 [WITH (
@@ -7359,26 +7379,16 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 )]
 ;
 
-```
+```{{< include-md
+file="content/headless/create-table-from-source-snapshotting.md"
+>}}
 
-| Syntax element | Description |
-| --- | --- |
-| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}  |
-| `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
-| `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
-| **(REFERENCE <upstream_schema>.<upstream_table>)** |  The fully-qualified name of the upstream MySQL table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
-| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, decode data as `text` for the listed column(s), such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
+For details, see [CREATE TABLE: MySQL source table](/sql/create-table/mysql/).
 
 **SQL Server source table:**
-### SQL Server source table
-
-> **Public Preview:** This feature is in public preview.
-
-> **Note:** You must be on **v26+** to use the new syntax.
 
 To create a read-only table from a [source](/sql/create-source/) connected
 (via native connector) to an external SQL Server database:
-
 ```mzsql
 CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <upstream_table>)
 [WITH (
@@ -7389,334 +7399,172 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 )]
 ;
 
-```
+```{{% include-headless "/headless/create-table-from-source-snapshotting.md"
+%}}
 
-| Syntax element | Description |
-| --- | --- |
-| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}  |
-| `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
-| `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
-| **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
-| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
+For details, see [CREATE TABLE: SQL Server source
+table](/sql/create-table/sql-server/).
 
-## Read-write tables
+**Kafka source table:**
 
-### Table names and column names
+**Format Avro:**
 
-Names for tables and column(s) must follow the [naming
-guidelines](/sql/identifiers/#naming-restrictions).
-
-### Known limitations
-
-Tables do not currently support:
-
-- Primary keys
-- Unique constraints
-- Check constraints
-
-See also the known limitations for [`INSERT`](/sql/insert#known-limitations),
-[`UPDATE`](/sql/update#known-limitations), and [`DELETE`](/sql/delete#known-limitations).
-
-## Source-populated tables
-
-> **Public Preview:** This feature is in public preview.
-
-> **Note:** You must be on **v26+** to use the new syntax.
-
-### Table names and column names
-
-Names for tables and column(s) must follow the [naming
-guidelines](/sql/identifiers/#naming-restrictions).
-
-<a name="supported-db-source-types"></a>
-
-### Read-only tables
-
-Source-populated tables are **read-only** tables. Users **cannot** perform write
-operations
-([`INSERT`](/sql/insert/)/[`UPDATE`](/sql/update/)/[`DELETE`](/sql/delete/)) on
-these tables.
-
-### DDL transaction block
-
-For performance, when issuing multiple `CREATE TABLE FROM SOURCE...` statements,
-use within a [transaction block](/sql/begin/#ddl-only-transactions).
-
-### Source-populated tables and snapshotting
-
-Creating the tables from sources starts the [snapshotting](/ingest-data/#snapshotting) process. Snapshotting syncs the
-currently available data into Materialize. Because the initial snapshot is
-persisted in the storage layer atomically (i.e., at the same ingestion
-timestamp), you are not able to query the table until snapshotting is complete.
-
-> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
-> source is temporarily blocked. As such, if possible, you can resize the cluster
-> to speed up the snapshotting process and once the process finishes, resize the
-> cluster for steady-state. You can monitor the snapshot progress on the overview
-> page for the source in the Materialize console.
-
-### Supported data types
-
-**PostgreSQL:**
-#### PostgreSQL types
-
-<p>Materialize natively supports the following PostgreSQL types (including the
-array type for each of the types):</p>
-<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
-
-Replicating tables that contain **unsupported [data types](/sql/types/)** is
-possible via the `TEXT COLUMNS` option. The specified columns will be
-treated as `text`; i.e., will not have the expected PostgreSQL type
-features. For example:
-
-* [`enum`]: When decoded as `text`, the implicit ordering of the original
-  PostgreSQL `enum` type is not preserved; instead, Materialize will sort values
-  as `text`.
-
-* [`money`]: When decoded as `text`, resulting `text` value cannot be cast
-back to `numeric`, since PostgreSQL adds typical currency formatting to the
-output.
-
-[`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
-[`money`]: https://www.postgresql.org/docs/current/datatype-money.html
-
-**MySQL:**
-#### MySQL types
-
-<p>Materialize natively supports the following MySQL types:</p>
-<ul style="column-count: 3"><li><code>bigint</code></li><li><code>binary</code></li><li><code>bit</code></li><li><code>blob</code></li><li><code>boolean</code></li><li><code>char</code></li><li><code>date</code></li><li><code>datetime</code></li><li><code>decimal</code></li><li><code>double</code></li><li><code>float</code></li><li><code>int</code></li><li><code>json</code></li><li><code>longblob</code></li><li><code>longtext</code></li><li><code>mediumblob</code></li><li><code>mediumint</code></li><li><code>mediumtext</code></li><li><code>numeric</code></li><li><code>real</code></li><li><code>smallint</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>tinyblob</code></li><li><code>tinyint</code></li><li><code>tinytext</code></li><li><code>varbinary</code></li><li><code>varchar</code></li></ul>
-
-When replicating tables that contain the **unsupported [data
-types](/sql/types/)**, you can:
-
-- Use [`TEXT COLUMNS`
-  option](/sql/create-source/mysql/#handling-unsupported-types) for the
-  following unsupported  MySQL types:
-
-  - `enum`
-  - `year`
-
-  The specified columns will be treated as `text` and will not offer the
-  expected MySQL type features.
-
-- Use the [`EXCLUDE COLUMNS`](/sql/create-source/mysql/#excluding-columns)
-option to exclude any columns that contain unsupported data types.
-
-#### Zero values for `date`, `datetime`, and `timestamp`
-
-MySQL allows the special "zero" values `0000-00-00`, `0000-00-00
-00:00:00` in `date`, `datetime`, and `timestamp` columns when the server
-`sql_mode` does not include `NO_ZERO_DATE` or `NO_ZERO_IN_DATE`. These
-values are not representable in Materialize's corresponding native types,
-so they will cause ingestion to fail for the affected column.
-
-To ingest columns that contain zero values, use [`TEXT
-COLUMNS`](/sql/create-source/mysql/#handling-unsupported-types) to
-decode the affected columns as `text`. The zero values for `date`,
-`datetime`, `timestamp`, and `year` are preserved verbatim as strings
-(e.g. `"0000-00-00 00:00:00"`, `"0000"`).
-
-**SQL Server:**
-#### SQL Server types
-
-Materialize natively supports the following SQL Server types:
-
-<ul style="column-count: 3"><li><code>tinyint</code></li><li><code>smallint</code></li><li><code>int</code></li><li><code>bigint</code></li><li><code>real</code></li><li><code>double precision</code></li><li><code>float</code></li><li><code>bit</code></li><li><code>decimal</code></li><li><code>numeric</code></li><li><code>money</code></li><li><code>smallmoney</code></li><li><code>char</code></li><li><code>nchar</code></li><li><code>varchar</code></li><li><code>varchar(max)</code></li><li><code>nvarchar</code></li><li><code>nvarchar(max)</code></li><li><code>sysname</code></li><li><code>binary</code></li><li><code>varbinary</code></li><li><code>json</code></li><li><code>date</code></li><li><code>time</code></li><li><code>smalldatetime</code></li><li><code>datetime</code></li><li><code>datetime2</code></li><li><code>datetimeoffset</code></li><li><code>uniqueidentifier</code></li></ul>
-
-To replicate tables that contain the following unsupported data types, you can
-use either the `TEXT COLUMNS` or the `EXCLUDE COLUMNS` option:
-
-| Unsupported type | Supported option(s)                                         |
-| ---------------- | ----------------------------------------------------------- |
-| `text`           | `TEXT COLUMNS` (exposed as `varchar`) or `EXCLUDE COLUMNS`  |
-| `ntext`          | `TEXT COLUMNS` (exposed as `nvarchar`) or `EXCLUDE COLUMNS` |
-| `image`          | `EXCLUDE COLUMNS`                                           |
-| `varbinary(max)` | `EXCLUDE COLUMNS`                                           |
-
-### Handling table schema changes
-
-The use of `CREATE SOURCE` (new syntax) with `CREATE TABLE FROM SOURCE` allows
-for the handling of the upstream DDL changes, specifically adding or dropping
-columns in the upstream tables, without downtime. For details, see:
-
-- [PostgreSQL: Handling upstream schema changes with zero
-downtime](/ingest-data/postgres/source-versioning/)
-
-- [MySQL: Handling upstream schema changes with zero
-downtime](/ingest-data/mysql/source-versioning/)
-
-- [SQL Server: Handling upstream schema changes with zero
-downtime](/ingest-data/sql-server/source-versioning/)
-
-#### Incompatible schema changes
-
-All other schema changes to upstream tables will set the corresponding
-Materialize tables into an error state, preventing reads from these tables.
-
-To handle [incompatible schema changes](#incompatible-schema-changes), drop
-the affected table [`DROP TABLE`](/sql/drop-table/) , and then, [`CREATE
-TABLE FROM SOURCE`](/sql/create-table/) to recreate the table with the
-updated schema.
-
-### Upstream table truncation restrictions
-
-Avoid truncating upstream tables that are being replicated into Materialize.
-If a replicated upstream table is truncated, the corresponding
-subsource(s)/table(s) in Materialize becomes inaccessible and will not
-produce any data until it is recreated.
-
-Instead of truncating, use an unqualified `DELETE` to remove all rows from
-the upstream table:
-
+Materialize can decode Avro messages by integrating with a schema registry
+to retrieve a schema, and automatically determine the columns and data types
+to use in the table.
 ```mzsql
-DELETE FROM t;
+CREATE TABLE [IF NOT EXISTS] <table_name>
+FROM SOURCE <src_name>
+FORMAT AVRO
+    USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
+      [KEY STRATEGY <key_strategy>]
+      [VALUE STRATEGY <value_strategy>]
+  | USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> (
+      SCHEMA NAME = '<schema_name>'
+    )
+[INCLUDE
+    KEY [AS <name>]
+  | PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE
+    NONE
+  | DEBEZIUM
+  | UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]
+];
+
 ```
 
-### Inherited tables
+**Format JSON:**
 
-When using [PostgreSQL table inheritance](https://www.postgresql.org/docs/current/tutorial-inheritance.html),
-PostgreSQL serves data from `SELECT`s as if the inheriting tables' data is
-also present in the inherited table. However, both PostgreSQL's logical
-replication and `COPY` only present data written to the tables themselves,
-i.e. the inheriting data is _not_ treated as part of the inherited table.
-
-PostgreSQL sources use logical replication and `COPY` to ingest table data,
-so inheriting tables' data will only be ingested as part of the inheriting
-table, i.e. in Materialize, the data will not be returned when serving
-`SELECT`s from the inherited table.
-
-You can mimic PostgreSQL's `SELECT` behavior with inherited tables by
-creating a materialized view that unions data from the inherited and
-inheriting tables (using `UNION ALL`). However, if new tables inherit from
-the table, data from the inheriting tables will not be available in the
-view. You will need to add the inheriting tables via `CREATE TABLE .. FROM
-SOURCE` and create a new view (materialized or non-) that unions the new
-table.
-
-## Privileges
-
-The privileges required to execute this statement are:
-
-- `CREATE` privileges on the containing schema.
-- `USAGE` privileges on all types used in the table definition.
-- `USAGE` privileges on the schemas that all types in the statement are
-  contained in.
-
-## Examples
-
-### Create a table (User-populated)
-
-The following example uses `CREATE TABLE` to create a new read-write table
-`mytable` with two columns `a` (of type `int`) and `b` (of type `text` and
-not nullable):
+Materialize can decode JSON messages into a single column named `data` with
+type `jsonb`. Refer to the [`jsonb` type](/sql/types/jsonb) documentation for
+the supported operations on this type.
 ```mzsql
-CREATE TABLE mytable (a int, b text NOT NULL);
+CREATE TABLE [IF NOT EXISTS] <table_name>
+FROM SOURCE <src_name>
+FORMAT JSON
+[INCLUDE
+    PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE NONE];
 
 ```
 
-Once a user-populated table is created, you can perform CRUD
-(Create/Read/Update/Write) operations on it.
+**Format TEXT/BYTES:**
 
-The following example uses [`INSERT`](/sql/insert/) to write two rows to the table:
+Materialize can parse **new-line delimited** data as plain text, or read raw
+bytes without applying any formatting or decoding. Text-formatted tables have
+a single column, by default named `text`. Raw byte-formatted tables have a
+single column, by default named `data`.
 ```mzsql
-INSERT INTO mytable VALUES
-(1, 'hello'),
-(2, 'goodbye')
-;
+CREATE TABLE [IF NOT EXISTS] <table_name>
+FROM SOURCE <src_name>
+FORMAT TEXT | BYTES
+[INCLUDE
+    PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE NONE];
 
 ```
 
-The following example uses [`SELECT`](/sql/select/) to read all rows from the table:
+**Format CSV:**
+
+Materialize can parse CSV-formatted data. The data in CSV tables is read as
+[`text`](/sql/types/text).
 ```mzsql
-SELECT * FROM mytable;
+CREATE TABLE [IF NOT EXISTS] <table_name>
+FROM SOURCE <src_name>
+FORMAT CSV WITH <n> COLUMNS [DELIMITED BY <char>]
+[INCLUDE
+    PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE NONE];
 
-```The results should display the two rows inserted:
-
-```hc {hl_lines="3-4"}
-| a | b       |
-| - | ------- |
-| 1 | hello   |
-| 2 | goodbye |
 ```
 
-### Create a table (PostgreSQL source)
+**Format Protobuf:**
 
-> **Public Preview:** This feature is in public preview.
-
-> **Note:** You must be on **v26+** to use the new syntax.
-> The example assumes you have configured your upstream PostgreSQL 11+ (i.e.,
-> enabled logical replication, created the publication for the various tables and
-> replication user, and updated the network configuration).
-> For details about configuring your upstream system, see the [PostgreSQL
-> integration guides](/ingest-data/postgres/#supported-versions-and-services).
-
-To create new **read-only** tables from a source table, use the `CREATE
-TABLE ... FROM SOURCE ... (REFERENCE <upstream_table>)` statement in a [DDL
-transaction block](/sql/begin/#ddl-only-transactions). The following example
-creates **read-only** tables `items` and `orders` from the PostgreSQL
-source's `public.items` and `public.orders` tables (the schema is `public`).
-
-{{< note >}}
-
-- Although the example creates the tables with the same names as the
-upstream tables, the tables in Materialize can have names that differ from
-the referenced table names.
-
-- For supported PostgreSQL data types, refer to [supported
-types](/sql/create-table/#supported-data-types).
-
-{{< /note >}}
+Materialize can decode Protobuf messages by integrating with a schema
+registry or parsing an inline schema to retrieve a `.proto` schema
+definition. It can then automatically define the columns and data types to
+use in the table.
 ```mzsql
-/* This example assumes:
-  - In the upstream PostgreSQL, you have defined:
-    - replication user and password with the appropriate access.
-    - a publication named `mz_source` for the `items` and `orders` tables.
-  - In Materialize:
-    - You have created a secret for the PostgreSQL password.
-    - You have defined the connection to the upstream PostgreSQL.
-    - You have used the connection to create a source.
-
-   For example (substitute with your configuration):
-      CREATE SECRET pgpass AS '<replication user password>'; -- substitute
-      CREATE CONNECTION pg_connection TO POSTGRES (
-        HOST '<hostname>',          -- substitute
-        DATABASE <db>,              -- substitute
-        USER <replication user>,    -- substitute
-        PASSWORD SECRET pgpass
-        -- [, <network security configuration> ]
-      );
-
-      CREATE SOURCE pg_source
-      FROM POSTGRES CONNECTION pg_connection (
-        PUBLICATION 'mz_source'       -- substitute
-      );
-*/
-
-BEGIN;
-CREATE TABLE items
-FROM SOURCE pg_source(REFERENCE public.items)
-;
-CREATE TABLE orders
-FROM SOURCE pg_source(REFERENCE public.orders)
-;
-COMMIT;
+CREATE TABLE [IF NOT EXISTS] <table_name>
+FROM SOURCE <src_name>
+FORMAT PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
+  | FORMAT PROTOBUF MESSAGE '<message_name>' USING SCHEMA '<schema_bytes>'
+[INCLUDE
+    KEY [AS <name>]
+  | PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE
+    NONE
+  | UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]
+];
 
 ```
-{{< include-md
-file="content/headless/create-table-from-source-snapshotting.md" >}}
 
-{{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}
+**KEY FORMAT VALUE FORMAT:**
 
-Source-populated tables are **read-only** tables. Users **cannot** perform write
-operations
-([`INSERT`](/sql/insert/)/[`UPDATE`](/sql/update/)/[`DELETE`](/sql/delete/)) on
-these tables.
-
-Once the snapshotting process completes and the table is in the running state, you can query the table:
+By default, the message key is decoded using the same format as the message
+value. However, you can set the key and value encodings explicitly using
+`KEY FORMAT ... VALUE FORMAT`.
 ```mzsql
-SELECT * FROM items;
+CREATE TABLE [IF NOT EXISTS] <table_name>
+FROM SOURCE <src_name>
+KEY FORMAT <key_format> VALUE FORMAT <value_format>
+-- <key_format> and <value_format> can be:
+-- AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <conn_name>
+--     [KEY STRATEGY <strategy>]
+--     [VALUE STRATEGY <strategy>]
+-- | AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_conn_name> (SCHEMA NAME = '<schema_name>')
+-- | CSV WITH <num> COLUMNS DELIMITED BY <char>
+-- | JSON | TEXT | BYTES
+-- | PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <conn_name>
+-- | PROTOBUF MESSAGE '<message_name>' USING SCHEMA '<schema_bytes>'
+[INCLUDE
+    KEY [AS <name>]
+  | PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE
+    NONE
+  | DEBEZIUM
+  | UPSERT [(VALUE DECODING ERRORS = INLINE [AS name])]
+];
 
 ```
+
+For details, see [CREATE TABLE: Kafka source table](/sql/create-table/kafka/).
 
 ## Related pages
 

@@ -102,13 +102,36 @@ Ensure you have the following:
     source will be created in the active cluster; to use a different cluster,
     use the `IN CLUSTER` clause.
 
+    **Legacy Syntax:**
+
+    With the legacy syntax, the source decodes the topic directly and is itself
+    queryable. Picking up an upstream schema change requires dropping and recreating
+    the source, which incurs downtime.
+
     ```mzsql
     CREATE SOURCE warpstream_click_stream_source
         FROM KAFKA CONNECTION warpstream_kafka (TOPIC 'materialize_click_streams')
         FORMAT JSON;
     ```
 
-    d. Verify the ingestion and query the data in Materialize:
+    **New Syntax:**
+
+    With the new syntax, create a source for the topic and then a table that decodes
+    it. Each table pins its own reader schema, which lets you pick up upstream schema
+    changes without downtime. For details, see [Handle upstream schema changes with
+    zero downtime](/ingest-data/kafka/source-versioning/).
+
+    ```mzsql
+    CREATE SOURCE warpstream_click_stream_source
+        FROM KAFKA CONNECTION warpstream_kafka (TOPIC 'materialize_click_streams');
+
+    CREATE TABLE warpstream_click_stream
+        FROM SOURCE warpstream_click_stream_source
+        FORMAT JSON;
+    ```
+
+    d. Verify the ingestion and query the data in Materialize. With the legacy
+    syntax, query the source; with the new syntax, query the table:
 
     ```mzsql
     SELECT * FROM warpstream_click_stream_source LIMIT 10;

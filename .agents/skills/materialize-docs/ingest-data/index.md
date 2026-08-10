@@ -981,6 +981,144 @@ This MySQL connection can then be reused across multiple [`CREATE SOURCE`](https
 
 ---
 
+## Change a webhook source's included headers
+
+A webhook source fixes its column shape when you create it, including which
+request headers it exposes through [`INCLUDE HEADER` /
+`INCLUDE HEADERS`](/sql/create-source/webhook/#exposing-headers). You cannot alter
+the header configuration of an existing webhook source in place. To change it,
+create a new source with the header configuration you want in a separate schema,
+then swap it into place with [`ALTER SCHEMA ...
+SWAP WITH`](/sql/alter-schema/). Because the swap only renames schemas,
+the [webhook endpoint URL](/sql/create-source/webhook/#webhook-url) that your
+senders post to stays the same.
+
+> **Tip:** For help getting started with your own data, you can schedule a [free guided
+> trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
+
+> **Warning:** Unlike a Kafka or database source, a webhook source has no upstream system to
+> re-read. The replacement source starts **empty**: it only contains webhook calls
+> received **after** the swap. Events delivered to the original source are **not**
+> copied to the replacement, and are lost for good once you drop the original
+> source. Only perform the swap when losing the original source's history is
+> acceptable, or keep the original source around to continue querying its past
+> data.
+
+## How it works
+
+The webhook endpoint URL is derived from the source's fully qualified name:
+
+```
+https://<HOST>/api/webhook/<database>/<schema>/<src_name>
+```
+
+Because the schema is part of the URL, building the replacement in a different
+schema and then swapping the two schemas atomically leaves the original URL
+resolving to the new source. Senders keep posting to the same URL, and downstream
+objects keep referencing the same name.
+
+## Before you begin
+
+You need a Materialize account and a cluster to host the source. The examples
+below use the `quickstart` cluster and omit the `CHECK` clause for brevity. In
+production, always [validate requests](/sql/create-source/webhook/#validating-requests)
+with a `CHECK` clause.
+
+## Step 1. Create the initial source
+
+Create the original source in a `prod` schema. This version exposes a single
+`foo` header as its own column:
+
+```mzsql
+CREATE SCHEMA prod;
+
+CREATE SOURCE prod.events
+  IN CLUSTER quickstart
+  FROM WEBHOOK
+  BODY FORMAT JSON
+  INCLUDE HEADER 'foo' AS foo;
+```
+
+The source has a `foo` column alongside the `body`:
+
+Column | Type    | Nullable?
+-------|---------|-----------
+ body  | `jsonb` | No
+ foo   | `text`  | Yes
+
+Point your webhook sender at
+`https://<HOST>/api/webhook/materialize/prod/events`. Incoming events accumulate
+in `prod.events`.
+
+## Step 2. Create the replacement with the new header configuration
+
+Suppose you now want to expose **all** headers except a sensitive `bar` header,
+rather than only `foo`. Build the replacement in a separate `staging` schema
+using the `INCLUDE HEADERS ( NOT ... )` syntax:
+
+```mzsql
+CREATE SCHEMA staging;
+
+CREATE SOURCE staging.events
+  IN CLUSTER quickstart
+  FROM WEBHOOK
+  BODY FORMAT JSON
+  INCLUDE HEADERS ( NOT 'bar' );
+```
+
+Instead of a single `foo` column, this version has a `headers` map column that
+contains every header except `bar`:
+
+Column  | Type                | Nullable?
+--------|---------------------|-----------
+ body   | `jsonb`             | No
+ headers | `map[text => text]` | No
+
+At this point nothing is posting to `staging.events` yet, so it is empty. Your
+senders are still delivering to `prod.events`.
+
+## Step 3. Swap the schemas
+
+Swap the two schemas to cut over. The swap is atomic:
+
+```mzsql
+ALTER SCHEMA prod SWAP WITH staging;
+```
+
+After the swap:
+
+- `prod.events` now resolves to the new source (the `headers` map version), so
+  the unchanged endpoint URL `.../materialize/prod/events` and any downstream
+  objects that reference `prod.events` immediately pick up the new shape.
+- The original source now lives at `staging.events`, retaining the data it
+  ingested before the swap.
+
+New webhook calls to `prod.events` land in the new source and expose the
+`headers` map. As noted in the warning above, the events that arrived before the
+swap remain only in `staging.events` (the old source) and are **not** present in
+the new `prod.events`.
+
+## Step 4. Clean up
+
+Once you have validated the cutover, drop the retired source. This permanently
+discards the data it ingested before the swap:
+
+```mzsql
+DROP SCHEMA staging CASCADE;
+```
+
+If you need to preserve the original source's historical events, copy them into a
+table or downstream object **before** dropping it, or leave the `staging` schema
+in place and query it as needed.
+
+## See also
+
+- [`CREATE SOURCE: Webhook`](/sql/create-source/webhook/)
+- [`ALTER SCHEMA ... SWAP WITH`](/sql/alter-schema/)
+- [Webhooks quickstart](/ingest-data/webhooks/webhook-quickstart/)
+
+---
+
 ## CockroachDB CDC using Kafka and Changefeeds
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
@@ -1134,16 +1272,37 @@ guidance.
 ### 3. Start ingesting data
 
 1. Use the [`CREATE SOURCE`](/sql/create-source/kafka/) command to connect Materialize
-   to your Kafka broker and start ingesting data from the target topic:
+   to your Kafka broker and start ingesting data from the target topic.
+   CockroachDB's default envelope structure for changefeed messages is
+   compatible with the Debezium format, so you can use `ENVELOPE DEBEZIUM` to
+   interpret the data:
+
+   **Legacy Syntax:**
+
+   With the legacy syntax, the source decodes the topic directly and is itself
+   queryable. Picking up an upstream schema change requires dropping and recreating
+   the source, which incurs downtime.
 
    ```mzsql
    CREATE SOURCE kafka_repl
-     IN CLUSTER ingest_kafka
-     FROM KAFKA CONNECTION kafka_connection (TOPIC 'my_table')
-     -- CockroachDB's default envelope structure for changefeed messages is
-     -- compatible with the Debezium format, so you can use ENVELOPE DEBEZIUM
-     -- to interpret the data.
-     ENVELOPE DEBEZIUM;
+       FROM KAFKA CONNECTION kafka_connection (TOPIC 'my_table')
+       FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection ENVELOPE DEBEZIUM;
+   ```
+
+   **New Syntax:**
+
+   With the new syntax, create a source for the topic and then a table that decodes
+   it. Each table pins its own reader schema, which lets you pick up upstream schema
+   changes without downtime. For details, see [Handle upstream schema changes with
+   zero downtime](/ingest-data/kafka/source-versioning/).
+
+   ```mzsql
+   CREATE SOURCE kafka_repl
+       FROM KAFKA CONNECTION kafka_connection (TOPIC 'my_table');
+
+   CREATE TABLE my_table
+       FROM SOURCE kafka_repl
+       FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection ENVELOPE DEBEZIUM;
    ```
 
     By default, the source will be created in the active cluster; to use a
@@ -1637,7 +1796,7 @@ The architecture consists of the following components:
     the events to a Kafka topic, while the Schema Registry ensures the data
     structure (schema) is consistent and readable.
 
-- **Materialize:** Materialize uses connects to Kafka to ingests data from
+- **Materialize:** Materialize connects to Kafka to ingest data from
   MongoDB.
 
 ## Prerequisites
@@ -1827,6 +1986,12 @@ connection](/sql/create-connection/#confluent-schema-registry):
 Create the sources for the specific Kafka topic
 (`<topic.prefix>.<database>.<collection>`).
 
+**Legacy Syntax:**
+
+With the legacy syntax, each source decodes its topic directly and is itself
+queryable. Picking up an upstream schema change requires dropping and recreating
+the source, which incurs downtime.
+
 ```mzsql
 CREATE SOURCE mdb_items
 FROM KAFKA CONNECTION kafka_connection (TOPIC 'mdb-prod-rs0.test.items')
@@ -1834,7 +1999,32 @@ FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
 ENVELOPE UPSERT;
 
 CREATE SOURCE mdb_orders
-FROM KAFKA CONNECTION kafka_connection (TOPIC 'mdb-prod-rs0.test.items')
+FROM KAFKA CONNECTION kafka_connection (TOPIC 'mdb-prod-rs0.test.orders')
+FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
+ENVELOPE UPSERT;
+```
+
+**New Syntax:**
+
+With the new syntax, create a source for each topic and then a table that
+decodes it. Each table pins its own reader schema, which lets you pick up
+upstream schema changes without downtime. For details, see [Handle upstream
+schema changes with zero downtime](/ingest-data/kafka/source-versioning/).
+
+```mzsql
+CREATE SOURCE mdb_items_src
+FROM KAFKA CONNECTION kafka_connection (TOPIC 'mdb-prod-rs0.test.items');
+
+CREATE TABLE mdb_items
+FROM SOURCE mdb_items_src (REFERENCE "mdb-prod-rs0.test.items")
+FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
+ENVELOPE UPSERT;
+
+CREATE SOURCE mdb_orders_src
+FROM KAFKA CONNECTION kafka_connection (TOPIC 'mdb-prod-rs0.test.orders');
+
+CREATE TABLE mdb_orders
+FROM SOURCE mdb_orders_src (REFERENCE "mdb-prod-rs0.test.orders")
 FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
 ENVELOPE UPSERT;
 ```
@@ -2064,42 +2254,6 @@ To help you get started, the following integration guides are available:
 
 ## Considerations
 
-### Schema changes
-
-Materialize supports schema changes in the upstream database as follows:
-
-#### Compatible schema changes (Legacy syntax)
-
-> **Note:** This section refer to the legacy [`CREATE SOURCE ... FOR
-> ...`](/sql/create-source/mysql/) that creates subsources as part of the `CREATE
-> SOURCE` operation.  To be able to handle the upstream column additions and
-> drops, use [`CREATE SOURCE (New Syntax)`](/sql/create-source/mysql-v2/) and
-> [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
-> [MySQL: Source versioning guide](/ingest-data/mysql/source-versioning/).
-
-- Adding columns to tables. Materialize will **not ingest** new columns
-added upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to
-first drop the affected subsource, and then add the table back to the source
-using [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/).
-
-- Dropping columns that were added after the source was created. These
-columns are never ingested, so you can drop them without issue.
-
-- Adding or removing `NOT NULL` constraints to tables that were nullable
-when the source was created.
-
-#### Incompatible schema changes
-
-All other schema changes to upstream tables will set the corresponding
-subsource into an error state, which prevents you from reading from the
-subsource.
-
-To handle incompatible [schema changes](#schema-changes), use [`DROP
-SOURCE`](/sql/alter-source/#context) to first drop the affected subsource,
-and then [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to add the
-subsource back to the source. When you add the subsource, it will have the
-updated schema from the corresponding upstream table.
-
 ### Supported types
 
 <p>Materialize natively supports the following MySQL types:</p>
@@ -2135,20 +2289,6 @@ decode the affected columns as `text`. The zero values for `date`,
 `datetime`, `timestamp`, and `year` are preserved verbatim as strings
 (e.g. `"0000-00-00 00:00:00"`, `"0000"`).
 
-### Truncation
-
-Avoid truncating upstream tables that are being replicated into Materialize.
-If a replicated upstream table is truncated, the corresponding
-subsource in Materialize becomes inaccessible and will not
-produce any data until it is recreated.
-
-Instead of truncating, use an unqualified `DELETE` to remove all rows from
-the upstream table:
-
-```mzsql
-DELETE FROM t;
-```
-
 ### Modifying an existing source
 
 When you add a new subsource to an existing source ([`ALTER SOURCE ... ADD
@@ -2157,6 +2297,98 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
+
+## Handling upstream operations
+
+This section describes how changes to upstream tables that Materialize ingests
+affect the corresponding Materialize tables.
+
+### Adding a column
+
+When you add a new column to your upstream table, Materialize continues to
+ingest only the existing columns.
+
+To incorporate the new column:
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/mysql-v2/) syntax, create a new table from
+the source. See [Handle upstream column addition](/ingest-data/mysql/source-versioning/#handle-upstream-column-addition).
+
+- If using the legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/mysql/) syntax that creates subsources, use [`DROP
+SOURCE`](/sql/drop-source/) to drop the affected subsource, and then add the
+table back to the source using [`ALTER SOURCE ... ADD
+SUBSOURCE`](/sql/alter-source/). The re-added subsource includes the new column.
+
+### Dropping a column
+
+Dropping columns that Materialize does not ingest (for example, columns added
+after the source was created, or columns that are excluded) is supported. As
+these columns were never ingested, you can drop them without issue.
+
+If your Materialize source ingests a column, dropping that column from your
+upstream table puts the affected table into an error state.
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/mysql-v2/) syntax, you can safely drop a
+column by first ignoring it in Materialize. See [Handle upstream column
+drop](/ingest-data/mysql/source-versioning/#handle-upstream-column-drop).
+
+- If using legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/mysql/) syntax, use [`DROP SOURCE`](/sql/drop-source/) to drop the affected
+subsource, and then add the table back to the source using [`ALTER
+SOURCE ... ADD SUBSOURCE`](/sql/alter-source/).
+
+### Changing constraints
+
+Materialize ignores the following constraint changes: foreign
+key and `CHECK`.
+As such, you can add or drop them without affecting ingestion.
+
+Materialize also ignores `NOT NULL`, `UNIQUE`, and `PRIMARY KEY` constraints that
+are added after the Materialize table is created (that is, the table was created
+without them). Adding such a constraint, and later dropping it, does not affect
+ingestion.
+
+Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
+the table was created puts the affected table into an error state.
+
+### Changing a column's data type
+
+Changing an ingested column's data type upstream so that it maps to a different
+Materialize type than before puts the affected Materialize table into an
+error state. Ingestion for that table stops, and you must drop and recreate the
+table in Materialize to resume ingestion.
+
+Changing an ingested column's upstream data type so that it continues to map to
+the same Materialize type does not interrupt ingestion. For example, changing
+`tinyint` to `smallint`, changing within the
+`text`/`tinytext`/`mediumtext`/`longtext` family, and adjusting `bit(n)`
+precision are all safe.
+
+Appending new values to the **end** of an existing enum does not put the table
+into an error state. However, the newly-added values are not recognized, so rows
+that use them fail to decode until you drop and recreate the table. Existing
+enum values remain recognized, and rows that use them continue to decode
+successfully.
+
+Any other enum change puts the affected Materialize table into an
+error state, including inserting a value before the end, reordering or renaming
+values, and removing values.
+
+### Renaming a column
+
+Renaming a column that Materialize ingests puts the affected table into an error
+state. Ingestion for that table stops, and you must drop and recreate the table
+in Materialize to resume ingestion.
+
+### Table-level operations
+
+The following upstream operations put the affected table into an error state.
+Ingestion for that table stops, and you must drop and recreate the affected
+table in Materialize to resume:
+
+- Dropping a table (`DROP TABLE`).
+- Renaming a table or moving it to a different schema.
+- Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
 
 ---
 
@@ -2205,36 +2437,6 @@ To help you get started, the following integration guides are available:
 
 ## Considerations
 
-<h3 id="schema-changes">Schema changes</h3>
-<p>Materialize supports schema changes in the upstream database as follows:</p>
-<h4 id="compatible-schema-changes-legacy-syntax">Compatible schema changes (Legacy syntax)</h4>
-<blockquote>
-<p><strong>Note:</strong> This section refer to the legacy <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a> that creates subsources as part of the
-<code>CREATE SOURCE</code> operation.  To be able to handle the upstream column
-additions and drops, see <a href="/sql/create-source/postgres-v2/" ><code>CREATE SOURCE (New Syntax)</code></a> and <a href="/sql/create-table" ><code>CREATE TABLE FROM SOURCE</code></a>.</p>
-</blockquote>
-<ul>
-<li>
-<p>Adding columns to tables. Materialize will <strong>not ingest</strong> new columns
-added upstream unless you use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> to
-first drop the affected subsource, and then add the table back to the source
-using <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a>.</p>
-</li>
-<li>
-<p>Dropping columns that were added after the source was created. These
-columns are never ingested, so you can drop them without issue.</p>
-</li>
-<li>
-<p>Adding or removing <code>NOT NULL</code> constraints to tables that were nullable
-when the source was created.</p>
-</li>
-</ul>
-<h4 id="incompatible-schema-changes">Incompatible schema changes</h4>
-<p>All other schema changes to upstream tables will set the corresponding
-Materialize tables into an error state, preventing reads from these tables.</p>
-<p>To handle <a href="#incompatible-schema-changes" >incompatible schema changes</a>, drop
-the affected table <a href="/sql/drop-table/" ><code>DROP TABLE</code></a> , and then, <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> to recreate the table with the
-updated schema.</p>
 <h3 id="publication-membership">Publication membership</h3>
 <p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
 remove tables from publications. Because of this, Materialize relies on
@@ -2269,15 +2471,7 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
-<h3 id="truncation">Truncation</h3>
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
-If a replicated upstream table is truncated, the corresponding
-subsource(s)/table(s) in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div><h3 id="inherited-tables">Inherited tables</h3>
+<h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
 also present in the inherited table. However, both PostgreSQL&rsquo;s logical
@@ -2347,6 +2541,83 @@ work distribution, reducing snapshot performance. They can also cause incorrect 
 progress reporting in the Console.</p>
 <p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
 date by running PostgreSQL <code>ANALYZE</code> command.</p>
+
+## Handling upstream operations
+
+This section describes how changes to upstream tables that Materialize ingests
+affect the corresponding Materialize tables.
+
+### Adding a column
+
+When you add a new column to your upstream table, Materialize continues to
+ingest only the existing columns.
+
+To incorporate the new column:
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, create a new table from
+the source. See [Handle upstream column addition](/ingest-data/postgres/source-versioning/#handle-upstream-column-addition).
+
+- If using the legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/postgres/) syntax that creates subsources, use [`DROP
+SOURCE`](/sql/drop-source/) to drop the affected subsource, and then add the
+table back to the source using [`ALTER SOURCE ... ADD
+SUBSOURCE`](/sql/alter-source/). The re-added subsource includes the new column.
+
+### Dropping a column
+
+Dropping columns that Materialize does not ingest (for example, columns added
+after the source was created, or columns that are excluded) is supported. As
+these columns were never ingested, you can drop them without issue.
+
+If your Materialize source ingests a column, dropping that column from your
+upstream table puts the affected table into an error state.
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop a
+column by first ignoring it in Materialize. See [Handle upstream column
+drop](/ingest-data/postgres/source-versioning/#handle-upstream-column-drop).
+
+- If using legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/postgres/) syntax, use [`DROP SOURCE`](/sql/drop-source/) to drop the affected
+subsource, and then add the table back to the source using [`ALTER
+SOURCE ... ADD SUBSOURCE`](/sql/alter-source/).
+
+### Changing constraints
+
+Materialize ignores the following constraint changes: foreign
+key, `CHECK`, and `EXCLUSION`.
+As such, you can add or drop them without affecting ingestion.
+
+Materialize also ignores `NOT NULL`, `UNIQUE`, and `PRIMARY KEY` constraints that
+are added after the Materialize table is created (that is, the table was created
+without them). Adding such a constraint, and later dropping it, does not affect
+ingestion.
+
+Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
+the table was created puts the affected table into an error state.
+
+### Changing a column's data type
+
+Changing an ingested column's data type upstream puts the affected
+Materialize table into an error state unless the column was ingested as `text`
+via the `TEXT COLUMNS` option. Ingestion for that table stops, and you must
+drop and recreate the table in Materialize to resume ingestion.
+
+### Renaming a column
+
+Renaming a column that Materialize ingests puts the affected table into an error
+state. Ingestion for that table stops, and you must drop and recreate the table
+in Materialize to resume ingestion.
+
+### Table-level operations
+
+The following upstream operations put the affected table into an error state.
+Ingestion for that table stops, and you must drop and recreate the affected
+table in Materialize to resume:
+
+- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Renaming a table or moving it to a different schema.
+- Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
+- Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
 
 ---
 
@@ -3154,46 +3425,18 @@ Data Capture (CDC) support.
 
 ## Considerations
 
-### Schema changes
-Materialize supports schema changes in the upstream database as follows:
-
-#### Compatible schema changes (Legacy syntax)
-
-> **Note:** This section refer to the legacy [`CREATE SOURCE ... FOR
-> ...`](/sql/create-source/sql-server/) that creates subsources as part of the
-> `CREATE SOURCE` operation.  To be able to handle the upstream column additions
-> and drops, use [`CREATE SOURCE (New Syntax)`](/sql/create-source/sql-server-v2/)
-> and [`CREATE TABLE FROM SOURCE`](/sql/create-table) instead.  For details, see
-> [SQL Server: Source versioning
-> guide](/ingest-data/sql-server/source-versioning/).
-
-- Adding columns to tables. Materialize will **not ingest** new columns added
-  upstream unless you use [`DROP SOURCE`](/sql/alter-source/#context) to first
-  drop the affected subsource, and then add the table back to the source using
-  [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/).
-
-- Dropping columns that were added after the source was created. These columns
-  are never ingested, so you can drop them without issue.
-
-- Adding or removing `NOT NULL` constraints to tables that were nullable when
-  the source was created.
-
-#### Incompatible schema changes
-
-All other schema changes to upstream tables will set the corresponding subsource
-into an error state, which prevents you from reading from the source.
-
-To handle incompatible [schema changes](#schema-changes), use [`DROP SOURCE`](/sql/alter-source/#context)
-and [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to first drop the
-affected subsource, and then add the table back to the source. When you add the
-subsource, it will have the updated schema from the corresponding upstream
-table.
-
 ### Supported types
 
 Materialize natively supports the following SQL Server types:
 
 <ul style="column-count: 3"><li><code>tinyint</code></li><li><code>smallint</code></li><li><code>int</code></li><li><code>bigint</code></li><li><code>real</code></li><li><code>double precision</code></li><li><code>float</code></li><li><code>bit</code></li><li><code>decimal</code></li><li><code>numeric</code></li><li><code>money</code></li><li><code>smallmoney</code></li><li><code>char</code></li><li><code>nchar</code></li><li><code>varchar</code></li><li><code>varchar(max)</code></li><li><code>nvarchar</code></li><li><code>nvarchar(max)</code></li><li><code>sysname</code></li><li><code>binary</code></li><li><code>varbinary</code></li><li><code>json</code></li><li><code>date</code></li><li><code>time</code></li><li><code>smalldatetime</code></li><li><code>datetime</code></li><li><code>datetime2</code></li><li><code>datetimeoffset</code></li><li><code>uniqueidentifier</code></li></ul>
+
+#### `char` and `nchar` columns
+
+To preserve values exactly as SQL Server returns them, `char` and `nchar` columns
+are replicated as `text` rather than fixed-length. SQL Server and Materialize
+measure fixed-length character types differently, so replicating as text avoids
+truncation and padding mismatches.
 
 To replicate tables that contain the following unsupported data types, you can
 use either the `TEXT COLUMNS` or the `EXCLUDE COLUMNS` option:
@@ -3258,6 +3501,92 @@ process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
+
+## Handling upstream operations
+
+This section describes how changes to upstream tables that Materialize ingests
+affect the corresponding Materialize tables.
+
+### Adding a column
+
+When you add a new column to your upstream table, Materialize continues to
+ingest only the existing columns.
+
+To incorporate the new column:
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/sql-server-v2/) syntax, create a new table from
+the source. See [Handle upstream column addition](/ingest-data/sql-server/source-versioning/#handle-upstream-column-addition).
+
+- If using the legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/sql-server/) syntax that creates subsources, use [`DROP
+SOURCE`](/sql/drop-source/) to drop the affected subsource, and then add the
+table back to the source using [`ALTER SOURCE ... ADD
+SUBSOURCE`](/sql/alter-source/). The re-added subsource includes the new column.
+
+### Dropping a column
+
+Dropping columns that Materialize does not ingest (for example, columns added
+after the source was created, or columns that are excluded) is supported. As
+these columns were never ingested, you can drop them without issue.
+
+If your Materialize source ingests a column, dropping that column from your
+upstream table puts the affected table into an error state.
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/sql-server-v2/) syntax, you can safely drop a
+column by first ignoring it in Materialize. See [Handle upstream column
+drop](/ingest-data/sql-server/source-versioning/#handle-upstream-column-drop).
+
+- If using legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/sql-server/) syntax, use [`DROP SOURCE`](/sql/drop-source/) to drop the affected
+subsource, and then add the table back to the source using [`ALTER
+SOURCE ... ADD SUBSOURCE`](/sql/alter-source/).
+
+### Changing constraints
+
+Materialize ignores foreign key and `CHECK` constraint changes. You can add or
+drop them without affecting ingestion.
+
+Adding a `UNIQUE` constraint does not affect ingestion. Dropping a `UNIQUE`
+constraint puts the affected table into an error state.
+
+SQL Server does not allow dropping a `PRIMARY KEY` from a table while change data
+capture is enabled on it. A primary key that existed when Materialize began
+ingesting the table therefore cannot be dropped upstream.
+
+Adding or removing a `NOT NULL` constraint on an ingested column requires an
+upstream `ALTER COLUMN`, which puts the affected table into an error state. See
+[Changing a column's data type](#changing-a-columns-data-type).
+### Changing a column's data type
+
+Any upstream `ALTER COLUMN` on an ingested column puts the affected Materialize
+table into an error state. This covers every `ALTER COLUMN` operation, not just
+data-type changes. Changing a column's collation, sparseness, masking, or
+nullability all error the table the same way. Ingestion for that table stops,
+and you must drop and recreate the table in Materialize to resume ingestion.
+
+### Renaming a column
+
+Renaming a column that Materialize ingests puts the affected table into an error
+state. Ingestion for that table stops, and you must drop and recreate the table
+in Materialize to resume ingestion.
+
+### Removing a capture instance
+
+SQL Server allows up to two capture instances to exist for a table at once.
+Materialize ingests from one of them.
+
+Removing the capture instance that Materialize is using puts the affected table
+into an error state. Removing a capture instance that Materialize is not using does not affect
+ingestion.
+
+### Table-level operations
+
+The following upstream operations put the affected table into an error state.
+Ingestion for that table stops, and you must drop and recreate the affected
+table in Materialize to resume:
+
+- Dropping a table (`DROP TABLE`).
+- Renaming a table or moving it to a different schema.
 
 ---
 

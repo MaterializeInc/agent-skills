@@ -5,7 +5,7 @@
 ## Syntax
 
 ```mzsql
-CREATE CLUSTER <cluster_name> (
+CREATE CLUSTER [IF NOT EXISTS] <cluster_name> (
     SIZE = <text>
     [, REPLICATION FACTOR = <int>]
     [, MANAGED = <bool>]
@@ -21,6 +21,7 @@ CREATE CLUSTER <cluster_name> (
 
 | Syntax element | Description |
 | --- | --- |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if a cluster with the same name already exists. Instead, issue a notice and skip the cluster creation. Note that the existing cluster is left untouched, its configuration is not updated to match the statement.  |
 | `<cluster_name>` | A name for the cluster.  |
 | `SIZE` | The size of the resource allocations for the cluster.  For valid size values, see [Available sizes](#available-sizes).  |
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. See [Replication factor](#replication-factor) for details.  Default: `1`  |

@@ -35,9 +35,10 @@ There are two ways to authenticate to the `materialize-developer` MCP server:
 *Available starting in v26.30*
 
 > **Note:** The OAuth method is available for **Cloud** and for **Self-Managed** deployments
-> using [SSO](/security/self-managed/sso/). For the **Emulator** (or Self-Managed
-> not using SSO), use [Method 2: Token-based
-> authentication](#method-2-token-based-authentication).
+> using [SSO](/security/self-managed/sso/). For Self-Managed deployments not using
+> SSO, use [Method 2: Token-based
+> authentication](#method-2-token-based-authentication). For the **Emulator**, use
+> [Method 3: No authentication](#method-3-no-authentication-emulator).
 
 #### Step 1. Get your MCP server URL
 
@@ -235,21 +236,25 @@ base64-encoded and not encrypted.
 
 **Emulator:**
 
-To connect to the MCP server for your Emulator, you can create a role for your
-specific AI agent or use the default `materialize` user:
+The Emulator [does not require
+authentication](#method-3-no-authentication-emulator). You can still pass a
+role's credentials as an MCP token to run the agent's queries as that role:
 
-1. You can create a role for your specific AI agent (the Emulator does not
-   support the `LOGIN PASSWORD` option):
+1. Connect to the Emulator with a [SQL
+   client](/get-started/install-materialize-emulator/#materialize-emulator-connect-client)
+   and create the role, if it does not already exist:
 
    ```mzsql
-   CREATE ROLE my_dev_agent;
+   CREATE ROLE my_agent;
    ```
 
-1. Base64-encode your agent role's credentials `<role>:<password>` to create the
-   MCP token (the Emulator does not support passwords):
+1. Base64-encode the role's credentials `<role>:` to create the MCP token.
+   Unlike Materialize Cloud and Materialize Self-Managed, the Emulator does
+   not support passwords, so the credentials do not include a password after
+   the `:`:
 
    ```bash
-   printf 'my_dev_agent:' | base64
+   printf 'my_agent:' | base64
    ```
 
 #### Step 2. Get your MCP server URL
@@ -474,6 +479,74 @@ curl -X POST <baseURL>/api/mcp/developer \
     "method": "tools/list"
   }'
 ```
+
+### Method 3: No authentication (Emulator)
+
+The [Materialize Emulator](/get-started/install-materialize-emulator/) does not
+require authentication. Your MCP client only needs the `materialize-developer`
+MCP server URL:
+
+```
+http://localhost:6876/api/mcp/developer
+```
+
+**Claude Code:**
+
+1. Add the `materialize-developer` MCP server as [local-scoped
+   server](https://code.claude.com/docs/en/mcp#local-scope) (i.e., the
+   configurations are stored in `~/.claude.json`):
+
+   ```sh
+   claude mcp add --transport http materialize-developer \
+     http://localhost:6876/api/mcp/developer
+   ```
+
+1. Restart Claude Code to pick up the new setting.
+
+1. Upon successful connection, you can [Start asking
+   questions](#start-asking-questions).
+
+**Cursor:**
+
+1. Add the `materialize-developer` MCP server entry to your local MCP settings
+   file (`~/.cursor/mcp.json`).
+   - When merging into an existing `mcpServers` object, remember to add commas
+     between entries.
+   - If the `mcpServers` field does not already exist, add it as well.
+
+   ```json {hl_lines="3-5"}
+   {
+     "mcpServers": {
+       "materialize-developer": {
+         "url": "http://localhost:6876/api/mcp/developer"
+       }
+     }
+   }
+   ```
+
+1. Restart Cursor to pick up the new setting.
+
+1. Upon successful connection, you can [Start asking
+   questions](#start-asking-questions).
+
+**Generic HTTP:**
+
+Any MCP-compatible client can connect by sending JSON-RPC 2.0 requests:
+
+```bash
+curl -X POST http://localhost:6876/api/mcp/developer \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list"
+  }'
+```
+
+Unauthenticated requests run as the `anonymous_http_user` role. To run the
+agent's queries as a specific role instead, pass the role's credentials as an
+MCP token, as described in [Method 2: Token-based
+authentication](#method-2-token-based-authentication).
 
 ## Start asking questions
 

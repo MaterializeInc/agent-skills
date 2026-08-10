@@ -152,6 +152,8 @@ To create a sink, you can:
 | Use Census as an intermediate step | Census supported destinations | <ul> <li><a href="/serve-results/sink/census/" >Sink to Census</a></li> </ul>  |
 | Use <code>COPY TO</code> S3 or S3-compatible storage as an intermediate step | Snowflake and other systems that can read from S3 | <ul> <li><a href="/serve-results/sink/snowflake/" >Sink to Snowflake</a></li> </ul>  |
 | Use a native connector | Kafka/Redpanda | <ul> <li><a href="/serve-results/sink/kafka/" >Sink to Kafka/Redpanda</a></li> </ul>  |
+| Use the Kafka sink + Kafka Connect | Elasticsearch | <ul> <li><a href="/serve-results/sink/elasticsearch/" >Sink to Elasticsearch</a></li> </ul>  |
+| Use the Kafka sink + Kafka Connect | OpenSearch | <ul> <li><a href="/serve-results/sink/opensearch/" >Sink to OpenSearch</a></li> </ul>  |
 | Use a native connector | Apache Iceberg hosted on AWS S3 Tables | <ul> <li><a href="/serve-results/sink/iceberg/" >Sink to Iceberg</a></li> </ul>  |
 | Use <code>SUBSCRIBE</code> | Various | <ul> <li><a href="https://github.com/MaterializeInc/mz-catalog-sync" >Sink to Postgres</a></li> <li><a href="https://github.com/MaterializeIncLabs/mz-redis-sync" >Sink to Redis</a></li> </ul>  |
 

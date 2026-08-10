@@ -884,14 +884,36 @@ multiple [`CREATE SOURCE`](/sql/create-source/kafka/) statements. By default,
 the source will be created in the active cluster; to use a different cluster,
 use the `IN CLUSTER` clause.
 
+**Legacy Syntax:**
+
+With the legacy syntax, the source decodes the topic directly and is itself
+queryable. Picking up an upstream schema change requires dropping and recreating
+the source, which incurs downtime.
+
 ```mzsql
 CREATE SOURCE json_source
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
-  FORMAT JSON;
+    FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+    FORMAT JSON;
 ```
 
-If the command executes without an error and outputs _CREATE SOURCE_, it means
-that you have successfully connected Materialize to your cluster.
+**New Syntax:**
+
+With the new syntax, create a source for the topic and then a table that decodes
+it. Each table pins its own reader schema, which lets you pick up upstream schema
+changes without downtime. For details, see [Handle upstream schema changes with
+zero downtime](/ingest-data/kafka/source-versioning/).
+
+```mzsql
+CREATE SOURCE json_source
+    FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic');
+
+CREATE TABLE json_table
+    FROM SOURCE json_source
+    FORMAT JSON;
+```
+
+If the command executes without an error, it means that you have successfully
+connected Materialize to your cluster.
 
 ## Related pages
 
@@ -913,73 +935,69 @@ Cloud Kafka cluster.
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
 If you already have a Confluent Cloud Kafka cluster, you can skip step 1 and
-directly move on to [Create an API Key](#create-an-api-key). You can also skip
+directly move on to [Create an API Key](#2-create-an-api-key). You can also skip
 step 3 if you already have a Confluent Cloud Kafka cluster up and running, and
 have created a topic that you want to create a source for.
 
 The process to connect Materialize to a Confluent Cloud Kafka cluster consists
 of the following steps:
 
-1. #### Create a Confluent Cloud Kafka cluster
+## 1. Create a Confluent Cloud Kafka cluster
 
-    If you already have a Confluent Cloud Kafka cluster set up, then you can
-    skip this step.
+If you already have a Confluent Cloud Kafka cluster set up, then you can skip
+this step.
 
-    a. Sign in to [Confluent Cloud](https://confluent.cloud/)
+1. Sign in to [Confluent Cloud](https://confluent.cloud/)
 
-    b. Choose **Create a new cluster**
+1. Choose **Create a new cluster**
 
-    c. Select the cluster type, and specify the rest of the settings based on
-    your needs
+1. Select the cluster type, and specify the rest of the settings based on your
+   needs
 
-    d. Choose **Create cluster**
+1. Choose **Create cluster**
 
-    **Note:** This creation can take about 10 minutes. For more information on the cluster creation, see [Confluent Cloud documentation](https://docs.confluent.io/cloud/current/get-started/index.html#step-1-create-a-ak-cluster-in-ccloud).
+**Note:** This creation can take about 10 minutes. For more information on the cluster creation, see [Confluent Cloud documentation](https://docs.confluent.io/cloud/current/get-started/index.html#step-1-create-a-ak-cluster-in-ccloud).
 
-2. #### Create an API Key
+## 2. Create an API Key
 
-    ##### API Key
+1. Navigate to the [Confluent Cloud dashboard](https://confluent.cloud/)
+1. Choose the Confluent Cloud Kafka cluster you just created in Step 1
+1. Click on the **API Keys** tab
+1. In the **API Keys** section, choose **Add Key**
 
-    a. Navigate to the [Confluent Cloud dashboard](https://confluent.cloud/)
+1. Specify the scope for the API key and then click **Create Key**. If you
+choose to create a _granular access_ API key, make sure to create a
+[service account](https://docs.confluent.io/cloud/current/access-managementidentity/service-accountshtml#create-a-service-account-using-the-ccloud-console)
+and add an [ACL](https://docs.confluent.io/cloud/current/access-managementaccess-control/acl.html#use-access-control-lists-acls-for-ccloud)
+with `Read` access to the topic you want to create a source for.
+Take note of the API Key you just created, as well as the API Key secret
+key; you'll need them later on. Keep in mind that the API Key secret key
+contains sensitive information, and you should store it somewhere safe!
 
-    b. Choose the Confluent Cloud Kafka cluster you just created in Step 1
+## 3. Create a topic
 
-    c. Click on the **API Keys** tab
+To start using Materialize with Confluent Cloud, you need to point it to an
+existing Kafka topic you want to read data from.
 
-    d. In the **API Keys** section, choose **Add Key**
+If you already have a topic created, you can skip this step.
 
-    e. Specify the scope for the API key and then click **Create Key**. If you
-    choose to create a _granular access_ API key, make sure to create a
-    [service account](https://docs.confluent.io/cloud/current/access-management/identity/service-accounts.html#create-a-service-account-using-the-ccloud-console)
-    and add an [ACL](https://docs.confluent.io/cloud/current/access-management/access-control/acl.html#use-access-control-lists-acls-for-ccloud)
-    with `Read` access to the topic you want to create a source for.
+Otherwise, you can find more information about how to do that [here](https://docs.confluent.io/cloud/current/get-started/indexhtml#step-2-create-a-ak-topic).
 
-    Take note of the API Key you just created, as well as the API Key secret
-    key; you'll need them later on. Keep in mind that the API Key secret key
-    contains sensitive information, and you should store it somewhere safe!
+## 4. Create a connection in Materialize
 
-3. #### Create a topic
+1. Open the [Confluent Cloud dashboard](https://confluent.cloud/) and select
+   your cluster.
 
-    To start using Materialize with Confluent Cloud, you need to point it to an
-    existing Kafka topic you want to read data from.
+1. Click on **Overview** and select **Cluster settings**.
 
-    If you already have a topic created, you can skip this step.
+1. Copy the URL under **Bootstrap server**. This will be your `<broker-url>`
+   going forward.
 
-    Otherwise, you can find more information about how to do that [here](https://docs.confluent.io/cloud/current/get-started/index.html#step-2-create-a-ak-topic).
+1. Connect to Materialize using the [SQL Shell](/console/), or your preferred
+   SQL client.
 
-4. #### Create a connection in Materialize
-
-    a. Open the [Confluent Cloud dashboard](https://confluent.cloud/) and select your cluster.
-
-    b. Click on **Overview** and select **Cluster settings**.
-
-    c. Copy the URL under **Bootstrap server**. This will be your `<broker-url>` going forward.
-
-    d. Connect to Materialize using the [SQL Shell](/console/),
-       or your preferred SQL client.
-
-    e. Create the connection. The exact steps depend on your networking
-    configuration, so start by selecting the relevant option.
+1. Create the connection. The exact steps depend on your networking
+   configuration, so start by selecting the relevant option.
 
 **Public:**
 
@@ -998,21 +1016,21 @@ CREATE CONNECTION confluent_cloud TO KAFKA (
 **PrivateLink:**
 
 [AWS PrivateLink](https://aws.amazon.com/privatelink/) lets you connect
-Materialize to your Confluent Cloud cluster without exposing traffic to the
+Materialize to your Confluent Cloud cluster without exposing traffic tothe
 public internet.
 
-1. In the [Confluent Cloud console](https://confluent.cloud/), navigate to
+1. In the [Confluent Cloud console](https://confluent.cloud/), navigateto
 your cluster's **Networking** settings and set up a PrivateLink endpoint.
 Record the **VPC Endpoint Service Name** and the **DNS domain**.
 
 1. In the Materialize [SQL shell](/console/), create a
-[PrivateLink connection](/ingest-data/network-security/privatelink/) using
+[PrivateLink connection](/ingest-data/network-security/privatelink/)using
 the service name from the previous step. Be sure to specify **all
 availability zones** of your Confluent Cloud cluster.
 
     ```mzsql
     CREATE CONNECTION confluent_privatelink TO AWS PRIVATELINK (
-        SERVICE NAME 'com.amazonaws.vpce.us-east-1.vpce-svc-0e123abc123198abc',
+        SERVICE NAME 'com.amazonaws.vpceus-east-1vpce-svc-0e123abc123198abc',
         AVAILABILITY ZONES ('use1-az1', 'use1-az4', 'use1-az6')
     );
     ```
@@ -1026,7 +1044,7 @@ availability zones** of your Confluent Cloud cluster.
     WHERE c.name = 'confluent_privatelink';
     ```
 
-1. In the Confluent Cloud console, add the AWS principal to the PrivateLink
+1. In the Confluent Cloud console, add the AWS principal to thePrivateLink
 access list.
 
 1. In Materialize, validate the PrivateLink connection:
@@ -1037,11 +1055,11 @@ access list.
 
     If no validation error is returned, move to the next step.
 
-1. Create the Kafka connection. The static broker (used for bootstrapping)
+1. Create the Kafka connection. The static broker (used forbootstrapping)
 does not need an `AVAILABILITY ZONE` — Materialize will find it across
-availability zones. The `MATCHING` rules should specify `AVAILABILITY ZONE`
+availability zones. The `MATCHING` rules should specify `AVAILABILITYZONE`
 to route discovered brokers through their specific AZ endpoint. The
-availability zones in the `MATCHING` rules must match the AZs where Confluent
+availability zones in the `MATCHING` rules must match the AZs whereConfluent
 has deployed brokers. For best results, deploy brokers across 3 AZs and
 select those same AZs during the Confluent PrivateLink ingress setup.
 
@@ -1051,10 +1069,10 @@ select those same AZs during the Confluent PrivateLink ingress setup.
 
     CREATE CONNECTION confluent_cloud TO KAFKA (
         BROKERS (
-            '<confluent-broker-url>' USING AWS PRIVATELINK confluent_privatelink,
-            MATCHING '*.use1-az1.*' USING AWS PRIVATELINK confluent_privatelink (AVAILABILITY ZONE = 'use1-az1'),
-            MATCHING '*.use1-az4.*' USING AWS PRIVATELINK confluent_privatelink (AVAILABILITY ZONE = 'use1-az4'),
-            MATCHING '*.use1-az6.*' USING AWS PRIVATELINK confluent_privatelink (AVAILABILITY ZONE = 'use1-az6')
+            '<confluent-broker-url>' USING AWS PRIVATELINK      confluent_privatelink,
+            MATCHING '*.use1-az1.*' USING AWSPRIVATELINKconfluent_privatelink        (AVAILABILITY ZONE='use1-az1'),
+            MATCHING '*.use1-az4.*' USING AWSPRIVATELINKconfluent_privatelink        (AVAILABILITY ZONE='use1-az4'),
+            MATCHING '*.use1-az6.*' USING AWSPRIVATELINKconfluent_privatelink        (AVAILABILITY ZONE ='use1-az6')
         ),
         SASL MECHANISMS = 'PLAIN',
         SASL USERNAME = SECRET confluent_username,
@@ -1063,29 +1081,236 @@ select those same AZs during the Confluent PrivateLink ingress setup.
     ```
 
     The `MATCHING` patterns correspond to the AZ-specific DNS subdomains
-    from your Confluent Cloud networking settings. Adjust the patterns and
+    from your Confluent Cloud networking settings. Adjust the patternsand
     availability zones to match your cluster's configuration.
 
-5. #### Start ingesting data
+## 5. Start ingesting data
 
-    Once you have created the connection, create a source and start ingesting
-    data from your topic. By default, the source will be created in the active
-    cluster; to use a different cluster, use the `IN CLUSTER` clause.
+Once you have created the connection, create a source and start ingesting data
+from your topic. By default, the source will be created in the active cluster;
+to use a different cluster, use the `IN CLUSTER` clause.
 
-    ```mzsql
-    CREATE SOURCE confluent_source
-        FROM KAFKA CONNECTION confluent_cloud (TOPIC '<topic-name>')
-        FORMAT JSON;
-    ```
+**Legacy Syntax:**
 
-    If the command executes without an error and outputs _CREATE SOURCE_, it
-    means that you have successfully connected Materialize to your Confluent
-    Cloud Kafka cluster.
+With the legacy syntax, the source decodes the topic directly and is itself
+queryable. Picking up an upstream schema change requires dropping and recreating
+the source, which incurs downtime.
 
-    **Note:** The example above used `JSON`, but you can also ingest Kafka messages
-    formatted in other supported formats; e.g., [Avro and CSV](/sql/create-source/kafka/#syntax).
-    You can find more details about the various different supported formats and
-    possible configurations in the [reference documentation](/sql/create-source/kafka/).
+```mzsql
+CREATE SOURCE confluent_source
+    FROM KAFKA CONNECTION confluent_cloud (TOPIC '<topic-name>')
+    FORMAT JSON;
+```
+
+**New Syntax:**
+
+With the new syntax, create a source for the topic and then a table that decodes
+it. Each table pins its own reader schema, which lets you pick up upstream schema
+changes without downtime. For details, see [Handle upstream schema changes with
+zero downtime](/ingest-data/kafka/source-versioning/).
+
+```mzsql
+CREATE SOURCE confluent_source
+    FROM KAFKA CONNECTION confluent_cloud (TOPIC '<topic-name>');
+
+CREATE TABLE confluent_table
+    FROM SOURCE confluent_source
+    FORMAT JSON;
+```
+
+If the command executes without an error, it means that you have successfully
+connected Materialize to your Confluent Cloud Kafka cluster.
+
+**Note:** The examples above use `JSON`, but you can also ingest Kafka messages
+formatted in other supported formats; e.g., [Avro and
+CSV](/sql/create-source/kafka/#syntax). You can find more details about the
+various different supported formats and possible configurations in the
+[reference documentation](/sql/create-source/kafka/).
+
+---
+
+## Guide: Handle upstream schema changes with zero downtime
+
+Materialize resolves the Avro schema of a Kafka topic when you create a table
+from the source, and pins that reader schema to the table. Compatible upstream
+schema changes continue to decode, but a table does not expose fields that were
+added after it was created.
+
+This guide walks you through how to pick up an upstream schema change without any
+downtime in Materialize, using a blue/green cutover:
+
+- Create a new table that reads the evolved schema.
+- Recreate the downstream objects against the new table.
+- Swap the new objects into place with [`ALTER SCHEMA ... SWAP WITH`](/sql/alter-schema/).
+
+Consumers keep referencing the same object names, and the cutover is atomic.
+
+## Prerequisites
+
+Some familiarity with Materialize. If you've never used Materialize before,
+start with our [guide to getting started](/get-started/quickstart/).
+
+### Set up a Kafka topic
+
+For this guide, set up an Avro-formatted Kafka topic `orders` whose value schema
+is registered in a Confluent Schema Registry. The initial schema has two fields:
+
+```json
+{
+    "type": "record",
+    "name": "order",
+    "fields": [
+        { "name": "id", "type": "long" },
+        { "name": "item", "type": "string" }
+    ]
+}
+```
+
+Produce a few records using this schema.
+
+### Connect your Kafka broker and schema registry to Materialize
+
+In Materialize, create a [connection](/sql/create-connection/) to your Kafka
+broker and to your Confluent Schema Registry:
+
+```mzsql
+CREATE CONNECTION kafka_conn TO KAFKA (
+    BROKER '<broker>',
+    SECURITY PROTOCOL PLAINTEXT
+);
+
+CREATE CONNECTION csr_conn TO CONFLUENT SCHEMA REGISTRY (
+    URL '<schema-registry-url>'
+);
+```
+
+## Create a source
+
+Create a Kafka [source](/sql/create-source/kafka/). The source connects to the
+topic but does not decode it. Each table you create from the source carries its
+own format.
+
+```mzsql
+CREATE SOURCE orders_src
+    FROM KAFKA CONNECTION kafka_conn (TOPIC 'orders');
+```
+
+## Create a table from the source
+
+To start ingesting the topic, create a table from the source. We'll add it into
+a `prod` schema in Materialize:
+
+```mzsql
+CREATE SCHEMA prod;
+
+CREATE TABLE prod.orders
+    FROM SOURCE orders_src
+    FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_conn
+    ENVELOPE NONE;
+```
+
+Materialize resolves the latest registered schema when the `CREATE TABLE`
+statement runs, and pins it as the reader schema for `prod.orders`. The table
+exposes the `id` and `item` fields.
+
+Once you've created a table from the source, the [initial
+snapshot](/ingest-data/#snapshotting) of table `prod.orders` will begin.
+
+> **Note:** The `TEXT COLUMNS` and `EXCLUDE COLUMNS` options are not supported for Kafka
+> `CREATE TABLE ... FROM SOURCE`. Unlike PostgreSQL, MySQL, and SQL Server
+> sources, a Kafka table's columns are determined entirely by its Avro reader
+> schema. To exclude or recast a field, project or cast it in a view on top of the
+> table.
+
+## Create a view on top of the table
+
+For this guide, add a materialized view `orders_by_item` (also in schema `prod`)
+that counts orders per item:
+
+```mzsql
+CREATE MATERIALIZED VIEW prod.orders_by_item AS
+    SELECT item, count(*) AS orders
+    FROM prod.orders
+    GROUP BY item;
+```
+
+## Handle an upstream schema change
+
+### A. Evolve the schema in your upstream system
+
+In your upstream system, evolve the topic's value schema in a
+[backward-compatible](https://avro.apache.org/docs/++version++/specification/#schema-resolution)
+way. Here, add a `quantity` field with a default so that existing records still
+decode:
+
+```json
+{
+    "type": "record",
+    "name": "order",
+    "fields": [
+        { "name": "id", "type": "long" },
+        { "name": "item", "type": "string" },
+        { "name": "quantity", "type": "int", "default": 0 }
+    ]
+}
+```
+
+Produce records using the new schema.
+
+This operation has no immediate effect in Materialize. `prod.orders` keeps its
+pinned reader schema, so it continues to decode new records but resolves away the
+`quantity` field. The materialized view `prod.orders_by_item` is unaffected.
+
+### B. Incorporate the new field in Materialize
+
+To pick up the new field, create a new table from the same source in a `staging`
+schema. Because you create the table after the schema evolved, it resolves the
+latest schema and exposes `quantity`:
+
+```mzsql
+CREATE SCHEMA staging;
+
+CREATE TABLE staging.orders
+    FROM SOURCE orders_src
+    FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_conn
+    ENVELOPE NONE;
+```
+
+Records produced with the earlier schema take the default value for `quantity`.
+
+Recreate the downstream objects in the `staging` schema, referencing the new
+table. Since `staging.orders` exposes `quantity`, the view can use it:
+
+```mzsql
+CREATE MATERIALIZED VIEW staging.orders_by_item AS
+    SELECT item, sum(quantity) AS total_quantity
+    FROM staging.orders
+    GROUP BY item;
+```
+
+### C. Cut over with a schema swap
+
+Once `staging.orders` has finished snapshotting and its views are hydrated,
+atomically swap the `staging` schema into `prod`:
+
+```mzsql
+ALTER SCHEMA prod SWAP WITH staging;
+```
+
+After the swap, `prod.orders` and `prod.orders_by_item` serve the evolved schema.
+Consumers that reference these names pick up the change without any downtime and
+without changing their queries. The previous objects now live in the `staging`
+schema, where you can drop them once you've validated the cutover:
+
+```mzsql
+DROP SCHEMA staging CASCADE;
+```
+
+> **Note:** This guide covers backward-compatible changes, such as adding a field with a
+> default. An incompatible change, such as dropping a field that the pinned reader
+> schema still requires, causes decode errors on the affected table. To recover,
+> create a new table that reads the current schema, following the steps above,
+> rather than reading from the existing table.
 
 ---
 
@@ -1666,16 +1891,37 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 ## Creating a source
 
 The Kafka connection created in the previous section can then be reused across
-multiple [`CREATE SOURCE`](/sql/create-source/kafka/) statements:
+multiple [`CREATE SOURCE`](/sql/create-source/kafka/) statements. By default, the
+source will be created in the active cluster; to use a different cluster, use the
+`IN CLUSTER` clause.
+
+**Legacy Syntax:**
+
+With the legacy syntax, the source decodes the topic directly and is itself
+queryable. Picking up an upstream schema change requires dropping and recreating
+the source, which incurs downtime.
 
 ```mzsql
 CREATE SOURCE json_source
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
-  FORMAT JSON;
+    FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+    FORMAT JSON;
 ```
 
-By default, the source will be created in the active cluster; to use a different
-cluster, use the `IN CLUSTER` clause.
+**New Syntax:**
+
+With the new syntax, create a source for the topic and then a table that decodes
+it. Each table pins its own reader schema, which lets you pick up upstream schema
+changes without downtime. For details, see [Handle upstream schema changes with
+zero downtime](/ingest-data/kafka/source-versioning/).
+
+```mzsql
+CREATE SOURCE json_source
+    FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic');
+
+CREATE TABLE json_table
+    FROM SOURCE json_source
+    FORMAT JSON;
+```
 
 ## Related pages
 
@@ -1789,13 +2035,36 @@ Ensure you have the following:
     source will be created in the active cluster; to use a different cluster,
     use the `IN CLUSTER` clause.
 
+    **Legacy Syntax:**
+
+    With the legacy syntax, the source decodes the topic directly and is itself
+    queryable. Picking up an upstream schema change requires dropping and recreating
+    the source, which incurs downtime.
+
     ```mzsql
     CREATE SOURCE warpstream_click_stream_source
         FROM KAFKA CONNECTION warpstream_kafka (TOPIC 'materialize_click_streams')
         FORMAT JSON;
     ```
 
-    d. Verify the ingestion and query the data in Materialize:
+    **New Syntax:**
+
+    With the new syntax, create a source for the topic and then a table that decodes
+    it. Each table pins its own reader schema, which lets you pick up upstream schema
+    changes without downtime. For details, see [Handle upstream schema changes with
+    zero downtime](/ingest-data/kafka/source-versioning/).
+
+    ```mzsql
+    CREATE SOURCE warpstream_click_stream_source
+        FROM KAFKA CONNECTION warpstream_kafka (TOPIC 'materialize_click_streams');
+
+    CREATE TABLE warpstream_click_stream
+        FROM SOURCE warpstream_click_stream_source
+        FORMAT JSON;
+    ```
+
+    d. Verify the ingestion and query the data in Materialize. With the legacy
+    syntax, query the source; with the new syntax, query the table:
 
     ```mzsql
     SELECT * FROM warpstream_click_stream_source LIMIT 10;

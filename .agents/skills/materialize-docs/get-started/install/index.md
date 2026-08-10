@@ -56,32 +56,3 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
   </tbody>
 </table>
 
-<h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
-> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
-> changes in future versions.
-> We recommend updating your module source tags when updating Materialize versions,
-> taking care to follow any instructions in the release notes.
-
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-aws-legacy/" >Install on AWS (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to AWS Elastic Kubernetes Service (EKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-azure-legacy/" >Install on Azure (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Azure Kubernetes Service (AKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-gcp-legacy/" >Install on GCP (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
-      </tr>
-  </tbody>
-</table>
-

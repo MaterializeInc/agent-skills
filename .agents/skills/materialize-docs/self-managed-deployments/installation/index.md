@@ -58,68 +58,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
   </tbody>
 </table>
 
-<h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
-> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
-> changes in future versions.
-> We recommend updating your module source tags when updating Materialize versions,
-> taking care to follow any instructions in the release notes.
-
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-aws-legacy/" >Install on AWS (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to AWS Elastic Kubernetes Service (EKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-azure-legacy/" >Install on Azure (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Azure Kubernetes Service (AKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-gcp-legacy/" >Install on GCP (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
-      </tr>
-  </tbody>
-</table>
-
----
-
-## Install Guides (Legacy)
-
-<h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
-> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
-> changes in future versions.
-> We recommend updating your module source tags when updating Materialize versions,
-> taking care to follow any instructions in the release notes.
-
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-aws-legacy/" >Install on AWS (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to AWS Elastic Kubernetes Service (EKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-azure-legacy/" >Install on Azure (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Azure Kubernetes Service (AKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-gcp-legacy/" >Install on GCP (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
-      </tr>
-  </tbody>
-</table>
-
 ---
 
 ## Install locally on kind
@@ -244,7 +182,7 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    the Materialize repo:
 
    ```shell
-   mz_version=v26.34.1
+   mz_version=v26.36.0
 
    curl -o sample-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
    curl -o sample-postgres.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/postgres.yaml
@@ -319,7 +257,7 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
       ```shell {hl_lines="5"}
       helm install my-materialize-operator materialize/materialize-operator \
           --namespace=materialize --create-namespace \
-          --version v26.34.1 \
+          --version v26.36.0 \
           --set observability.podMetrics.enabled=true \
           --set operator.args.installV1CRD=true \
           -f sample-values.yaml

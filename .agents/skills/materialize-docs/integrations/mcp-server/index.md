@@ -8,13 +8,13 @@ Materialize provides the following open-source [agent
 skills](https://github.com/MaterializeInc/agent-skills) to help developers build
 with Materialize.
 
-| Skill | What it provides | When to use |
-|-------|------------------|-------------|
-| `mcp-developer-analysis` | Exact catalog schemas, diagnostic workflows, remediation runbooks, and guardrails for known pitfalls (cluster-scoped queries, uint8 ID mismatches, etc.). | Operational introspection and troubleshooting via the `materialize-developer` server. Examples: *"why is my materialized view stale?"*, *"what can I optimize to save costs?"*, *"is my source healthy?"* |
-| `materialize-docs` | Comprehensive Materialize documentation, including SQL syntax, idiomatic patterns, data ingestion, concepts, and best practices (400+ reference files). | Authoring view definitions, learning concepts, looking up patterns. Useful with either MCP server. Examples: *"show me how to deduplicate a stream"*, *"what's the idiomatic top-K pattern?"*, *"how do I create a Kafka source?"* |
-| `materialize-dbt` | dbt-materialize adapter usage: materializations, profile configuration, index creation, blue/green deployments, and testing. | Managing Materialize pipelines with dbt. Examples: *"write a dbt model for a materialized view"*, *"how do I do a blue/green deployment with dbt?"* |
-| `materialize-terraform-provider` | Provider configuration for Cloud and self-managed, navigation into the provider's auto-generated resource reference, cross-resource patterns, import workflows, and gotchas. | Managing Materialize resources declaratively with Terraform. Examples: *"create a Kafka source with Terraform"*, *"import my existing clusters into Terraform state"*, *"set up RBAC grants in Terraform"* |
-| `materialize-terraform-self-managed` | Module layout and variables for deploying self-managed Materialize on AWS, Azure, and GCP: networking, Kubernetes, backend URL formats, instance sizing, upgrades, and gotchas. | Deploying or operating self-managed Materialize infrastructure with Terraform. Examples: *"deploy Materialize on EKS"*, *"what instance types should Materialize nodes use?"*, *"upgrade my self-managed Materialize"* |
+| Skill | Description |
+|-------|-------------|
+| `mcp-developer-analysis` | Use for operational introspection and troubleshooting via the `materialize-developer` server. Covers exact catalog schemas, diagnostic workflows, remediation runbooks, and guardrails for known pitfalls (cluster-scoped queries, uint8 ID mismatches, etc.).<br><br>Examples: *"why is my materialized view stale?"*, *"what can I optimize to save costs?"*, *"is my source healthy?"* |
+| `materialize-docs` | Use for authoring view definitions, learning concepts, and looking up patterns; useful with either MCP server. Covers comprehensive Materialize documentation, including SQL syntax, idiomatic patterns, data ingestion, concepts, and best practices (400+ reference files).<br><br>Examples: *"show me how to deduplicate a stream"*, *"what's the idiomatic top-K pattern?"*, *"how do I create a Kafka source?"* |
+| `materialize-dbt` | Use for managing Materialize pipelines with dbt. Covers dbt-materialize adapter usage: materializations, profile configuration, index creation, blue/green deployments, and testing.<br><br>Examples: *"write a dbt model for a materialized view"*, *"how do I do a blue/green deployment with dbt?"* |
+| `materialize-terraform-provider` | Use for managing Materialize resources declaratively with Terraform. Covers provider configuration for Cloud and self-managed, navigation into the provider's auto-generated resource reference, cross-resource patterns, import workflows, and gotchas.<br><br>Examples: *"create a Kafka source with Terraform"*, *"import my existing clusters into Terraform state"*, *"set up RBAC grants in Terraform"* |
+| `materialize-terraform-self-managed` | Use for deploying or operating self-managed Materialize infrastructure with Terraform. Covers module layout and variables for deploying on AWS, Azure, and GCP: networking, Kubernetes, backend URL formats, instance sizing, upgrades, and gotchas.<br><br>Examples: *"deploy Materialize on EKS"*, *"what instance types should Materialize nodes use?"*, *"upgrade my self-managed Materialize"* |
 
 ## MCP servers
 
@@ -1265,9 +1265,10 @@ There are two ways to authenticate to the `materialize-developer` MCP server:
 *Available starting in v26.30*
 
 > **Note:** The OAuth method is available for **Cloud** and for **Self-Managed** deployments
-> using [SSO](/security/self-managed/sso/). For the **Emulator** (or Self-Managed
-> not using SSO), use [Method 2: Token-based
-> authentication](#method-2-token-based-authentication).
+> using [SSO](/security/self-managed/sso/). For Self-Managed deployments not using
+> SSO, use [Method 2: Token-based
+> authentication](#method-2-token-based-authentication). For the **Emulator**, use
+> [Method 3: No authentication](#method-3-no-authentication-emulator).
 
 #### Step 1. Get your MCP server URL
 
@@ -1465,21 +1466,25 @@ base64-encoded and not encrypted.
 
 **Emulator:**
 
-To connect to the MCP server for your Emulator, you can create a role for your
-specific AI agent or use the default `materialize` user:
+The Emulator [does not require
+authentication](#method-3-no-authentication-emulator). You can still pass a
+role's credentials as an MCP token to run the agent's queries as that role:
 
-1. You can create a role for your specific AI agent (the Emulator does not
-   support the `LOGIN PASSWORD` option):
+1. Connect to the Emulator with a [SQL
+   client](/get-started/install-materialize-emulator/#materialize-emulator-connect-client)
+   and create the role, if it does not already exist:
 
    ```mzsql
-   CREATE ROLE my_dev_agent;
+   CREATE ROLE my_agent;
    ```
 
-1. Base64-encode your agent role's credentials `<role>:<password>` to create the
-   MCP token (the Emulator does not support passwords):
+1. Base64-encode the role's credentials `<role>:` to create the MCP token.
+   Unlike Materialize Cloud and Materialize Self-Managed, the Emulator does
+   not support passwords, so the credentials do not include a password after
+   the `:`:
 
    ```bash
-   printf 'my_dev_agent:' | base64
+   printf 'my_agent:' | base64
    ```
 
 #### Step 2. Get your MCP server URL
@@ -1704,6 +1709,74 @@ curl -X POST <baseURL>/api/mcp/developer \
     "method": "tools/list"
   }'
 ```
+
+### Method 3: No authentication (Emulator)
+
+The [Materialize Emulator](/get-started/install-materialize-emulator/) does not
+require authentication. Your MCP client only needs the `materialize-developer`
+MCP server URL:
+
+```
+http://localhost:6876/api/mcp/developer
+```
+
+**Claude Code:**
+
+1. Add the `materialize-developer` MCP server as [local-scoped
+   server](https://code.claude.com/docs/en/mcp#local-scope) (i.e., the
+   configurations are stored in `~/.claude.json`):
+
+   ```sh
+   claude mcp add --transport http materialize-developer \
+     http://localhost:6876/api/mcp/developer
+   ```
+
+1. Restart Claude Code to pick up the new setting.
+
+1. Upon successful connection, you can [Start asking
+   questions](#start-asking-questions).
+
+**Cursor:**
+
+1. Add the `materialize-developer` MCP server entry to your local MCP settings
+   file (`~/.cursor/mcp.json`).
+   - When merging into an existing `mcpServers` object, remember to add commas
+     between entries.
+   - If the `mcpServers` field does not already exist, add it as well.
+
+   ```json {hl_lines="3-5"}
+   {
+     "mcpServers": {
+       "materialize-developer": {
+         "url": "http://localhost:6876/api/mcp/developer"
+       }
+     }
+   }
+   ```
+
+1. Restart Cursor to pick up the new setting.
+
+1. Upon successful connection, you can [Start asking
+   questions](#start-asking-questions).
+
+**Generic HTTP:**
+
+Any MCP-compatible client can connect by sending JSON-RPC 2.0 requests:
+
+```bash
+curl -X POST http://localhost:6876/api/mcp/developer \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list"
+  }'
+```
+
+Unauthenticated requests run as the `anonymous_http_user` role. To run the
+agent's queries as a specific role instead, pass the role's credentials as an
+MCP token, as described in [Method 2: Token-based
+authentication](#method-2-token-based-authentication).
 
 ## Start asking questions
 

@@ -35,24 +35,52 @@ significantly degrade performance and is not supported.
 
 ### Swap support
 
-**New Terraform:**
-The new Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure/examples/simple) supports configuring swap out of the box.
-
-**Legacy Terraform:**
-The Legacy Terraform provider, adds preliminary swap support in v0.6.1, via the [`swap_enabled`](https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#input_swap_enabled) variable.
-With this change, the Terraform:
-  - Creates a node group for Materialize.
-  - Configures NVMe instance store volumes as swap using a daemonset.
-  - Enables swap at the Kubelet.
-
-See [Upgrade Notes](https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#v061).
-
-> **Note:** If deploying `v25.2`, Materialize clusters will not automatically use swap unless they are configured with a `memory_request` less than their `memory_limit`. In `v26`, this will be handled automatically.
+The Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure/examples/simple) supports configuring swap out of the box.
 
 ## Recommended Azure Blob Storage
 
 Materialize writes **block** blobs on Azure. As a general guideline, we
 recommend **Premium block blob** storage accounts.
+
+## Recommended metadata database sizing
+
+<p>Self-managed Materialize uses an external PostgreSQL <strong>metadata database</strong> to
+store its catalog and to coordinate the state of the objects it keeps up to
+date. Every durable object that updates continuously (materialized views,
+sources, sinks, and tables) produces a steady stream of small writes to the
+metadata database. Metadata-database load therefore scales with the <strong>number of
+continuously-updating objects</strong>, not with the volume of data flowing through
+them.</p>
+> **Note:** The sizing figures below assume the
+> [`persist_pg_consensus_read_committed`](/self-managed-deployments/configuration-system-parameters/)
+> system parameter is **enabled**. Enable it before sizing against these
+> numbers. Materialize version `v26.33+` is required to set this parameter.
+
+<h3 id="safe-operating-point">Safe operating point</h3>
+<p>The primary factor that dictates the size of the metadata database is the
+number of durable objects Materialize keeps continuously fresh (materialized
+views, sources, sinks, and tables). Data volume, the query rate against
+Materialize, and cluster size do not materially change metadata database load.
+For example, a larger cluster running the same number of materialized views
+places roughly the same load on the metadata database.</p>
+<p>It is recommended that you size the metadata database so that its
+<strong>steady-state CPU stays below 60%</strong>. The headroom between ~60% and full
+utilization provides capacity to absorb everyday load variance, background
+database maintenance, and Materialize zero-downtime upgrades.</p>
+
+### Flexible Server SKUs
+
+For the Azure Database for PostgreSQL flexible server that backs the metadata
+database, we recommend:
+
+- The **Memory Optimized** tier (E-series), which provides the 1:8
+  vCore-to-memory ratio recommended for the metadata database.
+- **Zone-redundant high availability** for production.
+
+| Deployment size | `sku_name` | vCores / memory | Continuously-active objects (~60% CPU) |
+|---|---|---|---|
+| Entry / small production | `MO_Standard_E4ds_v5` | 4 / 32 GiB | ~4,500 |
+| Recommended default | `MO_Standard_E16ds_v5` | 16 / 128 GiB | ~18,000 |
 
 ## TLS
 

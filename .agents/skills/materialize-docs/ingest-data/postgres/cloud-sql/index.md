@@ -552,36 +552,6 @@ new data arrives, and serving results efficiently.
 
 ## Considerations
 
-<h3 id="schema-changes">Schema changes</h3>
-<p>Materialize supports schema changes in the upstream database as follows:</p>
-<h4 id="compatible-schema-changes-legacy-syntax">Compatible schema changes (Legacy syntax)</h4>
-<blockquote>
-<p><strong>Note:</strong> This section refer to the legacy <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a> that creates subsources as part of the
-<code>CREATE SOURCE</code> operation.  To be able to handle the upstream column
-additions and drops, see <a href="/sql/create-source/postgres-v2/" ><code>CREATE SOURCE (New Syntax)</code></a> and <a href="/sql/create-table" ><code>CREATE TABLE FROM SOURCE</code></a>.</p>
-</blockquote>
-<ul>
-<li>
-<p>Adding columns to tables. Materialize will <strong>not ingest</strong> new columns
-added upstream unless you use <a href="/sql/alter-source/#context" ><code>DROP SOURCE</code></a> to
-first drop the affected subsource, and then add the table back to the source
-using <a href="/sql/alter-source/" ><code>ALTER SOURCE...ADD SUBSOURCE</code></a>.</p>
-</li>
-<li>
-<p>Dropping columns that were added after the source was created. These
-columns are never ingested, so you can drop them without issue.</p>
-</li>
-<li>
-<p>Adding or removing <code>NOT NULL</code> constraints to tables that were nullable
-when the source was created.</p>
-</li>
-</ul>
-<h4 id="incompatible-schema-changes">Incompatible schema changes</h4>
-<p>All other schema changes to upstream tables will set the corresponding
-Materialize tables into an error state, preventing reads from these tables.</p>
-<p>To handle <a href="#incompatible-schema-changes" >incompatible schema changes</a>, drop
-the affected table <a href="/sql/drop-table/" ><code>DROP TABLE</code></a> , and then, <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> to recreate the table with the
-updated schema.</p>
 <h3 id="publication-membership">Publication membership</h3>
 <p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
 remove tables from publications. Because of this, Materialize relies on
@@ -616,15 +586,7 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
-<h3 id="truncation">Truncation</h3>
-<p>Avoid truncating upstream tables that are being replicated into Materialize.
-If a replicated upstream table is truncated, the corresponding
-subsource(s)/table(s) in Materialize becomes inaccessible and will not
-produce any data until it is recreated.</p>
-<p>Instead of truncating, use an unqualified <code>DELETE</code> to remove all rows from
-the upstream table:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">t</span><span class="p">;</span>
-</span></span></code></pre></div><h3 id="inherited-tables">Inherited tables</h3>
+<h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
 also present in the inherited table. However, both PostgreSQL&rsquo;s logical
@@ -694,4 +656,81 @@ work distribution, reducing snapshot performance. They can also cause incorrect 
 progress reporting in the Console.</p>
 <p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
 date by running PostgreSQL <code>ANALYZE</code> command.</p>
+
+## Handling upstream operations
+
+This section describes how changes to upstream tables that Materialize ingests
+affect the corresponding Materialize tables.
+
+### Adding a column
+
+When you add a new column to your upstream table, Materialize continues to
+ingest only the existing columns.
+
+To incorporate the new column:
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, create a new table from
+the source. See [Handle upstream column addition](/ingest-data/postgres/source-versioning/#handle-upstream-column-addition).
+
+- If using the legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/postgres/) syntax that creates subsources, use [`DROP
+SOURCE`](/sql/drop-source/) to drop the affected subsource, and then add the
+table back to the source using [`ALTER SOURCE ... ADD
+SUBSOURCE`](/sql/alter-source/). The re-added subsource includes the new column.
+
+### Dropping a column
+
+Dropping columns that Materialize does not ingest (for example, columns added
+after the source was created, or columns that are excluded) is supported. As
+these columns were never ingested, you can drop them without issue.
+
+If your Materialize source ingests a column, dropping that column from your
+upstream table puts the affected table into an error state.
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop a
+column by first ignoring it in Materialize. See [Handle upstream column
+drop](/ingest-data/postgres/source-versioning/#handle-upstream-column-drop).
+
+- If using legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/postgres/) syntax, use [`DROP SOURCE`](/sql/drop-source/) to drop the affected
+subsource, and then add the table back to the source using [`ALTER
+SOURCE ... ADD SUBSOURCE`](/sql/alter-source/).
+
+### Changing constraints
+
+Materialize ignores the following constraint changes: foreign
+key, `CHECK`, and `EXCLUSION`.
+As such, you can add or drop them without affecting ingestion.
+
+Materialize also ignores `NOT NULL`, `UNIQUE`, and `PRIMARY KEY` constraints that
+are added after the Materialize table is created (that is, the table was created
+without them). Adding such a constraint, and later dropping it, does not affect
+ingestion.
+
+Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
+the table was created puts the affected table into an error state.
+
+### Changing a column's data type
+
+Changing an ingested column's data type upstream puts the affected
+Materialize table into an error state unless the column was ingested as `text`
+via the `TEXT COLUMNS` option. Ingestion for that table stops, and you must
+drop and recreate the table in Materialize to resume ingestion.
+
+### Renaming a column
+
+Renaming a column that Materialize ingests puts the affected table into an error
+state. Ingestion for that table stops, and you must drop and recreate the table
+in Materialize to resume ingestion.
+
+### Table-level operations
+
+The following upstream operations put the affected table into an error state.
+Ingestion for that table stops, and you must drop and recreate the affected
+table in Materialize to resume:
+
+- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Renaming a table or moving it to a different schema.
+- Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
+- Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
 

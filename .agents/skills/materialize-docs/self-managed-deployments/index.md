@@ -30,8 +30,6 @@ To help you get started, the following installation guides are available:
 > We recommend updating your module source tags when updating Materialize versions,
 > taking care to follow any instructions in the release notes.
 
-**Terraform Modules (New!):**
-
 Materialize provides [**Terraform
 modules**](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main?tab=readme-ov-file#materialize-self-managed-terraform-modules),
 which provides concrete examples and an opinionated model for deploying Materialize.
@@ -41,15 +39,6 @@ which provides concrete examples and an opinionated model for deploying Material
 | <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws" >Amazon Web Services (AWS)</a> | An example Terraform module for deploying Materialize on AWS. See <a href="/self-managed-deployments/installation/install-on-aws/" >Install on AWS</a> for detailed instructions usage. |
 | <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure" >Azure</a> | An example Terraform module for deploying Materialize on Azure. See <a href="/self-managed-deployments/installation/install-on-azure/" >Install on Azure</a> for detailed instructions usage. |
 | <a href="https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp" >Google Cloud Platform (GCP)</a> | An example Terraform module for deploying Materialize on GCP. See <a href="/self-managed-deployments/installation/install-on-gcp/" >Install on GCP</a> for detailed instructions usage. |
-
-**Legacy Terraform Modules:**
-
-| Sample Module | Description |
-| --- | --- |
-| <a href="https://github.com/MaterializeInc/terraform-helm-materialize" >terraform-helm-materialize (Legacy)</a> | A sample Terraform module for installing the Materialize Helm chart into a Kubernetes cluster. |
-| <a href="https://github.com/MaterializeInc/terraform-aws-materialize" >Materialize on AWS (Legacy)</a> | A sample Terraform module for deploying Materialize on AWS Cloud Platform with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-aws-legacy/" >Install on AWS (Legacy)</a> for an example usage. |
-| <a href="https://github.com/MaterializeInc/terraform-azurerm-materialize" >Materialize on Azure (Legacy)</a> | A sample Terraform module for deploying Materialize on Azure with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-azure-legacy/" >Install on Azure</a> for an example usage. |
-| <a href="https://github.com/MaterializeInc/terraform-google-materialize" >Materialize on GCP (Legacy)</a> | A sample Terraform module for deploying Materialize on Google Cloud Platform (GCP) with all required infrastructure components. See <a href="/self-managed-deployments/installation/legacy/install-on-gcp-legacy/" >Install on GCP</a> for an example usage. |
 
 ## Architecture layers
 
@@ -169,7 +158,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.34.1
+  environmentdImageRef: materialize/environmentd:v26.36.0
 # ... additional fields omitted for brevity
 ```
 
@@ -184,7 +173,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.34.1
+  environmentdImageRef: materialize/environmentd:v26.36.0
 # ... additional fields omitted for brevity
 ```
 
@@ -424,7 +413,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.34.1
+  environmentdImageRef: materialize/environmentd:v26.36.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
   requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
@@ -441,7 +430,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.34.1
+  environmentdImageRef: materialize/environmentd:v26.36.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
 ```
@@ -758,35 +747,6 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
       <tr>
           <td><a href="/self-managed-deployments/installation/install-on-gcp/" >Install on GCP</a></td>
           <td>Uses Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
-      </tr>
-  </tbody>
-</table>
-
-<h3 id="install-using-legacy-terraform-modules">Install using Legacy Terraform Modules</h3>
-> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
-> changes in future versions.
-> We recommend updating your module source tags when updating Materialize versions,
-> taking care to follow any instructions in the release notes.
-
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-aws-legacy/" >Install on AWS (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to AWS Elastic Kubernetes Service (EKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-azure-legacy/" >Install on Azure (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Azure Kubernetes Service (AKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/legacy/install-on-gcp-legacy/" >Install on GCP (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
       </tr>
   </tbody>
 </table>
@@ -1168,7 +1128,35 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorcloudproviderprovidersgcp'><code>operator.cloudProvider.providers.gcp</code></a></td>
 <td>
-<code>{&quot;enabled&quot;:false}</code>
+<code>{&quot;enabled&quot;:false,&quot;nodeUpgradeRolloutTrigger&quot;:{&quot;clusterLocation&quot;:&quot;&quot;,&quot;clusterName&quot;:&quot;&quot;,&quot;enabled&quot;:false,&quot;notificationSubscription&quot;:&quot;&quot;,&quot;watchedNodePools&quot;:[]}}</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcloudproviderprovidersgcpnodeupgraderollouttriggerclusterlocation'><code>operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.clusterLocation</code></a></td>
+<td>
+<code>&quot;&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcloudproviderprovidersgcpnodeupgraderollouttriggerclustername'><code>operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.clusterName</code></a></td>
+<td>
+<code>&quot;&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcloudproviderprovidersgcpnodeupgraderollouttriggernotificationsubscription'><code>operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.notificationSubscription</code></a></td>
+<td>
+<code>&quot;&quot;</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorcloudproviderprovidersgcpnodeupgraderollouttriggerwatchednodepools'><code>operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.watchedNodePools</code></a></td>
+<td>
+<code>[]</code>
 </td>
 </tr>
 
@@ -1280,7 +1268,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.34.1&quot;</code>
+<code>&quot;v26.36.0&quot;</code>
 </td>
 </tr>
 
@@ -1288,6 +1276,27 @@ To configure the Materialize operator, you can:
 <td><a href='#operatornodeselector'><code>operator.nodeSelector</code></a></td>
 <td>
 
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorpoddisruptionbudgetenabled'><code>operator.podDisruptionBudget.enabled</code></a></td>
+<td>
+<code>true</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorpoddisruptionbudgetmaxunavailable'><code>operator.podDisruptionBudget.maxUnavailable</code></a></td>
+<td>
+<code>1</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorreplicas'><code>operator.replicas</code></a></td>
+<td>
+<code>2</code>
 </td>
 </tr>
 
@@ -1330,6 +1339,13 @@ To configure the Materialize operator, you can:
 <td><a href='#schedulername'><code>schedulerName</code></a></td>
 <td>
 <code>nil</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#serviceaccountannotations'><code>serviceAccount.annotations</code></a></td>
+<td>
+<code>{}</code>
 </td>
 </tr>
 
@@ -1721,9 +1737,33 @@ ARN of the IAM role for environmentd
 
 #### operator.cloudProvider.providers.gcp
 
-**Default**: <code>{&quot;enabled&quot;:false}</code>
+**Default**: <code>{&quot;enabled&quot;:false,&quot;nodeUpgradeRolloutTrigger&quot;:{&quot;clusterLocation&quot;:&quot;&quot;,&quot;clusterName&quot;:&quot;&quot;,&quot;enabled&quot;:false,&quot;notificationSubscription&quot;:&quot;&quot;,&quot;watchedNodePools&quot;:[]}}</code>
 
-GCP Configuration (placeholder for future use)
+GCP Configuration
+
+#### operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.clusterLocation
+
+**Default**: <code>&quot;&quot;</code>
+
+The location (region or zone) of the GKE cluster.
+
+#### operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.clusterName
+
+**Default**: <code>&quot;&quot;</code>
+
+The name of the GKE cluster.
+
+#### operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.notificationSubscription
+
+**Default**: <code>&quot;&quot;</code>
+
+The Pub/Sub subscription receiving GKE cluster notifications for this cluster, in <code>projects/{project}/subscriptions/{subscription}</code> form. The cluster must be configured to publish upgrade notifications to the corresponding topic, and the operator&rsquo;s service account must be able to subscribe to it and to read the cluster&rsquo;s node pools.
+
+#### operator.cloudProvider.providers.gcp.nodeUpgradeRolloutTrigger.watchedNodePools
+
+**Default**: <code>[]</code>
+
+The node pools to watch. An empty list watches all node pools.
 
 #### operator.cloudProvider.region
 
@@ -1797,7 +1837,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.34.1&quot;</code>
+**Default**: <code>&quot;v26.36.0&quot;</code>
 
 The tag/version of the operator image to be used
 
@@ -1806,6 +1846,24 @@ The tag/version of the operator image to be used
 **Default**: 
 
 Node selector to use for the operator pod
+
+#### operator.podDisruptionBudget.enabled
+
+**Default**: <code>true</code>
+
+Whether to create a PodDisruptionBudget for the operator. Only created when <code>replicas</code> is greater than 1, since a budget over a single replica either blocks node drains or protects nothing.
+
+#### operator.podDisruptionBudget.maxUnavailable
+
+**Default**: <code>1</code>
+
+Maximum number of operator pods that may be unavailable at once during voluntary disruptions. Expressed as a maximum rather than a minimum so that node drains are never blocked outright, they are only serialized.
+
+#### operator.replicas
+
+**Default**: <code>2</code>
+
+Number of operator replicas. The operator uses leader election so that only one replica reconciles at a time. Running more than one replica avoids downtime of the CRD conversion webhook during rollouts and node drains.
 
 #### operator.resources.limits
 
@@ -1848,6 +1906,12 @@ Whether to create necessary RBAC roles and bindings
 Optionally use a non-default kubernetes scheduler.
 
 ### `serviceAccount` parameters
+
+#### serviceAccount.annotations
+
+**Default**: <code>{}</code>
+
+Annotations to add to the service account, e.g. <code>iam.gke.io/gcp-service-account</code> to link it to a GCP service account via workload identity.
 
 #### serviceAccount.create
 
@@ -1932,6 +1996,9 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
+| v26.36 | v26.36 | v26.36 | 2026-08-07 | See <a href="/releases/#v26360" >v26.36 release notes</a> |
+| v26.35 | v26.35 | v26.35 | 2026-07-30 | See <a href="/releases/#v26350" >v26.35 release notes</a> |
+| v26.34.1 | v26.34.1 | v26.34.1 | 2026-07-24 | See <a href="/releases/#v26341" >v26.34.1 release notes</a> |
 | v26.34 | v26.34 | v26.34 | 2026-07-21 | See <a href="/releases/#v26340" >v26.34 release notes</a> |
 | v26.33 | v26.33 | v26.33 | 2026-07-17 | See <a href="/releases/#v26330" >v26.33 release notes</a> |
 | v26.32 | v26.32 | v26.32 | 2026-07-10 | See <a href="/releases/#v26320" >v26.32 release notes</a> |
@@ -2138,7 +2205,7 @@ The following upgrade guides are available as examples:
 | ------------- | -------|
 | [Upgrade on Kind](/self-managed-deployments/upgrading/upgrade-on-kind/) | Uses standard Helm commands to upgrade Materialize on a Kind cluster in Docker.
 
-<h4 id="upgrade-using-the-new-terraform-modules">Upgrade using the new Terraform Modules</h4>
+<h4 id="upgrade-using-terraform-modules">Upgrade using Terraform Modules</h4>
 > **Tip:** The Terraform modules are provided as examples. They are not required for
 > upgrading Materialize.
 
@@ -2152,42 +2219,15 @@ The following upgrade guides are available as examples:
   <tbody>
       <tr>
           <td><a href="/self-managed-deployments/upgrading/upgrade-on-aws/" >Upgrade on AWS (Terraform)</a></td>
-          <td>Uses the new Terraform module to deploy Materialize to AWS Elastic Kubernetes Service (EKS).</td>
+          <td>Uses Terraform module to deploy Materialize to AWS Elastic Kubernetes Service (EKS).</td>
       </tr>
       <tr>
           <td><a href="/self-managed-deployments/upgrading/upgrade-on-azure/" >Upgrade on Azure (Terraform)</a></td>
-          <td>Uses the new Terraform module to deploy Materialize to Azure Kubernetes Service (AKS).</td>
+          <td>Uses Terraform module to deploy Materialize to Azure Kubernetes Service (AKS).</td>
       </tr>
       <tr>
           <td><a href="/self-managed-deployments/upgrading/upgrade-on-gcp/" >Upgrade on GCP (Terraform)</a></td>
-          <td>Uses the new Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
-      </tr>
-  </tbody>
-</table>
-
-<h4 id="upgrade-using-legacy-terraform-modules">Upgrade using Legacy Terraform Modules</h4>
-> **Tip:** The Terraform modules are provided as examples. They are not required for
-> upgrading Materialize.
-
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/upgrading/legacy/upgrade-on-aws-legacy/" >Upgrade on AWS (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to AWS Elastic Kubernetes Service (EKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/upgrading/legacy/upgrade-on-azure-legacy/" >Upgrade on Azure (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Azure Kubernetes Service (AKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/upgrading/legacy/upgrade-on-gcp-legacy/" >Upgrade on GCP (Legacy Terraform)</a></td>
-          <td>Uses legacy Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
+          <td>Uses Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
       </tr>
   </tbody>
 </table>
@@ -2250,7 +2290,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.34.1
+  --version v26.36.0
 ```
 
 ## Upgrading Materialize Instances
