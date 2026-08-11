@@ -8,8 +8,6 @@ Use `ALTER CLUSTER REPLICA` to:
 
 **Rename:**
 
-### Rename
-
 To rename a cluster replica:
 
 ```mzsql
@@ -25,8 +23,6 @@ ALTER CLUSTER REPLICA <name> RENAME TO <new_name>;
 > **Note:** You cannot rename replicas in system clusters.
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a cluster replica:
 

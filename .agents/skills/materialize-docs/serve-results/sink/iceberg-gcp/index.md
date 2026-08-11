@@ -77,7 +77,7 @@ In Materialize, you can sink from a materialized view, table, or source. Use
 - `<my_iceberg_table>` with the name of your Iceberg table. If the Iceberg table
   does not exist, Materialize creates the table. For details, see [`CREATE SINK`
   reference page](/sql/create-sink/iceberg/#iceberg-table-creation).
-- `<commit_interval>` with your commit interval (e.g., `60s`). The commit
+- `<commit_interval>` with your commit interval (e.g., `1m`). The commit
   interval specifies how frequently Materialize commits snapshots to Iceberg.
   The minimum commit interval is `1s`. See [Commit interval
   tradeoffs](#commit-interval-tradeoffs) below.
@@ -126,7 +126,7 @@ The `COMMIT INTERVAL` setting controls how frequently Materialize commits
 snapshots to your Iceberg table, making the data available to downstream query
 engines. This setting involves tradeoffs:
 
-| Shorter intervals (e.g., < `60s`) | Longer intervals (e.g., `5m`) |
+| Shorter intervals (e.g., < `1m`) | Longer intervals (e.g., `5m`) |
 |---------------------------------|-------------------------------|
 | Lower latency - data visible sooner in downstream systems | Higher latency - data takes longer to appear |
 | More small files - can degrade query performance over time | Fewer, larger files - better query performance |
@@ -134,10 +134,13 @@ engines. This setting involves tradeoffs:
 | Lower throughput efficiency | Higher throughput efficiency |
 
 **Recommendations:**
-- For production, use intervals of `60s` or longer
+- For production, use intervals of `1m` or longer
 - For batch analytics, use longer intervals (`5m` to `15m`)
 
-> **Note:** Outside of development environments, commit intervals should be at least `60s`.
+Starting in v26.34, you can change the commit interval of an existing sink with
+[`ALTER SINK`](/sql/alter-sink/).
+
+> **Note:** Outside of development environments, commit intervals should be at least `1m`.
 > Short commit intervals increase catalog overhead and produce many small files.
 > Small files will result in degraded query performance. It also increases load on
 > the Iceberg metadata, which can result in a degraded catalog, and non-responsive

@@ -10,6 +10,10 @@ In Materialize, role-based access control (RBAC) governs access to **database
 objects** through privileges granted to [database
 roles](./manage-roles/).
 
+> **Tip:** You can manage database role membership from your identity provider by
+> [syncing IdP groups to database
+> roles](/security/cloud/users-service-accounts/sync-idp-groups/).
+
 ## Roles and privileges
 
 In Materialize, a database role is created:
@@ -143,6 +147,10 @@ In Materialize, role-based access control (RBAC) governs access to **database
 objects** through privileges granted to database roles.
 
 > **Disambiguation:** Materialize uses roles to manage access control at two levels: - [Organization roles](/security/cloud/users-service-accounts/#organization-roles), which determines the access to the Console's administrative features and sets the **initial database roles** for the user/service account. - [Database roles](/security/cloud/access-control/#role-based-access-control-rbac), which controls access to database objects and operations within Materialize. The focus of this page is on managing database roles. For information on organization roles, see [Users and service accounts](/security/cloud/users-service-accounts/). 
+
+> **Tip:** Instead of granting role membership by hand, you can [sync groups from your
+> identity provider](/security/cloud/users-service-accounts/sync-idp-groups/) to
+> manage database role membership from your IdP.
 
 ## Required privileges for managing roles
 

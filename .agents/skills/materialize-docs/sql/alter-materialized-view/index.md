@@ -11,8 +11,6 @@ Use `ALTER MATERIALIZED VIEW` to:
 
 **Rename:**
 
-### Rename
-
 To rename a materialized view:
 
 ```mzsql
@@ -27,8 +25,6 @@ ALTER MATERIALIZED VIEW <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a materialized view:
 
@@ -45,8 +41,6 @@ To change the owner of a materialized view, you must be the owner of the materia
 membership in the `<new_owner_role>`. See also [Privileges](#privileges).
 
 **(Re)Set retain history config:**
-
-### (Re)Set retain history config
 
 To set the retention history for a materialized view:
 
@@ -72,8 +66,6 @@ ALTER MATERIALIZED VIEW <name> RESET (RETAIN HISTORY);
 | `<name>` | The name of the materialized view you want to alter.  |
 
 **Replace materialized view:**
-
-### Replace materialized view
 
 > **Public Preview:** This feature is in public preview.
 

@@ -8,8 +8,6 @@ Use `ALTER TYPE` to:
 
 **Rename:**
 
-### Rename
-
 To rename a type:
 
 ```mzsql
@@ -24,8 +22,6 @@ ALTER TYPE <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a type:
 

@@ -12,7 +12,6 @@ Because indexes are scoped to a single cluster, they are most useful for acceler
 ## Syntax
 
 **CREATE INDEX:**
-### Create index
 
 Create an index using the specified columns as the index key.
 
@@ -34,7 +33,6 @@ ON <obj_name> [USING <method>] (<col_expr>, ...)
 | `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
 **CREATE DEFAULT INDEX:**
-### Create default index
 
 Create a default index using a set of columns that uniquely identify each row.
 If this set of columns cannot be inferred, all columns are used.

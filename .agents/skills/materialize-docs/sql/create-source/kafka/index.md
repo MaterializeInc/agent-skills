@@ -1,5 +1,7 @@
-# CREATE SOURCE: Kafka/Redpanda
+# CREATE SOURCE: Kafka/Redpanda (Legacy Syntax)
 Connecting Materialize to a Kafka or Redpanda broker
+> **Disambiguation:** This page reflects the legacy syntax. For the new syntax, see [new reference page](/sql/create-source/kafka-v2/).
+
 [`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
 
 To connect to a Kafka/Redpanda broker (and optionally a schema registry), you
@@ -94,7 +96,7 @@ selected by the `USING` clause:
 
 #### Schema versioning
 
-The schema is resolved when the `CREATE SOURCE` statement is issued. With
+The schema is resolved when the source or table is created. With
 [Confluent Schema Registry](/sql/create-connection/#confluent-schema-registry),
 the _latest_ schema is retrieved using the
 [`TopicNameStrategy`](https://docs.confluent.io/current/schema-registry/serdes-develop/index.html)
@@ -104,7 +106,12 @@ of the schema named by `SCHEMA NAME` is retrieved.
 
 #### Schema evolution
 
-As long as the writer schema changes in a [compatible way](https://avro.apache.org/docs/++version++/specification/#schema-resolution), Materialize will continue using the original reader schema definition by mapping values from the new to the old schema version. To use the new version of the writer schema in Materialize, you need to **drop and recreate** the source. This applies to both Confluent Schema Registry and AWS Glue Schema Registry.
+As long as the writer schema changes in a [compatible way](https://avro.apache.org/docs/++version++/specification/#schema-resolution), Materialize will continue using the original reader schema definition by mapping values from the new to the old schema version. This applies to both Confluent Schema Registry and AWS Glue Schema Registry.
+
+To pick up the new version of the writer schema, the approach depends on the syntax you used:
+
+- **Legacy syntax** (`CREATE SOURCE ... FORMAT AVRO ...`): you need to **drop and recreate** the source, which incurs downtime.
+- **New syntax** (`CREATE SOURCE` plus [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/)): you can create a new table that reads the evolved schema and cut over without downtime. See [Handle upstream schema changes with zero downtime](/ingest-data/kafka/source-versioning/).
 
 #### Name collision
 
@@ -354,11 +361,11 @@ Unlike Avro, Protobuf does not serialize a schema with the message, so Materiali
 
 #### Schema versioning
 
-The _latest_ schema is retrieved using the [`TopicNameStrategy`](https://docs.confluent.io/current/schema-registry/serdes-develop/index.html) strategy at the time the `CREATE SOURCE` statement is issued.
+The _latest_ schema is retrieved using the [`TopicNameStrategy`](https://docs.confluent.io/current/schema-registry/serdes-develop/index.html) strategy at the time the source or table is created.
 
 #### Schema evolution
 
-As long as the `.proto` schema definition changes in a [compatible way](https://developers.google.com/protocol-buffers/docs/overview#updating-defs), Materialize will continue using the original schema definition by mapping values from the new to the old schema version. To use the new version of the schema in Materialize, you need to **drop and recreate** the source.
+As long as the `.proto` schema definition changes in a [compatible way](https://developers.google.com/protocol-buffers/docs/overview#updating-defs), Materialize will continue using the original schema definition by mapping values from the new to the old schema version. To pick up the new version of the schema with the legacy syntax (`CREATE SOURCE ... FORMAT PROTOBUF ...`), you need to **drop and recreate** the source. With the new syntax (`CREATE SOURCE` plus [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/)), you can instead create a new table that reads the evolved schema and cut over without downtime, following the approach in [Handle upstream schema changes with zero downtime](/ingest-data/kafka/source-versioning/).
 
 #### Supported types
 
@@ -431,7 +438,10 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 
 ## Envelopes
 
-In addition to determining how to decode incoming records, Materialize also needs to understand how to interpret them. Whether a new record inserts, updates, or deletes existing data in Materialize depends on the `ENVELOPE` specified in the `CREATE SOURCE` statement.
+In addition to determining how to decode incoming records, Materialize also
+needs to understand how to interpret them. Whether a new record inserts,
+updates, or deletes existing data in Materialize depends on the `ENVELOPE`
+specified. For where the `ENVELOPE` clause goes, see [Syntax](#syntax).
 
 ### Append-only envelope
 
@@ -441,18 +451,11 @@ The append-only envelope treats all records as inserts. This is the **default** 
 
 ### Upsert envelope
 
-To create a source that uses the standard key-value convention to support
-inserts, updates, and deletes within Materialize, you can use `ENVELOPE
-UPSERT`. For example:
+<p style="font-size:14px"><b>Syntax:</b> <code>ENVELOPE UPSERT</code></p>
 
-```mzsql
-CREATE SOURCE kafka_upsert
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'events')
-  FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
-  ENVELOPE UPSERT;
-```
-
-The upsert envelope treats all records as having a **key** and a **value**, and supports inserts, updates and deletes within Materialize:
+The upsert envelope uses the standard key-value convention to support inserts,
+updates, and deletes within Materialize. It treats all records as having a
+**key** and a **value**:
 
 - If the key does not match a preexisting record, it inserts the record's key and value.
 
@@ -465,7 +468,7 @@ The upsert envelope treats all records as having a **key** and a **value**, and 
 > - This envelope can lead to high memory and disk utilization in the cluster
 >   maintaining the source. We recommend using a standard-sized cluster, rather
 >   than a legacy-sized cluster, to automatically spill the workload to disk. See
->   [spilling to disk](#spilling-to-disk) for details.
+>   [spilling to disk](/sql/create-source/kafka/#spilling-to-disk) for details.
 
 #### Null keys
 
@@ -492,11 +495,7 @@ configure the source to continue ingesting data in the presence of value
 decoding errors using the `VALUE DECODING ERRORS = INLINE` option:
 
 ```mzsql
-CREATE SOURCE kafka_upsert
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'events')
-  KEY FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
-  VALUE FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
-  ENVELOPE UPSERT (VALUE DECODING ERRORS = INLINE);
+ENVELOPE UPSERT (VALUE DECODING ERRORS = INLINE)
 ```
 
 When this option is specified the source will include an additional column named
@@ -526,21 +525,16 @@ WHERE error IS NULL;
 
 ### Debezium envelope
 
+<p style="font-size:14px"><b>Syntax:</b> <code>ENVELOPE DEBEZIUM</code></p>
+
 <div class="note">
   <strong class="gutter">NOTE:</strong> Currently, Materialize only supports Avro-encoded Debezium records. If you're interested in JSON support, please reach out in the community Slack or submit a <a href="https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests">feature request</a>.
 </div>
 
 Materialize provides a dedicated envelope (`ENVELOPE DEBEZIUM`) to decode Kafka
-messages produced by [Debezium](https://debezium.io/). For example:
+messages produced by [Debezium](https://debezium.io/).
 
-```mzsql
-CREATE SOURCE kafka_repl
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'my_table1')
-  FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
-  ENVELOPE DEBEZIUM;
-```
-
-Any materialized view defined on top of this source will be incrementally
+Any materialized view defined on top of a Debezium source will be incrementally
 updated as new change events stream in through Kafka, as a result of `INSERT`,
 `UPDATE` and `DELETE` operations in the original database.
 
@@ -554,7 +548,7 @@ This envelope treats all records as [change events](https://debezium.io/document
 
 > **Note:** - This envelope can lead to high memory utilization in the cluster maintaining
 >   the source. Materialize can automatically offload processing to
->   disk as needed. See [spilling to disk](#spilling-to-disk) for details.
+>   disk as needed. See [spilling to disk](/sql/create-source/kafka/#spilling-to-disk) for details.
 > - Materialize expects a specific message structure that includes the row data
 >   before and after the change event, which is **not guaranteed** for every
 >   Debezium connector. For more details, check the [Debezium integration
@@ -587,7 +581,8 @@ Spilling to disk is not available with [legacy cluster sizes](/sql/create-cluste
 ### Exposing source metadata
 
 In addition to the message value, Materialize can expose the message key,
-headers and other source metadata fields to SQL.
+headers and other source metadata fields to SQL through the `INCLUDE` clause.
+For where the `INCLUDE` clause goes, see [Syntax](#syntax).
 
 #### Key
 
@@ -595,11 +590,7 @@ The message key is exposed via the `INCLUDE KEY` option. Composite keys are also
 supported.
 
 ```mzsql
-CREATE SOURCE kafka_metadata
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'data')
-  KEY FORMAT TEXT
-  VALUE FORMAT TEXT
-  INCLUDE KEY AS renamed_id;
+INCLUDE KEY AS renamed_id
 ```
 
 Note that:
@@ -628,11 +619,7 @@ i.e. a list of records containing key-value pairs, where the keys are `text`
 and the values are nullable `bytea`s.
 
 ```mzsql
-CREATE SOURCE kafka_metadata
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'data')
-  FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
-  INCLUDE HEADERS
-  ENVELOPE NONE;
+INCLUDE HEADERS
 ```
 
 To simplify turning the headers column into a `map` (so individual headers can
@@ -666,11 +653,7 @@ The `bytea` value of the header is automatically parsed into an UTF-8 string. To
 expose the raw `bytea` instead, the `BYTES` option can be used.
 
 ```mzsql
-CREATE SOURCE kafka_metadata
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'data')
-  FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
-  INCLUDE HEADER 'c_id' AS client_id, HEADER 'key' AS encryption_key BYTES,
-  ENVELOPE NONE;
+INCLUDE HEADER 'c_id' AS client_id, HEADER 'key' AS encryption_key BYTES
 ```
 
 Headers can be queried as any other column in the source:
@@ -708,11 +691,7 @@ These metadata fields are exposed via the `INCLUDE PARTITION`, `INCLUDE OFFSET`
 and `INCLUDE TIMESTAMP` options.
 
 ```mzsql
-CREATE SOURCE kafka_metadata
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'data')
-  FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
-  INCLUDE PARTITION, OFFSET, TIMESTAMP AS ts
-  ENVELOPE NONE;
+INCLUDE PARTITION, OFFSET, TIMESTAMP AS ts
 ```
 
 ```mzsql
@@ -741,8 +720,7 @@ CREATE SOURCE kafka_offset
     -- Start reading from the earliest offset in the first partition,
     -- the second partition at 10, and the third partition at 100.
     START OFFSET (0, 10, 100)
-  )
-  FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection;
+  );
 ```
 
 Note that:

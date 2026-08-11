@@ -7,8 +7,6 @@ Use `ALTER INDEX` to:
 
 **Rename:**
 
-### Rename
-
 To rename an index:
 
 ```mzsql

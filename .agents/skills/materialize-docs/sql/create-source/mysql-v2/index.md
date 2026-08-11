@@ -1,11 +1,9 @@
 # CREATE SOURCE: MySQL (New Syntax)
 Connecting Materialize to a MySQL database for Change Data Capture (CDC).
-> **Public Preview:** This feature is in public preview.
-
 > **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/mysql/).
 
 Creates a new source from MySQL.  Materialize
-supports creating sources from MySQL version 8.0.1&#43;.  Once a new source is created, you can <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a>
+supports creating sources from MySQL version 8.0.1&#43;.  Once a new source is created, you can <a href="/sql/create-table/mysql/" ><code>CREATE TABLE FROM SOURCE</code></a>
 to create the corresponding tables in Materialize and start the data ingestion
 process.
 
@@ -58,12 +56,15 @@ details.
 ### Handling table schema changes
 
 The use of `CREATE SOURCE` with the new [`CREATE TABLE FROM
-SOURCE`](/sql/create-table/) allows for the handling of certain upstream DDL
+SOURCE`](/sql/create-table/) allows for the handling of certain upstream schema
 changes, specifically adding or dropping columns in the upstream tables, without
 downtime.
 
 See [Guide: Handle upstream schema
 changes](/ingest-data/mysql/source-versioning/) for details.
+
+See also [Handling upstream operations](#handling-upstream-operations) for
+additional upstream operation considerations.
 
 ### Supported types
 
@@ -71,39 +72,8 @@ With the new syntax, after a MySQL source is created, you [`CREATE TABLE FROM
 SOURCE`](/sql/create-table/) to create a corresponding table in Materialize and
 start ingesting data.
 
-Materialize natively supports the following MySQL types:
-
-<ul style="column-count: 3">
-<li><code>bigint</code></li>
-<li><code>binary</code></li>
-<li><code>bit</code></li>
-<li><code>blob</code></li>
-<li><code>boolean</code></li>
-<li><code>char</code></li>
-<li><code>date</code></li>
-<li><code>datetime</code></li>
-<li><code>decimal</code></li>
-<li><code>double</code></li>
-<li><code>float</code></li>
-<li><code>int</code></li>
-<li><code>json</code></li>
-<li><code>longblob</code></li>
-<li><code>longtext</code></li>
-<li><code>mediumblob</code></li>
-<li><code>mediumint</code></li>
-<li><code>mediumtext</code></li>
-<li><code>numeric</code></li>
-<li><code>real</code></li>
-<li><code>smallint</code></li>
-<li><code>text</code></li>
-<li><code>time</code></li>
-<li><code>timestamp</code></li>
-<li><code>tinyblob</code></li>
-<li><code>tinyint</code></li>
-<li><code>tinytext</code></li>
-<li><code>varbinary</code></li>
-<li><code>varchar</code></li>
-</ul>
+<p>Materialize natively supports the following MySQL types:</p>
+<ul style="column-count: 3"><li><code>bigint</code></li><li><code>binary</code></li><li><code>bit</code></li><li><code>blob</code></li><li><code>boolean</code></li><li><code>char</code></li><li><code>date</code></li><li><code>datetime</code></li><li><code>decimal</code></li><li><code>double</code></li><li><code>float</code></li><li><code>int</code></li><li><code>json</code></li><li><code>longblob</code></li><li><code>longtext</code></li><li><code>mediumblob</code></li><li><code>mediumint</code></li><li><code>mediumtext</code></li><li><code>numeric</code></li><li><code>real</code></li><li><code>smallint</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>tinyblob</code></li><li><code>tinyint</code></li><li><code>tinytext</code></li><li><code>varbinary</code></li><li><code>varchar</code></li></ul>
 
 When replicating tables that contain the **unsupported [data
 types](/sql/types/)**, you can:
@@ -137,22 +107,6 @@ decode the affected columns as `text`. The zero values for `date`,
 
 For more information, including strategies for handling unsupported types,
 see [`CREATE TABLE FROM SOURCE`](/sql/create-table/).
-
-### Upstream table truncation restrictions
-
-Avoid truncating upstream tables that are being replicated into Materialize.
-If a replicated upstream table is truncated, the corresponding
-subsource in Materialize becomes inaccessible and will not
-produce any data until it is recreated.
-
-Instead of truncating, use an unqualified `DELETE` to remove all rows from
-the upstream table:
-
-```mzsql
-DELETE FROM t;
-```
-
-For additional considerations, see also [`CREATE TABLE`](/sql/create-table/).
 
 ### Change data capture
 
@@ -374,6 +328,98 @@ of future possible GTIDs, which is similar to the
 system variable on a MySQL replica. The reported `transaction_id` should
 increase as Materialize consumes **new** binlog records from the upstream MySQL
 database. For more information, see [Troubleshooting](/ops/troubleshooting/).
+
+## Handling upstream operations
+
+This section describes how changes to upstream tables that Materialize ingests
+affect the corresponding Materialize tables.
+
+### Adding a column
+
+When you add a new column to your upstream table, Materialize continues to
+ingest only the existing columns.
+
+To incorporate the new column:
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/mysql-v2/) syntax, create a new table from
+the source. See [Handle upstream column addition](/ingest-data/mysql/source-versioning/#handle-upstream-column-addition).
+
+- If using the legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/mysql/) syntax that creates subsources, use [`DROP
+SOURCE`](/sql/drop-source/) to drop the affected subsource, and then add the
+table back to the source using [`ALTER SOURCE ... ADD
+SUBSOURCE`](/sql/alter-source/). The re-added subsource includes the new column.
+
+### Dropping a column
+
+Dropping columns that Materialize does not ingest (for example, columns added
+after the source was created, or columns that are excluded) is supported. As
+these columns were never ingested, you can drop them without issue.
+
+If your Materialize source ingests a column, dropping that column from your
+upstream table puts the affected table into an error state.
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/mysql-v2/) syntax, you can safely drop a
+column by first ignoring it in Materialize. See [Handle upstream column
+drop](/ingest-data/mysql/source-versioning/#handle-upstream-column-drop).
+
+- If using legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/mysql/) syntax, use [`DROP SOURCE`](/sql/drop-source/) to drop the affected
+subsource, and then add the table back to the source using [`ALTER
+SOURCE ... ADD SUBSOURCE`](/sql/alter-source/).
+
+### Changing constraints
+
+Materialize ignores the following constraint changes: foreign
+key and `CHECK`.
+As such, you can add or drop them without affecting ingestion.
+
+Materialize also ignores `NOT NULL`, `UNIQUE`, and `PRIMARY KEY` constraints that
+are added after the Materialize table is created (that is, the table was created
+without them). Adding such a constraint, and later dropping it, does not affect
+ingestion.
+
+Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
+the table was created puts the affected table into an error state.
+
+### Changing a column's data type
+
+Changing an ingested column's data type upstream so that it maps to a different
+Materialize type than before puts the affected Materialize table into an
+error state. Ingestion for that table stops, and you must drop and recreate the
+table in Materialize to resume ingestion.
+
+Changing an ingested column's upstream data type so that it continues to map to
+the same Materialize type does not interrupt ingestion. For example, changing
+`tinyint` to `smallint`, changing within the
+`text`/`tinytext`/`mediumtext`/`longtext` family, and adjusting `bit(n)`
+precision are all safe.
+
+Appending new values to the **end** of an existing enum does not put the table
+into an error state. However, the newly-added values are not recognized, so rows
+that use them fail to decode until you drop and recreate the table. Existing
+enum values remain recognized, and rows that use them continue to decode
+successfully.
+
+Any other enum change puts the affected Materialize table into an
+error state, including inserting a value before the end, reordering or renaming
+values, and removing values.
+
+### Renaming a column
+
+Renaming a column that Materialize ingests puts the affected table into an error
+state. Ingestion for that table stops, and you must drop and recreate the table
+in Materialize to resume ingestion.
+
+### Table-level operations
+
+The following upstream operations put the affected table into an error state.
+Ingestion for that table stops, and you must drop and recreate the affected
+table in Materialize to resume:
+
+- Dropping a table (`DROP TABLE`).
+- Renaming a table or moving it to a different schema.
+- Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
 
 ## Example
 

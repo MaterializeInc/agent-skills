@@ -10,7 +10,7 @@ cluster](/sql/create-cluster/#unmanaged-clusters).
 ## Syntax
 
 ```mzsql
-CREATE CLUSTER REPLICA <cluster_name>.<replica_name> (
+CREATE CLUSTER REPLICA [IF NOT EXISTS] <cluster_name>.<replica_name> (
     SIZE = <text>
 );
 
@@ -18,6 +18,7 @@ CREATE CLUSTER REPLICA <cluster_name>.<replica_name> (
 
 | Syntax element | Description |
 | --- | --- |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if a replica with the same name already exists on the cluster. Instead, issue a notice and skip the replica creation. Note that the existing replica is left untouched, its configuration is not updated to match the statement.  |
 | `<cluster_name>` | The cluster you want to attach a replica to.  |
 | `<replica_name>` | A name for this replica.  |
 | `SIZE` | The size of the resource allocations for the cluster.  For valid size values, see [Available sizes](#available-sizes).  |

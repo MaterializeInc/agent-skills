@@ -16,8 +16,6 @@ role(s)](/sql/create-role/).
 > runtime effect. They're stored so that a later `REVOKE ALL ON TABLE` can
 > clear every privilege previously granted through the same shorthand.
 
-<!-- ============ CLUSTER syntax ==============  -->
-
 **Cluster:**
 
 For specific cluster(s):
@@ -35,8 +33,6 @@ GRANT <USAGE | CREATE | ALL [PRIVILEGES]> [, ... ]
 ON ALL CLUSTERS
 TO <role_name> [, ... ];
 ```
-
-<!-- ================== Connection syntax ======================  -->
 
 **Connection:**
 
@@ -57,8 +53,6 @@ ON ALL CONNECTIONS
 TO <role_name> [, ... ];
 ```
 
-<!-- ================== Database syntax =====================  -->
-
 **Database:**
 
 For specific database(s):
@@ -76,8 +70,6 @@ GRANT <USAGE | CREATE | ALL [PRIVILEGES]> [, ... ]
 ON ALL DATABASES
 TO <role_name> [, ... ];
 ```
-
-<!-- =============== Materialized view syntax ===================  -->
 
 **Materialized view/view/source:**
 
@@ -105,8 +97,6 @@ ON TABLE <name> [, <name> ...]
 TO <role_name> [, ... ];
 ```
 
-<!-- ================== Network policy syntax ==================  -->
-
 **Network policy:**
 
 For specific network policies:
@@ -124,8 +114,6 @@ GRANT <USAGE | ALL [PRIVILEGES]>
 ON ALL POLICIES
 TO <role_name> [, ... ];
 ```
-
-<!-- ==================== Schema syntax =====================  -->
 
 **Schema:**
 
@@ -145,8 +133,6 @@ ON ALL SCHEMAS [IN DATABASE <name> [, <name> ...]]
 TO <role_name> [, ... ];
 ```
 
-<!-- ==================== Secret syntax =====================  -->
-
 **Secret:**
 
 For specific secret(s):
@@ -165,8 +151,6 @@ ON ALL SECRET [IN DATABASE <name> [, <name> ...]]
 TO <role_name> [, ... ];
 ```
 
-<!-- ==================== System syntax =====================  -->
-
 **System:**
 
 ```mzsql
@@ -174,8 +158,6 @@ GRANT <CREATEROLE | CREATEDB | CREATECLUSTER | CREATENETWORKPOLICY | ALL [PRIVIL
 ON SYSTEM
 TO <role_name> [, ... ];
 ```
-
-<!-- ==================== Type syntax =======================  -->
 
 **Type:**
 
@@ -195,8 +177,6 @@ ON ALL TYPES
   [ IN <SCHEMA|DATABASE> <name> [, <name> ...] ]
 TO <role_name> [, ... ];
 ```
-
-<!-- ======================= Table syntax =====================  -->
 
 **Table:**
 

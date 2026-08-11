@@ -1,5 +1,5 @@
 # Upgrade on Azure
-Upgrade Materialize on Azure using the new Terraform module.
+Upgrade Materialize on Azure using the Terraform module.
 The following tutorial upgrades your Materialize deployment running on Azure
 Kubernetes Service (AKS). The tutorial assumes you have installed the
 example on [Install on

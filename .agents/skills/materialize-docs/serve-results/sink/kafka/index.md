@@ -93,8 +93,8 @@ By default, Materialize assigns a partition to each message using the following
 strategy:
 
   1. Encode the message's key in the specified format.
-  2. If the format uses a Confluent Schema Registry, strip out the
-     schema ID from the encoded bytes.
+  2. If the format uses a schema registry (Confluent or AWS Glue), strip out
+     the header carrying the schema ID from the encoded bytes.
   3. Hash the remaining encoded bytes using [SeaHash].
   4. Divide the hash value by the topic's partition count and assign the
      remainder as the message's partition.
@@ -143,10 +143,10 @@ partioning](/sql/create-sink/kafka#custom-partitioning).
 
 ### Kafka transaction markers
 
-Materialize uses <a href="https://www.confluent.io/blog/transactions-apache-kafka/" >Kafka
-transactions</a>. When
-Kafka transactions are used, special control messages known as <strong>transaction
-markers</strong> are published to the topic. Transaction markers inform both the broker
+Materialize uses [Kafka
+transactions](https://www.confluent.io/blog/transactions-apache-kafka/). When
+Kafka transactions are used, special control messages known as **transaction
+markers** are published to the topic. Transaction markers inform both the broker
 and clients about the status of a transaction. When a topic is read using a
 standard Kafka consumer, these markers are not exposed to the application, which
 can give the impression that some offsets are being skipped.

@@ -29,8 +29,6 @@ offers lower latency for direct querying within that cluster.
 
 **CREATE MATERIALIZED VIEW:**
 
-### Create materialized view
-
 ```mzsql
 CREATE MATERIALIZED VIEW [IF NOT EXISTS] <view_name>
 [(<col_ident>, ...)]
@@ -50,8 +48,6 @@ AS <select_stmt>;
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) whose results you want to maintain incrementally updated.  |
 
 **CREATE REPLACEMENT MATERIALIZED VIEW:**
-
-### Create replacement materialized view
 
 > **Public Preview:** This feature is in public preview.
 

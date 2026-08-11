@@ -8,8 +8,6 @@ Use `ALTER DATABASE` to:
 
 **Rename:**
 
-### Rename
-
 To rename a database:
 
 ```mzsql
@@ -24,8 +22,6 @@ ALTER DATABASE <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a database:
 

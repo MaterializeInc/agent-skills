@@ -12,8 +12,6 @@ Use `ALTER CONNECTION` to:
 
 **SET/DROP/RESET options:**
 
-### SET/DROP/RESET options
-
 To modify connection parameters:
 
 ```mzsql
@@ -38,8 +36,6 @@ ALTER CONNECTION [IF EXISTS] <name>
 
 **ROTATE KEYS:**
 
-### ROTATE KEYS
-
 To rotate SSH tunnel connection key pairs:
 
 ```mzsql
@@ -53,8 +49,6 @@ ALTER CONNECTION [IF EXISTS] <name> ROTATE KEYS;
 | `<name>` | The identifier of the SSH tunnel connection.  |
 
 **Rename:**
-
-### Rename
 
 To rename a connection
 
@@ -70,8 +64,6 @@ ALTER CONNECTION <name> RENAME TO <new_name>;
 See also [Renaming restrictions](/sql/identifiers/#renaming-restrictions).
 
 **Change owner:**
-
-### Change owner
 
 To change the owner of a connection:
 

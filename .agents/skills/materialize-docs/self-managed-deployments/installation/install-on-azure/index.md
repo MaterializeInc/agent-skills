@@ -1,5 +1,5 @@
 # Install on Azure
-Install Materialize on Azure using the new Terraform module.
+Install Materialize on Azure using the Terraform module.
 Materialize provides a set of modular [Terraform
 modules](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main)
 that can be used to deploy all services required for Materialize to run on Azure.

@@ -1,5 +1,5 @@
 # Install on AWS
-Install Materialize on AWS using the new Terraform module.
+Install Materialize on AWS using the Terraform module.
 Materialize provides a set of modular [Terraform
 modules](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main)
 that can be used to deploy all services required for Materialize to run on AWS.

@@ -26,9 +26,11 @@ FROM LOAD GENERATOR <generator_type> [
     [, BATCH SIZE <batch_size>]
   )
 ]
-FOR ALL TABLES
 [EXPOSE PROGRESS AS <progress_subsource_name>]
-[WITH ( <with_option> [, ...] )]
+[WITH ( <with_option> [, ...] )];
+
+CREATE TABLE [IF NOT EXISTS] <table_name>
+FROM SOURCE <src_name> [ (REFERENCE <reference>) ];
 
 ```
 
@@ -50,9 +52,10 @@ FOR ALL TABLES
 | **SEED** `<seed>` | Optional. The seed for random number generation.  |
 | **PARTITIONS** `<partitions>` | Optional. The number of partitions for the generator.  |
 | **BATCH SIZE** `<batch_size>` | Optional. The batch size for the generator.  |
-| **FOR ALL TABLES** | Creates subsources for all tables in the load generator.  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress subsource for the source. If this is not specified, the subsource will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
 | **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| `<table_name>` | The name of the table to create for a relation exposed by the source. Use [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/) to ingest a relation. You can create multiple tables from the same source relation.  |
+| **(REFERENCE `<reference>`)** | The relation of the load generator source to ingest into the table (e.g. `bids`, `customer`). Required for multi-output generators (`AUCTION`, `MARKETING`, `TPCH`). Optional for the single-output `KEY VALUE` generator.  |
 
 ## Description
 
@@ -64,9 +67,9 @@ submit a [feature request].
 ### Auction
 
 The auction load generator simulates an auction house, where users are bidding
-on an ongoing series of auctions. The auction source will be automatically demuxed
-into multiple subsources when the `CREATE SOURCE` command is executed. This will
-create the following subsources:
+on an ongoing series of auctions. The auction source exposes the following
+relations, which you can ingest using [`CREATE TABLE ... FROM
+SOURCE`](/sql/create-table/):
 
   * `organizations` describes the organizations known to the auction
     house.
@@ -117,9 +120,10 @@ is placed in the currently ongoing auction.
 
 ### Marketing
 
-The marketing load generator simulates a marketing organization that is using a machine learning model to send coupons to potential leads. The marketing source will be automatically demuxed
-into multiple subsources when the `CREATE SOURCE` command is executed. This will
-create the following subsources:
+The marketing load generator simulates a marketing organization that is using a
+machine learning model to send coupons to potential leads. The marketing source
+exposes the following relations, which you can ingest using [`CREATE TABLE ...
+FROM SOURCE`](/sql/create-table/):
 
   * `customers` describes the customers that the marketing team may target.
 
@@ -175,7 +179,9 @@ create the following subsources:
 ### TPCH
 
 The TPCH load generator implements the [TPC-H benchmark specification](https://www.tpc.org/tpch/default5.asp).
-The TPCH source must be used with `FOR ALL TABLES`, which will create the standard TPCH relations.
+The TPCH source exposes the standard TPC-H relations (`customer`, `lineitem`,
+`nation`, `orders`, `part`, `partsupp`, `region`, `supplier`), which you can
+ingest using [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/).
 If `TICK INTERVAL` is specified, after the initial data load, an order and its lineitems will be changed at this interval.
 If not specified, the dataset will not change over time.
 
@@ -203,34 +209,84 @@ As long as the offset continues increasing, Materialize is generating data. For
 more details on monitoring source ingestion progress and debugging related
 issues, see [Troubleshooting](/ops/troubleshooting/).
 
+## Ingesting data
+
+Once a load generator source is created, use [`CREATE TABLE FROM
+SOURCE`](/sql/create-table/) to create a table for each relation described
+above that you want to ingest. For example, assuming a TPCH source named
+`tpch`:
+
+```mzsql
+CREATE TABLE orders FROM SOURCE tpch (REFERENCE orders);
+```
+
+For **multi-output generators** (`AUCTION`, `MARKETING`, `TPCH`), the
+`REFERENCE` clause is required: specify one of the table names listed above
+(e.g. `bids`, `customers`, `lineitem`). Omitting `REFERENCE` results in an
+error, since Materialize cannot determine which table you're referring to.
+
+Materialize's only single-output generator, `KEY VALUE`
+<a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
+, does not require `REFERENCE`, since there is
+only one table available:
+
+```mzsql
+CREATE TABLE kv_tbl FROM SOURCE kv_gen;
+```
+
+You can create multiple tables that reference the same load generator table.
+
+> **Note:** `TEXT COLUMNS` and `EXCLUDE COLUMNS` are not supported for load generator
+> tables. If specified, they are silently ignored.
+
+> **Note:** Load generator tables have a fixed schema defined by Materialize. You cannot
+> modify the schema.
+
 ## Examples
 
 ### Creating an auction load generator
 
-To create a load generator source that simulates an auction house and emits new data every second:
+To create a load generator source that simulates an auction house and emits new
+data every second, then create tables for its relations:
 
 ```mzsql
 CREATE SOURCE auction_house
   FROM LOAD GENERATOR AUCTION
-  (TICK INTERVAL '1s')
-  FOR ALL TABLES;
+  (TICK INTERVAL '1s');
+
+BEGIN;
+CREATE TABLE organizations FROM SOURCE auction_house (REFERENCE organizations);
+CREATE TABLE users FROM SOURCE auction_house (REFERENCE users);
+CREATE TABLE accounts FROM SOURCE auction_house (REFERENCE accounts);
+CREATE TABLE auctions FROM SOURCE auction_house (REFERENCE auctions);
+CREATE TABLE bids FROM SOURCE auction_house (REFERENCE bids);
+COMMIT;
 ```
 
-To display the created subsources:
+To display the created source:
 
 ```mzsql
 SHOW SOURCES;
 ```
 ```nofmt
-          name          |      type
-------------------------+----------------
- accounts               | subsource
- auction_house          | load-generator
- auction_house_progress | progress
- auctions               | subsource
- bids                   | subsource
- organizations          | subsource
- users                  | subsource
+     name      |      type
+---------------+----------------
+ auction_house | load-generator
+```
+
+To display the created tables:
+
+```mzsql
+SHOW TABLES;
+```
+```nofmt
+     name
+---------------
+ accounts
+ auctions
+ bids
+ organizations
+ users
 ```
 
 To examine the simulated bids:
@@ -248,31 +304,50 @@ SELECT * from bids;
 
 ### Creating a marketing load generator
 
-To create a load generator source that simulates an online marketing campaign:
+To create a load generator source that simulates an online marketing campaign,
+then create tables for its relations:
 
 ```mzsql
 CREATE SOURCE marketing
-  FROM LOAD GENERATOR MARKETING
-  FOR ALL TABLES;
+  FROM LOAD GENERATOR MARKETING;
+
+BEGIN;
+CREATE TABLE customers FROM SOURCE marketing (REFERENCE customers);
+CREATE TABLE impressions FROM SOURCE marketing (REFERENCE impressions);
+CREATE TABLE clicks FROM SOURCE marketing (REFERENCE clicks);
+CREATE TABLE leads FROM SOURCE marketing (REFERENCE leads);
+CREATE TABLE coupons FROM SOURCE marketing (REFERENCE coupons);
+CREATE TABLE conversion_predictions FROM SOURCE marketing (REFERENCE conversion_predictions);
+COMMIT;
 ```
 
-To display the created subsources:
+To display the created source:
 
 ```mzsql
 SHOW SOURCES;
 ```
 
 ```nofmt
-          name          |      type
-------------------------+---------------
- clicks                 | subsource
- conversion_predictions | subsource
- coupons                | subsource
- customers              | subsource
- impressions            | subsource
- leads                  | subsource
- marketing              | load-generator
- marketing_progress     | progress
+   name    |      type
+-----------+---------------
+ marketing | load-generator
+```
+
+To display the created tables:
+
+```mzsql
+SHOW TABLES;
+```
+
+```nofmt
+          name
+------------------------
+ clicks
+ conversion_predictions
+ coupons
+ customers
+ impressions
+ leads
 ```
 
 To find all impressions and clicks associated with a campaign over the last 30 days:
@@ -324,32 +399,51 @@ GROUP BY campaign_id;
 
 ### Creating a TPCH load generator
 
-To create the load generator source and its associated subsources:
+To create the load generator source, then create tables for its relations:
 
 ```mzsql
 CREATE SOURCE tpch
-  FROM LOAD GENERATOR TPCH (SCALE FACTOR 1)
-  FOR ALL TABLES;
+  FROM LOAD GENERATOR TPCH (SCALE FACTOR 1);
+
+BEGIN;
+CREATE TABLE customer FROM SOURCE tpch (REFERENCE customer);
+CREATE TABLE lineitem FROM SOURCE tpch (REFERENCE lineitem);
+CREATE TABLE nation FROM SOURCE tpch (REFERENCE nation);
+CREATE TABLE orders FROM SOURCE tpch (REFERENCE orders);
+CREATE TABLE part FROM SOURCE tpch (REFERENCE part);
+CREATE TABLE partsupp FROM SOURCE tpch (REFERENCE partsupp);
+CREATE TABLE region FROM SOURCE tpch (REFERENCE region);
+CREATE TABLE supplier FROM SOURCE tpch (REFERENCE supplier);
+COMMIT;
 ```
 
-To display the created subsources:
+To display the created source:
 
 ```mzsql
 SHOW SOURCES;
 ```
 ```nofmt
-      name     |      type
----------------+---------------
- tpch          | load-generator
- tpch_progress | progress
- supplier      | subsource
- region        | subsource
- partsupp      | subsource
- part          | subsource
- orders        | subsource
- nation        | subsource
- lineitem      | subsource
- customer      | subsource
+ name |      type
+------+---------------
+ tpch | load-generator
+```
+
+To display the created tables:
+
+```mzsql
+SHOW TABLES;
+```
+```nofmt
+   name
+----------
+ customer
+ lineitem
+ nation
+ orders
+ part
+ partsupp
+ region
+ supplier
 ```
 
 To run the Pricing Summary Report Query (Q1), which reports the amount of
@@ -386,6 +480,25 @@ ORDER BY
  N            | O            | 74281600 |   111337230039 | 106883023012.04 | 112227399730.9018 |  25.49430183051871 | 38212.221432873834 | 0.03999775539657235 |     2913655
  R            | F            | 37770949 |    56610551077 |   54347734573.7 |  57066196254.4557 | 25.496431466814634 |  38213.68205054471 | 0.03997848687172654 |     1481421
 ```
+
+### Ingesting a subset of a load generator source's relations
+
+Creating a load generator source does not ingest any data on its own. To ingest
+only some of a source's relations, create tables for just the ones you want:
+
+```mzsql
+CREATE SOURCE tpch
+  FROM LOAD GENERATOR TPCH (SCALE FACTOR 1);
+
+BEGIN;
+CREATE TABLE orders FROM SOURCE tpch (REFERENCE orders);
+CREATE TABLE lineitem FROM SOURCE tpch (REFERENCE lineitem);
+COMMIT;
+```
+
+Unlike the [previous example](#creating-a-tpch-load-generator), only the
+`orders` and `lineitem` tables are created; the other TPCH relations are not
+ingested unless you also create tables for them.
 
 ## Related pages
 

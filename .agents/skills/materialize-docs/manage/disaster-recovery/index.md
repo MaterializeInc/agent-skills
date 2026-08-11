@@ -28,17 +28,12 @@ cluster's rehydration time**.
 Materialize supports multi-replica clusters, allowing for distribution across
 Availability Zones (AZs):
 
-<ul>
-<li>
-<p>For clusters sized <strong>up to and including <code>3200cc</code></strong>, Materialize guarantees
-that all provisioned replicas in a cluster are distributed across the
-underlying cloud provider&rsquo;s availability zones.</p>
-</li>
-<li>
-<p>For clusters sized <strong>above <code>3200cc</code></strong>, even distribution of replicas
-across availability zones <strong>cannot</strong> be guaranteed.</p>
-</li>
-</ul>
+- For clusters sized **up to and including `3200cc`**, Materialize guarantees
+  that all provisioned replicas in a cluster are distributed across the
+  underlying cloud provider's availability zones.
+
+- For clusters sized **above `3200cc`**, even distribution of replicas
+  across availability zones **cannot** be guaranteed.
 
 Multi-replica **compute clusters** and multi-replica **serving clusters**
 (excluding sink clusters) with replicas distributed across AZs provide DR
@@ -53,7 +48,7 @@ AZ level failures for those clusters:
 As such, your compute and serving clusters will continue to serve up-to-date
 data uninterrupted in the case of a replica failure.
 
-> **💡 Cost and work capacity:** <ul> <li> <p>Each replica incurs cost, calculated as <code>cluster size * replication factor</code> per second. See <a href="/administration/billing/" >Usage &amp; billing</a> for more details.</p> </li> <li> <p>Increasing the replication factor does <strong>not</strong> increase the cluster&rsquo;s work capacity. Replicas are exact copies of one another: each replica must do exactly the same work as all the other replicas of the cluster(i.e., maintain the same dataflows and process the same queries). To increase the capacity of a cluster, you must increase its size.</p> </li> </ul> 
+> **💡 Cost and work capacity:** - Each replica incurs cost, calculated as `cluster size * replication factor` per second. See [Usage & billing](/administration/billing/) for more details. - Increasing the replication factor does **not** increase the cluster's work capacity. Replicas are exact copies of one another: each replica must do exactly the same work as all the other replicas of the cluster(i.e., maintain the same dataflows and process the same queries). To increase the capacity of a cluster, you must increase its size. 
 
 If you require resilience beyond a single region, consider the Level 3 strategy.
 

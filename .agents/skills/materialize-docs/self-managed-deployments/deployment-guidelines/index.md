@@ -27,7 +27,7 @@ As a general guideline, we recommend:
 
 - ARM-based CPU
 - A 1:8 ratio of vCPU to GiB memory.
-- A 8:1 ratio of GiB local instance storage to GiB memory when using swap.
+- At least a 2:1 ratio of GiB local instance storage to GiB memory when using swap.
 
 When operating in AWS, we recommend the following instances:
 
@@ -35,12 +35,6 @@ When operating in AWS, we recommend the following instances:
 | ---------------|
 | `r8g`, `r7g`, and `r6g` families when running without local disk. |
 | `r7gd` and `r6gd` families (and `r8gd` once available) when running with local disk.  *Recommended for production.* |
-
-Starting in v0.3.1, the Materialize on AWS Terraform uses `["r7gd.2xlarge"]` as
-the default [`node_group_instance_types`].
-
-[`node_group_instance_types`]:
-    https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#input_node_group_instance_types
 
 ## Locally-attached NVMe storage
 
@@ -52,24 +46,46 @@ significantly degrade performance and is not supported.
 
 ### Swap support
 
-**New Terraform:**
+The Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws/examples/simple) supports configuring swap out of the box.
 
-#### New Terraform
+## Recommended metadata database sizing
 
-The new Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws/examples/simple) supports configuring swap out of the box.
+<p>Self-managed Materialize uses an external PostgreSQL <strong>metadata database</strong> to
+store its catalog and to coordinate the state of the objects it keeps up to
+date. Every durable object that updates continuously (materialized views,
+sources, sinks, and tables) produces a steady stream of small writes to the
+metadata database. Metadata-database load therefore scales with the <strong>number of
+continuously-updating objects</strong>, not with the volume of data flowing through
+them.</p>
+> **Note:** The sizing figures below assume the
+> [`persist_pg_consensus_read_committed`](/self-managed-deployments/configuration-system-parameters/)
+> system parameter is **enabled**. Enable it before sizing against these
+> numbers. Materialize version `v26.33+` is required to set this parameter.
 
-**Legacy Terraform:**
-#### Legacy Terraform
+<h3 id="safe-operating-point">Safe operating point</h3>
+<p>The primary factor that dictates the size of the metadata database is the
+number of durable objects Materialize keeps continuously fresh (materialized
+views, sources, sinks, and tables). Data volume, the query rate against
+Materialize, and cluster size do not materially change metadata database load.
+For example, a larger cluster running the same number of materialized views
+places roughly the same load on the metadata database.</p>
+<p>It is recommended that you size the metadata database so that its
+<strong>steady-state CPU stays below 60%</strong>. The headroom between ~60% and full
+utilization provides capacity to absorb everyday load variance, background
+database maintenance, and Materialize zero-downtime upgrades.</p>
 
-The Legacy Terraform provider adds preliminary swap support in v0.6.1, via the [`swap_enabled`](https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#input_swap_enabled) variable.
-With this change, the Terraform:
-  - Creates a node group for Materialize.
-  - Configures NVMe instance store volumes as swap using a daemonset.
-  - Enables swap at the Kubelet.
+### RDS instance types
 
-See [Upgrade Notes](https://github.com/MaterializeInc/terraform-aws-materialize?tab=readme-ov-file#v061).
+For the RDS PostgreSQL metadata database, we recommend:
 
-> **Note:** If deploying `v25.2`, Materialize clusters will not automatically use swap unless they are configured with a `memory_request` less than their `memory_limit`. In `v26`, this will be handled automatically.
+- **Graviton (ARM)** memory-optimized instances (the `r6g` / `r7g` families).
+- **Multi-AZ** for production.
+- **gp3** storage.
+
+| Deployment size | Instance | vCPU / memory | Continuously-active objects (~60% CPU) |
+|---|---|---|---|
+| Entry / small production | `db.r6g.large` | 2 / 16 GiB | ~4,500 |
+| Recommended default | `db.r6g.2xlarge` | 8 / 64 GiB | ~18,000 |
 
 ## TLS
 
@@ -78,21 +94,41 @@ Certificate Authority (CA) rather than self-signed certificates.
 
 ## Upgrading guideline
 
-<p>Whe upgrading:</p>
-<ul>
-<li>
-<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/version-notes/" >version-specific upgrade
-notes</a>.</p>
-</li>
-<li>
-<p><strong>Always</strong> upgrade the operator <strong>first</strong> and ensure version compatibility
-between the operator and the Materialize instance you are upgrading to.</p>
-</li>
-<li>
-<p><strong>Always</strong> upgrade your Materialize instances <strong>after</strong> upgrading the operator
-to ensure compatibility.</p>
-</li>
-</ul>
+Whe upgrading:
+
+- **Always** check the [version-specific upgrade
+  notes](/self-managed-deployments/upgrading/version-notes/).
+
+- **Always** upgrade the operator **first** and ensure version compatibility
+  between the operator and the Materialize instance you are upgrading to.
+
+- **Always** upgrade your Materialize instances **after** upgrading the operator
+  to ensure compatibility.
+
+## Karpenter node expiry
+
+We recommend setting `expire_after` to `Never` on the Materialize nodepool
+since node expiry is not a voluntary disruption. With any other value,
+Karpenter removes nodes that reach their configured lifetime even if they run
+pods annotated with `karpenter.sh/do-not-disrupt`. This can cause downtime
+unless you gracefully roll the nodes first. The [Materialize Terraform
+modules](https://github.com/MaterializeInc/materialize-terraform-self-managed)
+default `expire_after` to `Never`.
+
+## Karpenter termination grace period
+
+We recommend leaving `termination_grace_period` unset on nodepools that run
+Materialize workloads. When this value is set, Karpenter terminates nodes after
+the configured grace period following any change to the nodepool
+configuration, even if they run pods annotated with
+`karpenter.sh/do-not-disrupt`.
+
+Before v6.0.0, the modules set `termination_grace_period` to `300s`. If you are
+using a version earlier than v6.0.0, upgrade to v6.0.0 using the [v6.0.0
+upgrade
+notes](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/v6.0.0/README.md#v600).
+Starting in v6.0.0, the Materialize Terraform modules leave
+`termination_grace_period` unset by default.
 
 ## Node pool resizing
 
@@ -115,7 +151,7 @@ As a general guideline, we recommend:
 
 - ARM-based CPU.
 - A 1:8 ratio of vCPU to GiB memory.
-- An 8:1 ratio of GiB local instance storage to GiB memory when using swap.
+- At least a 2:1 ratio of GiB local instance storage to GiB memory when using swap.
 
 ### Recommended Azure VM Types with Local NVMe Disks
 
@@ -144,28 +180,52 @@ significantly degrade performance and is not supported.
 
 ### Swap support
 
-**New Terraform:**
-#### New Terraform
-
-The new Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure/examples/simple) supports configuring swap out of the box.
-
-**Legacy Terraform:**
-#### Legacy Terraform
-
-The Legacy Terraform provider, adds preliminary swap support in v0.6.1, via the [`swap_enabled`](https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#input_swap_enabled) variable.
-With this change, the Terraform:
-  - Creates a node group for Materialize.
-  - Configures NVMe instance store volumes as swap using a daemonset.
-  - Enables swap at the Kubelet.
-
-See [Upgrade Notes](https://github.com/MaterializeInc/terraform-azurerm-materialize?tab=readme-ov-file#v061).
-
-> **Note:** If deploying `v25.2`, Materialize clusters will not automatically use swap unless they are configured with a `memory_request` less than their `memory_limit`. In `v26`, this will be handled automatically.
+The Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure/examples/simple) supports configuring swap out of the box.
 
 ## Recommended Azure Blob Storage
 
 Materialize writes **block** blobs on Azure. As a general guideline, we
 recommend **Premium block blob** storage accounts.
+
+## Recommended metadata database sizing
+
+<p>Self-managed Materialize uses an external PostgreSQL <strong>metadata database</strong> to
+store its catalog and to coordinate the state of the objects it keeps up to
+date. Every durable object that updates continuously (materialized views,
+sources, sinks, and tables) produces a steady stream of small writes to the
+metadata database. Metadata-database load therefore scales with the <strong>number of
+continuously-updating objects</strong>, not with the volume of data flowing through
+them.</p>
+> **Note:** The sizing figures below assume the
+> [`persist_pg_consensus_read_committed`](/self-managed-deployments/configuration-system-parameters/)
+> system parameter is **enabled**. Enable it before sizing against these
+> numbers. Materialize version `v26.33+` is required to set this parameter.
+
+<h3 id="safe-operating-point">Safe operating point</h3>
+<p>The primary factor that dictates the size of the metadata database is the
+number of durable objects Materialize keeps continuously fresh (materialized
+views, sources, sinks, and tables). Data volume, the query rate against
+Materialize, and cluster size do not materially change metadata database load.
+For example, a larger cluster running the same number of materialized views
+places roughly the same load on the metadata database.</p>
+<p>It is recommended that you size the metadata database so that its
+<strong>steady-state CPU stays below 60%</strong>. The headroom between ~60% and full
+utilization provides capacity to absorb everyday load variance, background
+database maintenance, and Materialize zero-downtime upgrades.</p>
+
+### Flexible Server SKUs
+
+For the Azure Database for PostgreSQL flexible server that backs the metadata
+database, we recommend:
+
+- The **Memory Optimized** tier (E-series), which provides the 1:8
+  vCore-to-memory ratio recommended for the metadata database.
+- **Zone-redundant high availability** for production.
+
+| Deployment size | `sku_name` | vCores / memory | Continuously-active objects (~60% CPU) |
+|---|---|---|---|
+| Entry / small production | `MO_Standard_E4ds_v5` | 4 / 32 GiB | ~4,500 |
+| Recommended default | `MO_Standard_E16ds_v5` | 16 / 128 GiB | ~18,000 |
 
 ## TLS
 
@@ -174,21 +234,16 @@ Certificate Authority (CA) rather than self-signed certificates.
 
 ## Upgrading guideline
 
-<p>Whe upgrading:</p>
-<ul>
-<li>
-<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/version-notes/" >version-specific upgrade
-notes</a>.</p>
-</li>
-<li>
-<p><strong>Always</strong> upgrade the operator <strong>first</strong> and ensure version compatibility
-between the operator and the Materialize instance you are upgrading to.</p>
-</li>
-<li>
-<p><strong>Always</strong> upgrade your Materialize instances <strong>after</strong> upgrading the operator
-to ensure compatibility.</p>
-</li>
-</ul>
+Whe upgrading:
+
+- **Always** check the [version-specific upgrade
+  notes](/self-managed-deployments/upgrading/version-notes/).
+
+- **Always** upgrade the operator **first** and ensure version compatibility
+  between the operator and the Materialize instance you are upgrading to.
+
+- **Always** upgrade your Materialize instances **after** upgrading the operator
+  to ensure compatibility.
 
 ## Node pool resizing
 
@@ -211,17 +266,21 @@ As a general guideline, we recommend:
 
 - ARM-based CPU.
 - A 1:8 ratio of vCPU to GiB memory.
-- An 8:1 ratio of GiB local instance storage to GiB memory when using swap.
+- At least a 2:1 ratio of GiB local instance storage to GiB memory when using swap.
 
-When operating on GCP in production, we recommend the following machine types
-that support local SSD attachment:
+When operating on GCP in production, we recommend the Arm-based [C4A
+high-memory series]. Both C4A and C4 offer local SSDs only on their `-lssd`
+machine variants, which bundle a fixed number of Titanium SSD disks.
 
 | Series | Examples   |
 | ------ | ---------- |
-| [N2 high-memory series] | `n2-highmem-16` or `n2-highmem-32` with local NVMe SSDs |
-| [N2D  high-memory series] | `n2d-highmem-16` or `n2d-highmem-32` with local NVMe SSDs |
+| [C4A high-memory series] (recommended) | `c4a-highmem-16-lssd` or `c4a-highmem-32-lssd` |
+| [C4 high-memory series] | `c4-highmem-16-lssd` or `c4-highmem-32-lssd` |
 
-To maintain the recommended 8:1 disk-to-RAM ratio for your machine type, see
+C4A is not available in every region. Where it is unavailable, use the
+x86-based [C4 high-memory series] instead.
+
+To maintain the recommended disk-to-RAM ratio for your machine type, see
 [Number of local SSDs](#number-of-local-ssds) to determine the number of local
 SSDs to use.
 
@@ -229,30 +288,33 @@ See also [Locally attached NVMe storage](#locally-attached-nvme-storage).
 
 ## Number of local SSDs
 
-Each local NVMe SSD in GCP provides 375GB of storage. Use the appropriate number
+Each local SSD in GCP provides 375GB of storage. Use the appropriate number
 of local SSDs to ensure your total disk space is at least twice the amount of RAM in your
 machine type for optimal Materialize performance.
 
-> **Note:** Your machine type may only supports predefined number of local SSDs. For instance, `n2d-highmem-32` allows only the following number of local
-> SSDs: `4`,`8`,`16`, or `24`. To determine the valid number of Local SSDs to attach for your machine type, see the [GCP
-> documentation](https://cloud.google.com/compute/docs/disks/local-ssd#lssd_disk_options).
+C4A and C4 bundle a fixed number of Titanium SSD disks in each `-lssd`
+machine variant. The count is not configurable, but every high-memory `-lssd`
+variant satisfies the 2:1 disk-to-RAM ratio:
 
-For example, the following table provides a minimum local SSD count to ensure
-the 2:1 disk-to-RAM ratio. Your actual
-count will depend on the [your machine
-type](https://cloud.google.com/compute/docs/disks/local-ssd#lssd_disk_options).
+| Machine Type          | RAM     | Bundled Local SSDs | Total SSD Storage |
+|-----------------------|---------|--------------------|-------------------|
+| `c4a-highmem-8-lssd`  | `64GB`  | 2                  | `750GB`           |
+| `c4a-highmem-16-lssd` | `128GB` | 4                  | `1500GB`          |
+| `c4a-highmem-32-lssd` | `256GB` | 6                  | `2250GB`          |
+| `c4a-highmem-64-lssd` | `512GB` | 14                 | `5250GB`          |
+| `c4-highmem-8-lssd`   | `62GB`  | 1                  | `375GB`           |
+| `c4-highmem-16-lssd`  | `124GB` | 2                  | `750GB`           |
+| `c4-highmem-32-lssd`  | `248GB` | 5                  | `1875GB`          |
+| `c4-highmem-48-lssd`  | `372GB` | 8                  | `3000GB`          |
 
-| Machine Type    | RAM     | Required Disk | Minimum Local SSD Count | Total SSD Storage |
-|-----------------|---------|---------------|-----------------------------|-------------------|
-| `n2-highmem-8`  | `64GB`  | `128GB`       | 1                           | `375GB`           |
-| `n2-highmem-16` | `128GB` | `256GB`       | 1                           | `375GB`           |
-| `n2-highmem-32` | `256GB` | `512GB`       | 2                           | `750GB`           |
-| `n2-highmem-64` | `512GB` | `1024GB`      | 3                           | `1125GB`          |
-| `n2-highmem-80` | `640GB` | `1280GB`      | 4                           | `1500GB`          |
+For other machine series, the local SSD count is configurable but may only
+support predefined values. To determine the valid number of local SSDs to
+attach for your machine type, see the [GCP
+documentation](https://cloud.google.com/compute/docs/disks/local-ssd#lssd_disk_options).
 
-[N2 high-memory series]: https://cloud.google.com/compute/docs/general-purpose-machines#n2-high-mem
+[C4A high-memory series]: https://cloud.google.com/compute/docs/general-purpose-machines#c4a_series
 
-[N2D high-memory series]: https://cloud.google.com/compute/docs/general-purpose-machines#n2d_machine_types
+[C4 high-memory series]: https://cloud.google.com/compute/docs/general-purpose-machines#c4_series
 
 ## Locally-attached NVMe storage
 
@@ -264,30 +326,55 @@ significantly degrade performance and is not supported.
 
 ### Swap support
 
-**New Terraform:**
-
-#### New Terraform
-
 The Materialize [Terraform module](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp/examples/simple) supports configuring swap out of the box.
-
-**Legacy Terraform:**
-#### Legacy Terraform
-
-The Legacy Terraform provider, adds preliminary swap support in v0.6.1, via the [`swap_enabled`](https://github.com/MaterializeInc/terraform-google-materialize?tab=readme-ov-file#input_swap_enabled) variable.
-With this change, the Terraform:
-  - Creates a node group for Materialize.
-  - Configures NVMe instance store volumes as swap using a daemonset.
-  - Enables swap at the Kubelet.
-
-See [Upgrade Notes](https://github.com/MaterializeInc/terraform-google-materialize?tab=readme-ov-file#v061).
-
-> **Note:** If deploying `v25.2`, Materialize clusters will not automatically use swap unless they are configured with a `memory_request` less than their `memory_limit`. In `v26`, this will be handled automatically.
 
 ## CPU affinity
 
 It is strongly recommended to enable the Kubernetes `static` [CPU management policy](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/#static-policy).
 This ensures that each worker thread of Materialize is given exclusively access to a vCPU. Our benchmarks have shown this
 to substantially improve the performance of compute-bound workloads.
+
+## Recommended metadata database sizing
+
+<p>Self-managed Materialize uses an external PostgreSQL <strong>metadata database</strong> to
+store its catalog and to coordinate the state of the objects it keeps up to
+date. Every durable object that updates continuously (materialized views,
+sources, sinks, and tables) produces a steady stream of small writes to the
+metadata database. Metadata-database load therefore scales with the <strong>number of
+continuously-updating objects</strong>, not with the volume of data flowing through
+them.</p>
+> **Note:** The sizing figures below assume the
+> [`persist_pg_consensus_read_committed`](/self-managed-deployments/configuration-system-parameters/)
+> system parameter is **enabled**. Enable it before sizing against these
+> numbers. Materialize version `v26.33+` is required to set this parameter.
+
+<h3 id="safe-operating-point">Safe operating point</h3>
+<p>The primary factor that dictates the size of the metadata database is the
+number of durable objects Materialize keeps continuously fresh (materialized
+views, sources, sinks, and tables). Data volume, the query rate against
+Materialize, and cluster size do not materially change metadata database load.
+For example, a larger cluster running the same number of materialized views
+places roughly the same load on the metadata database.</p>
+<p>It is recommended that you size the metadata database so that its
+<strong>steady-state CPU stays below 60%</strong>. The headroom between ~60% and full
+utilization provides capacity to absorb everyday load variance, background
+database maintenance, and Materialize zero-downtime upgrades.</p>
+
+### Cloud SQL machine types
+
+For the Cloud SQL for PostgreSQL instance that backs the metadata database, we
+recommend:
+
+- The **Enterprise Plus** edition with a **performance-optimized (N-series)**
+  machine type, which provides the 1:8 vCPU-to-memory ratio recommended for the
+  metadata database. Avoid shared-core machine types (`db-f1-micro`,
+  `db-g1-small`) in production.
+- A **regional (highly available)** configuration for production.
+
+| Deployment size | `tier` | vCPU / memory | Continuously-active objects (~60% CPU) |
+|---|---|---|---|
+| Entry / small production | `db-perf-optimized-N-4` | 4 / 32 GB | ~4,500 |
+| Recommended default | `db-perf-optimized-N-16` | 16 / 128 GB | ~18,000 |
 
 ## TLS
 
@@ -296,21 +383,16 @@ Certificate Authority (CA) rather than self-signed certificates.
 
 ## Upgrading guideline
 
-<p>Whe upgrading:</p>
-<ul>
-<li>
-<p><strong>Always</strong> check the <a href="/self-managed-deployments/upgrading/version-notes/" >version-specific upgrade
-notes</a>.</p>
-</li>
-<li>
-<p><strong>Always</strong> upgrade the operator <strong>first</strong> and ensure version compatibility
-between the operator and the Materialize instance you are upgrading to.</p>
-</li>
-<li>
-<p><strong>Always</strong> upgrade your Materialize instances <strong>after</strong> upgrading the operator
-to ensure compatibility.</p>
-</li>
-</ul>
+Whe upgrading:
+
+- **Always** check the [version-specific upgrade
+  notes](/self-managed-deployments/upgrading/version-notes/).
+
+- **Always** upgrade the operator **first** and ensure version compatibility
+  between the operator and the Materialize instance you are upgrading to.
+
+- **Always** upgrade your Materialize instances **after** upgrading the operator
+  to ensure compatibility.
 
 ## Node pool resizing
 
@@ -327,105 +409,344 @@ For the full procedure, see
 
 ## Resize node pools
 
-When you need a larger (or smaller) VM type for a node pool that Materialize
-runs on, the change cannot be applied in place. The underlying cloud APIs do
-not support an in-place "change VM type" operation on an existing managed node
-pool, so the Terraform providers mark the VM type field `ForceNew` on all three
-clouds:
+When you need a larger (or smaller) VM type for the nodes that Materialize
+runs on, how to proceed depends on how the nodes are managed:
 
-- GKE: `google_container_node_pool.node_config.machine_type`
-- AKS: `azurerm_kubernetes_cluster_node_pool.vm_size`
-- EKS: `aws_eks_node_group.instance_types`
+- **Static node pools** (the GCP and Azure modules, and AWS node groups when
+  not using Karpenter) cannot change VM type in place. The underlying cloud
+  APIs do not support it, so the Terraform providers mark the VM type field
+  `ForceNew` (GKE: `machine_type`, AKS: `vm_size`, EKS node groups:
+  `instance_types`), and changing it plans a `destroy + create`. The destroy
+  fails if the pool still has Materialize pods on it, because nothing in the
+  Terraform graph migrates the workloads to a replacement pool first. The
+  supported pattern is to **add a second pool, taint the old pool so no new
+  pods schedule on it, trigger a Materialize rollout so the new generation of
+  pods lands on the new pool, then drop the old pool**.
 
-Changing the value makes Terraform plan a `destroy + create`. The destroy step
-fails if the pool still has Materialize pods running on it, because nothing in
-the Terraform graph migrates the workloads to a replacement pool first.
+- **Karpenter-managed nodes** (the default for Materialize nodes in the AWS
+  modules) size nodes per pod rather than per pool. Changing the VM type is a
+  template change on the Karpenter `NodePool`, followed by a Materialize
+  rollout to move the pods onto new-spec nodes.
 
-The supported pattern is to **add a second pool, trigger a Materialize rollout
-so the new generation of pods lands on it, then drop the old pool**.
-
-> **Note:** This guide applies to deployments that use static node groups (the default for
-> the GCP and Azure modules, and for the AWS modules when Karpenter is disabled).
-> If you're using [Karpenter](https://karpenter.sh/) for dynamic node provisioning,
-> resizing is just a `NodePool` template change because Karpenter sizes nodes per
-> pod rather than per pool.
+> **Note:** The default rollout strategy (`WaitUntilReady`) used in the outlined steps
+> temporarily runs the old and new generations of Materialize simultaneously. Make
+> sure the new node pool has enough capacity to accommodate both generations
+> during the rollout.
 
 ## Steps
 
-### 1. Declare a second node pool with the new VM type
+**Terraform:**
 
-Add a second node pool alongside the existing one. Give it the same labels and
-taints as the existing pool so Materialize pods are eligible to schedule on it,
-but a distinct name and the new VM type.
+These steps apply to the [Materialize Terraform
+modules](https://github.com/MaterializeInc/materialize-terraform-self-managed).
 
-The exact shape depends on which module or resource you're using. For example,
-with `terraform-google-modules/kubernetes-engine` on GCP:
+**GCP:**
 
-```hcl
-module "gke" {
-  # ...
-  node_pools = [
-    {
-      name         = "materialize"
-      machine_type = "n2-highmem-8"
-      # ...
-    },
-    {
-      name         = "materialize-xl"
-      machine_type = "n2-highmem-16"
-      # ... same labels and taints as above ...
-    },
-  ]
-}
-```
+##### 1. Declare a second node pool with the new VM type
 
-Or, if you're using a single-pool module wrapper, instantiate it twice:
+Add a new nodepool module instance alongside the existing one, keeping the old
+pool unchanged. Copy the existing configuration, then change:
+
+- The `prefix`, so the pool gets a distinct name.
+- The `machine_type`.
+- For a swap-enabled pool, a distinct `disk_setup_name` (e.g.
+  `disk-setup-xl`). It names the disk-setup namespace and daemonset, which
+  otherwise collide with the old pool's.
+- The `local_ssd_count`, if the new machine type bundles a different number of
+  local SSDs (`c4a-highmem-16-lssd` has 4, for example).
+
+Keep the same labels and taints as the existing pool so Materialize pods are
+eligible to schedule on it. For example:
 
 ```hcl
 module "materialize_nodepool" {
-  # ... existing pool config ...
-  machine_type = "n2-highmem-8"
+  # ... existing pool config, unchanged ...
+  machine_type = "c4a-highmem-8-lssd"
 }
 
 module "materialize_nodepool_xl" {
-  # ... copy the existing config, change name and machine_type ...
-  machine_type = "n2-highmem-16"
+  # ... copy of the existing config, with a new prefix ...
+  machine_type    = "c4a-highmem-16-lssd"
+  local_ssd_count = 4
+  disk_setup_name = "disk-setup-xl"
 }
 ```
 
-The Azure and AWS equivalents change `vm_size` (Azure) or `instance_types` (AWS)
-instead of `machine_type`.
-
-Apply. Both pools now exist. Materialize pods have not yet been scheduled on
-the new pool.
-
-### 2. Cordon the old pool so new pods schedule on the new one
+Run `terraform init` to pick up the new module instance, then apply:
 
 ```bash
-# Cordon every node in the old pool so the scheduler stops placing new pods there
-for node in $(kubectl get nodes -l <your-old-pool-label> -o name); do
-  kubectl cordon "$node"
-done
+terraform init
+terraform apply
 ```
 
-DaemonSets and existing pods stay in place; only new pods are kept off the
-cordoned nodes.
+Both pools now exist. Materialize pods have not yet been scheduled on the new
+pool.
 
-### 3. Roll out the Materialize instance to land new pods on the new pool
+##### 2. Taint the old pool so no new pods schedule on it
 
-Use the Materialize CR's rollout machinery to have the operator create a new
-generation of `environmentd` and `clusterd` pods. With the old pool cordoned,
-the new generation schedules onto the new pool's nodes.
+Add a decommission taint to the old pool's `node_taints`:
 
-If you're using the `materialize-instance` Terraform module, bump both
-`force_rollout` and `request_rollout` inputs to a new UUID and apply:
+```hcl
+node_taints = [
+  # ... existing taints ...
+  {
+    key    = "materialize.cloud/decommissioned"
+    value  = "true"
+    effect = "NO_SCHEDULE"
+  }
+]
+```
+
+Taints update in place (no pool replacement) on the provider versions the
+modules require. Running pods are not evicted, but no new pods schedule to the
+old pool, and the cluster autoscaler will not scale it up for pending pods,
+since they don't tolerate the taint. Use a taint key the Materialize pods
+don't tolerate (not `materialize.cloud/workload` or `kubernetes.io/arch`).
+
+Apply:
+
+```bash
+terraform apply
+```
+
+##### 3. Roll out the Materialize instance
+
+With the old pool tainted, a forced rollout lands the new generation of pods
+on the new pool.
+
+The Materialize spec itself is unchanged (the node move happens at the
+Kubernetes cluster level and not in the Materialize CR), so you need to force
+the rollout.
+
+**Materialize CRD v1:**
+
+The `v1` version of the Materialize CRD is the default starting in v4.0.0 of
+the Terraform modules. Set the `force_rollout` input of the
+`materialize-instance` module to a new UUID:
+
+```hcl
+module "materialize_instance" {
+  # ...
+  rollout_strategy = "WaitUntilReady"  # default
+  force_rollout    = "00000000-0000-0000-0000-000000000002"  # any new UUID
+}
+```
+
+**Materialize CRD v1alpha1:**
+
+If you have reverted to the `v1alpha1` version of the Materialize CRD, set
+both the `request_rollout` and `force_rollout` inputs of the
+`materialize-instance` module to the same new UUID:
 
 ```hcl
 module "materialize_instance" {
   # ...
   rollout_strategy = "WaitUntilReady"  # default
   request_rollout  = "00000000-0000-0000-0000-000000000002"  # any new UUID
+  force_rollout    = "00000000-0000-0000-0000-000000000002"  # same UUID
+}
+```
+
+Apply:
+
+```bash
+terraform apply
+```
+
+See [Rollout behavior](#rollout-behavior) for what to expect during the
+rollout. Verify the new `environmentd` and `clusterd` pods are only scheduled
+onto the new pool.
+
+##### 4. Remove the old pool
+
+Once the rollout has completed, the old pool's nodes have no Materialize
+workloads on them. Remove the old nodepool module instance from your Terraform
+configuration and apply:
+
+```bash
+terraform apply
+```
+
+The destroy step now succeeds because the pool has no running workloads.
+
+##### 5. Optional: rename the new pool back
+
+If you want the pool to keep the original name (for example because other
+Terraform or kubectl tooling references it), repeat these steps with a third
+pool that carries the original name. Otherwise, accept the new name and update
+any references.
+
+**Azure:**
+
+##### 1. Declare a second node pool with the new VM type
+
+Add a new nodepool module instance alongside the existing one, keeping the old
+pool unchanged. Copy the existing configuration, then change:
+
+- The `prefix`, so the pool gets a distinct name. The AKS node pool name is
+  the prefix with dashes removed, truncated to 12 characters, so the new
+  prefix must differ from the old one within those characters. A suffix
+  appended to a long prefix is silently truncated away and the apply fails
+  because the pool name already exists.
+- The `vm_size`.
+- For a swap-enabled pool, a distinct `disk_setup_name` (e.g.
+  `disk-setup-xl`). It names the disk-setup namespace and daemonset, which
+  otherwise collide with the old pool's.
+
+Keep the same labels and taints as the existing pool so Materialize pods are
+eligible to schedule on it. For example:
+
+```hcl
+module "materialize_nodepool" {
+  # ... existing pool config, unchanged ...
+  prefix  = "mzpool"
+  vm_size = "Standard_E4pds_v6"
+}
+
+module "materialize_nodepool_xl" {
+  # ... copy of the existing config ...
+  prefix          = "mzpoolxl"
+  vm_size         = "Standard_E8pds_v6"
+  disk_setup_name = "disk-setup-xl"
+}
+```
+
+Run `terraform init` to pick up the new module instance, then apply:
+
+```bash
+terraform init
+terraform apply
+```
+
+Both pools now exist. Materialize pods have not yet been scheduled on the new
+pool.
+
+##### 2. Taint the old pool so no new pods schedule on it
+
+Add a decommission taint to the old pool's `node_taints`:
+
+```hcl
+node_taints = [
+  # ... existing taints ...
+  {
+    key    = "materialize.cloud/decommissioned"
+    value  = "true"
+    effect = "NO_SCHEDULE"
+  }
+]
+```
+
+Taints update in place (no pool replacement) on the provider versions the
+modules require. Running pods are not evicted, but no new pods schedule to the
+old pool, and the cluster autoscaler will not scale it up for pending pods,
+since they don't tolerate the taint. Use a taint key the Materialize pods
+don't tolerate (not `materialize.cloud/workload` or `kubernetes.io/arch`).
+
+Apply:
+
+```bash
+terraform apply
+```
+
+##### 3. Roll out the Materialize instance
+
+With the old pool tainted, a forced rollout lands the new generation of pods
+on the new pool.
+
+The Materialize spec itself is unchanged (the node move happens at the
+Kubernetes cluster level and not in the Materialize CR), so you need to force
+the rollout.
+
+**Materialize CRD v1:**
+
+The `v1` version of the Materialize CRD is the default starting in v4.0.0 of
+the Terraform modules. Set the `force_rollout` input of the
+`materialize-instance` module to a new UUID:
+
+```hcl
+module "materialize_instance" {
+  # ...
+  rollout_strategy = "WaitUntilReady"  # default
   force_rollout    = "00000000-0000-0000-0000-000000000002"  # any new UUID
+}
+```
+
+**Materialize CRD v1alpha1:**
+
+If you have reverted to the `v1alpha1` version of the Materialize CRD, set
+both the `request_rollout` and `force_rollout` inputs of the
+`materialize-instance` module to the same new UUID:
+
+```hcl
+module "materialize_instance" {
+  # ...
+  rollout_strategy = "WaitUntilReady"  # default
+  request_rollout  = "00000000-0000-0000-0000-000000000002"  # any new UUID
+  force_rollout    = "00000000-0000-0000-0000-000000000002"  # same UUID
+}
+```
+
+Apply:
+
+```bash
+terraform apply
+```
+
+See [Rollout behavior](#rollout-behavior) for what to expect during the
+rollout. Verify the new `environmentd` and `clusterd` pods are only scheduled
+onto the new pool.
+
+##### 4. Remove the old pool
+
+Once the rollout has completed, the old pool's nodes have no Materialize
+workloads on them. Remove the old nodepool module instance from your Terraform
+configuration and apply:
+
+```bash
+terraform apply
+```
+
+The destroy step now succeeds because the pool has no running workloads.
+
+##### 5. Optional: rename the new pool back
+
+If you want the pool to keep the original name (for example because other
+Terraform or kubectl tooling references it), repeat these steps with a third
+pool that carries the original name. Otherwise, accept the new name and update
+any references.
+
+**AWS:**
+
+> **Warning:** Prior to v6.0.0 of the Terraform modules, the nodepools had `termination_grace_period`
+> set to `300s`. This caused nodes to be terminated five minutes after any change to the
+> nodepool configuration, ignoring the `karpenter.sh/do-not-disrupt` annotation on pods.
+> If you are running an older version of the Terraform modules, to avoid downtime,
+> we recommend upgrading to at least v6.0.0, following the steps in the
+> [upgrade notes](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/v6.0.0/README.md#v600).
+> On later versions, the `termination_grace_period` is unset by default.
+> We recommend keeping it unset on nodepools for Materialize workloads.
+
+The AWS modules provision Materialize nodes with Karpenter, so there is no
+second pool to create. Karpenter provisions new-spec nodes on demand.
+
+If you have disabled Karpenter and run Materialize on a static EKS node
+group, follow the blue-green pattern from the GCP and Azure tabs instead,
+changing `instance_types` on a second node group module instance.
+
+##### 1. Update the instance types
+
+Change `instance_types` on the Materialize `karpenter-ec2nodeclass` and
+`karpenter-nodepool` module instances and apply:
+
+```hcl
+module "ec2nodeclass_materialize" {
+  # ...
+  instance_types = ["r7gd.4xlarge"]
+}
+
+module "nodepool_materialize" {
+  # ...
+  instance_types = ["r7gd.4xlarge"]
 }
 ```
 
@@ -433,27 +754,160 @@ module "materialize_instance" {
 terraform apply
 ```
 
-If you're managing the Materialize CR directly, the equivalent kubectl
-command is:
+Karpenter marks the existing nodes as drifted but does not drain them: the
+`environmentd` and `clusterd` pods carry the `karpenter.sh/do-not-disrupt`
+annotation, which blocks voluntary disruption while they run. This relies on
+the nodepool's `expire_after` being `Never`, see [Karpenter node
+expiry](/self-managed-deployments/deployment-guidelines/aws-deployment-guidelines/#karpenter-node-expiry).
+
+##### 2. Cordon the drifted nodes
+
+Cordon the existing Materialize nodes so the rollout's new pods cannot
+schedule onto them and instead trigger Karpenter to provision nodes with the
+new instance types:
+
+```bash
+# The nodepool name is the `name` input of the karpenter-nodepool module
+# ("materialize" in the examples).
+for node in $(kubectl get nodes -l karpenter.sh/nodepool=materialize -o name); do
+  kubectl cordon "$node"
+done
+```
+
+Nodes that Karpenter provisions after this point are not cordoned.
+
+##### 3. Roll out the Materialize instance
+
+The Materialize spec itself is unchanged (the node move happens at the
+Kubernetes cluster level and not in the Materialize CR), so you need to force
+the rollout.
+
+**Materialize CRD v1:**
+
+The `v1` version of the Materialize CRD is the default starting in v4.0.0 of
+the Terraform modules. Set the `force_rollout` input of the
+`materialize-instance` module to a new UUID:
+
+```hcl
+module "materialize_instance" {
+  # ...
+  rollout_strategy = "WaitUntilReady"  # default
+  force_rollout    = "00000000-0000-0000-0000-000000000002"  # any new UUID
+}
+```
+
+**Materialize CRD v1alpha1:**
+
+If you have reverted to the `v1alpha1` version of the Materialize CRD, set
+both the `request_rollout` and `force_rollout` inputs of the
+`materialize-instance` module to the same new UUID:
+
+```hcl
+module "materialize_instance" {
+  # ...
+  rollout_strategy = "WaitUntilReady"  # default
+  request_rollout  = "00000000-0000-0000-0000-000000000002"  # any new UUID
+  force_rollout    = "00000000-0000-0000-0000-000000000002"  # same UUID
+}
+```
+
+Apply:
+
+```bash
+terraform apply
+```
+
+Karpenter provisions new-spec nodes for the pending pods of the new
+generation. See [Rollout behavior](#rollout-behavior) for what to expect
+during the rollout. Verify the new `environmentd` and `clusterd` pods are
+only scheduled onto the new nodes.
+
+##### 4. Verify the old nodes are removed
+
+Once the rollout has completed and the old generation's pods are gone, the
+cordoned nodes are empty and Karpenter consolidates them away (the modules
+configure `consolidationPolicy: WhenEmpty`). Confirm they disappear:
+
+```bash
+kubectl get nodes -l karpenter.sh/nodepool=materialize
+```
+
+**Manual:**
+
+If you manage your infrastructure without the Materialize Terraform modules:
+
+##### 1. Create a second node pool with the new VM type
+
+Using your cloud provider's tooling, create a second node pool with the same
+labels and taints as the existing pool (so Materialize pods are eligible to
+schedule on it), a distinct name, and the new VM type.
+
+If your nodes are managed by Karpenter, skip this step and instead update the
+instance requirements on the Karpenter `NodePool`. Karpenter provisions
+new-spec nodes on demand once the old nodes are cordoned.
+
+##### 2. Keep new pods off the old nodes
+
+For a static pool, add a decommission taint, such as
+`materialize.cloud/decommissioned=true:NoSchedule`, to the old pool. Apply the
+taint at the node pool level through your cloud provider rather than with
+`kubectl taint`: node-level taints do not carry over to nodes the cluster
+autoscaler adds to the pool later. Running pods are not evicted, but no new
+pods schedule to the old pool, and the cluster autoscaler will not scale it
+up for pending pods, since they don't tolerate the taint. Use a taint key the
+Materialize pods don't tolerate (not `materialize.cloud/workload` or
+`kubernetes.io/arch`).
+
+For Karpenter-managed nodes, cordon the old nodes instead. Nodes that
+Karpenter provisions afterwards are not cordoned.
+
+##### 3. Roll out the Materialize instance to land new pods on the new nodes
+
+Use the Materialize CR's rollout machinery to have the operator create a new
+generation of `environmentd` and `clusterd` pods. Because the Materialize
+spec itself is unchanged (the node move happens at the Kubernetes cluster
+level and not in the Materialize CR), you need to force the rollout.
+
+**Materialize CRD v1:**
+
+Set `forceRollout` to a new UUID:
 
 ```bash
 kubectl patch materialize <instance-name> \
   -n <materialize-instance-namespace> \
   --type='merge' \
-  -p "{\"spec\": {\"requestRollout\": \"$(uuidgen)\", \"forceRollout\": \"$(uuidgen)\"}}"
+  -p "{\"spec\": {\"forceRollout\": \"$(uuidgen)\"}}"
 ```
 
-Both paths set `requestRollout` and `forceRollout` to new UUIDs, which is what
-the operator watches for. Because the Materialize spec itself is unchanged (the
-node pool move happens at the Kubernetes cluster level and not in the
-Materialize CR), you need to update `forceRollout` (in addition to
-`requestRollout`).
+**Materialize CRD v1alpha1:**
 
-The default `rolloutStrategy` is `WaitUntilReady`, which creates the new
-generation alongside the old, waits for it to catch up, then promotes it and
-tears down the old generation. This briefly doubles the resource footprint
-during the rollout (so make sure the new pool has the capacity) but is
-otherwise zero-downtime. For other rollout strategies (manual promotion,
+Set both `requestRollout` and `forceRollout` to the same new UUID:
+
+```bash
+UUID="$(uuidgen)"
+kubectl patch materialize <instance-name> \
+  -n <materialize-instance-namespace> \
+  --type='merge' \
+  -p "{\"spec\": {\"requestRollout\": \"$UUID\", \"forceRollout\": \"$UUID\"}}"
+```
+
+See [Rollout behavior](#rollout-behavior) for what to expect. Verify the new
+`environmentd` and `clusterd` pods are only scheduled onto the new nodes.
+
+##### 4. Remove the old pool
+
+Once the rollout has completed, the old nodes have no Materialize workloads
+on them. Delete the old node pool using your cloud provider's tooling. For
+Karpenter-managed nodes, empty drifted nodes are consolidated away
+automatically.
+
+## Rollout behavior
+
+The default rollout strategy, `WaitUntilReady`, creates the new generation
+alongside the old, waits for it to catch up, then promotes it and tears down
+the old generation. This briefly doubles the resource footprint during the
+rollout (so make sure the new nodes have the capacity) but otherwise incurs
+minimal downtime. For other rollout strategies (manual promotion,
 immediate-with-downtime), see
 [Rollout Configuration](/self-managed-deployments/upgrading/#rollout-configuration).
 
@@ -464,31 +918,17 @@ kubectl get materialize <instance-name> -n <materialize-instance-namespace> -w
 kubectl get pods -n <materialize-instance-namespace> -o wide
 ```
 
-You should see the new generation pods come up on the new pool's nodes, the
+You should see the new generation pods come up on the new nodes, the
 `UpToDate` condition flip to `True`, and the old generation pods get
 terminated.
 
-### 4. Remove the old pool
-
-Once the rollout has completed, the old pool's nodes have no Materialize
-workloads on them. Remove the original node pool entry (or module call) from
-your Terraform configuration and apply.
-
-The destroy step now succeeds because the pool has no running workloads.
-
-### 5. Optional: rename the new pool back
-
-If you want the pool to keep the original name (for example because other
-Terraform or kubectl tooling references it), repeat the same pattern in
-reverse: add a third pool with the original name, roll out onto it, then drop
-the renamed pool. Otherwise, accept the new name and update any references.
-
 ## Why not change the VM type in place
 
-It's tempting to update the existing pool's `machine_type` / `vm_size` /
-`instance_types` and re-apply. The Terraform plan correctly shows `destroy +
-create`, but the apply gets stuck on the destroy because the pool still has
-running pods that nothing has moved off. You end up with an error like:
+For static node pools, it's tempting to update the existing pool's
+`machine_type` / `vm_size` / `instance_types` and re-apply. The Terraform
+plan correctly shows `destroy + create`, but the apply gets stuck on the
+destroy because the pool still has running pods that nothing has moved off.
+You end up with an error like:
 
 ```
 cannot update node types in pool

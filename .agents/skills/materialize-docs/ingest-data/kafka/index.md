@@ -433,110 +433,157 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
 **Public cluster:**
 
-<p>This section goes through the required steps to connect Materialize to an Amazon MSK cluster, including some of the more complicated bits around configuring security settings in Amazon MSK.</p>
-<p>If you already have an Amazon MSK cluster, you can skip step 1 and directly move
-on to <strong>Make the cluster public and enable SASL</strong> step. You can also skip steps
+This section goes through the required steps to connect Materialize to an Amazon MSK cluster, including some of the more complicated bits around configuring security settings in Amazon MSK.
+
+If you already have an Amazon MSK cluster, you can skip step 1 and directly move
+on to **Make the cluster public and enable SASL** step. You can also skip steps
 3 and 4 if you already have Apache Kafka installed and running, and have created
-a topic that you want to create a source for.</p>
-<p>The process to connect Materialize to Amazon MSK consists of the following steps:</p>
-<ol>
-<li>
-<p>Create an Amazon MSK cluster. If you already have an Amazon MSK cluster set
-up, then you can skip this step.</p>
-<p>a. Sign in to the AWS Management Console and open the <a href="https://console.aws.amazon.com/msk/" >Amazon MSK console</a></p>
-<p>b. Choose <strong>Create cluster</strong></p>
-<p>c. Enter a cluster name, and leave all other settings unchanged</p>
-<p>d. From the table under <strong>All cluster settings</strong>, copy the values of the following settings and save them because you need them later in this tutorial: <strong>VPC</strong>, <strong>Subnets</strong>, <strong>Security groups associated with VPC</strong></p>
-<p>e. Choose <strong>Create cluster</strong></p>
-<p><strong>Note:</strong> This creation can take about 15 minutes.</p>
-</li>
-<li>
-<p>Make the cluster public and enable SASL.</p>
-<h5 id="turn-on-sasl">Turn on SASL</h5>
-<p>a. Navigate to the <a href="https://console.aws.amazon.com/msk/" >Amazon MSK console</a></p>
-<p>b. Choose the MSK cluster you just created in Step 1</p>
-<p>c. Click on the <strong>Properties</strong> tab</p>
-<p>d. In the <strong>Security settings</strong> section, choose <strong>Edit</strong></p>
-<p>e. Check the checkbox next to <strong>SASL/SCRAM authentication</strong></p>
-<p>f. Click <strong>Save changes</strong></p>
-<p>You can find more details about updating a cluster&rsquo;s security configurations <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-update-security.html" >here</a>.</p>
-<h5 id="create-a-symmetric-key">Create a symmetric key</h5>
-<p>a. Now go to the <a href="https://console.aws.amazon.com/kms" >AWS Key Management Service (AWS KMS) console</a></p>
-<p>b. Click <strong>Create Key</strong></p>
-<p>c. Choose <strong>Symmetric</strong> and click <strong>Next</strong></p>
-<p>d. Give the key and <strong>Alias</strong> and click <strong>Next</strong></p>
-<p>e. Under Administrative permissions, check the checkbox next to the <strong>AWSServiceRoleForKafka</strong> and click <strong>Next</strong></p>
-<p>f. Under Key usage permissions, again check the checkbox next to the <strong>AWSServiceRoleForKafka</strong> and click <strong>Next</strong></p>
-<p>g. Click on <strong>Create secret</strong></p>
-<p>h. Review the details and click <strong>Finish</strong></p>
-<p>You can find more details about creating a symmetric key <a href="https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html#create-symmetric-cmk" >here</a>.</p>
-<h5 id="store-a-new-secret">Store a new Secret</h5>
-<p>a. Go to the <a href="https://console.aws.amazon.com/secretsmanager/" >AWS Secrets Manager console</a></p>
-<p>b. Click <strong>Store a new secret</strong></p>
-<p>c. Choose <strong>Other type of secret</strong> (e.g. API key) for the secret type</p>
-<p>d. Under <strong>Key/value pairs</strong> click on <strong>Plaintext</strong></p>
-<p>e. Paste the following in the space below it and replace <code>&lt;your-username&gt;</code> and <code>&lt;your-password&gt;</code> with the username and password you want to set for the cluster</p>
-<pre tabindex="0"><code>  {
-    &#34;username&#34;: &#34;&lt;your-username&gt;&#34;,
-    &#34;password&#34;: &#34;&lt;your-password&gt;&#34;
-  }
-</code></pre><p>f. On the next page, give a <strong>Secret name</strong> that starts with <code>AmazonMSK_</code></p>
-<p>g. Under <strong>Encryption Key</strong>, select the symmetric key you just created in the previous sub-section from the dropdown</p>
-<p>h. Go forward to the next steps and finish creating the secret. Once created, record the ARN (Amazon Resource Name) value for your secret</p>
-<p>You can find more details about creating a secret using AWS Secrets Manager <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-password.html" >here</a>.</p>
-<h5 id="associate-secret-with-msk-cluster">Associate secret with MSK cluster</h5>
-<p>a. Navigate back to the <a href="https://console.aws.amazon.com/msk/" >Amazon MSK console</a> and click on the cluster you created in Step 1</p>
-<p>b. Click on the <strong>Properties</strong> tab</p>
-<p>c. In the <strong>Security settings</strong> section, under <strong>SASL/SCRAM authentication</strong>, click on <strong>Associate secrets</strong></p>
-<p>d. Paste the ARN you recorded in the previous subsection and click <strong>Associate secrets</strong></p>
-<h5 id="create-the-clusters-configuration">Create the cluster&rsquo;s configuration</h5>
-<p>a. Go to the <a href="https://console.aws.amazon.com/cloudshell/" >Amazon CloudShell console</a></p>
-<p>b. Create a file (eg. <em>msk-config.txt</em>) with the following line</p>
-<pre tabindex="0"><code>  allow.everyone.if.no.acl.found = false
-</code></pre><p>c. Run the following AWS CLI command, replacing <code>&lt;config-file-path&gt;</code> with the path to the file where you saved your configuration in the previous step</p>
-<pre tabindex="0"><code>  aws kafka create-configuration --name &#34;MakePublic&#34; \
-  --description &#34;Set allow.everyone.if.no.acl.found = false&#34; \
-  --kafka-versions &#34;2.6.2&#34; \
-  --server-properties fileb://&lt;config-file-path&gt;/msk-config.txt
-</code></pre><p>You can find more information about making your cluster public <a href="https://docs.aws.amazon.com/msk/latest/developerguide/public-access.html" >here</a>.</p>
-</li>
-<li>
-<p>If you already have a client machine set up that can interact with your
-cluster, then you can skip this step.</p>
-<p>If not, you can create an EC2 client machine and then add the security group of the client to the inbound rules of the cluster&rsquo;s security group from the VPC console. You can find more details about how to do that <a href="https://docs.aws.amazon.com/msk/latest/developerguide/create-client-machine.html" >here</a>.</p>
-</li>
-<li>
-<p>Install Apache Kafka and create a topic. To start using Materialize with
-Apache Kafka, you need to create a Materialize source over an Apache Kafka
-topic. If you already have Apache Kafka installed and a topic created, you
-can skip this step.</p>
-<p>Otherwise, you can install Apache Kafka on your client machine from the previous step and create a topic. You can find more information about how to do that <a href="https://docs.aws.amazon.com/msk/latest/developerguide/create-topic.html" >here</a>.</p>
-</li>
-<li>
-<p>Create ACLs. As <code>allow.everyone.if.no.acl.found</code> is set to <code>false</code>, you must
-create ACLs for the cluster and topics configured in the previous step to
-set appropriate access permissions. For more information, see the <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-acls.html" >Amazon
-MSK</a>
-documentation.</p>
-</li>
-<li>
-<p>Create a connection in Materialize.</p>
-<p>a. Open the <a href="https://console.aws.amazon.com/msk/" >Amazon MSK console</a> and select your cluster</p>
-<p>b. Click on <strong>View client information</strong></p>
-<p>c. Copy the url under <strong>Private endpoint</strong> and against <strong>SASL/SCRAM</strong>. This will be your <code>&lt;broker-url&gt;</code> going forward.</p>
-<p>d. Connect to Materialize using the <a href="/console/" >SQL Shell</a>,
-or your preferred SQL client.</p>
-<p>e. Create a connection using the command below. The broker URL is what you copied in step c of this subsection. The <code>&lt;topic-name&gt;</code> is the name of the topic you created in Step 4. The <code>&lt;your-username&gt;</code> and <code>&lt;your-password&gt;</code> is from <em>Store a new secret</em> under Step 2.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">SECRET</span> <span class="n">msk_password</span> <span class="k">AS</span> <span class="s1">&#39;&lt;your-password&gt;&#39;</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CONNECTION</span> <span class="n">kafka_connection</span> <span class="k">TO</span> <span class="k">KAFKA</span> <span class="p">(</span>
-</span></span><span class="line"><span class="cl">    <span class="k">BROKER</span> <span class="s1">&#39;&lt;broker-url&gt;&#39;</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="k">SASL</span> <span class="k">MECHANISMS</span> <span class="o">=</span> <span class="s1">&#39;SCRAM-SHA-512&#39;</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="k">SASL</span> <span class="k">USERNAME</span> <span class="o">=</span> <span class="s1">&#39;&lt;your-username&gt;&#39;</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="k">SASL</span> <span class="k">PASSWORD</span> <span class="o">=</span> <span class="k">SECRET</span> <span class="n">msk_password</span>
-</span></span><span class="line"><span class="cl">  <span class="p">);</span>
-</span></span></code></pre></div></li>
-</ol>
+a topic that you want to create a source for.
+
+The process to connect Materialize to Amazon MSK consists of the following steps:
+1. Create an Amazon MSK cluster. If you already have an Amazon MSK cluster set
+   up, then you can skip this step.
+
+    a. Sign in to the AWS Management Console and open the [Amazon MSK console](https://console.aws.amazon.com/msk/)
+
+    b. Choose **Create cluster**
+
+    c. Enter a cluster name, and leave all other settings unchanged
+
+    d. From the table under **All cluster settings**, copy the values of the following settings and save them because you need them later in this tutorial: **VPC**, **Subnets**, **Security groups associated with VPC**
+
+    e. Choose **Create cluster**
+
+    **Note:** This creation can take about 15 minutes.
+
+1. Make the cluster public and enable SASL.
+    ##### Turn on SASL
+    a. Navigate to the [Amazon MSK console](https://console.aws.amazon.com/msk/)
+
+    b. Choose the MSK cluster you just created in Step 1
+
+    c. Click on the **Properties** tab
+
+    d. In the **Security settings** section, choose **Edit**
+
+    e. Check the checkbox next to **SASL/SCRAM authentication**
+
+    f. Click **Save changes**
+
+    You can find more details about updating a cluster's security configurations [here](https://docs.aws.amazon.com/msk/latest/developerguide/msk-update-security.html).
+
+    ##### Create a symmetric key
+    a. Now go to the [AWS Key Management Service (AWS KMS) console](https://console.aws.amazon.com/kms)
+
+    b. Click **Create Key**
+
+    c. Choose **Symmetric** and click **Next**
+
+    d. Give the key and **Alias** and click **Next**
+
+    e. Under Administrative permissions, check the checkbox next to the **AWSServiceRoleForKafka** and click **Next**
+
+    f. Under Key usage permissions, again check the checkbox next to the **AWSServiceRoleForKafka** and click **Next**
+
+    g. Click on **Create secret**
+
+    h. Review the details and click **Finish**
+
+    You can find more details about creating a symmetric key [here](https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html#create-symmetric-cmk).
+
+    ##### Store a new Secret
+    a. Go to the [AWS Secrets Manager console](https://console.aws.amazon.com/secretsmanager/)
+
+    b. Click **Store a new secret**
+
+    c. Choose **Other type of secret** (e.g. API key) for the secret type
+
+    d. Under **Key/value pairs** click on **Plaintext**
+
+    e. Paste the following in the space below it and replace `<your-username>` and `<your-password>` with the username and password you want to set for the cluster
+      ```
+        {
+          "username": "<your-username>",
+          "password": "<your-password>"
+        }
+      ```
+
+    f. On the next page, give a **Secret name** that starts with `AmazonMSK_`
+
+    g. Under **Encryption Key**, select the symmetric key you just created in the previous sub-section from the dropdown
+
+    h. Go forward to the next steps and finish creating the secret. Once created, record the ARN (Amazon Resource Name) value for your secret
+
+    You can find more details about creating a secret using AWS Secrets Manager [here](https://docs.aws.amazon.com/msk/latest/developerguide/msk-password.html).
+
+    ##### Associate secret with MSK cluster
+    a. Navigate back to the [Amazon MSK console](https://console.aws.amazon.com/msk/) and click on the cluster you created in Step 1
+
+    b. Click on the **Properties** tab
+
+    c. In the **Security settings** section, under **SASL/SCRAM authentication**, click on **Associate secrets**
+
+    d. Paste the ARN you recorded in the previous subsection and click **Associate secrets**
+
+    ##### Create the cluster's configuration
+    a. Go to the [Amazon CloudShell console](https://console.aws.amazon.com/cloudshell/)
+
+    b. Create a file (eg. _msk-config.txt_) with the following line
+      ```
+        allow.everyone.if.no.acl.found = false
+      ```
+
+    c. Run the following AWS CLI command, replacing `<config-file-path>` with the path to the file where you saved your configuration in the previous step
+    ```
+      aws kafka create-configuration --name "MakePublic" \
+      --description "Set allow.everyone.if.no.acl.found = false" \
+      --kafka-versions "2.6.2" \
+      --server-properties fileb://<config-file-path>/msk-config.txt
+    ```
+
+    You can find more information about making your cluster public [here](https://docs.aws.amazon.com/msk/latest/developerguide/public-access.html).
+
+1. If you already have a client machine set up that can interact with your
+   cluster, then you can skip this step.
+
+    If not, you can create an EC2 client machine and then add the security group of the client to the inbound rules of the cluster's security group from the VPC console. You can find more details about how to do that [here](https://docs.aws.amazon.com/msk/latest/developerguide/create-client-machine.html).
+
+1. Install Apache Kafka and create a topic. To start using Materialize with
+    Apache Kafka, you need to create a Materialize source over an Apache Kafka
+    topic. If you already have Apache Kafka installed and a topic created, you
+    can skip this step.
+
+    Otherwise, you can install Apache Kafka on your client machine from the previous step and create a topic. You can find more information about how to do that [here](https://docs.aws.amazon.com/msk/latest/developerguide/create-topic.html).
+
+1. Create ACLs. As `allow.everyone.if.no.acl.found` is set to `false`, you must
+    create ACLs for the cluster and topics configured in the previous step to
+    set appropriate access permissions. For more information, see the [Amazon
+    MSK](https://docs.aws.amazon.com/msk/latest/developerguide/msk-acls.html)
+    documentation.
+
+1. Create a connection in Materialize.
+
+    a. Open the [Amazon MSK console](https://console.aws.amazon.com/msk/) and select your cluster
+
+    b. Click on **View client information**
+
+    c. Copy the url under **Private endpoint** and against **SASL/SCRAM**. This will be your `<broker-url>` going forward.
+
+    d. Connect to Materialize using the [SQL Shell](/console/),
+       or your preferred SQL client.
+
+    e. Create a connection using the command below. The broker URL is what you copied in step c of this subsection. The `<topic-name>` is the name of the topic you created in Step 4. The `<your-username>` and `<your-password>` is from _Store a new secret_ under Step 2.
+
+      ```mzsql
+      CREATE SECRET msk_password AS '<your-password>';
+
+      CREATE CONNECTION kafka_connection TO KAFKA (
+          BROKER '<broker-url>',
+          SASL MECHANISMS = 'SCRAM-SHA-512',
+          SASL USERNAME = '<your-username>',
+          SASL PASSWORD = SECRET msk_password
+        );
+      ```
 
 **Self-Managed:**
 Configure your Kafka network to allow Materialize to connect:
@@ -678,110 +725,157 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
 **Public cluster:**
 
-<p>This section goes through the required steps to connect Materialize to an Amazon MSK cluster, including some of the more complicated bits around configuring security settings in Amazon MSK.</p>
-<p>If you already have an Amazon MSK cluster, you can skip step 1 and directly move
-on to <strong>Make the cluster public and enable SASL</strong> step. You can also skip steps
+This section goes through the required steps to connect Materialize to an Amazon MSK cluster, including some of the more complicated bits around configuring security settings in Amazon MSK.
+
+If you already have an Amazon MSK cluster, you can skip step 1 and directly move
+on to **Make the cluster public and enable SASL** step. You can also skip steps
 3 and 4 if you already have Apache Kafka installed and running, and have created
-a topic that you want to create a source for.</p>
-<p>The process to connect Materialize to Amazon MSK consists of the following steps:</p>
-<ol>
-<li>
-<p>Create an Amazon MSK cluster. If you already have an Amazon MSK cluster set
-up, then you can skip this step.</p>
-<p>a. Sign in to the AWS Management Console and open the <a href="https://console.aws.amazon.com/msk/" >Amazon MSK console</a></p>
-<p>b. Choose <strong>Create cluster</strong></p>
-<p>c. Enter a cluster name, and leave all other settings unchanged</p>
-<p>d. From the table under <strong>All cluster settings</strong>, copy the values of the following settings and save them because you need them later in this tutorial: <strong>VPC</strong>, <strong>Subnets</strong>, <strong>Security groups associated with VPC</strong></p>
-<p>e. Choose <strong>Create cluster</strong></p>
-<p><strong>Note:</strong> This creation can take about 15 minutes.</p>
-</li>
-<li>
-<p>Make the cluster public and enable SASL.</p>
-<h5 id="turn-on-sasl">Turn on SASL</h5>
-<p>a. Navigate to the <a href="https://console.aws.amazon.com/msk/" >Amazon MSK console</a></p>
-<p>b. Choose the MSK cluster you just created in Step 1</p>
-<p>c. Click on the <strong>Properties</strong> tab</p>
-<p>d. In the <strong>Security settings</strong> section, choose <strong>Edit</strong></p>
-<p>e. Check the checkbox next to <strong>SASL/SCRAM authentication</strong></p>
-<p>f. Click <strong>Save changes</strong></p>
-<p>You can find more details about updating a cluster&rsquo;s security configurations <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-update-security.html" >here</a>.</p>
-<h5 id="create-a-symmetric-key">Create a symmetric key</h5>
-<p>a. Now go to the <a href="https://console.aws.amazon.com/kms" >AWS Key Management Service (AWS KMS) console</a></p>
-<p>b. Click <strong>Create Key</strong></p>
-<p>c. Choose <strong>Symmetric</strong> and click <strong>Next</strong></p>
-<p>d. Give the key and <strong>Alias</strong> and click <strong>Next</strong></p>
-<p>e. Under Administrative permissions, check the checkbox next to the <strong>AWSServiceRoleForKafka</strong> and click <strong>Next</strong></p>
-<p>f. Under Key usage permissions, again check the checkbox next to the <strong>AWSServiceRoleForKafka</strong> and click <strong>Next</strong></p>
-<p>g. Click on <strong>Create secret</strong></p>
-<p>h. Review the details and click <strong>Finish</strong></p>
-<p>You can find more details about creating a symmetric key <a href="https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html#create-symmetric-cmk" >here</a>.</p>
-<h5 id="store-a-new-secret">Store a new Secret</h5>
-<p>a. Go to the <a href="https://console.aws.amazon.com/secretsmanager/" >AWS Secrets Manager console</a></p>
-<p>b. Click <strong>Store a new secret</strong></p>
-<p>c. Choose <strong>Other type of secret</strong> (e.g. API key) for the secret type</p>
-<p>d. Under <strong>Key/value pairs</strong> click on <strong>Plaintext</strong></p>
-<p>e. Paste the following in the space below it and replace <code>&lt;your-username&gt;</code> and <code>&lt;your-password&gt;</code> with the username and password you want to set for the cluster</p>
-<pre tabindex="0"><code>  {
-    &#34;username&#34;: &#34;&lt;your-username&gt;&#34;,
-    &#34;password&#34;: &#34;&lt;your-password&gt;&#34;
-  }
-</code></pre><p>f. On the next page, give a <strong>Secret name</strong> that starts with <code>AmazonMSK_</code></p>
-<p>g. Under <strong>Encryption Key</strong>, select the symmetric key you just created in the previous sub-section from the dropdown</p>
-<p>h. Go forward to the next steps and finish creating the secret. Once created, record the ARN (Amazon Resource Name) value for your secret</p>
-<p>You can find more details about creating a secret using AWS Secrets Manager <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-password.html" >here</a>.</p>
-<h5 id="associate-secret-with-msk-cluster">Associate secret with MSK cluster</h5>
-<p>a. Navigate back to the <a href="https://console.aws.amazon.com/msk/" >Amazon MSK console</a> and click on the cluster you created in Step 1</p>
-<p>b. Click on the <strong>Properties</strong> tab</p>
-<p>c. In the <strong>Security settings</strong> section, under <strong>SASL/SCRAM authentication</strong>, click on <strong>Associate secrets</strong></p>
-<p>d. Paste the ARN you recorded in the previous subsection and click <strong>Associate secrets</strong></p>
-<h5 id="create-the-clusters-configuration">Create the cluster&rsquo;s configuration</h5>
-<p>a. Go to the <a href="https://console.aws.amazon.com/cloudshell/" >Amazon CloudShell console</a></p>
-<p>b. Create a file (eg. <em>msk-config.txt</em>) with the following line</p>
-<pre tabindex="0"><code>  allow.everyone.if.no.acl.found = false
-</code></pre><p>c. Run the following AWS CLI command, replacing <code>&lt;config-file-path&gt;</code> with the path to the file where you saved your configuration in the previous step</p>
-<pre tabindex="0"><code>  aws kafka create-configuration --name &#34;MakePublic&#34; \
-  --description &#34;Set allow.everyone.if.no.acl.found = false&#34; \
-  --kafka-versions &#34;2.6.2&#34; \
-  --server-properties fileb://&lt;config-file-path&gt;/msk-config.txt
-</code></pre><p>You can find more information about making your cluster public <a href="https://docs.aws.amazon.com/msk/latest/developerguide/public-access.html" >here</a>.</p>
-</li>
-<li>
-<p>If you already have a client machine set up that can interact with your
-cluster, then you can skip this step.</p>
-<p>If not, you can create an EC2 client machine and then add the security group of the client to the inbound rules of the cluster&rsquo;s security group from the VPC console. You can find more details about how to do that <a href="https://docs.aws.amazon.com/msk/latest/developerguide/create-client-machine.html" >here</a>.</p>
-</li>
-<li>
-<p>Install Apache Kafka and create a topic. To start using Materialize with
-Apache Kafka, you need to create a Materialize source over an Apache Kafka
-topic. If you already have Apache Kafka installed and a topic created, you
-can skip this step.</p>
-<p>Otherwise, you can install Apache Kafka on your client machine from the previous step and create a topic. You can find more information about how to do that <a href="https://docs.aws.amazon.com/msk/latest/developerguide/create-topic.html" >here</a>.</p>
-</li>
-<li>
-<p>Create ACLs. As <code>allow.everyone.if.no.acl.found</code> is set to <code>false</code>, you must
-create ACLs for the cluster and topics configured in the previous step to
-set appropriate access permissions. For more information, see the <a href="https://docs.aws.amazon.com/msk/latest/developerguide/msk-acls.html" >Amazon
-MSK</a>
-documentation.</p>
-</li>
-<li>
-<p>Create a connection in Materialize.</p>
-<p>a. Open the <a href="https://console.aws.amazon.com/msk/" >Amazon MSK console</a> and select your cluster</p>
-<p>b. Click on <strong>View client information</strong></p>
-<p>c. Copy the url under <strong>Private endpoint</strong> and against <strong>SASL/SCRAM</strong>. This will be your <code>&lt;broker-url&gt;</code> going forward.</p>
-<p>d. Connect to Materialize using the <a href="/console/" >SQL Shell</a>,
-or your preferred SQL client.</p>
-<p>e. Create a connection using the command below. The broker URL is what you copied in step c of this subsection. The <code>&lt;topic-name&gt;</code> is the name of the topic you created in Step 4. The <code>&lt;your-username&gt;</code> and <code>&lt;your-password&gt;</code> is from <em>Store a new secret</em> under Step 2.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">SECRET</span> <span class="n">msk_password</span> <span class="k">AS</span> <span class="s1">&#39;&lt;your-password&gt;&#39;</span><span class="p">;</span>
-</span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="k">CREATE</span> <span class="k">CONNECTION</span> <span class="n">kafka_connection</span> <span class="k">TO</span> <span class="k">KAFKA</span> <span class="p">(</span>
-</span></span><span class="line"><span class="cl">    <span class="k">BROKER</span> <span class="s1">&#39;&lt;broker-url&gt;&#39;</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="k">SASL</span> <span class="k">MECHANISMS</span> <span class="o">=</span> <span class="s1">&#39;SCRAM-SHA-512&#39;</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="k">SASL</span> <span class="k">USERNAME</span> <span class="o">=</span> <span class="s1">&#39;&lt;your-username&gt;&#39;</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="k">SASL</span> <span class="k">PASSWORD</span> <span class="o">=</span> <span class="k">SECRET</span> <span class="n">msk_password</span>
-</span></span><span class="line"><span class="cl">  <span class="p">);</span>
-</span></span></code></pre></div></li>
-</ol>
+a topic that you want to create a source for.
+
+The process to connect Materialize to Amazon MSK consists of the following steps:
+1. Create an Amazon MSK cluster. If you already have an Amazon MSK cluster set
+   up, then you can skip this step.
+
+    a. Sign in to the AWS Management Console and open the [Amazon MSK console](https://console.aws.amazon.com/msk/)
+
+    b. Choose **Create cluster**
+
+    c. Enter a cluster name, and leave all other settings unchanged
+
+    d. From the table under **All cluster settings**, copy the values of the following settings and save them because you need them later in this tutorial: **VPC**, **Subnets**, **Security groups associated with VPC**
+
+    e. Choose **Create cluster**
+
+    **Note:** This creation can take about 15 minutes.
+
+1. Make the cluster public and enable SASL.
+    ##### Turn on SASL
+    a. Navigate to the [Amazon MSK console](https://console.aws.amazon.com/msk/)
+
+    b. Choose the MSK cluster you just created in Step 1
+
+    c. Click on the **Properties** tab
+
+    d. In the **Security settings** section, choose **Edit**
+
+    e. Check the checkbox next to **SASL/SCRAM authentication**
+
+    f. Click **Save changes**
+
+    You can find more details about updating a cluster's security configurations [here](https://docs.aws.amazon.com/msk/latest/developerguide/msk-update-security.html).
+
+    ##### Create a symmetric key
+    a. Now go to the [AWS Key Management Service (AWS KMS) console](https://console.aws.amazon.com/kms)
+
+    b. Click **Create Key**
+
+    c. Choose **Symmetric** and click **Next**
+
+    d. Give the key and **Alias** and click **Next**
+
+    e. Under Administrative permissions, check the checkbox next to the **AWSServiceRoleForKafka** and click **Next**
+
+    f. Under Key usage permissions, again check the checkbox next to the **AWSServiceRoleForKafka** and click **Next**
+
+    g. Click on **Create secret**
+
+    h. Review the details and click **Finish**
+
+    You can find more details about creating a symmetric key [here](https://docs.aws.amazon.com/kms/latest/developerguide/create-keys.html#create-symmetric-cmk).
+
+    ##### Store a new Secret
+    a. Go to the [AWS Secrets Manager console](https://console.aws.amazon.com/secretsmanager/)
+
+    b. Click **Store a new secret**
+
+    c. Choose **Other type of secret** (e.g. API key) for the secret type
+
+    d. Under **Key/value pairs** click on **Plaintext**
+
+    e. Paste the following in the space below it and replace `<your-username>` and `<your-password>` with the username and password you want to set for the cluster
+      ```
+        {
+          "username": "<your-username>",
+          "password": "<your-password>"
+        }
+      ```
+
+    f. On the next page, give a **Secret name** that starts with `AmazonMSK_`
+
+    g. Under **Encryption Key**, select the symmetric key you just created in the previous sub-section from the dropdown
+
+    h. Go forward to the next steps and finish creating the secret. Once created, record the ARN (Amazon Resource Name) value for your secret
+
+    You can find more details about creating a secret using AWS Secrets Manager [here](https://docs.aws.amazon.com/msk/latest/developerguide/msk-password.html).
+
+    ##### Associate secret with MSK cluster
+    a. Navigate back to the [Amazon MSK console](https://console.aws.amazon.com/msk/) and click on the cluster you created in Step 1
+
+    b. Click on the **Properties** tab
+
+    c. In the **Security settings** section, under **SASL/SCRAM authentication**, click on **Associate secrets**
+
+    d. Paste the ARN you recorded in the previous subsection and click **Associate secrets**
+
+    ##### Create the cluster's configuration
+    a. Go to the [Amazon CloudShell console](https://console.aws.amazon.com/cloudshell/)
+
+    b. Create a file (eg. _msk-config.txt_) with the following line
+      ```
+        allow.everyone.if.no.acl.found = false
+      ```
+
+    c. Run the following AWS CLI command, replacing `<config-file-path>` with the path to the file where you saved your configuration in the previous step
+    ```
+      aws kafka create-configuration --name "MakePublic" \
+      --description "Set allow.everyone.if.no.acl.found = false" \
+      --kafka-versions "2.6.2" \
+      --server-properties fileb://<config-file-path>/msk-config.txt
+    ```
+
+    You can find more information about making your cluster public [here](https://docs.aws.amazon.com/msk/latest/developerguide/public-access.html).
+
+1. If you already have a client machine set up that can interact with your
+   cluster, then you can skip this step.
+
+    If not, you can create an EC2 client machine and then add the security group of the client to the inbound rules of the cluster's security group from the VPC console. You can find more details about how to do that [here](https://docs.aws.amazon.com/msk/latest/developerguide/create-client-machine.html).
+
+1. Install Apache Kafka and create a topic. To start using Materialize with
+    Apache Kafka, you need to create a Materialize source over an Apache Kafka
+    topic. If you already have Apache Kafka installed and a topic created, you
+    can skip this step.
+
+    Otherwise, you can install Apache Kafka on your client machine from the previous step and create a topic. You can find more information about how to do that [here](https://docs.aws.amazon.com/msk/latest/developerguide/create-topic.html).
+
+1. Create ACLs. As `allow.everyone.if.no.acl.found` is set to `false`, you must
+    create ACLs for the cluster and topics configured in the previous step to
+    set appropriate access permissions. For more information, see the [Amazon
+    MSK](https://docs.aws.amazon.com/msk/latest/developerguide/msk-acls.html)
+    documentation.
+
+1. Create a connection in Materialize.
+
+    a. Open the [Amazon MSK console](https://console.aws.amazon.com/msk/) and select your cluster
+
+    b. Click on **View client information**
+
+    c. Copy the url under **Private endpoint** and against **SASL/SCRAM**. This will be your `<broker-url>` going forward.
+
+    d. Connect to Materialize using the [SQL Shell](/console/),
+       or your preferred SQL client.
+
+    e. Create a connection using the command below. The broker URL is what you copied in step c of this subsection. The `<topic-name>` is the name of the topic you created in Step 4. The `<your-username>` and `<your-password>` is from _Store a new secret_ under Step 2.
+
+      ```mzsql
+      CREATE SECRET msk_password AS '<your-password>';
+
+      CREATE CONNECTION kafka_connection TO KAFKA (
+          BROKER '<broker-url>',
+          SASL MECHANISMS = 'SCRAM-SHA-512',
+          SASL USERNAME = '<your-username>',
+          SASL PASSWORD = SECRET msk_password
+        );
+      ```
 
 ## Creating a source
 
@@ -790,14 +884,36 @@ multiple [`CREATE SOURCE`](/sql/create-source/kafka/) statements. By default,
 the source will be created in the active cluster; to use a different cluster,
 use the `IN CLUSTER` clause.
 
+**Legacy Syntax:**
+
+With the legacy syntax, the source decodes the topic directly and is itself
+queryable. Picking up an upstream schema change requires dropping and recreating
+the source, which incurs downtime.
+
 ```mzsql
 CREATE SOURCE json_source
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
-  FORMAT JSON;
+    FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+    FORMAT JSON;
 ```
 
-If the command executes without an error and outputs _CREATE SOURCE_, it means
-that you have successfully connected Materialize to your cluster.
+**New Syntax:**
+
+With the new syntax, create a source for the topic and then a table that decodes
+it. Each table pins its own reader schema, which lets you pick up upstream schema
+changes without downtime. For details, see [Handle upstream schema changes with
+zero downtime](/ingest-data/kafka/source-versioning/).
+
+```mzsql
+CREATE SOURCE json_source
+    FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic');
+
+CREATE TABLE json_table
+    FROM SOURCE json_source
+    FORMAT JSON;
+```
+
+If the command executes without an error, it means that you have successfully
+connected Materialize to your cluster.
 
 ## Related pages
 
@@ -819,73 +935,69 @@ Cloud Kafka cluster.
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 
 If you already have a Confluent Cloud Kafka cluster, you can skip step 1 and
-directly move on to [Create an API Key](#create-an-api-key). You can also skip
+directly move on to [Create an API Key](#2-create-an-api-key). You can also skip
 step 3 if you already have a Confluent Cloud Kafka cluster up and running, and
 have created a topic that you want to create a source for.
 
 The process to connect Materialize to a Confluent Cloud Kafka cluster consists
 of the following steps:
 
-1. #### Create a Confluent Cloud Kafka cluster
+## 1. Create a Confluent Cloud Kafka cluster
 
-    If you already have a Confluent Cloud Kafka cluster set up, then you can
-    skip this step.
+If you already have a Confluent Cloud Kafka cluster set up, then you can skip
+this step.
 
-    a. Sign in to [Confluent Cloud](https://confluent.cloud/)
+1. Sign in to [Confluent Cloud](https://confluent.cloud/)
 
-    b. Choose **Create a new cluster**
+1. Choose **Create a new cluster**
 
-    c. Select the cluster type, and specify the rest of the settings based on
-    your needs
+1. Select the cluster type, and specify the rest of the settings based on your
+   needs
 
-    d. Choose **Create cluster**
+1. Choose **Create cluster**
 
-    **Note:** This creation can take about 10 minutes. For more information on the cluster creation, see [Confluent Cloud documentation](https://docs.confluent.io/cloud/current/get-started/index.html#step-1-create-a-ak-cluster-in-ccloud).
+**Note:** This creation can take about 10 minutes. For more information on the cluster creation, see [Confluent Cloud documentation](https://docs.confluent.io/cloud/current/get-started/index.html#step-1-create-a-ak-cluster-in-ccloud).
 
-2. #### Create an API Key
+## 2. Create an API Key
 
-    ##### API Key
+1. Navigate to the [Confluent Cloud dashboard](https://confluent.cloud/)
+1. Choose the Confluent Cloud Kafka cluster you just created in Step 1
+1. Click on the **API Keys** tab
+1. In the **API Keys** section, choose **Add Key**
 
-    a. Navigate to the [Confluent Cloud dashboard](https://confluent.cloud/)
+1. Specify the scope for the API key and then click **Create Key**. If you
+choose to create a _granular access_ API key, make sure to create a
+[service account](https://docs.confluent.io/cloud/current/access-managementidentity/service-accountshtml#create-a-service-account-using-the-ccloud-console)
+and add an [ACL](https://docs.confluent.io/cloud/current/access-managementaccess-control/acl.html#use-access-control-lists-acls-for-ccloud)
+with `Read` access to the topic you want to create a source for.
+Take note of the API Key you just created, as well as the API Key secret
+key; you'll need them later on. Keep in mind that the API Key secret key
+contains sensitive information, and you should store it somewhere safe!
 
-    b. Choose the Confluent Cloud Kafka cluster you just created in Step 1
+## 3. Create a topic
 
-    c. Click on the **API Keys** tab
+To start using Materialize with Confluent Cloud, you need to point it to an
+existing Kafka topic you want to read data from.
 
-    d. In the **API Keys** section, choose **Add Key**
+If you already have a topic created, you can skip this step.
 
-    e. Specify the scope for the API key and then click **Create Key**. If you
-    choose to create a _granular access_ API key, make sure to create a
-    [service account](https://docs.confluent.io/cloud/current/access-management/identity/service-accounts.html#create-a-service-account-using-the-ccloud-console)
-    and add an [ACL](https://docs.confluent.io/cloud/current/access-management/access-control/acl.html#use-access-control-lists-acls-for-ccloud)
-    with `Read` access to the topic you want to create a source for.
+Otherwise, you can find more information about how to do that [here](https://docs.confluent.io/cloud/current/get-started/indexhtml#step-2-create-a-ak-topic).
 
-    Take note of the API Key you just created, as well as the API Key secret
-    key; you'll need them later on. Keep in mind that the API Key secret key
-    contains sensitive information, and you should store it somewhere safe!
+## 4. Create a connection in Materialize
 
-3. #### Create a topic
+1. Open the [Confluent Cloud dashboard](https://confluent.cloud/) and select
+   your cluster.
 
-    To start using Materialize with Confluent Cloud, you need to point it to an
-    existing Kafka topic you want to read data from.
+1. Click on **Overview** and select **Cluster settings**.
 
-    If you already have a topic created, you can skip this step.
+1. Copy the URL under **Bootstrap server**. This will be your `<broker-url>`
+   going forward.
 
-    Otherwise, you can find more information about how to do that [here](https://docs.confluent.io/cloud/current/get-started/index.html#step-2-create-a-ak-topic).
+1. Connect to Materialize using the [SQL Shell](/console/), or your preferred
+   SQL client.
 
-4. #### Create a connection in Materialize
-
-    a. Open the [Confluent Cloud dashboard](https://confluent.cloud/) and select your cluster.
-
-    b. Click on **Overview** and select **Cluster settings**.
-
-    c. Copy the URL under **Bootstrap server**. This will be your `<broker-url>` going forward.
-
-    d. Connect to Materialize using the [SQL Shell](/console/),
-       or your preferred SQL client.
-
-    e. Create the connection. The exact steps depend on your networking
-    configuration, so start by selecting the relevant option.
+1. Create the connection. The exact steps depend on your networking
+   configuration, so start by selecting the relevant option.
 
 **Public:**
 
@@ -904,21 +1016,21 @@ CREATE CONNECTION confluent_cloud TO KAFKA (
 **PrivateLink:**
 
 [AWS PrivateLink](https://aws.amazon.com/privatelink/) lets you connect
-Materialize to your Confluent Cloud cluster without exposing traffic to the
+Materialize to your Confluent Cloud cluster without exposing traffic tothe
 public internet.
 
-1. In the [Confluent Cloud console](https://confluent.cloud/), navigate to
+1. In the [Confluent Cloud console](https://confluent.cloud/), navigateto
 your cluster's **Networking** settings and set up a PrivateLink endpoint.
 Record the **VPC Endpoint Service Name** and the **DNS domain**.
 
 1. In the Materialize [SQL shell](/console/), create a
-[PrivateLink connection](/ingest-data/network-security/privatelink/) using
+[PrivateLink connection](/ingest-data/network-security/privatelink/)using
 the service name from the previous step. Be sure to specify **all
 availability zones** of your Confluent Cloud cluster.
 
     ```mzsql
     CREATE CONNECTION confluent_privatelink TO AWS PRIVATELINK (
-        SERVICE NAME 'com.amazonaws.vpce.us-east-1.vpce-svc-0e123abc123198abc',
+        SERVICE NAME 'com.amazonaws.vpceus-east-1vpce-svc-0e123abc123198abc',
         AVAILABILITY ZONES ('use1-az1', 'use1-az4', 'use1-az6')
     );
     ```
@@ -932,7 +1044,7 @@ availability zones** of your Confluent Cloud cluster.
     WHERE c.name = 'confluent_privatelink';
     ```
 
-1. In the Confluent Cloud console, add the AWS principal to the PrivateLink
+1. In the Confluent Cloud console, add the AWS principal to thePrivateLink
 access list.
 
 1. In Materialize, validate the PrivateLink connection:
@@ -943,11 +1055,11 @@ access list.
 
     If no validation error is returned, move to the next step.
 
-1. Create the Kafka connection. The static broker (used for bootstrapping)
+1. Create the Kafka connection. The static broker (used forbootstrapping)
 does not need an `AVAILABILITY ZONE` — Materialize will find it across
-availability zones. The `MATCHING` rules should specify `AVAILABILITY ZONE`
+availability zones. The `MATCHING` rules should specify `AVAILABILITYZONE`
 to route discovered brokers through their specific AZ endpoint. The
-availability zones in the `MATCHING` rules must match the AZs where Confluent
+availability zones in the `MATCHING` rules must match the AZs whereConfluent
 has deployed brokers. For best results, deploy brokers across 3 AZs and
 select those same AZs during the Confluent PrivateLink ingress setup.
 
@@ -957,10 +1069,10 @@ select those same AZs during the Confluent PrivateLink ingress setup.
 
     CREATE CONNECTION confluent_cloud TO KAFKA (
         BROKERS (
-            '<confluent-broker-url>' USING AWS PRIVATELINK confluent_privatelink,
-            MATCHING '*.use1-az1.*' USING AWS PRIVATELINK confluent_privatelink (AVAILABILITY ZONE = 'use1-az1'),
-            MATCHING '*.use1-az4.*' USING AWS PRIVATELINK confluent_privatelink (AVAILABILITY ZONE = 'use1-az4'),
-            MATCHING '*.use1-az6.*' USING AWS PRIVATELINK confluent_privatelink (AVAILABILITY ZONE = 'use1-az6')
+            '<confluent-broker-url>' USING AWS PRIVATELINK      confluent_privatelink,
+            MATCHING '*.use1-az1.*' USING AWSPRIVATELINKconfluent_privatelink        (AVAILABILITY ZONE='use1-az1'),
+            MATCHING '*.use1-az4.*' USING AWSPRIVATELINKconfluent_privatelink        (AVAILABILITY ZONE='use1-az4'),
+            MATCHING '*.use1-az6.*' USING AWSPRIVATELINKconfluent_privatelink        (AVAILABILITY ZONE ='use1-az6')
         ),
         SASL MECHANISMS = 'PLAIN',
         SASL USERNAME = SECRET confluent_username,
@@ -969,29 +1081,236 @@ select those same AZs during the Confluent PrivateLink ingress setup.
     ```
 
     The `MATCHING` patterns correspond to the AZ-specific DNS subdomains
-    from your Confluent Cloud networking settings. Adjust the patterns and
+    from your Confluent Cloud networking settings. Adjust the patternsand
     availability zones to match your cluster's configuration.
 
-5. #### Start ingesting data
+## 5. Start ingesting data
 
-    Once you have created the connection, create a source and start ingesting
-    data from your topic. By default, the source will be created in the active
-    cluster; to use a different cluster, use the `IN CLUSTER` clause.
+Once you have created the connection, create a source and start ingesting data
+from your topic. By default, the source will be created in the active cluster;
+to use a different cluster, use the `IN CLUSTER` clause.
 
-    ```mzsql
-    CREATE SOURCE confluent_source
-        FROM KAFKA CONNECTION confluent_cloud (TOPIC '<topic-name>')
-        FORMAT JSON;
-    ```
+**Legacy Syntax:**
 
-    If the command executes without an error and outputs _CREATE SOURCE_, it
-    means that you have successfully connected Materialize to your Confluent
-    Cloud Kafka cluster.
+With the legacy syntax, the source decodes the topic directly and is itself
+queryable. Picking up an upstream schema change requires dropping and recreating
+the source, which incurs downtime.
 
-    **Note:** The example above used `JSON`, but you can also ingest Kafka messages
-    formatted in other supported formats; e.g., [Avro and CSV](/sql/create-source/kafka/#syntax).
-    You can find more details about the various different supported formats and
-    possible configurations in the [reference documentation](/sql/create-source/kafka/).
+```mzsql
+CREATE SOURCE confluent_source
+    FROM KAFKA CONNECTION confluent_cloud (TOPIC '<topic-name>')
+    FORMAT JSON;
+```
+
+**New Syntax:**
+
+With the new syntax, create a source for the topic and then a table that decodes
+it. Each table pins its own reader schema, which lets you pick up upstream schema
+changes without downtime. For details, see [Handle upstream schema changes with
+zero downtime](/ingest-data/kafka/source-versioning/).
+
+```mzsql
+CREATE SOURCE confluent_source
+    FROM KAFKA CONNECTION confluent_cloud (TOPIC '<topic-name>');
+
+CREATE TABLE confluent_table
+    FROM SOURCE confluent_source
+    FORMAT JSON;
+```
+
+If the command executes without an error, it means that you have successfully
+connected Materialize to your Confluent Cloud Kafka cluster.
+
+**Note:** The examples above use `JSON`, but you can also ingest Kafka messages
+formatted in other supported formats; e.g., [Avro and
+CSV](/sql/create-source/kafka/#syntax). You can find more details about the
+various different supported formats and possible configurations in the
+[reference documentation](/sql/create-source/kafka/).
+
+---
+
+## Guide: Handle upstream schema changes with zero downtime
+
+Materialize resolves the Avro schema of a Kafka topic when you create a table
+from the source, and pins that reader schema to the table. Compatible upstream
+schema changes continue to decode, but a table does not expose fields that were
+added after it was created.
+
+This guide walks you through how to pick up an upstream schema change without any
+downtime in Materialize, using a blue/green cutover:
+
+- Create a new table that reads the evolved schema.
+- Recreate the downstream objects against the new table.
+- Swap the new objects into place with [`ALTER SCHEMA ... SWAP WITH`](/sql/alter-schema/).
+
+Consumers keep referencing the same object names, and the cutover is atomic.
+
+## Prerequisites
+
+Some familiarity with Materialize. If you've never used Materialize before,
+start with our [guide to getting started](/get-started/quickstart/).
+
+### Set up a Kafka topic
+
+For this guide, set up an Avro-formatted Kafka topic `orders` whose value schema
+is registered in a Confluent Schema Registry. The initial schema has two fields:
+
+```json
+{
+    "type": "record",
+    "name": "order",
+    "fields": [
+        { "name": "id", "type": "long" },
+        { "name": "item", "type": "string" }
+    ]
+}
+```
+
+Produce a few records using this schema.
+
+### Connect your Kafka broker and schema registry to Materialize
+
+In Materialize, create a [connection](/sql/create-connection/) to your Kafka
+broker and to your Confluent Schema Registry:
+
+```mzsql
+CREATE CONNECTION kafka_conn TO KAFKA (
+    BROKER '<broker>',
+    SECURITY PROTOCOL PLAINTEXT
+);
+
+CREATE CONNECTION csr_conn TO CONFLUENT SCHEMA REGISTRY (
+    URL '<schema-registry-url>'
+);
+```
+
+## Create a source
+
+Create a Kafka [source](/sql/create-source/kafka/). The source connects to the
+topic but does not decode it. Each table you create from the source carries its
+own format.
+
+```mzsql
+CREATE SOURCE orders_src
+    FROM KAFKA CONNECTION kafka_conn (TOPIC 'orders');
+```
+
+## Create a table from the source
+
+To start ingesting the topic, create a table from the source. We'll add it into
+a `prod` schema in Materialize:
+
+```mzsql
+CREATE SCHEMA prod;
+
+CREATE TABLE prod.orders
+    FROM SOURCE orders_src
+    FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_conn
+    ENVELOPE NONE;
+```
+
+Materialize resolves the latest registered schema when the `CREATE TABLE`
+statement runs, and pins it as the reader schema for `prod.orders`. The table
+exposes the `id` and `item` fields.
+
+Once you've created a table from the source, the [initial
+snapshot](/ingest-data/#snapshotting) of table `prod.orders` will begin.
+
+> **Note:** The `TEXT COLUMNS` and `EXCLUDE COLUMNS` options are not supported for Kafka
+> `CREATE TABLE ... FROM SOURCE`. Unlike PostgreSQL, MySQL, and SQL Server
+> sources, a Kafka table's columns are determined entirely by its Avro reader
+> schema. To exclude or recast a field, project or cast it in a view on top of the
+> table.
+
+## Create a view on top of the table
+
+For this guide, add a materialized view `orders_by_item` (also in schema `prod`)
+that counts orders per item:
+
+```mzsql
+CREATE MATERIALIZED VIEW prod.orders_by_item AS
+    SELECT item, count(*) AS orders
+    FROM prod.orders
+    GROUP BY item;
+```
+
+## Handle an upstream schema change
+
+### A. Evolve the schema in your upstream system
+
+In your upstream system, evolve the topic's value schema in a
+[backward-compatible](https://avro.apache.org/docs/++version++/specification/#schema-resolution)
+way. Here, add a `quantity` field with a default so that existing records still
+decode:
+
+```json
+{
+    "type": "record",
+    "name": "order",
+    "fields": [
+        { "name": "id", "type": "long" },
+        { "name": "item", "type": "string" },
+        { "name": "quantity", "type": "int", "default": 0 }
+    ]
+}
+```
+
+Produce records using the new schema.
+
+This operation has no immediate effect in Materialize. `prod.orders` keeps its
+pinned reader schema, so it continues to decode new records but resolves away the
+`quantity` field. The materialized view `prod.orders_by_item` is unaffected.
+
+### B. Incorporate the new field in Materialize
+
+To pick up the new field, create a new table from the same source in a `staging`
+schema. Because you create the table after the schema evolved, it resolves the
+latest schema and exposes `quantity`:
+
+```mzsql
+CREATE SCHEMA staging;
+
+CREATE TABLE staging.orders
+    FROM SOURCE orders_src
+    FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_conn
+    ENVELOPE NONE;
+```
+
+Records produced with the earlier schema take the default value for `quantity`.
+
+Recreate the downstream objects in the `staging` schema, referencing the new
+table. Since `staging.orders` exposes `quantity`, the view can use it:
+
+```mzsql
+CREATE MATERIALIZED VIEW staging.orders_by_item AS
+    SELECT item, sum(quantity) AS total_quantity
+    FROM staging.orders
+    GROUP BY item;
+```
+
+### C. Cut over with a schema swap
+
+Once `staging.orders` has finished snapshotting and its views are hydrated,
+atomically swap the `staging` schema into `prod`:
+
+```mzsql
+ALTER SCHEMA prod SWAP WITH staging;
+```
+
+After the swap, `prod.orders` and `prod.orders_by_item` serve the evolved schema.
+Consumers that reference these names pick up the change without any downtime and
+without changing their queries. The previous objects now live in the `staging`
+schema, where you can drop them once you've validated the cutover:
+
+```mzsql
+DROP SCHEMA staging CASCADE;
+```
+
+> **Note:** This guide covers backward-compatible changes, such as adding a field with a
+> default. An incompatible change, such as dropping a field that the pinned reader
+> schema still requires, causes decode errors on the affected table. To recover,
+> create a new table that reads the current schema, following the steps above,
+> rather than reading from the existing table.
 
 ---
 
@@ -1572,16 +1891,37 @@ CREATE CONNECTION kafka_connection TO KAFKA (
 ## Creating a source
 
 The Kafka connection created in the previous section can then be reused across
-multiple [`CREATE SOURCE`](/sql/create-source/kafka/) statements:
+multiple [`CREATE SOURCE`](/sql/create-source/kafka/) statements. By default, the
+source will be created in the active cluster; to use a different cluster, use the
+`IN CLUSTER` clause.
+
+**Legacy Syntax:**
+
+With the legacy syntax, the source decodes the topic directly and is itself
+queryable. Picking up an upstream schema change requires dropping and recreating
+the source, which incurs downtime.
 
 ```mzsql
 CREATE SOURCE json_source
-  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
-  FORMAT JSON;
+    FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+    FORMAT JSON;
 ```
 
-By default, the source will be created in the active cluster; to use a different
-cluster, use the `IN CLUSTER` clause.
+**New Syntax:**
+
+With the new syntax, create a source for the topic and then a table that decodes
+it. Each table pins its own reader schema, which lets you pick up upstream schema
+changes without downtime. For details, see [Handle upstream schema changes with
+zero downtime](/ingest-data/kafka/source-versioning/).
+
+```mzsql
+CREATE SOURCE json_source
+    FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic');
+
+CREATE TABLE json_table
+    FROM SOURCE json_source
+    FORMAT JSON;
+```
 
 ## Related pages
 
@@ -1695,13 +2035,36 @@ Ensure you have the following:
     source will be created in the active cluster; to use a different cluster,
     use the `IN CLUSTER` clause.
 
+    **Legacy Syntax:**
+
+    With the legacy syntax, the source decodes the topic directly and is itself
+    queryable. Picking up an upstream schema change requires dropping and recreating
+    the source, which incurs downtime.
+
     ```mzsql
     CREATE SOURCE warpstream_click_stream_source
         FROM KAFKA CONNECTION warpstream_kafka (TOPIC 'materialize_click_streams')
         FORMAT JSON;
     ```
 
-    d. Verify the ingestion and query the data in Materialize:
+    **New Syntax:**
+
+    With the new syntax, create a source for the topic and then a table that decodes
+    it. Each table pins its own reader schema, which lets you pick up upstream schema
+    changes without downtime. For details, see [Handle upstream schema changes with
+    zero downtime](/ingest-data/kafka/source-versioning/).
+
+    ```mzsql
+    CREATE SOURCE warpstream_click_stream_source
+        FROM KAFKA CONNECTION warpstream_kafka (TOPIC 'materialize_click_streams');
+
+    CREATE TABLE warpstream_click_stream
+        FROM SOURCE warpstream_click_stream_source
+        FORMAT JSON;
+    ```
+
+    d. Verify the ingestion and query the data in Materialize. With the legacy
+    syntax, query the source; with the new syntax, query the table:
 
     ```mzsql
     SELECT * FROM warpstream_click_stream_source LIMIT 10;

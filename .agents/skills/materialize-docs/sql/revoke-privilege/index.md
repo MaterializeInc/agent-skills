@@ -16,8 +16,6 @@ be used to indicate that the privileges should be revoked from all roles
 > granted through the same shorthand, including the non-applicable ones that
 > have no runtime effect.
 
-<!-- ============ CLUSTER syntax ==============  -->
-
 **Cluster:**
 
 For specific cluster(s):
@@ -38,8 +36,6 @@ FROM <role_name> [, ... ]
 ;
 ```
 
-<!-- ================== Connection syntax ======================  -->
-
 **Connection:**
 
 For specific connection(s):
@@ -59,8 +55,6 @@ ON ALL CONNECTIONS
 FROM <role_name> [, ... ];
 ```
 
-<!-- ================== Database syntax =====================  -->
-
 **Database:**
 
 For specific database(s):
@@ -78,8 +72,6 @@ REVOKE <USAGE | CREATE | ALL [PRIVILEGES]> [, ... ]
 ON ALL DATABASES
 FROM <role_name> [, ... ];
 ```
-
-<!-- =============== Materialized view syntax ===================  -->
 
 **Materialized view/view/source:**
 
@@ -107,8 +99,6 @@ ON TABLE <name> [, <name> ...]
 FROM <role_name> [, ... ];
 ```
 
-<!-- ================== Network policy syntax ==================  -->
-
 **Network policy:**
 
 For specific network policies:
@@ -126,8 +116,6 @@ REVOKE <USAGE | ALL [PRIVILEGES]>
 ON ALL POLICIES
 FROM <role_name> [, ... ];
 ```
-
-<!-- ==================== Schema syntax =====================  -->
 
 **Schema:**
 
@@ -147,8 +135,6 @@ ON ALL SCHEMAS [IN DATABASE <name> [, <name> ...]]
 FROM <role_name> [, ... ];
 ```
 
-<!-- ==================== Secret syntax =====================  -->
-
 **Secret:**
 
 For specific secret(s):
@@ -167,8 +153,6 @@ ON ALL SECRET [IN DATABASE <name> [, <name> ...]]
 FROM <role_name> [, ... ];
 ```
 
-<!-- ==================== System syntax =====================  -->
-
 **System:**
 
 ```mzsql
@@ -176,8 +160,6 @@ REVOKE <CREATEROLE | CREATEDB | CREATECLUSTER | CREATENETWORKPOLICY | ALL [PRIVI
 ON SYSTEM
 FROM <role_name> [, ... ];
 ```
-
-<!-- ==================== Type syntax =======================  -->
 
 **Type:**
 
@@ -197,8 +179,6 @@ ON ALL TYPES
   [ IN <SCHEMA|DATABASE> <name> [, <name> ...] ]
 FROM <role_name> [, ... ];
 ```
-
-<!-- ======================= Table syntax =====================  -->
 
 **Table:**
 
