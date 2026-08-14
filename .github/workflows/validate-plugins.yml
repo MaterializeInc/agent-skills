@@ -1,0 +1,48 @@
+# Validates the plugin marketplace manifest and every plugin manifest.
+#
+# `claude plugin validate --strict` treats warnings as errors, so it catches a
+# misspelled or missing field before users install the plugin. Add each new
+# plugin under `plugins/` to the matrix below.
+#
+# This checks manifests only. Runtime behavior (LSP servers actually starting
+# and answering requests) needs a real project and is verified by hand; see the
+# "Claude Code Plugins" section of AGENTS.md.
+
+name: validate-plugins
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.claude-plugin/**'
+      - 'plugins/**'
+      - '.github/workflows/validate-plugins.yml'
+  pull_request:
+    paths:
+      - '.claude-plugin/**'
+      - 'plugins/**'
+      - '.github/workflows/validate-plugins.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          # The repository root resolves to .claude-plugin/marketplace.json
+          - .
+          - ./plugins/mz-sql-lsp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Validate ${{ matrix.target }}
+        run: claude plugin validate "${{ matrix.target }}" --strict

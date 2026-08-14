@@ -133,6 +133,59 @@ When adding new documentation to an existing skill:
 2. Add an `index.md` file with the documentation content
 3. Update the skill's `SKILL.md` to reference the new documentation in the appropriate section
 
+## Claude Code Plugins
+
+Alongside the portable skills, this repo is a [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces). Plugins are for capabilities the Agent Skills standard can't express — currently, registering a language server.
+
+```
+.claude-plugin/
+  marketplace.json        # marketplace manifest; lists every plugin
+plugins/
+  {plugin-name}/
+    .claude-plugin/
+      plugin.json         # plugin manifest
+    skills/               # optional: skills bundled with the plugin
+      {skill-name}/SKILL.md
+    README.md             # install, configuration, troubleshooting
+```
+
+### Current Plugins
+
+| Plugin | Description |
+|--------|-------------|
+| `mz-sql-lsp` | Registers the `mz-deploy` language server for `.sql` files (go-to-definition, hover, symbols) |
+
+### Conventions
+
+- The marketplace is named `materialize`, so plugins install as `{plugin}@materialize`. It cannot be named `agent-skills` — that name is [reserved for Anthropic](https://code.claude.com/docs/en/plugin-marketplaces#marketplace-schema).
+- Plugin sources in `marketplace.json` use the explicit `./plugins/{name}` form. The documented `metadata.pluginRoot` shorthand fails validation.
+- Set an explicit semver `version` in `plugin.json` and bump it on every user-visible change. Without a bump, Claude Code keeps the cached copy. `claude plugin validate --strict` also fails on a missing version.
+- Add each new plugin to the `validate-plugins` workflow, this table, and the root `README.md`.
+
+### Validating
+
+CI runs these on every push touching `plugins/` or the marketplace manifest. Run them locally before pushing:
+
+```bash
+claude plugin validate . --strict                      # marketplace manifest
+claude plugin validate ./plugins/mz-sql-lsp --strict   # plugin manifest
+```
+
+Manifest validation does not exercise runtime behavior. To test a plugin end to end without installing it globally, load it for one session and point Claude at a real project:
+
+```bash
+claude --plugin-dir ./plugins/mz-sql-lsp --debug-file /tmp/lsp.log -p "..."
+```
+
+### LSP plugin constraints
+
+Learned by testing; they are easy to get wrong because the docs don't state them.
+
+- A `userConfig` `default` does **not** satisfy `${user_config.KEY}` substitution. If the user never sets the value, the LSP server fails to load. There is no zero-configuration fallback — treat any `${user_config.*}` reference in an LSP config as a required setting and document it as such.
+- An unset `${ENV_VAR}` in `workspaceFolder` collapses to an invalid path. The server then fails with `ENOENT ... posix_spawn '<binary>'`, which names the binary but is really a bad working directory.
+- `mz-deploy` adopts the LSP `rootUri` (from `workspaceFolder`) as its project root and ignores a `-d` flag passed in `args`. A wrapper script that discovers `project.toml` therefore cannot fix a wrong `workspaceFolder`.
+- `ENABLE_LSP_TOOL` is not required. The LSP tool is on by default.
+
 ## End-User Installation
 
 ### Using the Skills CLI (recommended)

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "materialize",
+  "description": "Claude Code plugins for developing with Materialize",
+  "owner": {
+    "name": "Materialize",
+    "url": "https://materialize.com/"
+  },
+  "plugins": [
+    {
+      "name": "mz-sql-lsp",
+      "source": "./plugins/mz-sql-lsp",
+      "description": "Materialize SQL language server (mz-deploy lsp) for go-to-definition, hover, and symbols in .sql files",
+      "category": "language-support",
+      "tags": ["materialize", "sql", "lsp", "mz-deploy"],
+      "license": "Apache-2.0",
+      "repository": "https://github.com/MaterializeInc/agent-skills"
+    }
+  ]
+}
