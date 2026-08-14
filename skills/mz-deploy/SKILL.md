@@ -2,17 +2,17 @@
 name: mz-deploy
 description: >-
   Using the mz-deploy CLI to manage a declarative SQL project for
-  Materialize — project layout, the dev inner loop, and the
-  stage/wait/promote deployment lifecycle. Use this skill whenever the
-  user is working in an mz-deploy project (a directory containing
-  project.toml), asks how to deploy SQL changes to Materialize safely,
-  or mentions mz-deploy, project.toml, profiles.toml, types.lock,
-  staging deployments, deploy IDs, `mz-deploy stage`, `mz-deploy
-  promote`, `mz-deploy abort`, `mz-deploy apply`, `mz-deploy dev`, dev
-  overlays, `SET api = stable`, stable API schemas, replacement
-  materialized views, EXECUTE UNIT TEST, or per-profile SQL file
-  overrides (`name#profile.sql`). Also trigger when a user needs to
-  roll back a Materialize deployment or resolve a deployment conflict.
+  Materialize — project layout and the stage/wait/promote deployment
+  lifecycle. Use this skill whenever the user is working in an
+  mz-deploy project (a directory containing project.toml), asks how to
+  deploy SQL changes to Materialize safely, or mentions mz-deploy,
+  project.toml, profiles.toml, types.lock, staging deployments, deploy
+  IDs, `mz-deploy stage`, `mz-deploy promote`, `mz-deploy abort`,
+  `mz-deploy apply`, `SET api = stable`, stable API schemas,
+  replacement materialized views, EXECUTE UNIT TEST, or per-profile SQL
+  file overrides (`name#profile.sql`). Also trigger when a user needs
+  to roll back a Materialize deployment or resolve a deployment
+  conflict.
 ---
 
 # mz-deploy
@@ -88,37 +88,7 @@ database, its tables, the `_mz_deploy_server` cluster, and three roles. **It
 must be run by a superuser when RBAC is enabled**, because it grants system
 privileges. Everything after that runs as an ordinary user.
 
-## The Two Loops
-
-### Inner loop — `dev`
-
-`mz-deploy dev <CLUSTER>` rebuilds a personal overlay containing *only* your
-changes, so you can validate a view against real production data in seconds
-without staging anything. A schema is "dirty" when its objects differ from the
-current production snapshot — the same hash comparison `stage` uses, not a git
-status check.
-
-For each in-project database with dirty schemas, `dev` creates an overlay
-database `<base_db>__<profile>` (so `app` becomes `app__alice`) and recreates
-the dirty schemas inside it. References rewrite as follows:
-
-| Reference target | Resolves to |
-|------------------|-------------|
-| In-project, dirty schema | the overlay database |
-| In-project, clean schema | production |
-| External database | unchanged |
-| `IN CLUSTER` on an MV or index | the `CLUSTER` argument (the file's own clause is ignored) |
-
-Points that surprise people:
-
-- Only **views and materialized views** are overlaid. Tables, sources, sinks,
-  connections, and secrets are silently skipped — `apply` owns those.
-- Every run is a full **drop and rebuild**. There is no incremental state.
-- `dev` refuses a `CLUSTER` that hosts a promoted production deployment.
-  Provision a dedicated dev cluster once and reuse it.
-- `mz-deploy dev --down` tears the overlay down.
-
-### Ship loop
+## Workflow
 
 ```bash
 mz-deploy compile              # parse, resolve dependencies, type-check offline

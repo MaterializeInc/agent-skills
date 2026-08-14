@@ -103,12 +103,11 @@ Using the [`mz-deploy`](https://materialize.com/) CLI to manage a declarative SQ
 
 - Working in an mz-deploy project (any directory containing `project.toml`)
 - Deploying SQL changes through the stage → wait → promote lifecycle
-- Iterating on a view in a per-developer `dev` overlay
 - Managing infrastructure declaratively with `mz-deploy apply`
 - Writing `EXECUTE UNIT TEST` tests for views
 - Rolling back a deployment or resolving a deployment conflict
 
-**Covers:** project layout, the `dev` inner loop and the ship loop, hash-based change detection, atomic `ALTER … SWAP` promotion, conflict detection, stable API schemas (`SET api = stable`) and replacement materialized views, offline type checking with `types.lock`, per-profile suffixes/variables/file overrides, and a full reference for the `EXECUTE UNIT TEST` syntax. Per-command flags intentionally stay in `mz-deploy help <command>`, which the skill teaches agents to consult.
+**Covers:** project layout, the `compile → test → apply → stage → wait → promote` workflow, hash-based change detection, atomic `ALTER … SWAP` promotion, conflict detection, stable API schemas (`SET api = stable`) and replacement materialized views, offline type checking with `types.lock`, per-profile suffixes/variables/file overrides, and a full reference for the `EXECUTE UNIT TEST` syntax. Per-command flags intentionally stay in `mz-deploy help <command>`, which the skill teaches agents to consult.
 
 </details>
 
