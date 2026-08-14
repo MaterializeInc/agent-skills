@@ -23,10 +23,12 @@ skills/
 
 | Skill | Description |
 |-------|-------------|
+| `materialize-dbt` | Using the dbt-materialize adapter to manage Materialize streaming pipelines with dbt |
 | `materialize-docs` | Materialize documentation for SQL syntax, data ingestion, concepts, and best practices |
 | `materialize-terraform-provider` | Using the Materialize Terraform provider to manage Materialize resources declaratively |
 | `materialize-terraform-self-managed` | Terraform modules for deploying self-managed Materialize on AWS, Azure, and GCP |
 | `mcp-developer-analysis` | Analyze a Materialize environment via the MCP Developer endpoint and configure MCP clients |
+| `mz-deploy` | Using the mz-deploy CLI to manage a declarative SQL project and deploy changes to Materialize |
 
 ## Working with Skills
 
