@@ -181,7 +181,7 @@ claude --plugin-dir ./plugins/mz-sql-lsp --debug-file /tmp/lsp.log -p "..."
 
 Learned by testing; they are easy to get wrong because the docs don't state them.
 
-- A `userConfig` `default` does **not** satisfy `${user_config.KEY}` substitution. If the user never sets the value, the LSP server fails to load entirely. There is no zero-configuration fallback — treat any `${user_config.*}` reference in an LSP config as a required setting and document it as such.
+- A `userConfig` `default` does **not** satisfy `${user_config.KEY}` substitution. If the user never sets the value, the LSP server fails to load. There is no zero-configuration fallback — treat any `${user_config.*}` reference in an LSP config as a required setting and document it as such.
 - An unset `${ENV_VAR}` in `workspaceFolder` collapses to an invalid path. The server then fails with `ENOENT ... posix_spawn '<binary>'`, which names the binary but is really a bad working directory.
 - `mz-deploy` adopts the LSP `rootUri` (from `workspaceFolder`) as its project root and ignores a `-d` flag passed in `args`. A wrapper script that discovers `project.toml` therefore cannot fix a wrong `workspaceFolder`.
 - `ENABLE_LSP_TOOL` is not required. The LSP tool is on by default.
