@@ -75,6 +75,41 @@ Terraform modules for deploying self-managed Materialize on AWS (EKS), Azure (AK
 
 **Covers:** module layout and variables for all three clouds, backend URL formats, storage authentication support, instance sizing, post-deployment setup, upgrades, and common gotchas from the [materialize-terraform-self-managed](https://github.com/MaterializeInc/materialize-terraform-self-managed) repository.
 
+</details>
+
+<details>
+<summary><strong>materialize-dbt</strong></summary>
+
+Using the dbt-materialize adapter to manage Materialize streaming pipelines with dbt.
+
+**Use when:**
+
+- Writing dbt models for Materialize, or migrating an existing dbt project to it
+- Configuring dbt profiles for Materialize
+- Running blue/green or zero-downtime deployments with dbt
+- Creating sources or sinks in dbt
+- Troubleshooting dbt-materialize issues
+
+**Covers:** every materialization (`source`, `source_table`, `view`, `materialized_view`, `sink`, `table`, `seed`), profile configuration, indexes, strict mode, the blue/green macros (`deploy_init`, `deploy_await`, `deploy_promote`, `deploy_cleanup`), cluster management, slim deployments, model contracts, and gotchas.
+
+</details>
+
+<details>
+<summary><strong>mz-deploy</strong></summary>
+
+Using the [`mz-deploy`](https://materialize.com/) CLI to manage a declarative SQL project and deploy changes to Materialize safely.
+
+**Use when:**
+
+- Working in an mz-deploy project (any directory containing `project.toml`)
+- Deploying SQL changes through the stage → wait → promote lifecycle
+- Managing infrastructure declaratively with `mz-deploy apply`
+- Writing `EXECUTE UNIT TEST` tests for views
+- Rolling back a deployment or resolving a deployment conflict
+
+**Covers:** project layout, the `compile → test → apply → stage → wait → promote` workflow, hash-based change detection, atomic `ALTER … SWAP` promotion, conflict detection, stable API schemas (`SET api = stable`) and replacement materialized views, offline type checking with `types.lock`, per-profile suffixes/variables/file overrides, and a full reference for the `EXECUTE UNIT TEST` syntax. Per-command flags intentionally stay in `mz-deploy help <command>`, which the skill teaches agents to consult.
+
+</details>
 
 <details>
 <summary><strong>mcp-developer-analysis</strong></summary>
@@ -175,6 +210,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-08-14: Add mz-deploy skill
 - 2026-07-29: Add mz-sql-lsp Claude Code plugin
 - 2026-07-09: Add materialize-terraform-self-managed skill
 - 2026-07-09: Add materialize-terraform-provider skill
