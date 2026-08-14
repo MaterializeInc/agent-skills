@@ -2,7 +2,7 @@
 
 Registers the `mz-deploy` language server for `.sql` files so Claude Code's LSP tool can
 resolve go-to-definition, hover, and document/workspace symbols across an
-[mz-deploy](https://materialize.com/docs/) project.
+[mz-deploy](https://materialize.com/docs/manage/mz-deploy/) project.
 
 Ships with the `mz-sql-navigation` skill, which tells Claude to reach for the LSP tool
 rather than grepping when it needs to resolve an object reference, inspect a view's
