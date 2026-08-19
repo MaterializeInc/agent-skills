@@ -14,6 +14,10 @@
 # Tree and blob SHAs are content hashes, so unrelated upstream commits, rebases
 # and re-tags do not move the fingerprint.
 #
+# It runs on a schedule twice a day, at 08:00 and 20:00 America/New_York. The
+# gate is what makes that affordable: a run against unchanged upstream docs
+# finishes in the `check` job.
+#
 # Each run pushes a fresh `automated/update-materialize-docs-skill-<timestamp>`
 # branch and opens its own PR, closing any earlier automated PR it supersedes.
 # The workflow never deletes or force-pushes a branch: the `global-branch-safety`
@@ -33,6 +37,14 @@
 name: update-materialize-docs-skill
 
 on:
+  schedule:
+    # 08:00 and 20:00 America/New_York. GitHub cron is UTC-only and has no DST
+    # handling, so both the EDT (UTC-4) and EST (UTC-5) translations are listed
+    # and the `check` job drops whichever pair is an hour off today.
+    - cron: '0 0 * * *'   # 20:00 EDT
+    - cron: '0 1 * * *'   # 20:00 EST
+    - cron: '0 12 * * *'  # 08:00 EDT
+    - cron: '0 13 * * *'  # 08:00 EST
   workflow_dispatch:
     inputs:
       mz_version:
@@ -75,10 +87,21 @@ jobs:
         id: fingerprint
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MZ_REF: ${{ inputs.mz_version }}
-          FORCE: ${{ inputs.force }}
+          MZ_REF: ${{ inputs.mz_version || 'main' }}
+          FORCE: ${{ inputs.force || false }}
         run: |
           set -euo pipefail
+
+          # Two of the four cron entries fire an hour away from 08:00/20:00 ET
+          # on any given day, depending on whether DST is in effect. Drop those.
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            HOUR=$(TZ=America/New_York date +%H)
+            if [ "$HOUR" != "08" ] && [ "$HOUR" != "20" ]; then
+              echo "Scheduled run lands at ${HOUR}:00 ET, not 08:00 or 20:00; skipping."
+              echo "should_run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
 
           MZ_COMMIT=$(gh api "repos/MaterializeInc/materialize/commits/${MZ_REF}" --jq '.sha')
           DOC_USER_TREE=$(gh api "repos/MaterializeInc/materialize/contents/doc?ref=${MZ_REF}" \
@@ -140,7 +163,7 @@ jobs:
       contents: write
       pull-requests: write
     env:
-      MZ_REF: ${{ inputs.mz_version }}
+      MZ_REF: ${{ inputs.mz_version || 'main' }}
       MZ_COMMIT: ${{ needs.check.outputs.mz_commit }}
     steps:
       - name: Checkout agent-skills
