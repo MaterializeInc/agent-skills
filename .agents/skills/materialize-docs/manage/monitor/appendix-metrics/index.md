@@ -439,21 +439,6 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
-      <td><code>mz_check_scheduling_policies_seconds_bucket</code></td>
-      <td>The time each policy in `check_scheduling_policies` takes.</td>
-      <td><code>le</code>, <code>policy</code>, <code>thread</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_check_scheduling_policies_seconds_count</code></td>
-      <td>The time each policy in `check_scheduling_policies` takes.</td>
-      <td><code>policy</code>, <code>thread</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_check_scheduling_policies_seconds_sum</code></td>
-      <td>The time each policy in `check_scheduling_policies` takes.</td>
-      <td><code>policy</code>, <code>thread</code></td>
-    </tr>
-    <tr>
       <td><code>mz_cluster_handle_command_duration_seconds_bucket</code></td>
       <td>Time spent in handling commands.</td>
       <td><code>cluster</code>, <code>command_type</code>, <code>le</code>, <code>worker_id</code></td>
@@ -889,21 +874,6 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
-      <td><code>mz_handle_scheduling_decisions_seconds_bucket</code></td>
-      <td>The time `handle_scheduling_decisions` takes.</td>
-      <td><code>altered_a_cluster</code>, <code>le</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_handle_scheduling_decisions_seconds_count</code></td>
-      <td>The time `handle_scheduling_decisions` takes.</td>
-      <td><code>altered_a_cluster</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_handle_scheduling_decisions_seconds_sum</code></td>
-      <td>The time `handle_scheduling_decisions` takes.</td>
-      <td><code>altered_a_cluster</code></td>
-    </tr>
-    <tr>
       <td><code>mz_index_peek_cursor_setup_seconds_bucket</code></td>
       <td>Time setting up cursor and literal constraints.</td>
       <td><code>le</code></td>
@@ -949,6 +919,21 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_index_peek_result_sort_rows_bucket</code></td>
+      <td>Number of intermediate result rows sorted during peek collection, summed across sort operations.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_result_sort_rows_count</code></td>
+      <td>Number of intermediate result rows sorted during peek collection, summed across sort operations.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_result_sort_rows_sum</code></td>
+      <td>Number of intermediate result rows sorted during peek collection, summed across sort operations.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_index_peek_result_sort_seconds_bucket</code></td>
       <td>Time sorting intermediate results during peek collection.</td>
       <td><code>le</code></td>
@@ -976,6 +961,21 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     <tr>
       <td><code>mz_index_peek_row_collection_seconds_sum</code></td>
       <td>Time constructing RowCollection from peek results.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_row_iteration_rows_bucket</code></td>
+      <td>Number of arrangement rows evaluated by the index peek result iterator.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_row_iteration_rows_count</code></td>
+      <td>Number of arrangement rows evaluated by the index peek result iterator.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_row_iteration_rows_sum</code></td>
+      <td>Number of arrangement rows evaluated by the index peek result iterator.</td>
       <td></td>
     </tr>
     <tr>
@@ -1332,6 +1332,21 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_object_info</code></td>
       <td>Maps catalog object IDs to the object&#39;s name, schema, database, and type. Constant 1.</td>
       <td><code>database_name</code>, <code>global_id</code>, <code>name</code>, <code>object_id</code>, <code>schema_name</code>, <code>type</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_occ_read_then_write_retry_count_bucket</code></td>
+      <td>Number of OCC retries per read-then-write operation.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_occ_read_then_write_retry_count_count</code></td>
+      <td>Number of OCC retries per read-then-write operation.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_occ_read_then_write_retry_count_sum</code></td>
+      <td>Number of OCC retries per read-then-write operation.</td>
+      <td></td>
     </tr>
     <tr>
       <td><code>mz_optimization_notices</code></td>

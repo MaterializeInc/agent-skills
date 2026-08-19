@@ -41,7 +41,7 @@ This example provisions the following infrastructure:
 
 | Resource | Description |
 |----------|-------------|
-| AKS Cluster | Version 1.32 with Cilium networking (network plugin: azure, data plane: cilium, policy: cilium) |
+| AKS Cluster | Version 1.34 with Cilium networking (network plugin: azure, data plane: cilium, policy: cilium) |
 | Default Node Pool | Standard_D4pds_v6 VMs, autoscaling 2-5 nodes, labeled for generic workloads |
 | Materialize Node Pool | Standard_E4pds_v6 VMs with 100GB disk, autoscaling 2-5 nodes, swap enabled, dedicated taints for Materialize workloads |
 | Managed Identities | AKS cluster identity (used by AKS control plane to provision Azure resources like load balancers and network interfaces) and Workload identity (used by Materialize pods for secure, passwordless authentication to Azure Storage) |
@@ -86,6 +86,23 @@ This example provisions the following infrastructure:
 | 8080 | For HTTP(S) connections to Materialize Console |
   |
 
+### Observability
+
+Off by default in the simple example. Set `enable_observability = true` to
+create the following as well:
+
+| Resource | Description |
+|----------|-------------|
+| Monitoring stack | Grafana, Thanos, Loki, Grafana Alloy, and Alertmanager in the `monitoring` namespace, with the Materialize dashboards pre-installed |
+| Blob Containers | Dedicated containers for metrics and logs |
+| Grafana PostgreSQL Flexible Server | `B_Standard_B1ms` server holding Grafana's own state (users, API tokens, annotations, dashboard versions) |
+| Grafana Load Balancer | Internal Azure Load Balancer for reaching Grafana, allowlisted to `ingress_cidr_blocks` |
+
+This stack requires TF v10.0.0 or later, which replaced an earlier
+Prometheus-and-Grafana pair. The Grafana database and load balancer were added
+in v10.1.0, and are both billable. For details, see
+[Grafana](/manage/monitor/self-managed/grafana/).
+
 ## Prerequisites
 
 ### Azure Account Requirements
@@ -122,9 +139,9 @@ An active Azure subscription with appropriate permissions to create:
 
 > **Tip:** * The `examples/simple` example, used in this tutorial, is provided for illustration and to help you get started. In practice, we recommend instantiating these modules within your own Terraform code rather than relying on the example configuration directly.
 > * The simple example used in this tutorial enables [Password
-> authentication](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/azure/examples/simple/main.tf#L340)
+> authentication](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/v10.1.0/azure/examples/simple/main.tf#L429)
 > for the Materialize instance. To use a different authentication method, update
-> [`authenticator_kind`](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/main/kubernetes/modules/materialize-instance/README.md#input_authenticator_kind).
+> [`authenticator_kind`](https://github.com/MaterializeInc/materialize-terraform-self-managed/blob/v10.1.0/kubernetes/modules/materialize-instance/README.md#input_authenticator_kind).
 > See [Authentication](/security/self-managed/authentication/) for the supported
 > authentication mechanisms.
 
@@ -200,7 +217,14 @@ An active Azure subscription with appropriate permissions to create:
    # internal_load_balancer = false   # default = true (internal load balancer). You can set to false = public load balancer.
    # ingress_cidr_blocks = ["x.x.x.x/n", ...]
    # k8s_apiserver_authorized_networks  = ["x.x.x.x/n", ...]
+   # enable_observability = true   # Set to true to enable observability stack.
+   # grafana_host = "grafana.example.com"   # Only used when enable_observability = true.
    ```
+
+   > **Note:** `enable_observability = true` also creates a `B_Standard_B1ms` PostgreSQL
+>    Flexible Server for Grafana's own state and an internal load balancer to
+>    reach Grafana on. Both are billable. See
+>    [Grafana](/manage/monitor/self-managed/grafana/).
 
    <p><strong>Additional variables</strong>:</p>
    <ul>
@@ -213,6 +237,10 @@ An active Azure subscription with appropriate permissions to create:
    <li><code>k8s_apiserver_authorized_networks</code>: List of CIDR
    blocks allowed to access your cluster endpoint. If unset, defaults to
    <code>[&quot;0.0.0.0/0&quot;]</code> (<red><strong>all</strong></red> IPv4 addresses on the internet).</li>
+   <li><code>enable_observability</code>: Flag that determines whether to deploy the
+   monitoring stack (Grafana, metrics, and logs) alongside Materialize.
+   Defaults to <code>false</code> in the <code>simple</code> example. See
+   <a href="/manage/monitor/self-managed/grafana/" >Grafana</a>.</li>
    </ul>
    > **Note:** Refer to your organization's security practices to set these values accordingly.
 

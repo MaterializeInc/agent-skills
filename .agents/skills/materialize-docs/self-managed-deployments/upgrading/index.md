@@ -125,7 +125,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.36.0
+  --version v26.37.0
 ```
 
 ## Upgrading Materialize Instances
@@ -874,6 +874,128 @@ the <code>Image</code> field in the pod description.</p>
 <p>If you run into an error during the upgrade, refer to the
 <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
 
+## Enable the monitoring stack
+
+The Terraform modules can install a monitoring stack — Grafana, Thanos, Loki,
+Grafana Alloy, and Alertmanager — alongside your deployment, with the
+Materialize dashboards pre-installed. You can turn it on during an upgrade, in
+the same `terraform apply` as the version bump.
+
+The stack below arrived in **TF v10.0.0**, replacing the earlier single
+Prometheus and Grafana. **TF v10.1.0** then added durable state for Grafana and
+a load balancer to reach it on.
+
+> **Warning:** `kubernetes/modules/prometheus` and `kubernetes/modules/grafana` were **removed**
+> in v10.0.0, not deprecated in place. If your configuration references either
+> directly, that reference breaks — pin the previous major until you have
+> migrated.
+> If you were running the old stack, upgrading **destroys** its Helm releases and
+> PersistentVolumeClaims. Up to 15 days of local Prometheus data goes with them,
+> along with anything hand-created in the old Grafana. There is no backfill. See
+> [Upgrading from the previous
+> stack](/manage/monitor/self-managed/grafana/#upgrading-from-the-previous-stack).
+
+### If you use the example configuration
+
+Set the following in your `terraform.tfvars`:
+
+```hcl
+enable_observability = true
+```
+
+### If you instantiate the modules yourself
+
+1. Add the `alekc/kubectl` provider to your `versions.tf`. The monitoring module
+   uses it for the `TargetGroupBinding` that attaches the Grafana load balancer
+   to the Grafana Service:
+
+   ```hcl
+   kubectl = {
+     source  = "alekc/kubectl"
+     version = "2.4.1"
+   }
+   ```
+
+1. Add the `monitoring` module, using the same release tag as the rest of your
+   modules:
+
+   ```hcl
+   module "monitoring" {
+     source = "github.com/MaterializeInc/materialize-terraform-self-managed//aws/modules/monitoring?ref=<RELEASE_TAG>"
+
+     name_prefix = var.name_prefix
+     region      = var.aws_region
+
+     namespace = "monitoring"
+     # The operator module already creates this namespace.
+     create_namespace = false
+
+     oidc_provider_arn       = module.eks.oidc_provider_arn
+     cluster_oidc_issuer_url = module.eks.cluster_oidc_issuer_url
+
+     storage_class = module.ebs_csi_driver.storage_class_name
+
+     materialize_instance_namespace = "materialize-environment"
+     materialize_operator_namespace = "materialize"
+
+     # Grafana's own state. Omit to leave Grafana on SQLite.
+     grafana_database = {
+       vpc_id                    = module.networking.vpc_id
+       subnet_ids                = module.networking.private_subnet_ids
+       cluster_name              = module.eks.cluster_name
+       cluster_security_group_id = module.eks.cluster_security_group_id
+       node_security_group_id    = module.eks.node_security_group_id
+     }
+
+     # Reach Grafana without port forwarding. Omit to keep it on ClusterIP.
+     grafana_load_balancer = {
+       vpc_id                 = module.networking.vpc_id
+       subnet_ids             = module.networking.private_subnet_ids
+       node_security_group_id = module.eks.node_security_group_id
+       ingress_cidr_blocks    = var.ingress_cidr_blocks
+     }
+
+     depends_on = [module.operator]
+   }
+   ```
+
+1. Turn on the operator's scrape annotations so its pods are collected:
+
+   ```hcl
+   module "operator" {
+     # ...
+     helm_values = {
+       observability = {
+         enabled = true
+         prometheus = {
+           scrapeAnnotations = {
+             enabled = true
+           }
+         }
+       }
+     }
+   }
+   ```
+
+### What this creates
+
+Applying the above adds S3 buckets for metrics and logs, and — from TF v10.1.0 —
+a `db.t4g.micro` RDS instance for Grafana's own state and an internal NLB to
+reach Grafana on. The database and the load balancer are both billable.
+
+> **Warning:** The Grafana load balancer terminates no TLS, and Grafana has no identity
+> provider until you configure one. Keep it internal until both are addressed. A
+> public load balancer whose allowlist is still `0.0.0.0/0` is refused at plan
+> time for Grafana specifically.
+
+> **Note:** The monitoring stack runs several components: Loki, Thanos, Grafana,
+> Alertmanager, kube-state-metrics, and two Alloy roles. Your generic node pool
+> may need to grow before the apply can schedule all of them.
+
+For accessing Grafana, pointing the stack at a database you already run, sizing
+profiles, and retention, see
+[Grafana](/manage/monitor/self-managed/grafana/).
+
 ## See also
 
 - [Materialize Operator
@@ -1065,6 +1187,112 @@ the <code>Image</code> field in the pod description.</p>
 </ol>
 <p>If you run into an error during the upgrade, refer to the
 <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
+
+## Enable the monitoring stack
+
+The Terraform modules can install a monitoring stack — Grafana, Thanos, Loki,
+Grafana Alloy, and Alertmanager — alongside your deployment, with the
+Materialize dashboards pre-installed. You can turn it on during an upgrade, in
+the same `terraform apply` as the version bump.
+
+The stack below arrived in **TF v10.0.0**, replacing the earlier single
+Prometheus and Grafana. **TF v10.1.0** then added durable state for Grafana and
+a load balancer to reach it on.
+
+> **Warning:** `kubernetes/modules/prometheus` and `kubernetes/modules/grafana` were **removed**
+> in v10.0.0, not deprecated in place. If your configuration references either
+> directly, that reference breaks — pin the previous major until you have
+> migrated.
+> If you were running the old stack, upgrading **destroys** its Helm releases and
+> PersistentVolumeClaims. Up to 15 days of local Prometheus data goes with them,
+> along with anything hand-created in the old Grafana. There is no backfill. See
+> [Upgrading from the previous
+> stack](/manage/monitor/self-managed/grafana/#upgrading-from-the-previous-stack).
+
+### If you use the example configuration
+
+Set the following in your `terraform.tfvars`:
+
+```hcl
+enable_observability = true
+```
+
+### If you instantiate the modules yourself
+
+1. Add the `monitoring` module, using the same release tag as the rest of your
+   modules:
+
+   ```hcl
+   module "monitoring" {
+     source = "github.com/MaterializeInc/materialize-terraform-self-managed//azure/modules/monitoring?ref=<RELEASE_TAG>"
+
+     prefix              = var.name_prefix
+     resource_group_name = azurerm_resource_group.materialize.name
+     location            = var.location
+
+     namespace = "monitoring"
+     # The operator module already creates this namespace.
+     create_namespace = false
+
+     oidc_issuer_url = module.aks.cluster_oidc_issuer_url
+
+     materialize_instance_namespace = "materialize-environment"
+     materialize_operator_namespace = "materialize"
+
+     # Grafana's own state. Omit to leave Grafana on SQLite.
+     grafana_database = {
+       subnet_id           = module.networking.postgres_subnet_id
+       private_dns_zone_id = module.networking.private_dns_zone_id
+     }
+
+     # Reach Grafana without port forwarding. Omit to keep it on ClusterIP.
+     grafana_load_balancer = {
+       ingress_cidr_blocks = var.ingress_cidr_blocks
+     }
+
+     tags = var.tags
+
+     depends_on = [module.operator]
+   }
+   ```
+
+1. Turn on the operator's scrape annotations so its pods are collected:
+
+   ```hcl
+   module "operator" {
+     # ...
+     helm_values = {
+       observability = {
+         enabled = true
+         prometheus = {
+           scrapeAnnotations = {
+             enabled = true
+           }
+         }
+       }
+     }
+   }
+   ```
+
+### What this creates
+
+Applying the above adds blob containers for metrics and logs, and — from TF
+v10.1.0 — a `B_Standard_B1ms` PostgreSQL Flexible Server for Grafana's own state
+and an internal load balancer to reach Grafana on. The database and the load
+balancer are both billable.
+
+> **Warning:** The Grafana load balancer terminates no TLS, and Grafana has no identity
+> provider until you configure one. Keep it internal until both are addressed. A
+> public load balancer whose allowlist is still `0.0.0.0/0` is refused at plan
+> time for Grafana specifically.
+
+> **Note:** The monitoring stack runs several components: Loki, Thanos, Grafana,
+> Alertmanager, kube-state-metrics, and two Alloy roles. Your generic node pool
+> may need to grow before the apply can schedule all of them.
+
+For accessing Grafana, pointing the stack at a database you already run, sizing
+profiles, and retention, see
+[Grafana](/manage/monitor/self-managed/grafana/).
 
 ## See also
 
@@ -1261,6 +1489,107 @@ the <code>Image</code> field in the pod description.</p>
 <p>If you run into an error during the upgrade, refer to the
 <a href="/self-managed-deployments/troubleshooting/" >Troubleshooting</a>.</p>
 
+## Enable the monitoring stack
+
+The Terraform modules can install a monitoring stack — Grafana, Thanos, Loki,
+Grafana Alloy, and Alertmanager — alongside your deployment, with the
+Materialize dashboards pre-installed. You can turn it on during an upgrade, in
+the same `terraform apply` as the version bump.
+
+The stack below arrived in **TF v10.0.0**, replacing the earlier single
+Prometheus and Grafana. **TF v10.1.0** then added durable state for Grafana and
+a load balancer to reach it on.
+
+> **Warning:** `kubernetes/modules/prometheus` and `kubernetes/modules/grafana` were **removed**
+> in v10.0.0, not deprecated in place. If your configuration references either
+> directly, that reference breaks — pin the previous major until you have
+> migrated.
+> If you were running the old stack, upgrading **destroys** its Helm releases and
+> PersistentVolumeClaims. Up to 15 days of local Prometheus data goes with them,
+> along with anything hand-created in the old Grafana. There is no backfill. See
+> [Upgrading from the previous
+> stack](/manage/monitor/self-managed/grafana/#upgrading-from-the-previous-stack).
+
+### If you use the example configuration
+
+Set the following in your `terraform.tfvars`:
+
+```hcl
+enable_observability = true
+```
+
+### If you instantiate the modules yourself
+
+1. Add the `monitoring` module, using the same release tag as the rest of your
+   modules:
+
+   ```hcl
+   module "monitoring" {
+     source = "github.com/MaterializeInc/materialize-terraform-self-managed//gcp/modules/monitoring?ref=<RELEASE_TAG>"
+
+     prefix     = var.name_prefix
+     project_id = var.project_id
+     region     = var.region
+
+     namespace = "monitoring"
+     # The operator module already creates this namespace.
+     create_namespace = false
+
+     materialize_instance_namespace = "materialize-environment"
+     materialize_operator_namespace = "materialize"
+
+     # Grafana's own state. Omit to leave Grafana on SQLite.
+     grafana_database = {
+       network_id = module.networking.network_id
+     }
+
+     # Reach Grafana without port forwarding. Omit to keep it on ClusterIP.
+     grafana_load_balancer = {
+       ingress_cidr_blocks = var.ingress_cidr_blocks
+     }
+
+     depends_on = [module.operator]
+   }
+   ```
+
+1. Turn on the operator's scrape annotations so its pods are collected:
+
+   ```hcl
+   module "operator" {
+     # ...
+     helm_values = {
+       observability = {
+         enabled = true
+         prometheus = {
+           scrapeAnnotations = {
+             enabled = true
+           }
+         }
+       }
+     }
+   }
+   ```
+
+### What this creates
+
+Applying the above adds Cloud Storage buckets for metrics and logs, and — from
+TF v10.1.0 — a `db-f1-micro` Cloud SQL instance for Grafana's own state and an
+internal load balancer to reach Grafana on. The database and the load balancer
+are both billable.
+
+> **Warning:** The Grafana load balancer terminates no TLS, and Grafana has no identity
+> provider until you configure one. Keep it internal until both are addressed. A
+> public load balancer whose allowlist is still `0.0.0.0/0` is refused at plan
+> time for Grafana specifically.
+
+> **Note:** The monitoring stack runs several components: Loki, Thanos, Grafana,
+> Alertmanager, kube-state-metrics, and two Alloy roles. Your generic node pool
+> may need to grow before the apply can schedule all of them.
+
+For accessing Grafana, pointing the stack at a database you already run, sizing
+profiles, and retention, see
+[Grafana](/manage/monitor/self-managed/grafana/).
+
 ## See also
 
 - [Materialize Operator
@@ -1326,7 +1655,7 @@ deployment does not have a license key configured, contact [Materialize support]
 </span></span></code></pre></div></li>
 <li>
 <p>Get the sample configuration files for the new version.</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl"><span class="nv">mz_version</span><span class="o">=</span>v26.36.0
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl"><span class="nv">mz_version</span><span class="o">=</span>v26.37.0
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">curl -o upgrade-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/<span class="nv">$mz_version</span>/misc/helm-charts/operator/values.yaml
 </span></span></code></pre></div><p>If you have previously modified the <code>sample-values.yaml</code> file for your
@@ -1363,7 +1692,7 @@ prerequisites)</a>.</p>
 <p>If currently using <code>v1</code> (available starting in Materialize v26.30):</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade my-materialize-operator materialize/materialize-operator <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>--namespace<span class="o">=</span>materialize <span class="se">\
-</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--version v26.36.0 <span class="se">\
+</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--version v26.37.0 <span class="se">\
 </span></span></span><span class="line hl"><span class="cl"><span class="se"></span>-f upgrade-values.yaml <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>--set observability.podMetrics.enabled<span class="o">=</span><span class="nb">true</span> <span class="se">\
 </span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--set operator.args.installV1CRD<span class="o">=</span><span class="nb">true</span>
@@ -1372,7 +1701,7 @@ prerequisites)</a>.</p>
 <p>If currently using <code>v1alpha1</code> (default):</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">helm upgrade my-materialize-operator materialize/materialize-operator <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>--namespace<span class="o">=</span>materialize <span class="se">\
-</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--version v26.36.0 <span class="se">\
+</span></span></span><span class="line hl"><span class="cl"><span class="se"></span>--version v26.37.0 <span class="se">\
 </span></span></span><span class="line hl"><span class="cl"><span class="se"></span>-f upgrade-values.yaml <span class="se">\
 </span></span></span><span class="line"><span class="cl"><span class="se"></span>--set observability.podMetrics.enabled<span class="o">=</span><span class="nb">true</span>
 </span></span></code></pre></div></div>
@@ -1412,7 +1741,7 @@ API version is available starting in Materialize v26.30.)</p>
   <tbody>
       <tr>
           <td><code>environmentdImageRef</code></td>
-          <td>Update the version to the new version. This should be the same as the operator version: <code>v26.36.0</code>. Updating this field automatically triggers a rollout.</td>
+          <td>Update the version to the new version. This should be the same as the operator version: <code>v26.37.0</code>. Updating this field automatically triggers a rollout.</td>
       </tr>
       <tr>
           <td><code>forceRollout</code></td>
@@ -1426,7 +1755,7 @@ API version is available starting in Materialize v26.30.)</p>
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="m">12345678-1234-1234-1234-123456789012</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">materialize-environment</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">environmentdImageRef</span><span class="p">:</span><span class="w"> </span><span class="l">materialize/environmentd:v26.36.0</span><span class="w"> </span><span class="c"># Update version</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">environmentdImageRef</span><span class="p">:</span><span class="w"> </span><span class="l">materialize/environmentd:v26.37.0</span><span class="w"> </span><span class="c"># Update version</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># forceRollout: 33333333-3333-3333-3333-333333333333    # For forced rollouts</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">rolloutStrategy</span><span class="p">:</span><span class="w"> </span><span class="l">WaitUntilReady                        </span><span class="w"> </span><span class="c"># The mechanism to use when rolling out the new version.</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">backendSecretName</span><span class="p">:</span><span class="w"> </span><span class="l">materialize-backend</span><span class="w">
@@ -1447,7 +1776,7 @@ API version is available starting in Materialize v26.30.)</p>
   <tbody>
       <tr>
           <td><code>environmentdImageRef</code></td>
-          <td>Update the version to the new version. This should be the same as the operator version: <code>v26.36.0</code>.</td>
+          <td>Update the version to the new version. This should be the same as the operator version: <code>v26.37.0</code>.</td>
       </tr>
       <tr>
           <td><code>requestRollout</code> or <code>forceRollout</code></td>
@@ -1461,7 +1790,7 @@ API version is available starting in Materialize v26.30.)</p>
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="m">12345678-1234-1234-1234-123456789012</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l">materialize-environment</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="nt">spec</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">environmentdImageRef</span><span class="p">:</span><span class="w"> </span><span class="l">materialize/environmentd:v26.36.0</span><span class="w"> </span><span class="c"># Update version</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">environmentdImageRef</span><span class="p">:</span><span class="w"> </span><span class="l">materialize/environmentd:v26.37.0</span><span class="w"> </span><span class="c"># Update version</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">requestRollout</span><span class="p">:</span><span class="w"> </span><span class="m">22222222-2222-2222-2222-222222222222</span><span class="w">    </span><span class="c"># Enter a new UUID</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w"></span><span class="c"># forceRollout: 33333333-3333-3333-3333-333333333333    # For forced rollouts</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">rolloutStrategy</span><span class="p">:</span><span class="w"> </span><span class="l">WaitUntilReady                        </span><span class="w"> </span><span class="c"># The mechanism to use when rolling out the new version.</span><span class="w">

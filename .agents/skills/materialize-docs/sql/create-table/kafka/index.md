@@ -620,10 +620,15 @@ use within a [transaction block](/sql/begin/#ddl-only-transactions).
 
 ### Source-populated tables and snapshotting
 
-Creating the tables from sources starts the [snapshotting](/ingest-data/#snapshotting) process. Snapshotting syncs the
-currently available data into Materialize. Because the initial snapshot is
-persisted in the storage layer atomically (i.e., at the same ingestion
-timestamp), you are not able to query the table until snapshotting is complete.
+Creating a table from a source starts the
+[snapshotting](/ingest-data/#snapshotting) process.
+
+Snapshotting is the initial sync of a table's data. It reads from the upstream
+system and writes the data into Materialize's storage. The initial snapshot is
+committed to storage atomically, with all records assigned the same ingestion
+timestamp.
+
+You cannot query the table until its snapshot completes.
 
 > **Note:** During the snapshotting, the data ingestion for the existing tables for the same
 > source is temporarily blocked. As such, if possible, you can resize the cluster

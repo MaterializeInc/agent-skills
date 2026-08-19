@@ -100,7 +100,7 @@ Field           | Type                         | Meaning
 ----------------|------------------------------|--------
 `id`            | [`uint8`]                    | Materialize's unique, monotonically increasing ID for the event.
 `event_type`    | [`text`]                     | The type of the event: `create`, `drop`, `alter`, `grant`, `revoke`, or `comment`.
-`object_type`   | [`text`]                     | The type of the affected object: `cluster`, `cluster-replica`, `connection`, `continual-task`, `database`, `func`, `index`, `materialized-view`, `network-policy`, `role`, `schema`, `secret`, `sink`, `source`, `system`, `table`, `type`, or `view`.
+`object_type`   | [`text`]                     | The type of the affected object: `cluster`, `cluster-replica`, `connection`, `continual-task`, `database`, `func`, `index`, `materialized-view`, `metric-sink`, `network-policy`, `role`, `schema`, `secret`, `sink`, `source`, `system`, `table`, `type`, or `view`.
 `details`       | [`jsonb`]                    | Additional details about the event. The shape of the details varies based on `event_type` and `object_type`.
 `user`          | [`text`]                     | The user who triggered the event, or `NULL` if triggered by the system.
 `occurred_at`   | [`timestamp with time zone`] | The time at which the event occurred. Guaranteed to be in order of event creation. Events created in the same transaction will have identical values.
@@ -906,7 +906,7 @@ shape is in [`mz_clusters`](../mz_catalog/#mz_clusters).
 | `status`       | [`text`]         | The lifecycle status of the reconfiguration: `in-progress` while the controller converges on the target, then a terminal `finalized`, `timed-out`, `cancelled`, or `resource-exhausted`. The record is retained after it settles, so the latest outcome stays inspectable until a later reconfiguration overwrites it. |
 | `deadline`     | [`mz_timestamp`] | The deadline by which the reconfiguration must complete. After it passes, the `on_timeout` action applies. |
 | `on_timeout`   | [`text`]         | The action applied if `deadline` passes before the target hydrates: `commit` (cut over to the not-yet-hydrated target) or `rollback` (revert to the pre-reconfiguration shape). |
-| `target`       | [`jsonb`]        | The config shape the cluster is reconfiguring to, as JSON: `size`, `replication_factor`, `availability_zones`, and `logging`. The realized (current) shape is in `mz_clusters`. |
+| `target`       | [`jsonb`]        | The config shape the cluster is reconfiguring to, as JSON: `size`, `replication_factor`, `availability_zones`, `logging`, and `arrangement_compression`. The realized (current) shape is in `mz_clusters`. |
 | `changes`      | [`jsonb`]        | The dimensions in which `target` differs from the cluster's realized configuration, as a JSON object holding the target value per changed dimension. Empty (`{}`) once a record settles with its target applied. A rolled-back record keeps the abandoned diff. |
 
 ## `mz_cluster_auto_scaling_strategies`
