@@ -3,6 +3,31 @@
 # Generator: https://github.com/MaterializeInc/materialize/blob/main/bin/gen-claude-skill
 # Target:    https://github.com/MaterializeInc/agent-skills/tree/main/.agents/skills/materialize-docs
 #
+# The `check` job compares a content fingerprint of everything the generator
+# reads -- the upstream `doc/user` tree, `bin/gen-claude-skill` itself, and the
+# Hugo version we render with -- against `.github/materialize-docs.lock`, which
+# records the state the committed skill was generated from. The `update` job
+# runs only when that fingerprint has moved, so dispatching against unchanged
+# upstream docs costs one API call instead of a full Hugo build. Pass the
+# `force` input to regenerate regardless.
+#
+# Tree and blob SHAs are content hashes, so unrelated upstream commits, rebases
+# and re-tags do not move the fingerprint.
+#
+# It runs on a schedule twice a day, at 08:00 and 20:00 America/New_York. The
+# gate is what makes that affordable: a run against unchanged upstream docs
+# finishes in the `check` job.
+#
+# Each run pushes a fresh `automated/update-materialize-docs-skill-<timestamp>`
+# branch and opens its own PR, closing any earlier automated PR it supersedes.
+# The workflow never deletes or force-pushes a branch: the `global-branch-safety`
+# ruleset blocks both for `github-actions[bot]`.
+#
+# The PR is squash-merged unattended when the `AUTOMERGE_TOKEN` secret is set;
+# see the "Merge PR" step for what that credential has to be. Nothing reviews
+# the diff, so the "Verify generated output" step is the only guard between a
+# bad render and `main` -- keep it strict.
+#
 # The generator uses `hugo --cleanDestinationDir`, so it wipes the output
 # directory on each run. Hand-maintained files (the skill's top-level README
 # and references/README) are stashed before generation and restored after.
@@ -12,77 +37,182 @@
 name: update-materialize-docs-skill
 
 on:
+  schedule:
+    # 08:00 and 20:00 America/New_York. GitHub cron is UTC-only and has no DST
+    # handling, so both the EDT (UTC-4) and EST (UTC-5) translations are listed
+    # and the `check` job drops whichever pair is an hour off today.
+    - cron: '0 0 * * *'   # 20:00 EDT
+    - cron: '0 1 * * *'   # 20:00 EST
+    - cron: '0 12 * * *'  # 08:00 EDT
+    - cron: '0 13 * * *'  # 08:00 EST
   workflow_dispatch:
     inputs:
       mz_version:
         description: 'Materialize ref (tag, branch, or commit SHA). Defaults to main.'
         required: false
         default: 'main'
+      force:
+        description: 'Regenerate even when the upstream docs are unchanged.'
+        type: boolean
+        default: false
+
+env:
+  # Pinned to match the version used in MaterializeInc/materialize CI
+  # (ci/builder/Dockerfile). Update together if upstream changes.
+  HUGO_VERSION: '0.152.2'
+  LOCK_FILE: .github/materialize-docs.lock
+  SKILL_DIR: .agents/skills/materialize-docs
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      should_run: ${{ steps.fingerprint.outputs.should_run }}
+      mz_commit: ${{ steps.fingerprint.outputs.mz_commit }}
+      doc_user_tree: ${{ steps.fingerprint.outputs.doc_user_tree }}
+      gen_script_blob: ${{ steps.fingerprint.outputs.gen_script_blob }}
+    steps:
+      - name: Checkout agent-skills
+        uses: actions/checkout@v4
+        with:
+          # Always read the lock file from the default branch, not the ref the
+          # workflow was dispatched from.
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Compare upstream fingerprint against lock file
+        id: fingerprint
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MZ_REF: ${{ inputs.mz_version || 'main' }}
+          FORCE: ${{ inputs.force || false }}
+        run: |
+          set -euo pipefail
+
+          # Two of the four cron entries fire an hour away from 08:00/20:00 ET
+          # on any given day, depending on whether DST is in effect. Drop those.
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            HOUR=$(TZ=America/New_York date +%H)
+            if [ "$HOUR" != "08" ] && [ "$HOUR" != "20" ]; then
+              echo "Scheduled run lands at ${HOUR}:00 ET, not 08:00 or 20:00; skipping."
+              echo "should_run=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          MZ_COMMIT=$(gh api "repos/MaterializeInc/materialize/commits/${MZ_REF}" --jq '.sha')
+          DOC_USER_TREE=$(gh api "repos/MaterializeInc/materialize/contents/doc?ref=${MZ_REF}" \
+            --jq '.[] | select(.name == "user") | .sha')
+          GEN_SCRIPT_BLOB=$(gh api "repos/MaterializeInc/materialize/contents/bin/gen-claude-skill?ref=${MZ_REF}" \
+            --jq '.sha')
+
+          if [ -z "$MZ_COMMIT" ] || [ -z "$DOC_USER_TREE" ] || [ -z "$GEN_SCRIPT_BLOB" ]; then
+            echo "Failed to resolve the upstream fingerprint at ${MZ_REF}." >&2
+            exit 1
+          fi
+
+          lock_value() {
+            [ -f "$LOCK_FILE" ] || return 0
+            sed -nE "s/^$1: (.+)$/\1/p" "$LOCK_FILE"
+          }
+
+          if [ "$FORCE" = "true" ]; then
+            SHOULD_RUN=true
+            REASON="\`force\` input set"
+          elif [ ! -f "$LOCK_FILE" ]; then
+            SHOULD_RUN=true
+            REASON="no lock file yet; bootstrapping"
+          elif [ "$(lock_value doc_user_tree)" != "$DOC_USER_TREE" ]; then
+            SHOULD_RUN=true
+            REASON="\`doc/user\` changed: \`$(lock_value doc_user_tree)\` -> \`${DOC_USER_TREE}\`"
+          elif [ "$(lock_value gen_script_blob)" != "$GEN_SCRIPT_BLOB" ]; then
+            SHOULD_RUN=true
+            REASON="\`bin/gen-claude-skill\` changed: \`$(lock_value gen_script_blob)\` -> \`${GEN_SCRIPT_BLOB}\`"
+          elif [ "$(lock_value hugo_version)" != "$HUGO_VERSION" ]; then
+            SHOULD_RUN=true
+            REASON="Hugo version changed: \`$(lock_value hugo_version)\` -> \`${HUGO_VERSION}\`"
+          else
+            SHOULD_RUN=false
+            REASON="upstream docs unchanged since \`$(lock_value mz_ref)\` (\`$(lock_value mz_commit)\`)"
+          fi
+
+          {
+            echo "should_run=$SHOULD_RUN"
+            echo "mz_commit=$MZ_COMMIT"
+            echo "doc_user_tree=$DOC_USER_TREE"
+            echo "gen_script_blob=$GEN_SCRIPT_BLOB"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Fingerprint check"
+            echo
+            echo "- Ref: \`${MZ_REF}\` (\`${MZ_COMMIT}\`)"
+            echo "- Regenerate: \`${SHOULD_RUN}\`"
+            echo "- Reason: ${REASON}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   update:
+    needs: check
+    if: needs.check.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: write
       pull-requests: write
     env:
-      MZ_REF: ${{ inputs.mz_version }}
-      BRANCH: automated/update-materialize-docs-skill
+      MZ_REF: ${{ inputs.mz_version || 'main' }}
+      MZ_COMMIT: ${{ needs.check.outputs.mz_commit }}
     steps:
       - name: Checkout agent-skills
         uses: actions/checkout@v4
         with:
+          # Always branch from the default branch, not the ref the workflow was
+          # dispatched from. Otherwise testing the workflow on a feature branch
+          # via `gh workflow run --ref <branch>` would carry that branch's
+          # changes into the generated PR.
+          ref: ${{ github.event.repository.default_branch }}
           path: agent-skills
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Checkout MaterializeInc/materialize @ ${{ inputs.mz_version }}
+      - name: Checkout MaterializeInc/materialize @ ${{ needs.check.outputs.mz_commit }}
         uses: actions/checkout@v4
         with:
           repository: MaterializeInc/materialize
-          ref: ${{ inputs.mz_version }}
+          # The resolved commit, not the ref, so the generated output matches
+          # the fingerprint even if the ref moves between jobs.
+          ref: ${{ needs.check.outputs.mz_commit }}
           path: materialize
           fetch-depth: 1
 
       - name: Set up Hugo (extended)
         uses: peaceiris/actions-hugo@v3
         with:
-          # Pinned to match the version used in MaterializeInc/materialize CI
-          # (ci/builder/Dockerfile). Update together if upstream changes.
-          hugo-version: '0.152.2'
+          hugo-version: ${{ env.HUGO_VERSION }}
           extended: true
 
-      - name: Set up branch
+      - name: Create branch
         id: branch
         working-directory: agent-skills
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
-          EXISTING_PR=$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number // empty')
+          # A fresh branch per run. The bot can neither delete nor force-push a
+          # branch under the `global-branch-safety` ruleset, so reusing a fixed
+          # branch name strands the workflow as soon as one is left behind.
+          BRANCH="automated/update-materialize-docs-skill-$(date -u +%Y%m%dT%H%M%SZ)"
+          git checkout -b "$BRANCH"
 
-          if [ -n "$EXISTING_PR" ]; then
-            echo "Updating existing PR #$EXISTING_PR on $BRANCH"
-            git fetch origin "$BRANCH"
-            git checkout "$BRANCH"
-            # Stay current with main; if a conflict appears, prefer regenerated content.
-            if ! git merge --no-edit origin/main; then
-              git merge --abort
-              git reset --hard origin/main
-            fi
-          else
-            if git ls-remote --exit-code origin "refs/heads/$BRANCH" >/dev/null 2>&1; then
-              echo "Deleting stale remote branch $BRANCH (no open PR)"
-              git push origin --delete "$BRANCH"
-            fi
-            git checkout -b "$BRANCH"
-          fi
-
-          echo "existing_pr=$EXISTING_PR" >> "$GITHUB_OUTPUT"
+          echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Stash hand-maintained files
         working-directory: agent-skills
@@ -91,19 +221,72 @@ jobs:
           # output directory. Preserve hand-maintained files here and restore
           # them after generation. Add new entries as needed.
           mkdir -p ../preserved/references
-          cp .agents/skills/materialize-docs/README.md ../preserved/README.md
-          cp .agents/skills/materialize-docs/references/README.md ../preserved/references/README.md
+          cp "$SKILL_DIR/README.md" ../preserved/README.md
+          cp "$SKILL_DIR/references/README.md" ../preserved/references/README.md
 
       - name: Generate skill
         working-directory: materialize
-        run: bin/gen-claude-skill ../agent-skills/.agents/skills/materialize-docs
+        run: bin/gen-claude-skill "../agent-skills/$SKILL_DIR"
 
       - name: Restore hand-maintained files
         working-directory: agent-skills
         run: |
-          mkdir -p .agents/skills/materialize-docs/references
-          cp ../preserved/README.md .agents/skills/materialize-docs/README.md
-          cp ../preserved/references/README.md .agents/skills/materialize-docs/references/README.md
+          mkdir -p "$SKILL_DIR/references"
+          cp ../preserved/README.md "$SKILL_DIR/README.md"
+          cp ../preserved/references/README.md "$SKILL_DIR/references/README.md"
+
+      - name: Verify generated output
+        working-directory: agent-skills
+        run: |
+          set -euo pipefail
+
+          # `--cleanDestinationDir` wipes the skill before rendering it, so a
+          # degenerate render commits as a mass deletion rather than failing.
+          # Refuse to go further unless the output looks like a whole skill.
+          MIN_FILES=400
+
+          if [ ! -f "$SKILL_DIR/SKILL.md" ]; then
+            echo "Generation produced no SKILL.md in $SKILL_DIR; aborting." >&2
+            exit 1
+          fi
+
+          COUNT=$(find "$SKILL_DIR" -name '*.md' -type f | wc -l | tr -d ' ')
+          if [ "$COUNT" -lt "$MIN_FILES" ]; then
+            echo "Generation produced only $COUNT markdown files (expected >= $MIN_FILES); aborting." >&2
+            exit 1
+          fi
+          echo "Generated $COUNT markdown files."
+
+          # Nobody reviews these PRs, so a partial render that still clears the
+          # floor above must not reach `main`. Upstream never drops a fifth of
+          # the docs in one go; a deletion that large is a generator fault.
+          MAX_DELETED_PCT=20
+          TRACKED=$(git ls-files -- "$SKILL_DIR" | wc -l | tr -d ' ')
+          DELETED=$(git diff --name-status HEAD -- "$SKILL_DIR" | awk '$1 == "D"' | wc -l | tr -d ' ')
+          if [ "$TRACKED" -gt 0 ] && [ $((DELETED * 100 / TRACKED)) -gt "$MAX_DELETED_PCT" ]; then
+            echo "Regeneration deletes $DELETED of $TRACKED tracked files (> ${MAX_DELETED_PCT}%); aborting." >&2
+            git diff --name-status HEAD -- "$SKILL_DIR" | awk '$1 == "D"' | head -20 >&2
+            exit 1
+          fi
+          echo "Deletes $DELETED of $TRACKED tracked files."
+
+      - name: Write lock file
+        working-directory: agent-skills
+        env:
+          DOC_USER_TREE: ${{ needs.check.outputs.doc_user_tree }}
+          GEN_SCRIPT_BLOB: ${{ needs.check.outputs.gen_script_blob }}
+        run: |
+          set -euo pipefail
+          cat > "$LOCK_FILE" <<EOF
+          # Provenance of ${SKILL_DIR}. Written by the
+          # update-materialize-docs-skill workflow; do not edit by hand.
+          mz_ref: ${MZ_REF}
+          mz_commit: ${MZ_COMMIT}
+          doc_user_tree: ${DOC_USER_TREE}
+          gen_script_blob: ${GEN_SCRIPT_BLOB}
+          hugo_version: ${HUGO_VERSION}
+          EOF
+          cat "$LOCK_FILE"
 
       - name: Check for changes
         id: changes
@@ -118,27 +301,76 @@ jobs:
       - name: Commit and push
         if: steps.changes.outputs.has_changes == 'true'
         working-directory: agent-skills
+        env:
+          BRANCH: ${{ steps.branch.outputs.name }}
         run: |
-          git add .agents/skills/materialize-docs
+          set -euo pipefail
+          git add "$SKILL_DIR" "$LOCK_FILE"
           git commit -m "Update materialize-docs skill from materialize@${MZ_REF}"
           git push origin "$BRANCH"
 
-      - name: Create draft PR
-        if: steps.changes.outputs.has_changes == 'true' && steps.branch.outputs.existing_pr == ''
+      - name: Create PR
+        id: pr
+        if: steps.changes.outputs.has_changes == 'true'
         working-directory: agent-skills
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ steps.branch.outputs.name }}
+          DOC_USER_TREE: ${{ needs.check.outputs.doc_user_tree }}
         run: |
-          gh pr create \
-            --draft \
+          set -euo pipefail
+
+          PR_URL=$(gh pr create \
             --head "$BRANCH" \
             --title "Update materialize-docs skill from materialize@${MZ_REF}" \
             --body "$(cat <<EOF
-          Regenerates \`.agents/skills/materialize-docs/\` by running [\`bin/gen-claude-skill\`](https://github.com/MaterializeInc/materialize/blob/main/bin/gen-claude-skill) from MaterializeInc/materialize.
+          Regenerates \`${SKILL_DIR}/\` by running [\`bin/gen-claude-skill\`](https://github.com/MaterializeInc/materialize/blob/main/bin/gen-claude-skill) from MaterializeInc/materialize.
 
-          **Source ref:** \`${MZ_REF}\`
+          **Source ref:** \`${MZ_REF}\` ([\`${MZ_COMMIT}\`](https://github.com/MaterializeInc/materialize/commit/${MZ_COMMIT}))
+
+          **\`doc/user\` tree:** \`${DOC_USER_TREE}\`
 
           Triggered by the \`update-materialize-docs-skill\` workflow.
-
           EOF
-          )"
+          )")
+          NEW_PR="${PR_URL##*/}"
+          echo "Opened #${NEW_PR}: ${PR_URL}"
+          echo "number=${NEW_PR}" >> "$GITHUB_OUTPUT"
+
+          # Only one automated PR should be open at a time; an older one is
+          # always a subset of this run's regeneration.
+          OPEN=$(gh pr list --state open --json number,headRefName \
+            --jq '.[] | select(.headRefName | startswith("automated/update-materialize-docs-skill-")) | .number')
+          for n in $OPEN; do
+            if [ "$n" != "$NEW_PR" ]; then
+              gh pr close "$n" --comment "Superseded by #${NEW_PR}."
+            fi
+          done
+
+      - name: Merge PR
+        if: steps.changes.outputs.has_changes == 'true'
+        working-directory: agent-skills
+        env:
+          # Merging has to bypass the review requirement on `main`, which
+          # `secrets.GITHUB_TOKEN` cannot do: GitHub refuses to add its built-in
+          # Actions app to a ruleset's bypass list ("must be part of the ruleset
+          # source or owner organization"). `AUTOMERGE_TOKEN` must therefore be a
+          # credential acting as one of the bypass actors on
+          # `default-main-protection`: a repository admin, an organization owner,
+          # or a GitHub App installed on the org and added to that bypass list.
+          # Without the secret the PR is simply left open.
+          GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "AUTOMERGE_TOKEN is not set; leaving #${PR} open for a human to merge."
+            exit 0
+          fi
+
+          # `--admin` is required, not optional: the ruleset leaves the PR in a
+          # BLOCKED mergeable state, which `gh pr merge` refuses to act on
+          # unless told to merge with the actor's bypass privileges.
+          gh pr merge "$PR" --squash --admin
+          echo "Merged #${PR}."
