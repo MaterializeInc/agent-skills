@@ -76,13 +76,15 @@ this exact purpose.
 
 ### Standard SQL support
 
-Like most databases, you interact with Materialize using **SQL**. You can build
-complex analytical
-workloads using **[any type of join](/sql/select/join/)** (including
-non-windowed joins and joins on arbitrary conditions) as well as leverage new
-SQL patterns enabled by streaming like [**Change Data Capture
-(CDC)**](/ingest-data/), [**temporal
-filters**](/sql/patterns/temporal-filters/), and
+With Materialize, you use SQL to transform your fast-changing data into **live
+data products**: the business objects (e.g., a customer, an order, a store) that
+your applications, services, dashboards, and AI agents read.
+
+You can express complex transformations using **[any type of
+join](/sql/select/join/)** (including non-windowed joins and joins on arbitrary
+conditions), as well as SQL patterns
+enabled by streaming like [**Change Data Capture (CDC)**](/ingest-data/),
+[**temporal filters**](/sql/patterns/temporal-filters/), and
 [**subscriptions**](/sql/subscribe/).
 
 Materialize follows the SQL standard (SQL-92) implementation and aims for
@@ -99,50 +101,16 @@ Materialize, please submit a [feature request](/support/#share-your-feedback).
 
 ### Real-time data ingestion
 
-Materialize provides **native connectors** that allow ingesting data from various external systems:
+Materialize supports ingesting data from various external systems:
 
-<div class="multilinkbox">
-<div class="linkbox ">
-  <div class="title">
-    Databases (CDC)
-  </div>
-  <ul>
-<li><a href="/ingest-data/postgres/" >PostgreSQL</a></li>
-<li><a href="/ingest-data/mysql/" >MySQL</a></li>
-<li><a href="/ingest-data/sql-server/" >SQL Server</a></li>
-<li><a href="/ingest-data/cdc-cockroachdb/" >CockroachDB</a></li>
-<li><a href="/ingest-data/mongodb/" >MongoDB</a></li>
-</ul>
+| Type | External system |
+|------|-----------------|
+| **Databases (CDC): native connectors** | [PostgreSQL](/ingest-data/postgres/) <br> [MySQL](/ingest-data/mysql/) <br> [SQL Server](/ingest-data/sql-server/) |
+| **Databases (CDC): via the Kafka connector** | [CockroachDB](/ingest-data/cdc-cockroachdb/) (using changefeeds) <br> [MongoDB](/ingest-data/mongodb/) (using Debezium) |
+| **Message brokers** | [Kafka](/ingest-data/kafka/) <br> [Redpanda](/sql/create-source/kafka) |
+| **Webhooks** | [Amazon EventBridge](/ingest-data/webhooks/amazon-eventbridge/) <br> [Segment](/ingest-data/webhooks/segment/) <br> [HubSpot](/ingest-data/webhooks/hubspot/) <br> [RudderStack](/ingest-data/webhooks/rudderstack/) <br> [SnowcatCloud](/ingest-data/webhooks/snowcatcloud/) <br> [Stripe](/ingest-data/webhooks/stripe/)|
 
-</div>
-
-<div class="linkbox ">
-  <div class="title">
-    Message Brokers
-  </div>
-  <ul>
-<li><a href="/ingest-data/kafka/" >Kafka</a></li>
-<li><a href="/sql/create-source/kafka" >Redpanda</a></li>
-</ul>
-
-</div>
-
-<div class="linkbox ">
-  <div class="title">
-    Webhooks
-  </div>
-  <ul>
-<li><a href="/ingest-data/webhooks/amazon-eventbridge/" >Amazon EventBridge</a></li>
-<li><a href="/ingest-data/webhooks/segment/" >Segment</a></li>
-<li><a href="/sql/create-source/webhook" >Other webhooks</a></li>
-</ul>
-
-</div>
-
-</div>
-
-For more information, see [Ingest Data](/ingest-data/) and
-[Integrations](/integrations/).
+For more information, see [Ingest Data](/ingest-data/).
 
 ### PostgreSQL wire-compatibility
 
@@ -151,19 +119,15 @@ world. Materialize uses the [PostgreSQL wire protocol](https://datastation.multi
 which allows it to integrate out-of-the-box with many SQL clients and other
 tools in the data ecosystem that support PostgreSQL — like [dbt](/integrations/dbt/).
 
-Don't see the a tool that you’d like to use with Materialize listed under
-[Tools and integrations](/integrations/)? Let us know by submitting a
-[feature request](https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests&labels=A-integration)!
-
 ### Strong consistency guarantees
 
 By default, Materialize provides the highest level of transaction isolation:
-[**strict serializability**](https://jepsen.io/consistency/models/strict-serializable).
-This means that it presents as if it were a single process, despite spanning a
-large number of threads, processes, and machines. Strict serializability avoids
-common pitfalls like eventual consistency and dual writes, which affect the
-correctness of your results. You can [adjust the transaction isolation level](/overview/isolation-level/)
-depending on your consistency and performance requirements.
+**strict serializability**. This means that it presents as if it were a single
+process, despite spanning a large number of threads, processes, and machines.
+Strict serializability avoids common pitfalls like eventual consistency and dual
+writes, which affect the correctness of your results. You can [adjust the
+transaction isolation level](/overview/isolation-level/) depending on your
+consistency and performance requirements.
 
 ## Learn more
 
@@ -344,7 +308,7 @@ not suitable for full feature set evaluations or production workloads.
    been already downloaded.
 
    ```sh
-   docker run -d -p 127.0.0.1:6874:6874 -p 127.0.0.1:6875:6875 -p 127.0.0.1:6876:6876 -p 127.0.0.1:6877:6877 materialize/materialized:v26.36.0
+   docker run -d -p 127.0.0.1:6874:6874 -p 127.0.0.1:6875:6875 -p 127.0.0.1:6876:6876 -p 127.0.0.1:6877:6877 materialize/materialized:v26.37.0
    ```
 
    When running locally:
@@ -575,7 +539,7 @@ consistency guarantees](/reference/isolation-level/). In Materialize, both
 within a cluster") and [materialized views](/concepts/views/#materialized-views)
 **incrementally update** results when Materialize ingests new data; i.e., work
 is performed on writes. Because work is performed on writes, reads from these
-objects return up-to-date results while being computationally **free**.
+objects return the already up-to-date results.
 
 In this quickstart, you will continuously ingest a sample auction data set to
 build an operational use case around finding auction winners and auction
@@ -846,8 +810,7 @@ get up-to-date results.
    Indexes provide always fresh view results in memory within a cluster by
    performing incremental updates as new data arrives. Queries can then read
    from the in-memory, already up-to-date results instead of re-running the
-   underlying statement, making queries **computationally free and more
-   performant**.
+   underlying statement, making queries more performant.
 
    In the next step, you will create an index on `winning_bids`.
 
@@ -875,7 +838,7 @@ point lookups and joins.
    and the view results are stored in memory within the cluster. As new data
    arrives, the index **incrementally updates** the view results in memory.
    Because incremental work is performed on writes, reads from indexes return
-   up-to-date results and are computationally **free**.
+   the already up-to-date results.
 
    This index can **also** help [optimize
    operations](/transform-data/optimization/) like point lookups and [delta
@@ -1140,7 +1103,7 @@ In Materialize, [indexes](/concepts/indexes/) represent query results stored in
 memory within a cluster. When you create an index on a view, the index
 incrementally updates the view results (instead of recalculating the results
 from scratch) as Materialize ingests new data. These up-to-date results are then
-immediately available and computationally free for reads within the cluster.
+immediately available for reads within the cluster.
 
 ### General guidelines
 
@@ -1200,12 +1163,31 @@ creating indexes, see [Index Best Practices](/concepts/indexes/#best-practices).
 
 [//]: # "TODO(morsapaes) Extend to suggest third party tools. dbt, Census and Metabase could all fit here to do interesting things as a follow-up."
 
-To get started ingesting your own data from an external system like Kafka, MySQL
-or PostgreSQL, check the documentation for [sources](/sql/create-source/), and
-navigate to **Data** > **Sources** > **New source** in the [Materialize Console](/console/)
-to create your first source.
+- To get started ingesting your own data from an external system like Kafka,
+  MySQL or PostgreSQL, check the documentation for
+  [sources](/sql/create-source/), and navigate to **Data** > **Sources** > **New
+  source** in the [Materialize Console](/console/) to create your first source.
 
-For help getting started with your data or other questions about Materialize,
-you can schedule a [free guided
-trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
+- To have your coding agent (such as Claude Code, Codex, or Cursor) write more
+  accurate Materialize SQL, install the [Materialize agent
+  skills](/integrations/coding-agent-skills/). The skills give your agent access
+  to Materialize documentation and reference material:
+
+  ```bash
+  npx skills add MaterializeInc/agent-skills
+  ```
+
+- To let your agent query your data and inspect your deployment, connect it to
+  Materialize's built-in [MCP servers](/integrations/mcp-server/):
+
+  - [MCP Server for agents](/integrations/mcp-server/mcp-agent/) to discover and
+    query your data products.
+
+  - [MCP Server for developers](/integrations/mcp-server/mcp-developer/) to
+    troubleshoot and observe your deployment through the `mz_*` system catalog
+    tables, and to run queries on your objects.
+
+- For help getting started with your data or other questions about Materialize,
+  you can schedule a [free guided
+  trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
 

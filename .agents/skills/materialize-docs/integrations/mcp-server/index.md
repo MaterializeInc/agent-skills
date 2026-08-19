@@ -4,17 +4,11 @@ This section contains guides for installing Materialize Agent skills and integra
 
 ## Agent skills
 
-Materialize provides the following open-source [agent
-skills](https://github.com/MaterializeInc/agent-skills) to help developers build
-with Materialize.
-
-| Skill | Description |
-|-------|-------------|
-| `mcp-developer-analysis` | Use for operational introspection and troubleshooting via the `materialize-developer` server. Covers exact catalog schemas, diagnostic workflows, remediation runbooks, and guardrails for known pitfalls (cluster-scoped queries, uint8 ID mismatches, etc.).<br><br>Examples: *"why is my materialized view stale?"*, *"what can I optimize to save costs?"*, *"is my source healthy?"* |
-| `materialize-docs` | Use for authoring view definitions, learning concepts, and looking up patterns; useful with either MCP server. Covers comprehensive Materialize documentation, including SQL syntax, idiomatic patterns, data ingestion, concepts, and best practices (400+ reference files).<br><br>Examples: *"show me how to deduplicate a stream"*, *"what's the idiomatic top-K pattern?"*, *"how do I create a Kafka source?"* |
-| `materialize-dbt` | Use for managing Materialize pipelines with dbt. Covers dbt-materialize adapter usage: materializations, profile configuration, index creation, blue/green deployments, and testing.<br><br>Examples: *"write a dbt model for a materialized view"*, *"how do I do a blue/green deployment with dbt?"* |
-| `materialize-terraform-provider` | Use for managing Materialize resources declaratively with Terraform. Covers provider configuration for Cloud and self-managed, navigation into the provider's auto-generated resource reference, cross-resource patterns, import workflows, and gotchas.<br><br>Examples: *"create a Kafka source with Terraform"*, *"import my existing clusters into Terraform state"*, *"set up RBAC grants in Terraform"* |
-| `materialize-terraform-self-managed` | Use for deploying or operating self-managed Materialize infrastructure with Terraform. Covers module layout and variables for deploying on AWS, Azure, and GCP: networking, Kubernetes, backend URL formats, instance sizing, upgrades, and gotchas.<br><br>Examples: *"deploy Materialize on EKS"*, *"what instance types should Materialize nodes use?"*, *"upgrade my self-managed Materialize"* |
+Materialize provides open-source [agent
+skills](https://github.com/MaterializeInc/agent-skills) that give coding agents
+like Claude Code, Codex, and Cursor access to Materialize documentation and
+reference material. For the list of available skills and installation
+instructions, see [Agent Skills](/integrations/coding-agent-skills/).
 
 ## MCP servers
 
@@ -27,7 +21,7 @@ and support the MCP `initialize`, `tools/list`, and `tools/call` methods.
 | Endpoint | Path | Description |
 |----------|------|-------------|
 | **Agent** | `/api/mcp/agent` | Discover and query your real-time data products over HTTP. <br>For details, see [MCP Server for agents](/integrations/mcp-server/mcp-agent/).<br>*Available starting in v26.24*|
-| **Developer** | `/api/mcp/developer` | Read `mz_*` system catalog tables for troubleshooting and observability. <br>For details, see [MCP Server for developer](/integrations/mcp-server/mcp-developer/).|
+| **Developer** | `/api/mcp/developer` | Read `mz_*` system catalog tables for troubleshooting and observability, and run queries on your objects. <br>For details, see [MCP Server for developer](/integrations/mcp-server/mcp-developer/). <br>*Available starting in v26.20*|
 
 ## See also
 

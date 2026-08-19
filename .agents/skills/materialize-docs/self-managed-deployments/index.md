@@ -158,7 +158,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.36.0
+  environmentdImageRef: materialize/environmentd:v26.37.0
 # ... additional fields omitted for brevity
 ```
 
@@ -173,7 +173,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.36.0
+  environmentdImageRef: materialize/environmentd:v26.37.0
 # ... additional fields omitted for brevity
 ```
 
@@ -413,7 +413,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.36.0
+  environmentdImageRef: materialize/environmentd:v26.37.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
   requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
@@ -430,7 +430,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.36.0
+  environmentdImageRef: materialize/environmentd:v26.37.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
 ```
@@ -1268,7 +1268,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.36.0&quot;</code>
+<code>&quot;v26.37.0&quot;</code>
 </td>
 </tr>
 
@@ -1837,7 +1837,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.36.0&quot;</code>
+**Default**: <code>&quot;v26.37.0&quot;</code>
 
 The tag/version of the operator image to be used
 
@@ -1996,6 +1996,7 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
+| v26.37 | v26.37 | v26.37 | 2026-08-13 | See <a href="/releases/#v26370" >v26.37 release notes</a> |
 | v26.36 | v26.36 | v26.36 | 2026-08-07 | See <a href="/releases/#v26360" >v26.36 release notes</a> |
 | v26.35 | v26.35 | v26.35 | 2026-07-30 | See <a href="/releases/#v26350" >v26.35 release notes</a> |
 | v26.34.1 | v26.34.1 | v26.34.1 | 2026-07-24 | See <a href="/releases/#v26341" >v26.34.1 release notes</a> |
@@ -2149,13 +2150,19 @@ To increase the cluster's size, you can follow the following steps:
    show clusters;
    ```
 
+   Resizing a cluster is a graceful reconfiguration: Materialize brings up a
+   replica at the new size, waits for it to hydrate, and only then retires the
+   old one. Until that finishes, `SHOW CLUSTERS` reports the old size, and
+   briefly both. Re-run the statement until it settles. The replacement replica
+   also gets a fresh name, so the resized cluster reports `r2` rather than `r1`.
+
    The output should include the `mz_catalog_server` cluster with a size of `50cc`:
 
    ```none
           name        | replicas  | comment
     -------------------+-----------+---------
     mz_analytics      |           |
-    mz_catalog_server | r1 (50cc) |
+    mz_catalog_server | r2 (50cc) |
     mz_probe          |           |
     mz_support        |           |
     mz_system         |           |
@@ -2290,7 +2297,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.36.0
+  --version v26.37.0
 ```
 
 ## Upgrading Materialize Instances

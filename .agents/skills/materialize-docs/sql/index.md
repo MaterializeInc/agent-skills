@@ -294,6 +294,7 @@ SET (
             [, LINGER DURATION = <interval>]
         )
     )]
+    [, EXPERIMENTAL ARRANGEMENT COMPRESSION = <bool>]
 )
 [WITH ( <with_option>[,...])]
 ;
@@ -307,6 +308,7 @@ SET (
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. Each replica of the cluster provisions a new pool of compute resources to perform exactly the same computations on exactly the same data. For more information, see [Replication factor considerations](#replication-factor).  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  If `FALSE`, enables the use of the <em>deprecated</em> [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) command.  Default: `TRUE`  |
 | `AUTO SCALING STRATEGY` | Optional. While the cluster has un-hydrated objects, provisions an extra burst replica at a larger size to speed up hydration. The steady-size replicas will continue to run, and hydrate in parallel. Once a steady-size replica hydrates and catches up with the burst, the burst replica is retired. This helps optimize costs while speeding up hydration. Only available on managed clusters.  Specify a single `ON HYDRATION` sub-policy, which supports the following options:  \| Option \| Description \| \|--------\|-------------\| \| `HYDRATION SIZE` \| The size of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration. For valid size values, see [Available sizes](#available-sizes). \| \| `LINGER DURATION` \| Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`. \|  Set an empty strategy (`AUTO SCALING STRATEGY = ()`) to disable autoscaling.  |
+| `EXPERIMENTAL ARRANGEMENT COMPRESSION` | {{< warn-if-unreleased-inline "v26.38" >}}  Optional. Whether to enable [dictionary compression](#dictionary-compression) for the arrangements maintained by the cluster's replicas. Compression reduces the memory those arrangements use, at the cost of CPU, and does not benefit every workload. Only available on managed clusters.  {{< warning >}} Because changing this option never changes an existing replica, Materialize creates a new set of replicas carrying the new setting and cuts over to them once they have hydrated. For more information, see [Dictionary compression](#dictionary-compression). {{< /warning >}}  Default: `FALSE`  |
 | `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under active development.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* A fixed duration to wait for the new replicas to be ready. This option can lead to downtime. As such, we recommend using the `WAIT UNTIL READY` option instead.\|  |
 
 **Reset to default:**
@@ -316,7 +318,8 @@ To reset a cluster configuration back to its default value:
 ```mzsql
 ALTER CLUSTER <cluster_name>
 RESET (
-    REPLICATION FACTOR | MANAGED | AUTO SCALING STRATEGY,
+    REPLICATION FACTOR | MANAGED | AUTO SCALING STRATEGY
+    | EXPERIMENTAL ARRANGEMENT COMPRESSION,
     ...
 )
 ;
@@ -329,6 +332,7 @@ RESET (
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  Default: `TRUE`  |
 | `AUTO SCALING STRATEGY` | Optional. Resetting removes any autoscaling strategy from the cluster.  Default: no autoscaling strategy.  |
+| `EXPERIMENTAL ARRANGEMENT COMPRESSION` | {{< warn-if-unreleased-inline "v26.38" >}}  Optional. Resetting turns [dictionary compression](#dictionary-compression) off for the cluster. Because this never changes an existing replica, Materialize creates a new set of replicas without the setting and cuts over to them once they have hydrated.  Default: `FALSE`  |
 
 **Rename:**
 
@@ -482,7 +486,7 @@ immediately.
 During a graceful resize, Materialize:
 1. Provisions new replicas at the target size, alongside the current replicas.
 2. Waits for the new replicas to
-   [hydrate](/concepts/clusters/#consider-hydration-requirements).
+   [hydrate](/concepts/hydration/).
 3. Retires the old replicas.
 
 Throughout, the cluster keeps serving queries, first from the old replicas,
@@ -576,7 +580,7 @@ autoscaling](#configure-autoscaling) for the `ALTER CLUSTER` form.
 
 When you create an index, materialized view, or Kafka upsert source, or when a
 cluster restarts, the cluster must
-[hydrate](/concepts/clusters/#consider-hydration-requirements) the affected
+[hydrate](/concepts/hydration/) the affected
 objects before they can serve results. Hydration reads the input data
 and rebuilds in-memory state, and its speed scales with the cluster
 [size](#available-sizes).
@@ -631,6 +635,52 @@ To remove the autoscaling strategy from a cluster, use `ALTER CLUSTER ... RESET
 You can inspect the configured strategy and any in-flight burst in the
 [`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
 catalog view.
+
+### Dictionary compression
+
+<div class="warning">
+    <strong class="gutter">Unreleased</strong>
+    This feature will be released in
+    <a href="/releases#release-notes"><strong>v26.38</strong></a>.
+    It may not be available in your region yet.
+    The release is scheduled to complete by <strong>August 19, 2026</strong>.
+  </div>
+
+Starting in v26.38, dictionary compression will be available (as **public
+preview**) for managed clusters. Dictionary compression reduces the memory that
+[arrangements](/get-started/arrangements/#arrangements) use when a column holds
+the same values repeatedly. Instead of storing a repeated column value each time
+it appears, Materialize stores that value once and has each row reference it.
+
+Dictionary compression is off by default. You opt in per cluster with the
+`EXPERIMENTAL ARRANGEMENT COMPRESSION` option.
+
+Turn compression on for an existing cluster with `ALTER CLUSTER ... SET
+(EXPERIMENTAL ARRANGEMENT COMPRESSION = true)`, and go back to the default with
+`ALTER CLUSTER ... RESET (EXPERIMENTAL ARRANGEMENT COMPRESSION)`.
+
+> **Warning:** A replica's compression setting is fixed when the replica is created, so
+> changing `EXPERIMENTAL ARRANGEMENT COMPRESSION` never changes an existing
+> replica's arrangements. Materialize instead creates a new set of replicas
+> carrying the new setting. The existing replicas keep serving until the new ones
+> have hydrated, then Materialize retires them. As a result, the cluster
+> temporarily uses roughly twice its usual memory until the switch completes,
+> regardless of whether you enable or disable dictionary compression.
+> Nothing else is needed to apply the setting. Plan for the switch the same way
+> you would plan for resizing a cluster. Because hydration is slower with
+> compression enabled, the switch takes longer when turning compression on than
+> when turning it off.
+
+Dictionary compression trades CPU for memory, and it does **not** reduce memory
+on every workload. The savings come from large arrangements with columns that
+hold a small set of longer values repeated across many rows, such as status
+strings, enum-like labels, or tenant IDs. High-cardinality columns pay the CPU
+cost with little or no memory benefit, and that cost is most visible as slower
+hydration.
+
+For the full tradeoff, guidance on whether your workload is a good fit, and how
+to measure the effect, see [Dictionary
+compression](/transform-data/dictionary-compression/).
 
 ### Replication factor
 
@@ -803,6 +853,7 @@ compute-specific settings. If needed, these can be set explicitly.
 - [`CREATE CLUSTER`](/sql/create-cluster/)
 - [`SHOW CLUSTERS`](/sql/show-clusters/)
 - [`DROP CLUSTER`](/sql/drop-cluster/)
+- [Dictionary compression](/transform-data/dictionary-compression/)
 
 ---
 
@@ -3750,6 +3801,7 @@ CREATE CLUSTER [IF NOT EXISTS] <cluster_name> (
             [, LINGER DURATION = <interval>]
         )
     )]
+    [, EXPERIMENTAL ARRANGEMENT COMPRESSION = <bool>]
 );
 
 ```
@@ -3762,6 +3814,7 @@ CREATE CLUSTER [IF NOT EXISTS] <cluster_name> (
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. See [Replication factor](#replication-factor) for details.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  <a name="unmanaged-clusters"></a>  Specify `FALSE` to create an **unmanaged** cluster. With unmanaged clusters, you need to manually manage the cluster's replicas using the the [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) and [`DROP CLUSTER REPLICA`](/sql/drop-cluster-replica) commands. When creating an unmanaged cluster, you must specify the `REPLICAS` option as well.  {{< tip >}} When getting started with Materialize, we recommend starting with managed clusters. {{</ tip >}}  Default: `TRUE`  |
 | `AUTO SCALING STRATEGY` | Optional. While the cluster has un-hydrated objects, provisions an extra burst replica at a larger size to speed up hydration. The steady-size replicas will continue to run, and hydrate in parallel. Once a steady-size replica hydrates and catches up with the burst, the burst replica is retired. This helps optimize costs while speeding up hydration. Only available on managed clusters.  Specify a single `ON HYDRATION` sub-policy, which supports the following options:  \| Option \| Description \| \|--------\|-------------\| \| `HYDRATION SIZE` \| The size of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration. For valid size values, see [Available sizes](#available-sizes). \| \| `LINGER DURATION` \| Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`. \|  |
+| `EXPERIMENTAL ARRANGEMENT COMPRESSION` | {{< warn-if-unreleased-inline "v26.38" >}}  Optional. Whether to enable [dictionary compression](#dictionary-compression) for the arrangements maintained by the cluster's replicas. Compression reduces the memory those arrangements use, at the cost of CPU, and does not benefit every workload. Only available on managed clusters.  Default: `FALSE`  |
 
 ## Details
 
@@ -3934,7 +3987,7 @@ on cluster resizing.
 
 When you create an index, materialized view, or Kafka upsert source, or when a
 cluster restarts, the cluster must
-[hydrate](/concepts/clusters/#consider-hydration-requirements) the affected
+[hydrate](/concepts/hydration/) the affected
 objects before they can serve results. Hydration reads the input data
 and rebuilds in-memory state, and its speed scales with the cluster
 [size](#available-sizes).
@@ -3989,6 +4042,36 @@ To remove the autoscaling strategy from a cluster, use `ALTER CLUSTER ... RESET
 You can inspect the configured strategy and any in-flight burst in the
 [`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
 catalog view.
+
+### Dictionary compression
+
+<div class="warning">
+    <strong class="gutter">Unreleased</strong>
+    This feature will be released in
+    <a href="/releases#release-notes"><strong>v26.38</strong></a>.
+    It may not be available in your region yet.
+    The release is scheduled to complete by <strong>August 19, 2026</strong>.
+  </div>
+
+Starting in v26.38, dictionary compression will be available (as **public
+preview**) for managed clusters. Dictionary compression reduces the memory that
+[arrangements](/get-started/arrangements/#arrangements) use when a column holds
+the same values repeatedly. Instead of storing a repeated column value each time
+it appears, Materialize stores that value once and has each row reference it.
+
+Dictionary compression is off by default. You opt in per cluster with the
+`EXPERIMENTAL ARRANGEMENT COMPRESSION` option.
+
+Dictionary compression trades CPU for memory, and it does **not** reduce memory
+on every workload. The savings come from large arrangements with columns that
+hold a small set of longer values repeated across many rows, such as status
+strings, enum-like labels, or tenant IDs. High-cardinality columns pay the CPU
+cost with little or no memory benefit, and that cost is most visible as slower
+hydration.
+
+For the full tradeoff, guidance on whether your workload is a good fit, and how
+to measure the effect, see [Dictionary
+compression](/transform-data/dictionary-compression/).
 
 ### Replication factor
 
@@ -4111,6 +4194,7 @@ The privileges required to execute this statement are:
 
 - [`ALTER CLUSTER`]
 - [`DROP CLUSTER`]
+- [Dictionary compression](/transform-data/dictionary-compression/)
 
 [AWS availability zone IDs]: https://docs.aws.amazon.com/ram/latest/userguide/working-with-az-ids.html
 [`ALTER CLUSTER`]: /sql/alter-cluster/
@@ -7208,45 +7292,12 @@ The privileges required to execute `CREATE SOURCE` are:
 
 The following guides step you through setting up sources:
 
-<div class="multilinkbox">
-<div class="linkbox ">
-  <div class="title">
-    Databases (CDC)
-  </div>
-  <ul>
-<li><a href="/ingest-data/postgres/" >PostgreSQL</a></li>
-<li><a href="/ingest-data/mysql/" >MySQL</a></li>
-<li><a href="/ingest-data/sql-server/" >SQL Server</a></li>
-<li><a href="/ingest-data/cdc-cockroachdb/" >CockroachDB</a></li>
-<li><a href="/ingest-data/mongodb/" >MongoDB</a></li>
-</ul>
-
-</div>
-
-<div class="linkbox ">
-  <div class="title">
-    Message Brokers
-  </div>
-  <ul>
-<li><a href="/ingest-data/kafka/" >Kafka</a></li>
-<li><a href="/sql/create-source/kafka" >Redpanda</a></li>
-</ul>
-
-</div>
-
-<div class="linkbox ">
-  <div class="title">
-    Webhooks
-  </div>
-  <ul>
-<li><a href="/ingest-data/webhooks/amazon-eventbridge/" >Amazon EventBridge</a></li>
-<li><a href="/ingest-data/webhooks/segment/" >Segment</a></li>
-<li><a href="/sql/create-source/webhook" >Other webhooks</a></li>
-</ul>
-
-</div>
-
-</div>
+| Type | External system |
+|------|-----------------|
+| **Databases (CDC): native connectors** | [PostgreSQL](/ingest-data/postgres/) <br> [MySQL](/ingest-data/mysql/) <br> [SQL Server](/ingest-data/sql-server/) |
+| **Databases (CDC): via the Kafka connector** | [CockroachDB](/ingest-data/cdc-cockroachdb/) (using changefeeds) <br> [MongoDB](/ingest-data/mongodb/) (using Debezium) |
+| **Message brokers** | [Kafka](/ingest-data/kafka/) <br> [Redpanda](/sql/create-source/kafka) |
+| **Webhooks** | [Amazon EventBridge](/ingest-data/webhooks/amazon-eventbridge/) <br> [Segment](/ingest-data/webhooks/segment/) <br> [HubSpot](/ingest-data/webhooks/hubspot/) <br> [RudderStack](/ingest-data/webhooks/rudderstack/) <br> [SnowcatCloud](/ingest-data/webhooks/snowcatcloud/) <br> [Stripe](/ingest-data/webhooks/stripe/)|
 
 ## Best practices
 
@@ -11080,7 +11131,7 @@ the syntax errors that result are not always obvious.
 The current keywords are listed below.
 
 | | | | |
-|--|--|--|--||`ABORT` |`ACCESS` |`ACCOUNT` |`ACTION`||`ADD` |`ADDED` |`ADDRESS` |`ADDRESSES`||`AFTER` |`AGGREGATE` |`AGGREGATION` |`ALIGNED`||`ALL` |`ALTER` |`ANALYSE` |`ANALYSIS`||`ANALYZE` |`AND` |`ANY` |`APPEND`||`APPLY` |`ARITY` |`ARN` |`ARRANGED`||`ARRANGEMENT` |`ARRAY` |`AS` |`ASC`||`ASSERT` |`ASSUME` |`AT` |`AUCTION`||`AUTHORITY` |`AUTO` |`AVAILABILITY` |`AVRO`||`AWS` |`BATCH` |`BEGIN` |`BETWEEN`||`BIGINT` |`BILLED` |`BODY` |`BOOLEAN`||`BOTH` |`BPCHAR` |`BROKEN` |`BROKER`||`BROKERS` |`BY` |`BYTES` |`CAPTURE`||`CARDINALITY` |`CASCADE` |`CASE` |`CAST`||`CATALOG` |`CERTIFICATE` |`CHAIN` |`CHAINS`||`CHAR` |`CHARACTER` |`CHARACTERISTICS` |`CHECK`||`CLASS` |`CLIENT` |`CLOCK` |`CLOSE`||`CLUSTER` |`CLUSTERS` |`COALESCE` |`COLLATE`||`COLUMN` |`COLUMNS` |`COMMENT` |`COMMIT`||`COMMITTED` |`COMPACTION` |`COMPATIBILITY` |`COMPRESSION`||`COMPUTE` |`COMPUTECTL` |`CONFIG` |`CONFLUENT`||`CONNECTION` |`CONNECTIONS` |`CONSTRAINT` |`COPY`||`CORRELATED` |`COUNT` |`COUNTER` |`CPU`||`CREATE` |`CREATECLUSTER` |`CREATEDB` |`CREATENETWORKPOLICY`||`CREATEROLE` |`CREATION` |`CREDENTIAL` |`CROSS`||`CSE` |`CSV` |`CTE` |`CURRENT`||`CURSOR` |`DATABASE` |`DATABASES` |`DATUMS`||`DAY` |`DAYS` |`DEALLOCATE` |`DEBEZIUM`||`DEBUG` |`DEBUGGING` |`DEC` |`DECIMAL`||`DECLARE` |`DECODING` |`DECORRELATED` |`DEFAULT`||`DEFAULTS` |`DELETE` |`DELIMITED` |`DELIMITER`||`DELTA` |`DESC` |`DETAILS` |`DIRECTION`||`DISCARD` |`DISK` |`DISTINCT` |`DOC`||`DOT` |`DOUBLE` |`DROP` |`DURATION`||`EAGER` |`ELEMENT` |`ELSE` |`ENABLE`||`END` |`ENDPOINT` |`ENFORCED` |`ENVELOPE`||`EQUIVALENCES` |`ERROR` |`ERRORS` |`ESCAPE`||`ESTIMATE` |`EVERY` |`EXCEPT` |`EXCLUDE`||`EXECUTE` |`EXISTS` |`EXPECTED` |`EXPERIMENTAL`||`EXPLAIN` |`EXPOSE` |`EXPRESSIONS` |`EXTERNAL`||`EXTRACT` |`FACTOR` |`FALSE` |`FAST`||`FEATURES` |`FETCH` |`FIELDS` |`FILE`||`FILES` |`FILTER` |`FIRST` |`FIXED`||`FIXPOINT` |`FLOAT` |`FOLLOWING` |`FOR`||`FOREIGN` |`FORMAT` |`FORWARD` |`FROM`||`FULL` |`FULLNAME` |`FUNCTION` |`FUSION`||`GCP` |`GENERATOR` |`GLUE` |`GRANT`||`GREATEST` |`GROUP` |`GROUPS` |`HAVING`||`HEADER` |`HEADERS` |`HINTS` |`HISTORY`||`HOLD` |`HOST` |`HOUR` |`HOURS`||`HUMANIZED` |`HYDRATION` |`ICEBERG` |`ID`||`IDENTIFIERS` |`IDS` |`IF` |`IGNORE`||`ILIKE` |`IMPLEMENTATIONS` |`IMPORTED` |`IN`||`INCLUDE` |`INDEX` |`INDEXES` |`INFO`||`INHERIT` |`INLINE` |`INNER` |`INPUT`||`INSERT` |`INSIGHTS` |`INSPECT` |`INSTANCE`||`INT` |`INTEGER` |`INTERNAL` |`INTERSECT`||`INTERVAL` |`INTO` |`INTROSPECTION` |`IS`||`ISNULL` |`ISOLATION` |`JOIN` |`JOINS`||`JSON` |`KAFKA` |`KEY` |`KEYS`||`LAST` |`LATERAL` |`LATEST` |`LEADING`||`LEAST` |`LEFT` |`LEGACY` |`LETREC`||`LEVEL` |`LIKE` |`LIMIT` |`LINEAR`||`LINGER` |`LIST` |`LOAD` |`LOCAL`||`LOCALLY` |`LOG` |`LOGICAL` |`LOGIN`||`LOWERING` |`MANAGED` |`MANUAL` |`MAP`||`MARKETING` |`MATCHING` |`MATERIALIZE` |`MATERIALIZED`||`MAX` |`MECHANISMS` |`MEMBERSHIP` |`MEMORY`||`MESSAGE` |`METADATA` |`MINUTE` |`MINUTES`||`MOCK` |`MODE` |`MONTH` |`MONTHS`||`MUTUALLY` |`MYSQL` |`NAME` |`NAMES`||`NAMESPACE` |`NATURAL` |`NEGATIVE` |`NETWORK`||`NEW` |`NEXT` |`NFC` |`NFD`||`NFKC` |`NFKD` |`NO` |`NOCREATECLUSTER`||`NOCREATEDB` |`NOCREATEROLE` |`NODE` |`NOINHERIT`||`NOLOGIN` |`NON` |`NONE` |`NORMALIZE`||`NOSUPERUSER` |`NOT` |`NOTICE` |`NOTICES`||`NULL` |`NULLIF` |`NULLS` |`OBJECTS`||`OF` |`OFFSET` |`ON` |`ONLY`||`OPERATOR` |`OPTIMIZED` |`OPTIMIZER` |`OPTIONS`||`OR` |`ORDER` |`ORDINALITY` |`OUTER`||`OVER` |`OWNED` |`OWNER` |`PARTITION`||`PARTITIONS` |`PASSWORD` |`PATH` |`PATTERN`||`PHYSICAL` |`PLAN` |`PLANS` |`POLICIES`||`POLICY` |`PORT` |`POSITION` |`POSTGRES`||`PRECEDING` |`PRECISION` |`PREFIX` |`PREPARE`||`PRIMARY` |`PRIORITIZE` |`PRIVATELINK` |`PRIVILEGES`||`PROGRESS` |`PROJECTION` |`PROTOBUF` |`PROTOCOL`||`PUBLIC` |`PUBLICATION` |`PUSHDOWN` |`QUALIFY`||`QUERY` |`QUOTE` |`RAISE` |`RANGE`||`RATE` |`RAW` |`READ` |`READY`||`REAL` |`REASSIGN` |`RECURSION` |`RECURSIVE`||`REDACTED` |`REDUCE` |`REFERENCE` |`REFERENCES`||`REFRESH` |`REGEX` |`REGION` |`REGISTRY`||`RELATION` |`RENAME` |`REOPTIMIZE` |`REPEATABLE`||`REPLACE` |`REPLACEMENT` |`REPLAN` |`REPLICA`||`REPLICAS` |`REPLICATION` |`RESET` |`RESPECT`||`RESTRICT` |`RETAIN` |`RETURN` |`RETURNING`||`REVOKE` |`RIGHT` |`ROLE` |`ROLES`||`ROLLBACK` |`ROTATE` |`ROUNDS` |`ROW`||`ROWS` |`RULES` |`SASL` |`SCALE`||`SCALING` |`SCHEDULE` |`SCHEMA` |`SCHEMAS`||`SCOPE` |`SECOND` |`SECONDS` |`SECRET`||`SECRETS` |`SECURITY` |`SEED` |`SELECT`||`SEQUENCES` |`SERIALIZABLE` |`SERVER` |`SERVICE`||`SESSION` |`SET` |`SHARD` |`SHOW`||`SINK` |`SINKS` |`SIZE` |`SKEW`||`SMALLINT` |`SNAPSHOT` |`SOME` |`SOURCE`||`SOURCES` |`SQL` |`SSH` |`SSL`||`START` |`STDIN` |`STDOUT` |`STORAGE`||`STORAGECTL` |`STRATEGY` |`STRICT` |`STRING`||`STRONG` |`SUBSCRIBE` |`SUBSOURCE` |`SUBSOURCES`||`SUBSTRING` |`SUBTREE` |`SUPERUSER` |`SWAP`||`SYNTAX` |`SYSTEM` |`TABLE` |`TABLES`||`TAIL` |`TEMP` |`TEMPORARY` |`TEST`||`TEXT` |`THEN` |`TICK` |`TIES`||`TIME` |`TIMEOUT` |`TIMESTAMP` |`TIMESTAMPTZ`||`TIMING` |`TO` |`TOKEN` |`TOPIC`||`TPCH` |`TRACE` |`TRAILING` |`TRANSACTION`||`TRANSACTIONAL` |`TRANSFORM` |`TRIM` |`TRUE`||`TUNNEL` |`TYPE` |`TYPES` |`UNBOUNDED`||`UNCOMMITTED` |`UNION` |`UNIQUE` |`UNIT`||`UNKNOWN` |`UNNEST` |`UNTIL` |`UP`||`UPDATE` |`UPSERT` |`URL` |`USAGE`||`USER` |`USERNAME` |`USERS` |`USING`||`VALIDATE` |`VALUE` |`VALUES` |`VARCHAR`||`VARIADIC` |`VARYING` |`VERBOSE` |`VERSION`||`VIEW` |`VIEWS` |`WAIT` |`WAREHOUSE`||`WARNING` |`WEBHOOK` |`WHEN` |`WHERE`||`WHILE` |`WINDOW` |`WIRE` |`WITH`||`WITHIN` |`WITHOUT` |`WORK` |`WORKERS`||`WORKLOAD` |`WRITE` |`YEAR` |`YEARS`||`ZONE` |`ZONES` |&nbsp; |&nbsp;|
+|--|--|--|--||`ABORT` |`ACCESS` |`ACCOUNT` |`ACTION`||`ADD` |`ADDED` |`ADDRESS` |`ADDRESSES`||`AFTER` |`AGGREGATE` |`AGGREGATION` |`ALIGNED`||`ALL` |`ALTER` |`ANALYSE` |`ANALYSIS`||`ANALYZE` |`AND` |`ANY` |`APPEND`||`APPLY` |`ARITY` |`ARN` |`ARRANGED`||`ARRANGEMENT` |`ARRAY` |`AS` |`ASC`||`ASSERT` |`ASSUME` |`AT` |`AUCTION`||`AUTHORITY` |`AUTO` |`AVAILABILITY` |`AVRO`||`AWS` |`BATCH` |`BEGIN` |`BETWEEN`||`BIGINT` |`BILLED` |`BODY` |`BOOLEAN`||`BOTH` |`BPCHAR` |`BROKEN` |`BROKER`||`BROKERS` |`BY` |`BYTES` |`CAPTURE`||`CARDINALITY` |`CASCADE` |`CASE` |`CAST`||`CATALOG` |`CERTIFICATE` |`CHAIN` |`CHAINS`||`CHAR` |`CHARACTER` |`CHARACTERISTICS` |`CHECK`||`CLASS` |`CLIENT` |`CLOCK` |`CLOSE`||`CLUSTER` |`CLUSTERS` |`COALESCE` |`COLLATE`||`COLUMN` |`COLUMNS` |`COMMENT` |`COMMIT`||`COMMITTED` |`COMPACTION` |`COMPATIBILITY` |`COMPRESSION`||`COMPUTE` |`COMPUTECTL` |`CONFIG` |`CONFLUENT`||`CONNECTION` |`CONNECTIONS` |`CONSTRAINT` |`COPY`||`CORRELATED` |`COUNT` |`COUNTER` |`CPU`||`CREATE` |`CREATECLUSTER` |`CREATEDB` |`CREATENETWORKPOLICY`||`CREATEROLE` |`CREATION` |`CREDENTIAL` |`CROSS`||`CSE` |`CSV` |`CTE` |`CURRENT`||`CURSOR` |`DATABASE` |`DATABASES` |`DATUMS`||`DAY` |`DAYS` |`DEALLOCATE` |`DEBEZIUM`||`DEBUG` |`DEBUGGING` |`DEC` |`DECIMAL`||`DECLARE` |`DECODING` |`DECORRELATED` |`DEFAULT`||`DEFAULTS` |`DELETE` |`DELIMITED` |`DELIMITER`||`DELTA` |`DESC` |`DETAILS` |`DIRECTION`||`DISCARD` |`DISK` |`DISTINCT` |`DOC`||`DOT` |`DOUBLE` |`DROP` |`DURATION`||`EAGER` |`ELEMENT` |`ELSE` |`ENABLE`||`END` |`ENDPOINT` |`ENFORCED` |`ENVELOPE`||`EQUIVALENCES` |`ERROR` |`ERRORS` |`ESCAPE`||`ESTIMATE` |`EVERY` |`EXCEPT` |`EXCLUDE`||`EXECUTE` |`EXISTS` |`EXPECTED` |`EXPERIMENTAL`||`EXPLAIN` |`EXPOSE` |`EXPRESSIONS` |`EXTERNAL`||`EXTRACT` |`FACTOR` |`FALSE` |`FAST`||`FEATURES` |`FETCH` |`FIELDS` |`FILE`||`FILES` |`FILTER` |`FIRST` |`FIXED`||`FIXPOINT` |`FLOAT` |`FOLLOWING` |`FOR`||`FOREIGN` |`FORMAT` |`FORWARD` |`FROM`||`FULL` |`FULLNAME` |`FUNCTION` |`FUSION`||`GCP` |`GENERATOR` |`GLUE` |`GRANT`||`GREATEST` |`GROUP` |`GROUPS` |`HAVING`||`HEADER` |`HEADERS` |`HINTS` |`HISTORY`||`HOLD` |`HOST` |`HOUR` |`HOURS`||`HUMANIZED` |`HYDRATION` |`ICEBERG` |`ID`||`IDENTIFIERS` |`IDS` |`IF` |`IGNORE`||`ILIKE` |`IMPLEMENTATIONS` |`IMPORTED` |`IN`||`INCLUDE` |`INDEX` |`INDEXES` |`INFO`||`INHERIT` |`INLINE` |`INNER` |`INPUT`||`INSERT` |`INSIGHTS` |`INSPECT` |`INSTANCE`||`INT` |`INTEGER` |`INTERNAL` |`INTERSECT`||`INTERVAL` |`INTO` |`INTROSPECTION` |`IS`||`ISNULL` |`ISOLATION` |`JOIN` |`JOINS`||`JSON` |`KAFKA` |`KEY` |`KEYS`||`LAST` |`LATERAL` |`LATEST` |`LEADING`||`LEAST` |`LEFT` |`LEGACY` |`LETREC`||`LEVEL` |`LIKE` |`LIMIT` |`LINEAR`||`LINGER` |`LIST` |`LOAD` |`LOCAL`||`LOCALLY` |`LOG` |`LOGICAL` |`LOGIN`||`LOWERING` |`MANAGED` |`MANUAL` |`MAP`||`MARKETING` |`MATCHING` |`MATERIALIZE` |`MATERIALIZED`||`MAX` |`MECHANISMS` |`MEMBERSHIP` |`MEMORY`||`MESSAGE` |`METADATA` |`METRIC` |`MINUTE`||`MINUTES` |`MOCK` |`MODE` |`MONTH`||`MONTHS` |`MUTUALLY` |`MYSQL` |`NAME`||`NAMES` |`NAMESPACE` |`NATURAL` |`NEGATIVE`||`NETWORK` |`NEW` |`NEXT` |`NFC`||`NFD` |`NFKC` |`NFKD` |`NO`||`NOCREATECLUSTER` |`NOCREATEDB` |`NOCREATEROLE` |`NODE`||`NOINHERIT` |`NOLOGIN` |`NON` |`NONE`||`NORMALIZE` |`NOSUPERUSER` |`NOT` |`NOTICE`||`NOTICES` |`NULL` |`NULLIF` |`NULLS`||`OBJECTS` |`OF` |`OFFSET` |`ON`||`ONLY` |`OPERATOR` |`OPTIMIZED` |`OPTIMIZER`||`OPTIONS` |`OR` |`ORDER` |`ORDINALITY`||`OUTER` |`OVER` |`OWNED` |`OWNER`||`PARTITION` |`PARTITIONS` |`PASSWORD` |`PATH`||`PATTERN` |`PHYSICAL` |`PLAN` |`PLANS`||`POLICIES` |`POLICY` |`PORT` |`POSITION`||`POSTGRES` |`PRECEDING` |`PRECISION` |`PREFIX`||`PREPARE` |`PRIMARY` |`PRIORITIZE` |`PRIVATELINK`||`PRIVILEGES` |`PROGRESS` |`PROJECTION` |`PROTOBUF`||`PROTOCOL` |`PUBLIC` |`PUBLICATION` |`PUSHDOWN`||`QUALIFY` |`QUERY` |`QUOTE` |`RAISE`||`RANGE` |`RATE` |`RAW` |`READ`||`READY` |`REAL` |`REASSIGN` |`RECURSION`||`RECURSIVE` |`REDACTED` |`REDUCE` |`REFERENCE`||`REFERENCES` |`REFRESH` |`REGEX` |`REGION`||`REGISTRY` |`RELATION` |`RENAME` |`REOPTIMIZE`||`REPEATABLE` |`REPLACE` |`REPLACEMENT` |`REPLAN`||`REPLICA` |`REPLICAS` |`REPLICATION` |`RESET`||`RESPECT` |`RESTRICT` |`RETAIN` |`RETURN`||`RETURNING` |`REVOKE` |`RIGHT` |`ROLE`||`ROLES` |`ROLLBACK` |`ROTATE` |`ROUNDS`||`ROW` |`ROWS` |`RULES` |`SASL`||`SCALE` |`SCALING` |`SCHEDULE` |`SCHEMA`||`SCHEMAS` |`SCOPE` |`SECOND` |`SECONDS`||`SECRET` |`SECRETS` |`SECURITY` |`SEED`||`SELECT` |`SEQUENCES` |`SERIALIZABLE` |`SERVER`||`SERVICE` |`SESSION` |`SET` |`SHARD`||`SHOW` |`SINK` |`SINKS` |`SIZE`||`SKEW` |`SMALLINT` |`SNAPSHOT` |`SOME`||`SOURCE` |`SOURCES` |`SQL` |`SSH`||`SSL` |`START` |`STDIN` |`STDOUT`||`STORAGE` |`STORAGECTL` |`STRATEGY` |`STRICT`||`STRING` |`STRONG` |`SUBSCRIBE` |`SUBSOURCE`||`SUBSOURCES` |`SUBSTRING` |`SUBTREE` |`SUPERUSER`||`SWAP` |`SYNTAX` |`SYSTEM` |`TABLE`||`TABLES` |`TAIL` |`TEMP` |`TEMPORARY`||`TEST` |`TEXT` |`THEN` |`TICK`||`TIES` |`TIME` |`TIMEOUT` |`TIMESTAMP`||`TIMESTAMPTZ` |`TIMING` |`TO` |`TOKEN`||`TOPIC` |`TPCH` |`TRACE` |`TRAILING`||`TRANSACTION` |`TRANSACTIONAL` |`TRANSFORM` |`TRIM`||`TRUE` |`TUNNEL` |`TYPE` |`TYPES`||`UNBOUNDED` |`UNCOMMITTED` |`UNION` |`UNIQUE`||`UNIT` |`UNKNOWN` |`UNNEST` |`UNTIL`||`UP` |`UPDATE` |`UPSERT` |`URL`||`USAGE` |`USER` |`USERNAME` |`USERS`||`USING` |`VALIDATE` |`VALUE` |`VALUES`||`VARCHAR` |`VARIADIC` |`VARYING` |`VERBOSE`||`VERSION` |`VIEW` |`VIEWS` |`WAIT`||`WAREHOUSE` |`WARNING` |`WEBHOOK` |`WHEN`||`WHERE` |`WHILE` |`WINDOW` |`WIRE`||`WITH` |`WITHIN` |`WITHOUT` |`WORK`||`WORKERS` |`WORKLOAD` |`WRITE` |`YEAR`||`YEARS` |`ZONE` |`ZONES` |&nbsp;|
 
 ---
 
@@ -15108,7 +15159,9 @@ Operator | Computes
 The regular expression syntax supported by Materialize is documented by the
 [Rust `regex` crate](https://docs.rs/regex/*/#syntax).
 The maximum length of a regular expression is 1 MiB in its raw form, and 10 MiB
-after compiling it.
+after compiling it. A regular expression may also contain at most 2000 character
+classes, counting each Unicode, Perl, or POSIX class such as `\p{L}`, `\d`, or
+`[[:alpha:]]`, and each range such as `a-z`.
 
 > **Warning:** Materialize regular expressions are similar to, but not identical to, PostgreSQL
 > regular expressions.

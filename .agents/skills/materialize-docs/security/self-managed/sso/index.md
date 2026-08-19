@@ -234,7 +234,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.36.0
+  environmentdImageRef: materialize/environmentd:v26.37.0
   backendSecretName: materialize-backend
   authenticatorKind: Oidc
   requestRollout: 00000000-0000-0000-0000-000000000003 # Switching to Oidc requires a rollout
@@ -283,7 +283,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.36.0
+  environmentdImageRef: materialize/environmentd:v26.37.0
   backendSecretName: materialize-backend
   authenticatorKind: Oidc
   systemParameterConfigmapName: mz-system-params
