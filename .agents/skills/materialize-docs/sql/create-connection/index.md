@@ -1263,7 +1263,7 @@ CREATE CONNECTION <connection_name> TO AWS PRIVATELINK (
 | Syntax element | Description |
 | --- | --- |
 | `<connection_name>` | A name for the connection.  |
-| `SERVICE NAME` | *Value:* `text`. Required.  The name of the AWS PrivateLink service.  |
+| `SERVICE NAME` | *Value:* `text`. Required.  The name of the AWS VPC endpoint service, which always starts with `com.amazonaws.`.  |
 | `AVAILABILITY ZONES` | *Value:* `text[]`. Required.  The IDs of the AWS availability zones in which the service is accessible.  |
 
 #### Permissions {#aws-privatelink-permissions}
