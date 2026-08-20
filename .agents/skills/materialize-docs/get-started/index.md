@@ -308,7 +308,7 @@ not suitable for full feature set evaluations or production workloads.
    been already downloaded.
 
    ```sh
-   docker run -d -p 127.0.0.1:6874:6874 -p 127.0.0.1:6875:6875 -p 127.0.0.1:6876:6876 -p 127.0.0.1:6877:6877 materialize/materialized:v26.37.0
+   docker run -d -p 127.0.0.1:6874:6874 -p 127.0.0.1:6875:6875 -p 127.0.0.1:6876:6876 -p 127.0.0.1:6877:6877 materialize/materialized:v26.38.0
    ```
 
    When running locally:
