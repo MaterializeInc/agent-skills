@@ -130,6 +130,22 @@ Analyze a Materialize environment via the MCP Developer endpoint, and/or configu
 
 </details>
 
+<details>
+<summary><strong>materialize-debug-freshness</strong></summary>
+
+Diagnosing why a Materialize object is behind wall-clock time, from the lag ranking down to the operator and the SQL responsible.
+
+**Use when:**
+
+- An object shows high lag in `mz_wallclock_global_lag`, or a freshness alert fires
+- A materialized view, index, or sink keeps serving old data
+- A dataflow cannot keep up with its input
+- You need to know whether the delay is ingestion or compute, and which object owns it
+
+**Covers:** the lag ranking read as a distribution, the status sweep that catches a stalled source whose frontier still looks current, lag history for spike against plateau, hop-by-hop attribution through `mz_materialization_lag`, hydration and replica selection before any `EXPLAIN ANALYZE`, ranking dataflows on a shared replica, per-operator cost and worker skew, and mapping an operator back through inlined views to the clause that produced it. Diagnosis only — remedies are a separate request.
+
+</details>
+
 ## Claude Code Plugins
 
 This repo also doubles as a [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces), for capabilities that go beyond what a portable skill can express — such as registering a language server.
@@ -210,6 +226,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-08-18: Add materialize-debug-freshness skill
 - 2026-08-14: Add mz-deploy skill
 - 2026-07-29: Add mz-sql-lsp Claude Code plugin
 - 2026-07-09: Add materialize-terraform-self-managed skill
