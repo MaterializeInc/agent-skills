@@ -82,10 +82,10 @@ For the RDS PostgreSQL metadata database, we recommend:
 - **Multi-AZ** for production.
 - **gp3** storage.
 
-| Deployment size | Instance | vCPU / memory | Continuously-active objects (~60% CPU) |
-|---|---|---|---|
-| Entry / small production | `db.r6g.large` | 2 / 16 GiB | ~4,500 |
-| Recommended default | `db.r6g.2xlarge` | 8 / 64 GiB | ~18,000 |
+| Deployment size | Instance | vCPU / memory | Storage | Provisioned IOPS | Continuously-active objects (~60% CPU) |
+|---|---|---|---|---|---|
+| Entry / small production | `db.r6g.large` | 2 / 16 GiB | 200 GiB | 3,000 (baseline) | ~4,500 |
+| Recommended default | `db.r6g.2xlarge` | 8 / 64 GiB | 400 GiB | 6,000 | ~18,000 |
 
 ## TLS
 
@@ -221,11 +221,13 @@ database, we recommend:
 - The **Memory Optimized** tier (E-series), which provides the 1:8
   vCore-to-memory ratio recommended for the metadata database.
 - **Zone-redundant high availability** for production.
+- **Premium SSD v2** storage, which includes 3,000 IOPS and 125 MB/s at any
+  size.
 
-| Deployment size | `sku_name` | vCores / memory | Continuously-active objects (~60% CPU) |
-|---|---|---|---|
-| Entry / small production | `MO_Standard_E4ds_v5` | 4 / 32 GiB | ~4,500 |
-| Recommended default | `MO_Standard_E16ds_v5` | 16 / 128 GiB | ~18,000 |
+| Deployment size | `sku_name` | vCores / memory | Storage | Provisioned IOPS | Continuously-active objects (~60% CPU) |
+|---|---|---|---|---|---|
+| Entry / small production | `MO_Standard_E4ds_v5` | 4 / 32 GiB | 128 GiB | 3,000 (included) | ~4,500 |
+| Recommended default | `MO_Standard_E16ds_v5` | 16 / 128 GiB | 512 GiB | 6,000 | ~18,000 |
 
 ## TLS
 
@@ -370,11 +372,13 @@ recommend:
   metadata database. Avoid shared-core machine types (`db-f1-micro`,
   `db-g1-small`) in production.
 - A **regional (highly available)** configuration for production.
+- **SSD** storage. IOPS and throughput cannot be configured independently: they
+  scale with the provisioned size at 30 IOPS and 0.48 MB/s per GB.
 
-| Deployment size | `tier` | vCPU / memory | Continuously-active objects (~60% CPU) |
-|---|---|---|---|
-| Entry / small production | `db-perf-optimized-N-4` | 4 / 32 GB | ~4,500 |
-| Recommended default | `db-perf-optimized-N-16` | 16 / 128 GB | ~18,000 |
+| Deployment size | `tier` | vCPU / memory | Storage | Provisioned IOPS | Continuously-active objects (~60% CPU) |
+|---|---|---|---|---|---|
+| Entry / small production | `db-perf-optimized-N-4` | 4 / 32 GB | 200 GB | 6,000 (set by size) | ~4,500 |
+| Recommended default | `db-perf-optimized-N-16` | 16 / 128 GB | 500 GB | 15,000 (set by size) | ~18,000 |
 
 ## TLS
 
