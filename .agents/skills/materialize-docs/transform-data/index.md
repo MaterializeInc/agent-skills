@@ -611,13 +611,7 @@ index, you have to drop and recreate all downstream dependencies.
 
 ## Dictionary compression
 
-<div class="warning">
-    <strong class="gutter">Unreleased</strong>
-    This feature will be released in
-    <a href="/releases#release-notes"><strong>v26.38</strong></a>.
-    It may not be available in your region yet.
-    The release is scheduled to complete by <strong>August 19, 2026</strong>.
-  </div>
+> **Public Preview:** This feature is in public preview.
 
 Starting in v26.38, dictionary compression will be available (as **public
 preview**) for managed clusters. Dictionary compression reduces the memory that
