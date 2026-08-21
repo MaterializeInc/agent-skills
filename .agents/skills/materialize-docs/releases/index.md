@@ -1833,6 +1833,10 @@ notes](/self-managed-deployments/upgrading/version-notes/).
 
 ---
 
+## Materialize v26.40
+
+---
+
 ## Materialize v26.39
 
 ---
