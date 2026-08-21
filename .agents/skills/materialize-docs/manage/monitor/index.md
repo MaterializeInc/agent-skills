@@ -27,11 +27,46 @@ prevent operational incidents. For alert rules guidelines, see
 You can monitor the performance and overall health of your Self-Managed
 Materialize.
 
-To help you get started, the following guides are available:
+The Materialize Terraform modules ([AWS
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws),
+[Azure
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure),
+[GCP
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp))
+install a monitoring stack alongside your deployment. It is enabled by default
+starting with v11.0.0 of the Materialize Terraform Modules. For the module
+install steps, see [Install using Terraform
+modules](/self-managed-deployments/installation/#install-using-terraform-modules).
 
-- [Grafana](/manage/monitor/self-managed/grafana/)
+The stack collects metrics and logs from Materialize and from the cluster,
+stores them in your own infrastructure, and ships dashboards to query them:
 
-- [Datadog using Prometheus SQL Exporter](/manage/monitor/self-managed/datadog/)
+- [How logs and metrics are stored](/manage/monitor/self-managed/storage/), including
+  the backends you can forward them to.
+
+- [Grafana](/manage/monitor/self-managed/grafana/), the dashboards and query
+  interface that ship with the stack.
+
+To configure the stack outside the Materialize Terraform modules, or to see the
+full set of module variables, see the [`materialize-monitoring` Terraform
+installation guide
+⧉](https://materializeinc.github.io/materialize-monitoring/getting-started/terraform/).
+
+To send metrics and logs to a platform you already run, a guide is available for
+each destination:
+
+- [Datadog](/manage/monitor/self-managed/datadog/)
+
+- [Honeycomb](/manage/monitor/self-managed/honeycomb/)
+
+- [OpenTelemetry](/manage/monitor/self-managed/opentelemetry/), for any other OTLP
+  endpoint, including your own collector.
+
+- [Google Cloud Monitoring](/manage/monitor/self-managed/google-cloud-monitoring/)
+
+- [Prometheus remote
+  write](/manage/monitor/self-managed/prometheus-remote-write/), for Mimir,
+  Amazon Managed Prometheus, Grafana Cloud, or a Thanos you run elsewhere.
 
 ### Alerting
 
@@ -4102,18 +4137,52 @@ Metrics for data output to external systems.
 
 This section covers monitoring and alerting for Self-Managed Materialize.
 
-### Monitoring
+## Built-in monitoring stack
 
-You can monitor the performance and overall health of your Self-Managed
-Materialize.
+The Materialize Terraform modules ([AWS
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws),
+[Azure
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure),
+[GCP
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp))
+install a monitoring stack alongside your deployment. It is enabled by default
+starting with v11.0.0 of the Materialize Terraform Modules. For the module
+install steps, see [Install using Terraform
+modules](/self-managed-deployments/installation/#install-using-terraform-modules).
 
-To help you get started, the following guides are available:
+The stack collects metrics and logs from Materialize and from the cluster,
+stores them in your own infrastructure, and ships dashboards to query them:
 
-- [Grafana](/manage/monitor/self-managed/grafana/)
+- [How logs and metrics are stored](/manage/monitor/self-managed/storage/), including
+  the backends you can forward them to.
 
-- [Datadog using Prometheus SQL Exporter](/manage/monitor/self-managed/datadog/)
+- [Grafana](/manage/monitor/self-managed/grafana/), the dashboards and query
+  interface that ship with the stack.
 
-### Alerting
+To configure the stack outside the Materialize Terraform modules, or to see the
+full set of module variables, see the [`materialize-monitoring` Terraform
+installation guide
+⧉](https://materializeinc.github.io/materialize-monitoring/getting-started/terraform/).
+
+## Deliver data to your observability platform
+
+To send metrics and logs to a platform you already run, a guide is available for
+each destination:
+
+- [Datadog](/manage/monitor/self-managed/datadog/)
+
+- [Honeycomb](/manage/monitor/self-managed/honeycomb/)
+
+- [OpenTelemetry](/manage/monitor/self-managed/opentelemetry/), for any other OTLP
+  endpoint, including your own collector.
+
+- [Google Cloud Monitoring](/manage/monitor/self-managed/google-cloud-monitoring/)
+
+- [Prometheus remote
+  write](/manage/monitor/self-managed/prometheus-remote-write/), for Mimir,
+  Amazon Managed Prometheus, Grafana Cloud, or a Thanos you run elsewhere.
+
+## Alerting
 
 After setting up a monitoring tool, you can configure alert rules. Alert rules
 send a notification when a metric surpasses a threshold. This will help you
