@@ -1,7 +1,7 @@
 # Provenance of .agents/skills/materialize-docs. Written by the
 # update-materialize-docs-skill workflow; do not edit by hand.
 mz_ref: main
-mz_commit: 09bb18d3c83e73c99a600ea55d838a8e4dee8d7b
-doc_user_tree: ab55a2389595582ea7307f39f7d88a00399d678b
+mz_commit: c3e4ddd43f0c5132577d35bdf97dde27dd506016
+doc_user_tree: 48a2a75e94ec571ab7001992be471e5948d46b23
 gen_script_blob: e8e603a8f7cb56d6b8e65f03e64b644d95f5e8a5
 hugo_version: 0.152.2
