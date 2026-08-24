@@ -386,45 +386,12 @@ The privileges required to execute `CREATE SOURCE` are:
 
 The following guides step you through setting up sources:
 
-<div class="multilinkbox">
-<div class="linkbox ">
-  <div class="title">
-    Databases (CDC)
-  </div>
-  <ul>
-<li><a href="/ingest-data/postgres/" >PostgreSQL</a></li>
-<li><a href="/ingest-data/mysql/" >MySQL</a></li>
-<li><a href="/ingest-data/sql-server/" >SQL Server</a></li>
-<li><a href="/ingest-data/cdc-cockroachdb/" >CockroachDB</a></li>
-<li><a href="/ingest-data/mongodb/" >MongoDB</a></li>
-</ul>
-
-</div>
-
-<div class="linkbox ">
-  <div class="title">
-    Message Brokers
-  </div>
-  <ul>
-<li><a href="/ingest-data/kafka/" >Kafka</a></li>
-<li><a href="/sql/create-source/kafka" >Redpanda</a></li>
-</ul>
-
-</div>
-
-<div class="linkbox ">
-  <div class="title">
-    Webhooks
-  </div>
-  <ul>
-<li><a href="/ingest-data/webhooks/amazon-eventbridge/" >Amazon EventBridge</a></li>
-<li><a href="/ingest-data/webhooks/segment/" >Segment</a></li>
-<li><a href="/sql/create-source/webhook" >Other webhooks</a></li>
-</ul>
-
-</div>
-
-</div>
+| Type | External system |
+|------|-----------------|
+| **Databases (CDC): native connectors** | [PostgreSQL](/ingest-data/postgres/) <br> [MySQL](/ingest-data/mysql/) <br> [SQL Server](/ingest-data/sql-server/) |
+| **Databases (CDC): via the Kafka connector** | [CockroachDB](/ingest-data/cdc-cockroachdb/) (using changefeeds) <br> [MongoDB](/ingest-data/mongodb/) (using Debezium) |
+| **Message brokers** | [Kafka](/ingest-data/kafka/) <br> [Redpanda](/sql/create-source/kafka) |
+| **Webhooks** | [Amazon EventBridge](/ingest-data/webhooks/amazon-eventbridge/) <br> [Segment](/ingest-data/webhooks/segment/) <br> [HubSpot](/ingest-data/webhooks/hubspot/) <br> [RudderStack](/ingest-data/webhooks/rudderstack/) <br> [SnowcatCloud](/ingest-data/webhooks/snowcatcloud/) <br> [Stripe](/ingest-data/webhooks/stripe/)|
 
 ## Best practices
 
@@ -5497,11 +5464,15 @@ SELECT COUNT(body) FROM webhook_source_ndjson;
 
 Webhook sources apply the following limits to received requests:
 
-* The maximum size of the request body is **`2MB`**. Requests larger than this
+* The maximum size of the request body is **`5MB`**. Requests larger than this
   will fail with `413 Payload Too Large`.
 * The maximum number of concurrent requests across **all** webhook sources
   is **500**. Trying to connect when the server is at capacity will fail with
   `429 Too Many Requests`.
+* A `CHECK` expression may use at most **`20MB`** of temporary memory while
+  validating a single request. A `CHECK` that needs more, for example one that
+  builds a large string out of the request body, will fail with
+  `400 Bad Request`.
 * Requests that contain a header name specified more than once will be rejected
   with `401 Unauthorized`.
 

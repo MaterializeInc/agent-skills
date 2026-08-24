@@ -4,45 +4,12 @@ Best practices for ingesting data into Materialize from external systems.
 
 You can ingest data into Materialize from various external systems:
 
-<div class="multilinkbox">
-<div class="linkbox ">
-  <div class="title">
-    Databases (CDC)
-  </div>
-  <ul>
-<li><a href="/ingest-data/postgres/" >PostgreSQL</a></li>
-<li><a href="/ingest-data/mysql/" >MySQL</a></li>
-<li><a href="/ingest-data/sql-server/" >SQL Server</a></li>
-<li><a href="/ingest-data/cdc-cockroachdb/" >CockroachDB</a></li>
-<li><a href="/ingest-data/mongodb/" >MongoDB</a></li>
-</ul>
-
-</div>
-
-<div class="linkbox ">
-  <div class="title">
-    Message Brokers
-  </div>
-  <ul>
-<li><a href="/ingest-data/kafka/" >Kafka</a></li>
-<li><a href="/sql/create-source/kafka" >Redpanda</a></li>
-</ul>
-
-</div>
-
-<div class="linkbox ">
-  <div class="title">
-    Webhooks
-  </div>
-  <ul>
-<li><a href="/ingest-data/webhooks/amazon-eventbridge/" >Amazon EventBridge</a></li>
-<li><a href="/ingest-data/webhooks/segment/" >Segment</a></li>
-<li><a href="/sql/create-source/webhook" >Other webhooks</a></li>
-</ul>
-
-</div>
-
-</div>
+| Type | External system |
+|------|-----------------|
+| **Databases (CDC): native connectors** | [PostgreSQL](/ingest-data/postgres/) <br> [MySQL](/ingest-data/mysql/) <br> [SQL Server](/ingest-data/sql-server/) |
+| **Databases (CDC): via the Kafka connector** | [CockroachDB](/ingest-data/cdc-cockroachdb/) (using changefeeds) <br> [MongoDB](/ingest-data/mongodb/) (using Debezium) |
+| **Message brokers** | [Kafka](/ingest-data/kafka/) <br> [Redpanda](/sql/create-source/kafka) |
+| **Webhooks** | [Amazon EventBridge](/ingest-data/webhooks/amazon-eventbridge/) <br> [Segment](/ingest-data/webhooks/segment/) <br> [HubSpot](/ingest-data/webhooks/hubspot/) <br> [RudderStack](/ingest-data/webhooks/rudderstack/) <br> [SnowcatCloud](/ingest-data/webhooks/snowcatcloud/) <br> [Stripe](/ingest-data/webhooks/stripe/)|
 
 ## Sources and clusters
 
@@ -55,19 +22,47 @@ data.
 
 ## Snapshotting
 
-When a new source is created, Materialize performs a sync of all data available
-in the external system before it starts ingesting new data — an operation known
-as _snapshotting_. Because the initial snapshot is persisted in the storage
-layer atomically (i.e., at the same ingestion timestamp), you are **not able to
-query the source until snapshotting is complete**.
+Snapshotting is the initial sync of a table's data. It reads from the upstream
+system and writes the data into Materialize's storage. The initial snapshot is
+committed to storage atomically, with all records assigned the same ingestion
+timestamp.
+
+### When snapshotting occurs
+
+When snapshotting occurs depends on the syntax.
+
+- With the legacy [`CREATE SOURCE ... FOR <ALL
+  TABLES|TABLES|SCHEMAS>`](/sql/create-source/#legacy-syntax), you run a single
+  statement to create both the source and the tables that ingest data.
+  Snapshotting begins when you run the statement. For an existing source, the
+  legacy [`ALTER SOURCE ... ADD SUBSOURCE`](/sql/alter-source/) starts the
+  snapshotting for the added table.
+
+- With the source-versioning syntax, you create the source and its tables
+  separately using [`CREATE SOURCE ...`](/sql/create-source/#new-syntax) and
+  [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/). Snapshotting begins when
+  you run `CREATE TABLE ... FROM SOURCE`.
 
 ### Duration
 
-The duration of the snapshotting operation depends on the volume of data in the
-initial snapshot and the size of the cluster where the source is hosted. To
-reduce the operational burden of snapshotting on the upstream system and ensure
-you are only bringing in the volume of data that you need in Materialize, we
-recommend:
+Snapshot duration depends on:
+
+- Volume of upstream data
+- Size of the source's cluster
+- Upstream capacity to serve the read, on top of its normal workload
+- Network path between the upstream system and Materialize
+
+In cloud environments, an instance's network and disk throughput are typically
+capped by its instance type, so a busy or throughput-limited upstream, or a
+constrained network path, can be the bottleneck regardless of the source
+cluster's size.
+
+For **upsert** sources, snapshotting can be especially resource-intensive
+(compared to append-only), and large upsert sources can take hours to snapshot.
+
+To reduce the operational burden of snapshotting on the upstream system and
+ensure you are only bringing in the volume of data that you need in Materialize,
+we recommend:
 
 - If possible, running source creation operations during **off-peak hours** to
   minimize operational risk in both the upstream system and Materialize.
@@ -98,21 +93,51 @@ exhaustion, you may need to [resize the cluster](#use-a-larger-cluster-for-upser
 
 ### Queries during snapshotting
 
-Because the initial snapshot is persisted atomically, you are **not able to
-query the source until snapshotting is complete**. This means that queries
-issued against (sub)sources undergoing snapshotting will hang until the
-operation completes. Once the initial snapshot has been ingested, you can start
-querying your (sub)sources and Materialize will continue ingesting any new data
-as it arrives, in real time.
+<!--
+Syntax-specific (legacy and source-versioning) query behavior during
+snapshotting. For the generic (syntax-agnostic) version, see
+headless/ingestion/snapshotting-ingestion.md.
+-->
+
+Queries on a table that is snapshotting are blocked until its snapshot
+completes.
+
+- With the legacy `CREATE` syntax:
+
+  - None of the subsources created as part of `CREATE SOURCE ... FOR ...` are
+    queryable until they have all finished snapshotting.
+
+  - When altering a source to add a new subsource (`ALTER SOURCE ... ADD
+    SUBSOURCE`), only the new subsource snapshots. The source's other subsources
+    remain queryable. **However**, ingestion for these subsources is temporarily
+    blocked, so they stop advancing until the snapshot completes.
+
+- With the source-versioning `CREATE TABLE FROM SOURCE` syntax:
+
+  - None of the tables created within a [transaction
+    block](/sql/begin/#ddl-only-transactions) are queryable until all their
+    snapshots complete.
+
+  - When you create new tables from a source that already has tables, only the
+    new tables snapshot. The source's existing tables remain queryable.
+    **However**, ingestion for the existing tables is temporarily blocked, so
+    they stop advancing until the snapshots for the new tables complete.
 
 ### Modifying an existing source
 
-When you add a new subsource to an existing source ([`ALTER SOURCE ... ADD
-SUBSOURCE ...`](/sql/alter-source/)), Materialize starts the snapshotting
-process for the new subsource. During this snapshotting, the data ingestion for
-the existing subsources for the same source is temporarily blocked. As such, if
-possible, you can resize the cluster to speed up the snapshotting process and
-once the process finishes, resize the cluster for steady-state.
+<!--
+Generic (syntax-agnostic) version of the "existing tables blocked" behavior.
+Keep in sync with the syntax-specific version in
+headless/ingestion/snapshotting-queries.md.
+-->
+
+When you create additional tables for a source that already has tables ingesting
+data, ingestion for the existing tables is blocked while the new tables
+snapshot. The existing tables remain queryable, but they stop advancing until
+the new tables' snapshots complete.
+
+If possible, resize the cluster to speed up the snapshot, then right-size it once
+snapshotting completes.
 
 ## Running/steady-state
 
@@ -134,11 +159,14 @@ See [Monitoring hydration/data freshness status](/ingest-data/monitoring-data-in
 
 ## Hydration
 
+Hydration is the reconstruction of an object's in-memory state by reading
+from Materialize's storage layer and existing indexes; hydration does not
+read from the upstream system.
+
 When a cluster is restarted (such as after resizing), certain objects on that
-cluster  (such as sources, indexes, materialized views, and sinks) undergo
-hydration. Hydration refers to the reconstruction of in-memory state by reading
-data from Materialize's storage layer; hydration **does not** require reading
-data from the upstream system.
+cluster  (such as Kafka upsert sources, indexes, materialized views, and sinks)
+undergo hydration. For the full list of events that trigger hydration and the
+affected objects, see [Hydration](/concepts/hydration/).
 
 > **Tip:** If possible, use a dedicated cluster just for sources. That is, avoid
 > using the same cluster for sources and other objects, such as sinks, etc.

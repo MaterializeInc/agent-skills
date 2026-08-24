@@ -30,6 +30,7 @@ SET (
             [, LINGER DURATION = <interval>]
         )
     )]
+    [, EXPERIMENTAL ARRANGEMENT COMPRESSION = <bool>]
 )
 [WITH ( <with_option>[,...])]
 ;
@@ -43,6 +44,7 @@ SET (
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster. Each replica of the cluster provisions a new pool of compute resources to perform exactly the same computations on exactly the same data. For more information, see [Replication factor considerations](#replication-factor).  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  If `FALSE`, enables the use of the <em>deprecated</em> [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) command.  Default: `TRUE`  |
 | `AUTO SCALING STRATEGY` | Optional. While the cluster has un-hydrated objects, provisions an extra burst replica at a larger size to speed up hydration. The steady-size replicas will continue to run, and hydrate in parallel. Once a steady-size replica hydrates and catches up with the burst, the burst replica is retired. This helps optimize costs while speeding up hydration. Only available on managed clusters.  Specify a single `ON HYDRATION` sub-policy, which supports the following options:  \| Option \| Description \| \|--------\|-------------\| \| `HYDRATION SIZE` \| The size of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration. For valid size values, see [Available sizes](#available-sizes). \| \| `LINGER DURATION` \| Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`. \|  Set an empty strategy (`AUTO SCALING STRATEGY = ()`) to disable autoscaling.  |
+| `EXPERIMENTAL ARRANGEMENT COMPRESSION` | {{< warn-if-unreleased-inline "v26.38" >}}  Optional. Whether to enable [dictionary compression](#dictionary-compression) for the arrangements maintained by the cluster's replicas. Compression reduces the memory those arrangements use, at the cost of CPU, and does not benefit every workload. Only available on managed clusters.  {{< warning >}} Because changing this option never changes an existing replica, Materialize creates a new set of replicas carrying the new setting and cuts over to them once they have hydrated. For more information, see [Dictionary compression](#dictionary-compression). {{< /warning >}}  Default: `FALSE`  |
 | `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under active development.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* A fixed duration to wait for the new replicas to be ready. This option can lead to downtime. As such, we recommend using the `WAIT UNTIL READY` option instead.\|  |
 
 **Reset to default:**
@@ -52,7 +54,8 @@ To reset a cluster configuration back to its default value:
 ```mzsql
 ALTER CLUSTER <cluster_name>
 RESET (
-    REPLICATION FACTOR | MANAGED | AUTO SCALING STRATEGY,
+    REPLICATION FACTOR | MANAGED | AUTO SCALING STRATEGY
+    | EXPERIMENTAL ARRANGEMENT COMPRESSION,
     ...
 )
 ;
@@ -65,6 +68,7 @@ RESET (
 | `REPLICATION FACTOR` | Optional. The number of replicas to provision for the cluster.  Default: `1`  |
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  Default: `TRUE`  |
 | `AUTO SCALING STRATEGY` | Optional. Resetting removes any autoscaling strategy from the cluster.  Default: no autoscaling strategy.  |
+| `EXPERIMENTAL ARRANGEMENT COMPRESSION` | {{< warn-if-unreleased-inline "v26.38" >}}  Optional. Resetting turns [dictionary compression](#dictionary-compression) off for the cluster. Because this never changes an existing replica, Materialize creates a new set of replicas without the setting and cuts over to them once they have hydrated.  Default: `FALSE`  |
 
 **Rename:**
 
@@ -218,7 +222,7 @@ immediately.
 During a graceful resize, Materialize:
 1. Provisions new replicas at the target size, alongside the current replicas.
 2. Waits for the new replicas to
-   [hydrate](/concepts/clusters/#consider-hydration-requirements).
+   [hydrate](/concepts/hydration/).
 3. Retires the old replicas.
 
 Throughout, the cluster keeps serving queries, first from the old replicas,
@@ -312,7 +316,7 @@ autoscaling](#configure-autoscaling) for the `ALTER CLUSTER` form.
 
 When you create an index, materialized view, or Kafka upsert source, or when a
 cluster restarts, the cluster must
-[hydrate](/concepts/clusters/#consider-hydration-requirements) the affected
+[hydrate](/concepts/hydration/) the affected
 objects before they can serve results. Hydration reads the input data
 and rebuilds in-memory state, and its speed scales with the cluster
 [size](#available-sizes).
@@ -367,6 +371,45 @@ To remove the autoscaling strategy from a cluster, use `ALTER CLUSTER ... RESET
 You can inspect the configured strategy and any in-flight burst in the
 [`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
 catalog view.
+
+### Dictionary compression
+
+> **Public Preview:** This feature is in public preview.
+
+Starting in v26.38, dictionary compression is available for managed clusters.
+Dictionary compression reduces the memory that
+[arrangements](/get-started/arrangements/#arrangements) use when a column holds
+the same values repeatedly. Instead of storing a repeated column value each time
+it appears, Materialize stores that value once and has each row reference it. This can reduce steady state memory requirements after hydration has completed.
+
+Dictionary compression is specified per cluster replica, and is set to off by default. You opt in using the `EXPERIMENTAL ARRANGEMENT COMPRESSION` option, while creating or altering a cluster or cluster replica.
+
+Turn compression on for an existing cluster with `ALTER CLUSTER ... SET
+(EXPERIMENTAL ARRANGEMENT COMPRESSION = true)`, and go back to the default with
+`ALTER CLUSTER ... RESET (EXPERIMENTAL ARRANGEMENT COMPRESSION)`.
+
+> **Warning:** A replica's compression setting is fixed when the replica is created, so
+> changing `EXPERIMENTAL ARRANGEMENT COMPRESSION` never changes an existing
+> replica's arrangements. Materialize instead creates a new set of replicas
+> carrying the new setting. The existing replicas keep serving until the new ones
+> have hydrated, then Materialize retires them. As a result, the cluster
+> temporarily uses roughly twice its usual memory until the switch completes,
+> regardless of whether you enable or disable dictionary compression.
+> Nothing else is needed to apply the setting. Plan for the switch the same way
+> you would plan for resizing a cluster. Because hydration is slower with
+> compression enabled, the switch takes longer when turning compression on than
+> when turning it off.
+
+Dictionary compression trades CPU for memory, and it does **not** reduce memory
+on every workload. The savings come from large arrangements with columns that
+hold a small set of longer values repeated across many rows, such as status
+strings, enum-like labels, or tenant IDs. High-cardinality columns pay the CPU
+cost with little or no memory benefit, and that cost is most visible as slower
+hydration.
+
+For the full tradeoff, guidance on whether your workload is a good fit, and how
+to measure the effect, see [Dictionary
+compression](/transform-data/dictionary-compression/).
 
 ### Replication factor
 
@@ -539,3 +582,4 @@ compute-specific settings. If needed, these can be set explicitly.
 - [`CREATE CLUSTER`](/sql/create-cluster/)
 - [`SHOW CLUSTERS`](/sql/show-clusters/)
 - [`DROP CLUSTER`](/sql/drop-cluster/)
+- [Dictionary compression](/transform-data/dictionary-compression/)

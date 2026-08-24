@@ -27,11 +27,46 @@ prevent operational incidents. For alert rules guidelines, see
 You can monitor the performance and overall health of your Self-Managed
 Materialize.
 
-To help you get started, the following guides are available:
+The Materialize Terraform modules ([AWS
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws),
+[Azure
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure),
+[GCP
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp))
+install a monitoring stack alongside your deployment. It is enabled by default
+starting with v11.0.0 of the Materialize Terraform Modules. For the module
+install steps, see [Install using Terraform
+modules](/self-managed-deployments/installation/#install-using-terraform-modules).
 
-- [Grafana using Prometheus](/manage/monitor/self-managed/prometheus/)
+The stack collects metrics and logs from Materialize and from the cluster,
+stores them in your own infrastructure, and ships dashboards to query them:
 
-- [Datadog using Prometheus SQL Exporter](/manage/monitor/self-managed/datadog/)
+- [How logs and metrics are stored](/manage/monitor/self-managed/storage/), including
+  the backends you can forward them to.
+
+- [Grafana](/manage/monitor/self-managed/grafana/), the dashboards and query
+  interface that ship with the stack.
+
+To configure the stack outside the Materialize Terraform modules, or to see the
+full set of module variables, see the [`materialize-monitoring` Terraform
+installation guide
+⧉](https://materializeinc.github.io/materialize-monitoring/getting-started/terraform/).
+
+To send metrics and logs to a platform you already run, a guide is available for
+each destination:
+
+- [Datadog](/manage/monitor/self-managed/datadog/)
+
+- [Honeycomb](/manage/monitor/self-managed/honeycomb/)
+
+- [OpenTelemetry](/manage/monitor/self-managed/opentelemetry/), for any other OTLP
+  endpoint, including your own collector.
+
+- [Google Cloud Monitoring](/manage/monitor/self-managed/google-cloud-monitoring/)
+
+- [Prometheus remote
+  write](/manage/monitor/self-managed/prometheus-remote-write/), for Mimir,
+  Amazon Managed Prometheus, Grafana Cloud, or a Thanos you run elsewhere.
 
 ### Alerting
 
@@ -483,21 +518,6 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
-      <td><code>mz_check_scheduling_policies_seconds_bucket</code></td>
-      <td>The time each policy in `check_scheduling_policies` takes.</td>
-      <td><code>le</code>, <code>policy</code>, <code>thread</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_check_scheduling_policies_seconds_count</code></td>
-      <td>The time each policy in `check_scheduling_policies` takes.</td>
-      <td><code>policy</code>, <code>thread</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_check_scheduling_policies_seconds_sum</code></td>
-      <td>The time each policy in `check_scheduling_policies` takes.</td>
-      <td><code>policy</code>, <code>thread</code></td>
-    </tr>
-    <tr>
       <td><code>mz_cluster_handle_command_duration_seconds_bucket</code></td>
       <td>Time spent in handling commands.</td>
       <td><code>cluster</code>, <code>command_type</code>, <code>le</code>, <code>worker_id</code></td>
@@ -933,21 +953,6 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
-      <td><code>mz_handle_scheduling_decisions_seconds_bucket</code></td>
-      <td>The time `handle_scheduling_decisions` takes.</td>
-      <td><code>altered_a_cluster</code>, <code>le</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_handle_scheduling_decisions_seconds_count</code></td>
-      <td>The time `handle_scheduling_decisions` takes.</td>
-      <td><code>altered_a_cluster</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_handle_scheduling_decisions_seconds_sum</code></td>
-      <td>The time `handle_scheduling_decisions` takes.</td>
-      <td><code>altered_a_cluster</code></td>
-    </tr>
-    <tr>
       <td><code>mz_index_peek_cursor_setup_seconds_bucket</code></td>
       <td>Time setting up cursor and literal constraints.</td>
       <td><code>le</code></td>
@@ -993,6 +998,21 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_index_peek_result_sort_rows_bucket</code></td>
+      <td>Number of intermediate result rows sorted during peek collection, summed across sort operations.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_result_sort_rows_count</code></td>
+      <td>Number of intermediate result rows sorted during peek collection, summed across sort operations.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_result_sort_rows_sum</code></td>
+      <td>Number of intermediate result rows sorted during peek collection, summed across sort operations.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_index_peek_result_sort_seconds_bucket</code></td>
       <td>Time sorting intermediate results during peek collection.</td>
       <td><code>le</code></td>
@@ -1020,6 +1040,21 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     <tr>
       <td><code>mz_index_peek_row_collection_seconds_sum</code></td>
       <td>Time constructing RowCollection from peek results.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_row_iteration_rows_bucket</code></td>
+      <td>Number of arrangement rows evaluated by the index peek result iterator.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_row_iteration_rows_count</code></td>
+      <td>Number of arrangement rows evaluated by the index peek result iterator.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_row_iteration_rows_sum</code></td>
+      <td>Number of arrangement rows evaluated by the index peek result iterator.</td>
       <td></td>
     </tr>
     <tr>
@@ -1376,6 +1411,21 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_object_info</code></td>
       <td>Maps catalog object IDs to the object&#39;s name, schema, database, and type. Constant 1.</td>
       <td><code>database_name</code>, <code>global_id</code>, <code>name</code>, <code>object_id</code>, <code>schema_name</code>, <code>type</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_occ_read_then_write_retry_count_bucket</code></td>
+      <td>Number of OCC retries per read-then-write operation.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_occ_read_then_write_retry_count_count</code></td>
+      <td>Number of OCC retries per read-then-write operation.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_occ_read_then_write_retry_count_sum</code></td>
+      <td>Number of OCC retries per read-then-write operation.</td>
+      <td></td>
     </tr>
     <tr>
       <td><code>mz_optimization_notices</code></td>
@@ -4087,18 +4137,52 @@ Metrics for data output to external systems.
 
 This section covers monitoring and alerting for Self-Managed Materialize.
 
-### Monitoring
+## Built-in monitoring stack
 
-You can monitor the performance and overall health of your Self-Managed
-Materialize.
+The Materialize Terraform modules ([AWS
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws),
+[Azure
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure),
+[GCP
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp))
+install a monitoring stack alongside your deployment. It is enabled by default
+starting with v11.0.0 of the Materialize Terraform Modules. For the module
+install steps, see [Install using Terraform
+modules](/self-managed-deployments/installation/#install-using-terraform-modules).
 
-To help you get started, the following guides are available:
+The stack collects metrics and logs from Materialize and from the cluster,
+stores them in your own infrastructure, and ships dashboards to query them:
 
-- [Grafana using Prometheus](/manage/monitor/self-managed/prometheus/)
+- [How logs and metrics are stored](/manage/monitor/self-managed/storage/), including
+  the backends you can forward them to.
 
-- [Datadog using Prometheus SQL Exporter](/manage/monitor/self-managed/datadog/)
+- [Grafana](/manage/monitor/self-managed/grafana/), the dashboards and query
+  interface that ship with the stack.
 
-### Alerting
+To configure the stack outside the Materialize Terraform modules, or to see the
+full set of module variables, see the [`materialize-monitoring` Terraform
+installation guide
+⧉](https://materializeinc.github.io/materialize-monitoring/getting-started/terraform/).
+
+## Deliver data to your observability platform
+
+To send metrics and logs to a platform you already run, a guide is available for
+each destination:
+
+- [Datadog](/manage/monitor/self-managed/datadog/)
+
+- [Honeycomb](/manage/monitor/self-managed/honeycomb/)
+
+- [OpenTelemetry](/manage/monitor/self-managed/opentelemetry/), for any other OTLP
+  endpoint, including your own collector.
+
+- [Google Cloud Monitoring](/manage/monitor/self-managed/google-cloud-monitoring/)
+
+- [Prometheus remote
+  write](/manage/monitor/self-managed/prometheus-remote-write/), for Mimir,
+  Amazon Managed Prometheus, Grafana Cloud, or a Thanos you run elsewhere.
+
+## Alerting
 
 After setting up a monitoring tool, you can configure alert rules. Alert rules
 send a notification when a metric surpasses a threshold. This will help you

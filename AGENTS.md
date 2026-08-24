@@ -24,6 +24,7 @@ skills/
 | Skill | Description |
 |-------|-------------|
 | `materialize-dbt` | Using the dbt-materialize adapter to manage Materialize streaming pipelines with dbt |
+| `materialize-debug-freshness` | Diagnosing why a Materialize object is behind wall-clock time, down to the operator and the SQL responsible |
 | `materialize-docs` | Materialize documentation for SQL syntax, data ingestion, concepts, and best practices |
 | `materialize-terraform-provider` | Using the Materialize Terraform provider to manage Materialize resources declaratively |
 | `materialize-terraform-self-managed` | Terraform modules for deploying self-managed Materialize on AWS, Azure, and GCP |

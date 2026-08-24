@@ -20,6 +20,7 @@ creating materialized views, and more.
 | `materialize-dbt` | Use for managing Materialize pipelines with dbt. Covers dbt-materialize adapter usage: materializations, profile configuration, index creation, blue/green deployments, and testing.<br><br>Examples: *"write a dbt model for a materialized view"*, *"how do I do a blue/green deployment with dbt?"* |
 | `materialize-terraform-provider` | Use for managing Materialize resources declaratively with Terraform. Covers provider configuration for Cloud and self-managed, navigation into the provider's auto-generated resource reference, cross-resource patterns, import workflows, and gotchas.<br><br>Examples: *"create a Kafka source with Terraform"*, *"import my existing clusters into Terraform state"*, *"set up RBAC grants in Terraform"* |
 | `materialize-terraform-self-managed` | Use for deploying or operating self-managed Materialize infrastructure with Terraform. Covers module layout and variables for deploying on AWS, Azure, and GCP: networking, Kubernetes, backend URL formats, instance sizing, upgrades, and gotchas.<br><br>Examples: *"deploy Materialize on EKS"*, *"what instance types should Materialize nodes use?"*, *"upgrade my self-managed Materialize"* |
+| `mz-deploy` | Use for managing a declarative SQL project and deploying changes to Materialize safely. Covers project layout, the compile → test → apply → stage → wait → promote lifecycle, hash-based change detection, atomic `ALTER ... SWAP` promotion, conflict detection, stable API schemas and replacement materialized views, offline type checking with `types.lock`, per-profile suffixes, variables, and file overrides, and the `EXECUTE UNIT TEST` syntax.<br><br>Examples: *"how do I deploy my sql changes safely?"*, *"what does mz-deploy stage do?"*, *"why did my promote fail with a conflict?"* |
 
 ## Prerequisites
 
@@ -33,7 +34,32 @@ Install the Materialize agent skills with a single command:
 npx skills add MaterializeInc/agent-skills
 ```
 
-Once installed, you can update installed skills by running `npx skills update`.
+## Upgrade skills
+
+We publish upgrades to the Materialize agent skills weekly, so check back
+regularly to pick up the latest documentation and reference material. To upgrade
+the skills you already have installed:
+
+```bash
+npx skills update MaterializeInc/agent-skills
+```
+
+To upgrade every skill installed on your machine, regardless of source, omit the
+repository:
+
+```bash
+npx skills update
+```
+
+## Claude Code plugins
+
+The same repository also serves as a [Claude Code plugin
+marketplace](https://code.claude.com/docs/en/plugin-marketplaces) named
+`materialize`. Its `mz-sql-lsp` plugin registers the
+[`mz-deploy`](/manage/mz-deploy/) language server for `.sql` files, so Claude
+Code navigates your project instead of grepping it. See [AI agent
+setup](/manage/mz-deploy/agent-setup/#configuring-for-claude-code) for
+installation and configuration.
 
 ## Reduce permission prompts (Claude Code)
 
@@ -63,4 +89,5 @@ all tools rather than just this directory.
 ## Related Pages
 
 - [MCP Server](/integrations/mcp-server/)
+- [mz-deploy AI agent setup](/manage/mz-deploy/agent-setup/)
 - [GitHub: Materialize Agent Skills](https://github.com/MaterializeInc/agent-skills)

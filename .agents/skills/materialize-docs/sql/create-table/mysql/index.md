@@ -32,7 +32,7 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 | **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if the table with the same name already exists. Instead, issue a notice and skip the table creation.  {{< include-md file="content/headless/create-table-if-not-exists-tip.md" >}}  |
 | `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
-| **(REFERENCE <upstream_schema>.<upstream_table>)** |  The fully-qualified name of the upstream MySQL table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  |
+| **(REFERENCE <upstream_schema>.<upstream_table>)** |  The fully-qualified name of the upstream MySQL table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  This list is recorded when the source is created. To update the list with tables added to the upstream since source creation, run [`ALTER SOURCE <source_name> REFRESH REFERENCES`](/sql/alter-source/#refreshing-available-upstream-references).  |
 | **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, decode data as `text` for the listed column(s), such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])` \| *Optional.* If specified, exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
 
 ## Details
@@ -44,10 +44,15 @@ use within a [transaction block](/sql/begin/#ddl-only-transactions).
 
 ### Source-populated tables and snapshotting
 
-Creating the tables from sources starts the [snapshotting](/ingest-data/#snapshotting) process. Snapshotting syncs the
-currently available data into Materialize. Because the initial snapshot is
-persisted in the storage layer atomically (i.e., at the same ingestion
-timestamp), you are not able to query the table until snapshotting is complete.
+Creating a table from a source starts the
+[snapshotting](/ingest-data/#snapshotting) process.
+
+Snapshotting is the initial sync of a table's data. It reads from the upstream
+system and writes the data into Materialize's storage. The initial snapshot is
+committed to storage atomically, with all records assigned the same ingestion
+timestamp.
+
+You cannot query the table until its snapshot completes.
 
 > **Note:** During the snapshotting, the data ingestion for the existing tables for the same
 > source is temporarily blocked. As such, if possible, you can resize the cluster

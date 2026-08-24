@@ -34,9 +34,11 @@ Learn about the core concepts in Materialize.
 
 - **Namespaces**: `concepts/namespaces/index.md`
 - **Clusters**: `concepts/clusters/index.md`
+- **Hydration**: `concepts/hydration/index.md`
 - **Indexes**: `concepts/indexes/index.md`
 - **Reaction Time, Freshness, and Query Latency**: `concepts/reaction-time/index.md`
 - **Sinks**: `concepts/sinks/index.md`
+- **Snapshotting**: `concepts/snapshotting/index.md`
 - **Sources**: `concepts/sources/index.md`
 - **Views**: `concepts/views/index.md`
 
@@ -82,6 +84,7 @@ Introduction to the Materialize Console, user interface for Materialize
 Learn how to efficiently transform data using Materialize SQL.
 
 - **Dataflow troubleshooting**: `transform-data/dataflow-troubleshooting/index.md`
+- **Dictionary compression**: `transform-data/dictionary-compression/index.md`
 - **FAQ: Indexes**: `transform-data/faq/index.md`
 - **Freshness troubleshooting**: `transform-data/freshness-troubleshooting/index.md`
 - **How to monitor freshness in Materialize**: `transform-data/monitor-freshness/index.md`
@@ -94,6 +97,7 @@ Learn how to efficiently transform data using Materialize SQL.
 ### References
 
 - **Explain plan operators**: `reference/explain-plan-operators/index.md`
+- **Ingestion performance**: `reference/performance/index.md`
 - **Isolation levels**: `reference/isolation-level/index.md`
 - **M.1 to cc size mapping**: `reference/m1-cc-mapping/index.md`
 - **System catalog**: `reference/system-catalog/index.md`

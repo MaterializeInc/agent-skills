@@ -158,7 +158,7 @@ AZ level failures for those clusters:
 As such, your compute and serving clusters will continue to serve up-to-date
 data uninterrupted in the case of a replica failure.
 
-> **💡 Cost and work capacity:** - Each replica incurs cost, calculated as `cluster size * replication factor` per second. See [Usage & billing](/administration/billing/) for more details. - Increasing the replication factor does **not** increase the cluster's work capacity. Replicas are exact copies of one another: each replica must do exactly the same work as all the other replicas of the cluster(i.e., maintain the same dataflows and process the same queries). To increase the capacity of a cluster, you must increase its size. 
+> **💡 Cost and work capacity:** - For Cloud, each replica incurs cost, calculated as `cluster size * replication factor` per second. See [Usage & billing (Cloud)](/administration/billing/) for more details. - Increasing the replication factor does **not** increase the cluster's work capacity. Replicas are exact copies of one another: each replica must do exactly the same work as all the other replicas of the cluster (i.e., maintain the same dataflows and process the same queries). To increase the capacity of a cluster, you must increase its size. 
 
 If you require resilience beyond a single region, consider the Level 3 strategy.
 
@@ -243,11 +243,46 @@ prevent operational incidents. For alert rules guidelines, see
 You can monitor the performance and overall health of your Self-Managed
 Materialize.
 
-To help you get started, the following guides are available:
+The Materialize Terraform modules ([AWS
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/aws),
+[Azure
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/azure),
+[GCP
+⧉](https://github.com/MaterializeInc/materialize-terraform-self-managed/tree/main/gcp))
+install a monitoring stack alongside your deployment. It is enabled by default
+starting with v11.0.0 of the Materialize Terraform Modules. For the module
+install steps, see [Install using Terraform
+modules](/self-managed-deployments/installation/#install-using-terraform-modules).
 
-- [Grafana using Prometheus](/manage/monitor/self-managed/prometheus/)
+The stack collects metrics and logs from Materialize and from the cluster,
+stores them in your own infrastructure, and ships dashboards to query them:
 
-- [Datadog using Prometheus SQL Exporter](/manage/monitor/self-managed/datadog/)
+- [How logs and metrics are stored](/manage/monitor/self-managed/storage/), including
+  the backends you can forward them to.
+
+- [Grafana](/manage/monitor/self-managed/grafana/), the dashboards and query
+  interface that ship with the stack.
+
+To configure the stack outside the Materialize Terraform modules, or to see the
+full set of module variables, see the [`materialize-monitoring` Terraform
+installation guide
+⧉](https://materializeinc.github.io/materialize-monitoring/getting-started/terraform/).
+
+To send metrics and logs to a platform you already run, a guide is available for
+each destination:
+
+- [Datadog](/manage/monitor/self-managed/datadog/)
+
+- [Honeycomb](/manage/monitor/self-managed/honeycomb/)
+
+- [OpenTelemetry](/manage/monitor/self-managed/opentelemetry/), for any other OTLP
+  endpoint, including your own collector.
+
+- [Google Cloud Monitoring](/manage/monitor/self-managed/google-cloud-monitoring/)
+
+- [Prometheus remote
+  write](/manage/monitor/self-managed/prometheus-remote-write/), for Mimir,
+  Amazon Managed Prometheus, Grafana Cloud, or a Thanos you run elsewhere.
 
 ### Alerting
 
@@ -340,18 +375,26 @@ putting sinks on the same cluster that hosts sources .
 
 See also [Cluster architecture](#three-tier-architecture).
 
-## Snapshotting and hydration considerations
+## Snapshotting considerations
 
-- For upsert sources, snapshotting is a resource-intensive operation that can
-  require a significant amount of CPU and memory.
+For upsert sources, snapshotting is a resource-intensive operation that can require a significant amount of CPU and memory.
 
-- During hydration (both initial and subsequent rehydrations), materialized
-  views require memory proportional to both the input and output. When
-  estimating required resources, consider both the hydration cost and the
-  steady-state cost.
+## Hydration considerations
 
-- During sink creation (initial hydration), sinks need to load an entire
-  snapshot of the data in memory.
+When sizing a cluster, budget for hydration memory on top of the steady-state
+cost. The table below summarizes, per object type, when each object hydrates and
+the memory it uses. For more on hydration, including strategies to reduce its
+impact, see [Hydration](/concepts/hydration/).
+
+| Object | Hydration behavior |
+| --- | --- |
+| Materialized views | - **When**: Hydrates on creation and on every replica (re)start or cluster resize. - **What**: Rebuilds the dataflow's operator state: the arrangements that joins, aggregations, and similar operators keep to update results incrementally. Note: A materialized view's result lives in durable storage, so it rebuilds only this maintenance state, not the result. - **Memory Use**: Scales with the view's definition, which it holds at steady state, plus a transient output buffer up to twice the output size: the current output plus a read-back of the previously persisted output. On first creation, since there is no previous output, the buffer is a single output size.  |
+| Indexes | - **When**: Hydrates on creation and on every replica (re)start or cluster resize. - **What**: Rebuilds the arranged (indexed) data it keeps in memory to serve reads, plus any operator arrangements its dataflow maintains (for joins, aggregations, and similar). - **Memory Use**: Its memory is proportional to the indexed data plus those arrangements, and is held for as long as the index exists.  |
+| Kafka <strong>upsert</strong> sources and associated read-only tables/subsources | - **When**: On replica (re)start or cluster resize. These sources do not hydrate on creation; instead, on creation, their indexes are built as part of [snapshotting](/concepts/snapshotting/). - **What**: Rebuilds the table's or subsource's internal upsert index from storage. - **Memory Use**: The index holds the latest value per key, so its memory scales with the source's key space. On standard cluster sizes it can spill to disk when the key space exceeds memory.  |
+| Append-only Kafka sources and CDC database sources (PostgreSQL, MySQL, SQL Server), and their read-only tables/subsources | - **When**: On replica (re)start or cluster resize, marked hydrated as soon as the dataflow starts. - **What**: Effectively nothing. These sources keep no internal index to rebuild and resume from their persisted position, so hydration is a no-op. - **Memory Use**: Negligible, since there is no index to hold.  |
+| Webhook sources | Not applicable. A webhook source is not maintained by a dataflow. It receives data pushed over HTTP and writes the data directly to storage, so it does not hydrate.  |
+| Sinks | - **When**: If created `WITH (SNAPSHOT = true)` (the default), hydrates:   - On creation, when the sink first emits its input snapshot.   - On a replica (re)start, but only if the sink restarted before recording     any progress: it then re-reads the whole input snapshot, and any data     already written to the external system is discarded, but the memory     cost still occurs. An established sink resumes from its recorded     progress without re-reading the snapshot.  - **What**: Loads a full copy of its input snapshot into the arrangement that feeds the sink before it can emit. - **Memory Use**: Peaks at roughly a full copy of the input snapshot, then decreases as the snapshot is written out. Negligible on a restart of an established sink. At steady state, a sink retains little in memory.  |
+| Subscriptions | - **When**: On creation and, while it remains active, on every replica (re)start: the dataflow is re-installed on the (re)started replica and the subscription resumes. A subscription that targets a specific replica instead ends with an error when that replica restarts. A subscription ends with its session and is not reported in `mz_hydration_statuses`. - **What**: Rebuilds the dataflow when it starts. - **Memory Use**: Scales with the dataflow, held while the subscription runs.  |
 
 ## Role-based access control (RBAC)
 
@@ -481,8 +524,6 @@ Terraform provider](/manage/terraform/) as a complementary deployment tool.
 ---
 
 ## Use mz-deploy to manage Materialize
-
-> **Warning:** `mz-deploy` is a v0.2 release and is not yet recommended for production use.
 
 `mz-deploy` is a CLI that manages your Materialize deployment from plain SQL
 files in a git repository. It catches errors before they reach production, lets

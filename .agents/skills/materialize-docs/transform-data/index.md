@@ -609,6 +609,177 @@ index, you have to drop and recreate all downstream dependencies.
 
 ---
 
+## Dictionary compression
+
+> **Public Preview:** This feature is in public preview.
+
+Starting in v26.38, dictionary compression is available for managed clusters.
+Dictionary compression reduces the memory that
+[arrangements](/get-started/arrangements/#arrangements) use when a column holds
+the same values repeatedly. Instead of storing a repeated column value each time
+it appears, Materialize stores that value once and has each row reference it. This can reduce steady state memory requirements after hydration has completed.
+
+Dictionary compression is specified per cluster replica, and is set to off by default. You opt in using the `EXPERIMENTAL ARRANGEMENT COMPRESSION` option, while creating or altering a cluster or cluster replica.
+
+Within a column, the values that repeat most often are the ones Materialize
+stores once and references. Everything else is stored as-is, exactly as it would
+be without compression. Materialize applies compression per column and decides
+which columns to compress, so a wide row can have one column compressed and the
+rest untouched.
+
+## Enable dictionary compression
+
+Set the `EXPERIMENTAL ARRANGEMENT COMPRESSION` option on each managed cluster
+whose arrangements you want compressed.
+
+The option is configured on the cluster, but the arrangements it applies to live
+in the cluster's replicas, in each replica's memory. A replica picks up the
+configured value when it is created and holds it for its lifetime.
+
+> **Warning:** A replica's compression setting is fixed when the replica is created, so
+> changing `EXPERIMENTAL ARRANGEMENT COMPRESSION` never changes an existing
+> replica's arrangements. Materialize instead creates a new set of replicas
+> carrying the new setting. The existing replicas keep serving until the new ones
+> have hydrated, then Materialize retires them. As a result, the cluster
+> temporarily uses roughly twice its usual memory until the switch completes,
+> regardless of whether you enable or disable dictionary compression.
+> Nothing else is needed to apply the setting. Plan for the switch the same way
+> you would plan for resizing a cluster. Because hydration is slower with
+> compression enabled, the switch takes longer when turning compression on than
+> when turning it off.
+
+### Set the option on a cluster
+
+You can set the option when you create a cluster:
+
+```mzsql
+CREATE CLUSTER my_cluster (
+    SIZE = '100cc',
+    EXPERIMENTAL ARRANGEMENT COMPRESSION = true
+);
+```
+
+Or change it on an existing cluster:
+
+```mzsql
+ALTER CLUSTER my_cluster SET (EXPERIMENTAL ARRANGEMENT COMPRESSION = true);
+```
+
+To go back to the default:
+
+```mzsql
+ALTER CLUSTER my_cluster RESET (EXPERIMENTAL ARRANGEMENT COMPRESSION);
+```
+
+[`SHOW CREATE CLUSTER`] reports the configured value.
+
+## The tradeoff
+
+Dictionary compression trades CPU for memory, and it does **not** reduce memory
+on every workload. Use this section to judge whether it suits your workload, and
+[contact our team](/support/) if you have questions.
+
+> **Note:** A single arrangement usually holds both columns that compress well and columns
+> that do not. Only the columns that compress save memory, and every column still
+> pays the CPU cost. Materialize decides which columns get compressed, and you
+> cannot select them yourself. You turn compression on per cluster, and the
+> optimizer chooses which intermediate arrangements a dataflow builds.
+
+### When it helps
+
+- Columns that hold a small set of often-repeated, longer values. Typical
+  examples are status strings, enum-like labels, country codes, and tenant IDs.
+  Most or all of the memory savings come from columns like these. See [How
+  distinct values affect the benefit](#how-distinct-values-affect-the-benefit)
+  for how the benefit changes as that set grows.
+- Large arrangements. Compression saves more memory when repeated values occur
+  across more rows, so larger arrangements generally offer more opportunity for
+  savings.
+
+Only data held in an arrangement is affected. That means [indexes] and the
+arrangements that a dataflow builds internally for joins and aggregations
+(`GROUP BY`, `DISTINCT`). Data that is not arranged is untouched. A materialized
+view's stored result is not an arrangement, but the dataflow that maintains it
+builds these internal arrangements for any joins and aggregations it computes.
+
+### When it does not help
+
+- **High-cardinality or near-unique columns.** Unique values are not worth
+  storing in a dictionary, so columns dominated by them see little or no memory
+  savings. Materialize does not detect a high-cardinality column and skip it up
+  front. It inspects every column of every row regardless, so a near-unique
+  column pays the full CPU cost for little or no memory benefit. Unique
+  identifiers, timestamps, and free-form text are typical examples.
+- **Columns of short values.** Booleans, `NULL`s, and small integers are already
+  stored compactly enough that a dictionary reference cannot beat storing the
+  value itself. They are never compressed.
+- **Small arrangements.** An arrangement built from scratch does not install a
+  dictionary until it has seen on the order of 65,000 rows. Small arrangements
+  are effectively unaffected.
+
+### The CPU cost
+
+The cost falls mainly on the write path. As updates arrive, Materialize keeps
+approximate counts of which values repeat most in each column and maintains the
+dictionary. The most
+visible symptom is slower arrangement hydration. A replica in a cluster with
+compression enabled takes longer to build its arrangements after it is created,
+restarted, or resized.
+
+Reads pay a smaller but ongoing cost. Resolving a compressed value requires an
+extra indirection, and comparing compressed rows cannot use the fast path that
+uncompressed rows use.
+
+## How distinct values affect the benefit
+
+The memory benefit is largest when a column repeats a small set of values across
+many rows. It tapers off as the number of distinct values in a column grows past
+roughly 64, and with enough distinct values the bookkeeping becomes overhead that
+buys no memory saving at all.
+
+This is not a limit. Nothing breaks when a column holds more distinct values
+than that. Values that are not worth storing in a dictionary, including values
+that appear only once, are stored as-is. The result is less memory saved, and
+nothing else changes.
+
+## Observe the effect
+
+There is no metric or system catalog relation specific to dictionary
+compression. The effect shows up in the existing arrangement-size introspection:
+
+```mzsql
+SELECT name, records, size
+FROM mz_introspection.mz_dataflow_arrangement_sizes
+ORDER BY size DESC;
+```
+
+See [`mz_introspection.mz_arrangement_sizes`] for per-operator numbers and
+[`mz_introspection.mz_dataflow_arrangement_sizes`] for per-dataflow numbers. The
+reported size includes the dictionary's own overhead, so on a workload that does
+not compress well you may see the cost of the machinery rather than a saving.
+
+To judge whether compression helped, compare arrangement sizes for the same
+objects with the option on and off. For example, run the same workload on a
+second cluster with the option set differently. Because changing the option
+re-hydrates the cluster, wait until hydration has completed before you measure.
+
+## Related pages
+
+- [Arrangements]
+- [Query optimization](/transform-data/optimization/)
+- [Dataflow troubleshooting](/transform-data/dataflow-troubleshooting/)
+- [`CREATE CLUSTER`](/sql/create-cluster/)
+- [`ALTER CLUSTER`](/sql/alter-cluster/)
+- [`SHOW CREATE CLUSTER`]
+
+[Arrangements]: /get-started/arrangements/
+[indexes]: /concepts/indexes/
+[`SHOW CREATE CLUSTER`]: /sql/show-create-cluster/
+[`mz_introspection.mz_arrangement_sizes`]: /reference/system-catalog/mz_introspection/#mz_arrangement_sizes
+[`mz_introspection.mz_dataflow_arrangement_sizes`]: /reference/system-catalog/mz_introspection/#mz_dataflow_arrangement_sizes
+
+---
+
 ## FAQ: Indexes
 
 ## Do indexes in Materialize support `ORDER BY`?
@@ -1329,15 +1500,31 @@ busier instance under real load might show non-zero fractions at those higher
 thresholds.
 
 By default this query aggregates across every object. To scope the CCDF to a
-single object, add a join to `mz_catalog.mz_objects` and a name filter to the
-`lags` CTE (replace `<your_mv_name>` with the name of your object):
+single object, join `mz_catalog.mz_objects` in the `lags` CTE and filter on the
+object name (replace `<your_mv_name>` with the name of your object):
 
 ```mzsql
+WITH lags AS (
+    -- Convert each lag to seconds, dropping unhydrated (NULL) observations and
+    -- any non-positive lag.
+    SELECT extract(epoch FROM wl.lag) AS lag_seconds
     FROM mz_internal.mz_wallclock_global_lag_recent_history wl
     JOIN mz_catalog.mz_objects o ON wl.object_id = o.id
     WHERE o.name = '<your_mv_name>'
       AND wl.lag IS NOT NULL
       AND wl.lag > INTERVAL '0'
+),
+thresholds AS (
+    -- Fixed decade thresholds, so the CCDF always reports 1s, 10s, and 100s.
+    SELECT unnest(ARRAY[1, 10, 100]) AS lag_threshold_seconds
+)
+SELECT
+    t.lag_threshold_seconds,
+    count(*) FILTER (WHERE l.lag_seconds >= t.lag_threshold_seconds)::float8
+        / count(*) AS fraction_of_time_at_or_above
+FROM thresholds t, lags l
+GROUP BY t.lag_threshold_seconds
+ORDER BY t.lag_threshold_seconds;
 ```
 
 To compare against an SLO, pick your target freshness (say 10 seconds) and read
@@ -1743,6 +1930,8 @@ In many relational databases, indexes don't replicate the entire collection of d
     INNER JOIN courses c ON s_c.course_id = c.id;
     ```
 
+Check out the blog post [Delta Joins and Late Materialization](https://materialize.com/blog/delta-joins/) to go deeper on join optimization in Materialize.
+
 ### Default index
 
 Create a default index when there is no particular `WHERE` or `JOIN` clause that would fit the above cases. This can still speed up your query by reading the input from memory.
@@ -1895,9 +2084,111 @@ ORDER BY dataflow_name, region_name;
 
 The column `hint` provides the estimated value to be provided to the `AGGREGATE INPUT GROUP SIZE` in the case of a `MIN` or `MAX` aggregation or to the `DISTINCT ON INPUT GROUP SIZE` or `LIMIT INPUT GROUP SIZE` in the case of a Top K pattern.
 
-## Learn more
+## Improve performance when using temporal filters
 
-Check out the blog post [Delta Joins and Late Materialization](https://materialize.com/blog/delta-joins/) to go deeper on join optimization in Materialize.
+[Temporal filters](/transform-data/patterns/temporal-filters/) bound a
+query's results using [`mz_now()`](/sql/functions/now_and_mz_now), e.g.:
+
+```mzsql
+WHERE mz_now() <= event_ts + INTERVAL '24 hours'
+```
+
+Input data originally appears at a timestamp precision of one second, so rows
+typically arrive in batches that share a single timestamp. They don't age out
+of the window that way: the temporal filter retracts each row at the
+millisecond-precision timestamp derived from that row's own `event_ts`, so
+data changes at a much finer granularity while aging out than it did when it
+arrived. Materialize computes a result update for each of those distinct
+timestamps, which, for a computation that is expensive to maintain
+incrementally, means a disproportionate amount of work, hurting CPU usage and
+freshness.
+
+**Rounding** the timestamp expression that `mz_now()` is compared against,
+e.g. with [`date_bin`](/sql/functions/date-bin), collapses many of these
+distinct timestamps together. Rows that would otherwise expire at slightly
+different times now expire in the same batch, so Materialize can consolidate
+the overlapping intermediate state into a single update instead of tracking
+each one separately.
+
+### When it helps
+
+Rounding is most effective for temporal filters with **high input update
+rates** where consecutive updates touch **heavily overlapping data**, and
+where the underlying computation is expensive to recompute per update (for
+example, a filter feeding into joins, aggregations, or window functions that
+can't be maintained cheaply per row). In this situation, coarsening the
+timestamp granularity can meaningfully reduce CPU usage and improve freshness
+(lower wallclock lag), since Materialize processes fewer, larger batches
+instead of many nearly-identical small ones.
+
+It's not helpful, or not applicable, when:
+
+- The filter already needs fine-grained (sub-interval) precision, e.g., a
+  sliding window that must expire records to the millisecond.
+- The comparison against `mz_now()` isn't an inequality, e.g., an equality
+  check, since then there is no bound to round.
+- The query is already cheap to maintain incrementally, in which case
+  rounding adds complexity for negligible benefit.
+
+### Example
+
+Before: a materialized view with a temporal filter that admits rows for
+exactly 24 hours, using the raw, millisecond-precision `event_ts`:
+
+```mzsql
+CREATE MATERIALIZED VIEW recent_events AS
+SELECT *
+FROM events
+WHERE mz_now() <= event_ts + INTERVAL '24 hours';
+```
+
+After: round the timestamp expression down to the nearest 10 seconds with
+`date_bin`, so all rows whose `event_ts` falls in the same 10-second bucket
+expire together:
+
+```mzsql
+CREATE MATERIALIZED VIEW recent_events AS
+SELECT *
+FROM events
+WHERE mz_now() <= date_bin('10 seconds', event_ts, TIMESTAMP '1970-01-01') + INTERVAL '24 hours';
+```
+
+The same idea applies to indexes with a temporal filter in their underlying
+view, and to filters expressed with epoch arithmetic rather than `date_bin`.
+For example, the filter:
+
+```mzsql
+WHERE mz_now() <= extract(epoch FROM event_ts) * 1000 + 86400000
+```
+
+can be rounded to whole seconds by flooring the timestamp expression:
+
+```mzsql
+WHERE mz_now() <= floor(extract(epoch FROM event_ts)) * 1000 + 86400000
+```
+
+### Tradeoffs
+
+- **This trades timing precision for performance.** Rows now become valid or
+  invalid only at the rounding interval's boundary, which adds up to one
+  interval's worth of imprecision to the filter's effective bound.
+- **Round in the direction that preserves your query's guarantee.**
+  `date_bin` always rounds *down*, and flooring an epoch expression does the
+  same. Which direction is the conservative one depends on the semantics you
+  need: if a record must never be retained for more than 24 hours, rounding
+  an upper bound down is safe, because rows can then only expire up to one
+  interval early; if a record must always be retained for at least 24 hours,
+  you need to round *up* instead. Don't round blindly; check which direction
+  preserves the guarantee your query depends on.
+- **Choosing the interval matters.** Too fine an interval loses most of the
+  consolidation benefit, while too coarse an interval measurably hurts
+  freshness precision (you're adding up to that much latency). Since input
+  data appears at a one-second timestamp precision to begin with, rounding to intervals
+  larger than one second has diminishing returns, and going beyond roughly 10
+  seconds is unlikely to help any further.
+- **This is a manual, per-query rewrite**, not an optimization Materialize
+  applies automatically. You need to identify which temporal filters are
+  costly to maintain and rewrite each one.
 
 [query hints]: /sql/select/#query-hints
 [arrangements]: /get-started/arrangements/#arrangements
@@ -2140,7 +2431,7 @@ on diagnosing a slow snapshot and sizing a cluster appropriately for
 snapshotting, follow the [`Ingest data`
 troubleshooting](/ingest-data/troubleshooting) guide.
 
-For upsert and Debezium sources, see also [Hydrating objects](#hydrating-objects).
+For upsert sources, see also [Hydrating objects](#hydrating-objects).
 
 ### Hydrating objects
 
@@ -2153,10 +2444,10 @@ to take longer to hydrate.
 
 When a materialized view or index is created, it undergoes hydration. Hydration
 also happens whenever a cluster is restarted or resized: the materialized views
-and indexes on that cluster rebuild their in-memory state, and upsert and
-Debezium sources rebuild their internal index. On Materialize Cloud, this
-includes restarts during the [routine
-maintenance window](/releases/schedule/#cloud-upgrade-schedule).
+and indexes on that cluster rebuild their in-memory state, and upsert sources
+rebuild their internal index. On Materialize Cloud, this includes restarts
+during the [routine maintenance
+window](/releases/schedule/#cloud-upgrade-schedule).
 
 To see whether an object is still hydrating, navigate to the
 [workflow graph](#detect) for the object in the Materialize console.

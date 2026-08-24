@@ -154,6 +154,7 @@ To create a sink, you can:
 | Use a native connector | Kafka/Redpanda | <ul> <li><a href="/serve-results/sink/kafka/" >Sink to Kafka/Redpanda</a></li> </ul>  |
 | Use the Kafka sink + Kafka Connect | Elasticsearch | <ul> <li><a href="/serve-results/sink/elasticsearch/" >Sink to Elasticsearch</a></li> </ul>  |
 | Use the Kafka sink + Kafka Connect | OpenSearch | <ul> <li><a href="/serve-results/sink/opensearch/" >Sink to OpenSearch</a></li> </ul>  |
+| Use the Kafka sink + <code>mz-tpuf-sink</code> | turbopuffer | <ul> <li><a href="/serve-results/sink/turbopuffer/" >Sink to turbopuffer</a></li> </ul>  |
 | Use a native connector | Apache Iceberg hosted on AWS S3 Tables | <ul> <li><a href="/serve-results/sink/iceberg/" >Sink to Iceberg</a></li> </ul>  |
 | Use <code>SUBSCRIBE</code> | Various | <ul> <li><a href="https://github.com/MaterializeInc/mz-catalog-sync" >Sink to Postgres</a></li> <li><a href="https://github.com/MaterializeIncLabs/mz-redis-sync" >Sink to Redis</a></li> </ul>  |
 
