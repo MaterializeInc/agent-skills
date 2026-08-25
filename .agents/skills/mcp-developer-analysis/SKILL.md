@@ -78,10 +78,11 @@ WHERE entity_type = 'source_status'
 
 ### If the ontology views are NOT available
 
-Use `SHOW COLUMNS FROM <schema>.<table>` to verify column names before
-querying. Do NOT use `SHOW TABLES FROM mz_internal LIKE '...'` to find
-relations: it lists tables only, and most system catalog objects are views;
-use `SHOW VIEWS FROM mz_internal LIKE '...'` instead.
+They exist from Materialize v26.24, so an older build is one reason the check
+comes back empty. Use `SHOW COLUMNS FROM <schema>.<table>` to verify column
+names before querying. Do NOT use `SHOW TABLES FROM mz_internal LIKE '...'` to
+find relations: it lists tables only, and most system catalog objects are
+views; use `SHOW VIEWS FROM mz_internal LIKE '...'` instead.
 
 ## Critical Rules
 
@@ -257,20 +258,25 @@ CPU/memory work.
 **Run these through the `query` tool**, not `query_system_catalog`:
 `EXPLAIN ANALYZE` executes on the cluster you pass as the `cluster` argument
 — for the object-level commands, that must be the cluster the MV/index lives
-on, otherwise the introspection sources are empty. If `query` is not
-available, this section is not actionable on the current environment.
+on, otherwise the introspection sources are empty. Nothing errors when you get
+this wrong: on another cluster, or through `query_system_catalog`, the
+object-level commands return an EMPTY result, which reads like "no skew". If
+`query` is not available, this section is not actionable on the current
+environment.
 
 **Cluster-level (run on the cluster you want to inspect):**
 
 ```sql
-EXPLAIN ANALYZE CLUSTER CPU WITH SKEW;
+EXPLAIN ANALYZE CLUSTER CPU WITH SKEW
 ```
 
 **Object-level (run for both the MV and its indexes):**
 
 ```sql
-EXPLAIN ANALYZE CPU WITH SKEW FOR MATERIALIZED VIEW <schema>.<mv_name>;
-EXPLAIN ANALYZE CPU WITH SKEW FOR INDEX <schema>.<index_name>;
+EXPLAIN ANALYZE CPU WITH SKEW FOR MATERIALIZED VIEW <schema>.<mv_name>
+```
+```sql
+EXPLAIN ANALYZE CPU WITH SKEW FOR INDEX <schema>.<index_name>
 ```
 
 If skew is present: identify the skewed operator (often TopK/window/agg/join/distinct), then inspect definitions (`SHOW CREATE ...`) and recommend a concrete SQL change (remove/adjust hints, refactor keys/partitioning, or rewrite the MV).
@@ -326,6 +332,7 @@ Produce a structured markdown report:
 ### Hydration
 ### Cluster Utilization
 ### Worker Skew
+### Source and Sink Health
 
 ## Cost Analysis (if requested)
 
@@ -338,6 +345,11 @@ Produce a structured markdown report:
 ## Optimization Recommendations
 <numbered list with specific SQL for each>
 ```
+
+The Cluster Topology row wants a replica count and a utilization figure per
+cluster, which the per-replica queries do not give you. The `Cluster Topology`
+query in `references/queries.md` produces both, and includes clusters with no
+replicas.
 
 ### Writing Recommendations
 

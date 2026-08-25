@@ -483,6 +483,10 @@ ORDER BY c.name, r.name
 ## Object Dependencies
 
 ### Dependency Graph
+Unbounded, and the schema filter only constrains the child side, so system
+objects appear as parents. Add a `LIMIT`, or narrow to the objects under
+investigation, before running it into the 1 MB response cap.
+
 ```sql
 SELECT
     parent.name AS parent_name,
