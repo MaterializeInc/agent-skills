@@ -90,20 +90,22 @@ Even with the ontology, be aware of these common mistakes:
 
 When unsure, run `SHOW COLUMNS FROM <schema>.<table>` to verify.
 
-### Do NOT query mz_dataflow_arrangement_sizes
+### mz_dataflow_arrangement_sizes needs the `query` tool
 
-**NEVER query `mz_introspection.mz_dataflow_arrangement_sizes`** via MCP. It
-fails for two reasons:
+`mz_introspection.mz_dataflow_arrangement_sizes`, like every `mz_introspection`
+relation, is cluster-scoped: it answers about the session's current cluster,
+and `query_system_catalog` cannot target a cluster, so through that tool it
+returns another cluster's numbers or an empty result, with no error. Read it
+through the `query` tool with the `cluster` argument (and `cluster_replica` on
+a multi-replica cluster). Its `id` column is a dataflow id (`uint8`), not
+`mz_catalog.mz_objects.id` (`text`), so a JOIN on ids fails with
+`operator does not exist: uint8 = text`; match on `name` instead
+(`Dataflow: <database>.<schema>.<object>`).
 
-1. **Cluster-scoped**: Only returns data for the session's current cluster,
-   and the MCP tool does not support `SET cluster = ...` to switch clusters.
-2. **Type mismatch**: Its `id` column is `uint8`, not `text` like
-   `mz_catalog.mz_objects.id`. JOINs fail with `operator does not exist: uint8 = text`.
-
-Instead, use:
-- `mz_internal.mz_cluster_replica_utilization` — memory/CPU/disk percentage
-- `mz_internal.mz_cluster_replica_metrics` — raw memory bytes
-- `mz_internal.mz_index_advice` — find MVs/indexes that can be removed
+Without the `query` tool, use:
+- `mz_internal.mz_cluster_replica_utilization`: memory/CPU/disk percentage
+- `mz_internal.mz_cluster_replica_metrics`: raw memory bytes
+- `mz_internal.mz_index_advice`: find MVs/indexes that can be removed
 
 ### Type casting notes
 
