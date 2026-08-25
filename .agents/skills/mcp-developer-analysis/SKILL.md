@@ -7,19 +7,25 @@ description: 'Analyze a Materialize environment via the MCP Developer endpoint, 
 
 Analyze a Materialize environment via the MCP Developer endpoint and produce a
 structured report with health status, performance findings, and optimization
-recommendations.
+recommendations. Assumes Materialize v26.24 or later.
 
 The developer endpoint exposes two read-only tools:
 
 - **`query_system_catalog`** — `SELECT`/`SHOW`/`EXPLAIN` restricted to system
-  catalog tables (`mz_*`, `pg_catalog`, `information_schema`). Does not take a
-  cluster argument; runs on the catalog server cluster (`mz_catalog_server`).
-  Use for most catalog lookups.
+  catalog tables (`mz_*`, `pg_catalog`, `information_schema`). Takes no cluster
+  argument, and one passed anyway is silently ignored rather than rejected.
+  Catalog reads are auto-routed to the catalog server cluster
+  (`mz_catalog_server`) while `auto_route_catalog_queries` is on (the
+  default); anything the router cannot serve there — notably every
+  `mz_introspection` relation — runs on the session's default cluster (the
+  role's `cluster` default if set, else the system default, `quickstart`
+  unless the operator changed it). Use for most catalog lookups.
 - **`query`** (added in Materialize v26.30) — `SELECT`/`SHOW`/`EXPLAIN` against
-  any object the role can access, including user objects on a named cluster.
-  Required for `EXPLAIN ANALYZE` (it must run on the MV/index's cluster) and
-  for reading user data directly. May be hidden when the operator has disabled
-  `enable_mcp_developer_query_tool`.
+  any object the role can access, on the cluster named by its required
+  `cluster` argument (plus, from v26.33, an optional `cluster_replica`).
+  Required for `EXPLAIN ANALYZE` (it must run on the
+  MV/index's cluster) and for reading user data directly. May be hidden when
+  the operator has disabled `enable_mcp_developer_query_tool`.
 
 ## Connecting an MCP client to `materialize-developer`
 
@@ -36,92 +42,65 @@ to analyze the environment.
 
 ## Discovering Tables and Columns
 
-**Do NOT guess column names.** Before writing queries, check if the `mz_ontology`
-schema is available by running:
-
-```sql
-SHOW TABLES FROM mz_ontology
-```
-
-### If mz_ontology is available
-
-Use it to discover the correct tables, columns, join paths, and ID types:
+**Do NOT guess column names.** System catalog relations are a mix of tables,
+views, materialized views and sources, so no single `SHOW TABLES` or
+`SHOW VIEWS` lists them all; use `SHOW OBJECTS FROM <schema>`. The ontology
+views in `mz_internal` describe the catalog; use them to discover the correct
+tables, columns, join paths, and ID types:
 
 | Table | What it tells you |
 |-------|-------------------|
-| `mz_ontology.mz_ontology_entity_types` | What catalog entities exist and which `mz_*` table they map to. |
-| `mz_ontology.mz_ontology_link_types` | Relationships between entities (foreign keys, metrics, etc.). |
-| `mz_ontology.mz_ontology_properties` | Column names, types, and descriptions for each entity. |
-| `mz_ontology.mz_ontology_semantic_types` | Typed ID domains (CatalogItemId, ReplicaId, etc.). |
+| `mz_internal.mz_ontology_entity_types` | What catalog entities exist and which `mz_*` table they map to. |
+| `mz_internal.mz_ontology_link_types` | Relationships between entities (foreign keys, metrics, etc.). |
+| `mz_internal.mz_ontology_properties` | Column names, types, and descriptions for each entity. |
+| `mz_internal.mz_ontology_semantic_types` | Typed ID domains (CatalogItemId, ReplicaId, etc.). |
 
 Example queries:
 ```sql
 -- Find the right table for an entity
 SELECT name, relation, description
-FROM mz_ontology.mz_ontology_entity_types
+FROM mz_internal.mz_ontology_entity_types
 WHERE name LIKE '%source%'
 
 -- Find join paths between entities
 SELECT name, source_entity, target_entity, properties, description
-FROM mz_ontology.mz_ontology_link_types
+FROM mz_internal.mz_ontology_link_types
 WHERE source_entity = 'source' OR target_entity = 'source'
 
 -- Find columns for a table
 SELECT column_name, semantic_type, description
-FROM mz_ontology.mz_ontology_properties
+FROM mz_internal.mz_ontology_properties
 WHERE entity_type = 'source_status'
 ```
 
-### If mz_ontology is NOT available
-
-Use `SHOW COLUMNS FROM <schema>.<table>` to verify column names before querying.
-Refer to the Critical Rules below for known pitfalls.
+Verify column names with `SHOW COLUMNS FROM <schema>.<table>` before querying.
 
 ## Critical Rules
 
-### Known column name pitfalls
+The server's own `initialize` instructions carry the catalog gotchas: column
+names such as `last_status_change_at`, the replica-to-cluster JOIN for
+`mz_cluster_replica_utilization`, the ontology views, and from v26.40 the
+`mz_introspection` routing and id types. Most clients forward them; if yours
+does not, `SHOW COLUMNS` is the fallback.
 
-Even with the ontology, be aware of these common mistakes:
+### `mz_introspection` relations need the `query` tool
 
-| Wrong | Correct | Table |
-|-------|---------|-------|
-| `updated_at` | `last_status_change_at` | `mz_source_statuses`, `mz_sink_statuses` |
-| `cluster_name` | Must JOIN through `replica_id` to `mz_cluster_replicas` then `mz_clusters` | `mz_cluster_replica_utilization` |
-
-When unsure, run `SHOW COLUMNS FROM <schema>.<table>` to verify.
-
-### mz_dataflow_arrangement_sizes needs the `query` tool
-
-`mz_introspection.mz_dataflow_arrangement_sizes`, like every `mz_introspection`
-relation, is cluster-scoped: it answers about the session's current cluster,
-and `query_system_catalog` cannot target a cluster, so through that tool it
-returns another cluster's numbers or an empty result, with no error. Read it
-through the `query` tool with the `cluster` argument (and `cluster_replica` on
-a multi-replica cluster). Its `id` column is a dataflow id (`uint8`), not
-`mz_catalog.mz_objects.id` (`text`), so a JOIN on ids fails with
-`operator does not exist: uint8 = text`. Reach the catalog through
-`mz_introspection.mz_compute_exports` instead (`dataflow_id` matches its
-`id`, `export_id` matches `mz_catalog.mz_objects.id`), or match `name`, which
-reads `Dataflow: <database>.<schema>.<object>`.
-
-Without the `query` tool, use:
-- `mz_internal.mz_cluster_replica_utilization`: memory/CPU/disk percentage
-- `mz_internal.mz_cluster_replica_metrics`: raw memory bytes
-- `mz_internal.mz_index_advice`: find MVs/indexes that can be removed
-
-### Type casting notes
-
-Some `mz_introspection` views use `uint8` for ID columns instead of `text`.
-**Avoid JOINing `mz_introspection` views with `mz_catalog` views unless you
-cast IDs explicitly.** The `mz_internal` views all use `text` IDs and are safe
-to JOIN with `mz_catalog`.
-
-### Discovering tables without the ontology
-
-If `mz_ontology` is not available, use these fallbacks:
-- `SHOW COLUMNS FROM <schema>.<table>` to check a table's columns
-- **Do NOT use `SHOW TABLES FROM mz_internal LIKE '...'`** — this only shows
-  tables, not views. Most system catalog objects are views.
+Every `mz_introspection` relation, `mz_dataflow_arrangement_sizes` included,
+is cluster-scoped, and `query_system_catalog` cannot target a cluster, so
+through that tool the read lands on the session's default cluster: with
+exactly one replica there you get its numbers, or an empty result, with no
+error; with several replicas the read fails with `log source reads must
+target a replica`, with none with `has no replicas available to service
+request`. Read them through `query` with the `cluster` argument, plus
+`cluster_replica` (from v26.33) on a cluster with more than one replica
+(unbilled ones count), which is what the first error asks for; nothing fixes
+the second.
+Servers before v26.40 say in their `initialize` instructions never
+to query `mz_dataflow_arrangement_sizes`; that rule predates the `query`
+tool, and this supersedes it. The query, its join path to the catalog, and
+its caveats are under Arrangement Sizes in `references/queries.md`. Without
+the `query` tool, fall back to the relations under Memory and Resource
+Consumption below.
 
 ## Workflow Overview
 
@@ -135,40 +114,53 @@ If `mz_ontology` is not available, use these fallbacks:
 Confirm you have access to the `query_system_catalog` tool. Run a quick test:
 
 ```
-query_system_catalog: SELECT mz_version()
+query_system_catalog: SELECT mz_version() FROM mz_catalog.mz_databases LIMIT 1
 ```
 
-Check `tools/list` for `query` as well. If it's there, you can also run
-`EXPLAIN ANALYZE` and queries against user objects on a named cluster. If
-it's not listed (operator has disabled it, or the environment is on a
-pre-v26.30 build), fall back to `query_system_catalog` for everything that
-fits.
+`query_system_catalog` rejects a `SELECT` that references no system catalog
+table, so a bare `SELECT mz_version()` fails with `Query must reference at
+least one system catalog table`, which reads like a broken connection.
+
+Check whether a `query` tool is among the tools your client exposes. With it
+you can also run `EXPLAIN ANALYZE` and queries against user objects on a named
+cluster; without it (operator disabled it, or a pre-v26.30 build), fall back
+to `query_system_catalog` for everything that fits.
 
 If `query_system_catalog` fails, check:
-- The MCP server is configured in `.mcp.json`
+- The MCP server is registered in your client's MCP configuration (the
+  file and key differ per client, see `mcp-client-connect.md`)
 - The `enable_mcp_developer` feature flag is enabled on the environment
 - Your authentication credentials are valid
 
 ### Running Queries
 
-Both tools accept a single read-only statement per call (no semicolons; no
-`SET`).
+Both tools take one read-only statement per call, no `SET`, and no trailing
+semicolon (one is tolerated; two statements are rejected).
 
-**`query_system_catalog`** — preferred for catalog work:
-- `SELECT`, `SHOW`, `EXPLAIN` only
-- System tables only: `mz_*`, `pg_catalog`, `information_schema` (no user
-  tables)
-- No cluster argument; runs on `mz_catalog_server`
+Results come back as a bare array of rows with no column names, and every `AS`
+alias is discarded, so map columns positionally and keep the `SELECT` list
+short and in the order you intend to read it. Numbers arrive as strings,
+booleans as JSON `true`/`false`, NULL as `null`; `timestamp` and `timestamptz`
+values arrive as millisecond-since-epoch strings (`1787687415336.000`), so cast
+them to `text` where you need a readable time. Qualify object names with the database when the object is not in the
+session's database (`SHOW database`), or the statement fails with `unknown
+schema`. A response is capped (1 MB by
+default) and a request timed out (60 seconds by default), both configurable by
+the operator and both surfacing as errors. A `LIMIT` keeps a catalog
+enumeration under the cap, and shortens the work only for a plain read of one
+indexed relation, not for a join. A timeout releases the call but sometimes
+not the query, so do not retry a timed-out statement as it was.
 
-**`query`** — required for cluster-bound operations:
-- Same `SELECT`/`SHOW`/`EXPLAIN` allowlist
-- Takes a required `cluster` argument
-- Can reach user objects in addition to the system catalog
-- Use for `EXPLAIN ANALYZE` (it runs on the specified cluster) and for reading
-  user data while debugging
+`query_system_catalog` checks its allowlist by walking FROM-clause table
+references, so statements without one are not checked at all: `SHOW TABLES`,
+`SHOW COLUMNS`, the `SHOW CREATE` forms and object-level `EXPLAIN ANALYZE`
+pass there and can name user objects (which is why the latter answers empty,
+see Worker Skew). Treat that as a fallback for when `query` is missing; use
+`query` for user objects.
 
 When filtering out system schemas, always exclude: `mz_catalog`, `mz_internal`,
-`pg_catalog`, `information_schema`, and `mz_introspection`.
+`pg_catalog`, `information_schema`, and `mz_introspection`. `SHOW SCHEMAS` also
+lists `mz_catalog_unstable` and `mz_unsafe`, which hold no relations.
 
 ## Step 2: Discover — Inventory the Environment
 
@@ -176,20 +168,24 @@ Run the discovery queries to understand what is deployed. See
 `references/queries.md` for the full query set. The discovery phase covers:
 
 ### Environment Overview
-- Materialize version (`SELECT mz_version()`)
-- Clusters and replicas — names, sizes, and replica counts
+- Materialize version
+- Clusters and replicas — names, `managed`, replica counts and sizes. Start
+  from `mz_clusters` and LEFT JOIN the replicas, or a cluster without
+  replicas disappears from the inventory. An unmanaged cluster has NULL
+  `size` and `replication_factor`; unbilled support replicas are listed in
+  `mz_internal.mz_internal_cluster_replicas` and count like any other.
 - Schemas in use
 
 ### Deployed Objects Inventory
-- **Sources**: type (Kafka, Postgres, MySQL, Webhook, etc.), cluster assignment, status
+- **Sources**: type (Kafka, Postgres, MySQL, Webhook, etc.), cluster
+  assignment, status. `mz_sources` also has a row for every subsource and
+  `progress` collection, so filter `type NOT IN ('subsource', 'progress')`
+  before reporting a source count.
 - **Materialized Views**: cluster assignment, indexes, dependencies
 - **Views**: (non-materialized) and their usage patterns
 - **Sinks**: type, destination, cluster assignment
 - **Indexes**: what they're on, cluster assignment
 - **Connections**: external system connections configured
-
-Build a mental model of the data pipeline: what data comes in (sources), how it's
-transformed (views/MVs), and where it goes out (sinks).
 
 ### Object Definitions
 
@@ -204,20 +200,29 @@ the SQL definitions tell you *how* things are computed:
 ## Step 3: Analyze — Performance and Resource Metrics
 
 ### Freshness (Lag Analysis)
-Query `mz_internal.mz_materialization_lag` for per-object lag.
+Query `mz_internal.mz_materialization_lag` for per-object lag. Its `local_lag`
+and `global_lag` columns are plain `interval`s, so they compare and sort
+directly, and `slowest_global_input_id` names the input holding the object
+back. Both lags are measured against the inputs' frontiers, not the wall
+clock: a pipeline whose source is paused shows zero lag while growing
+arbitrarily stale, so also compare `mz_frontiers.write_frontier` with `now()`
+(the Write Frontiers query).
 
-**Important**: The `write_frontier` column is of type `mz_timestamp` (a uint8),
-not a standard timestamp. You cannot subtract it from `now()` directly. Cast to
-get a human-readable time: `to_timestamp(write_frontier::bigint / 1000)`.
+`write_frontier` is not on this relation. It lives on
+`mz_internal.mz_frontiers` as an `mz_timestamp`, which casts to `timestamptz`
+for a readable time and to `text` (then `bigint`) for the raw number, never
+directly to `bigint`. `references/queries.md` has the queries.
 
 ### Hydration Status
 Query `mz_internal.mz_hydration_statuses` to check whether all dataflows are
 hydrated. Non-hydrated objects after initial startup may indicate resource
-pressure or configuration issues.
+pressure or configuration issues. LEFT JOIN the replica columns: `replica_id`
+is NULL with no replica to hydrate on, and an inner join hides those objects.
 
 ### Memory and Resource Consumption
-- `mz_internal.mz_cluster_replica_utilization` for memory/CPU percentage per replica
-- `mz_internal.mz_cluster_replica_metrics` for raw memory metrics
+- `mz_internal.mz_cluster_replica_utilization` for memory/CPU percentage per replica process
+- `mz_internal.mz_cluster_replica_metrics` for raw memory metrics, also one
+  row per (replica, process)
 - `mz_internal.mz_index_advice` to identify which MVs/indexes can be optimized
 
 ### Worker Skew (CPU imbalance across workers)
@@ -226,82 +231,61 @@ Use `WITH SKEW` to find operators where one worker does disproportionate
 CPU/memory work.
 
 **Run these through the `query` tool**, not `query_system_catalog`:
-`EXPLAIN ANALYZE` executes on the cluster you pass as the `cluster` argument
-— for the object-level commands, that must be the cluster the MV/index lives
-on, otherwise the introspection sources are empty. If `query` is not
-available, this section is not actionable on the current environment.
+`EXPLAIN ANALYZE` executes on the cluster you pass as the `cluster` argument,
+and for the object-level commands that must be the cluster the MV/index lives
+on. Getting it wrong does not reliably error: on another single-replica
+cluster, or through `query_system_catalog` when the default cluster has one
+replica, the object-level commands return an empty result, which reads like
+"no skew"; with several replicas the read fails with `log source reads must
+target a replica`, with none with `has no replicas available to service
+request`. Without `query`, this section is not actionable.
 
 **Cluster-level (run on the cluster you want to inspect):**
 
 ```sql
-EXPLAIN ANALYZE CLUSTER CPU WITH SKEW;
+EXPLAIN ANALYZE CLUSTER CPU WITH SKEW
 ```
 
 **Object-level (run for both the MV and its indexes):**
 
 ```sql
-EXPLAIN ANALYZE CPU WITH SKEW FOR MATERIALIZED VIEW <schema>.<mv_name>;
-EXPLAIN ANALYZE CPU WITH SKEW FOR INDEX <schema>.<index_name>;
+EXPLAIN ANALYZE CPU WITH SKEW FOR MATERIALIZED VIEW <schema>.<mv_name>
+```
+```sql
+EXPLAIN ANALYZE CPU WITH SKEW FOR INDEX <schema>.<index_name>
 ```
 
 If skew is present: identify the skewed operator (often TopK/window/agg/join/distinct), then inspect definitions (`SHOW CREATE ...`) and recommend a concrete SQL change (remove/adjust hints, refactor keys/partitioning, or rewrite the MV).
 
 ### Index Advice
-Query `mz_internal.mz_index_advice` — Materialize's built-in advisor. Hint types:
-- **"keep"** — the MV/index is needed as-is
-- **"drop unless queried directly"** — no structural dependencies; only useful for direct SELECT queries
-- **"convert to a view"** — MV can be dematerialized entirely, saving all arrangement memory
-- **"convert to a view with an index"** — convert MV to a view but keep its indexes
-- **"add index"** — object would benefit from an index
+Query `mz_internal.mz_index_advice`, Materialize's built-in advisor. It emits
+exactly six hints: `keep`, `drop unless queried directly`, `convert to a view`,
+`convert to a view with an index`, `convert to materialized view`, `add index`.
+Filtering on a subset silently drops real recommendations;
+`references/queries.md` says what each one means.
 
 ### Cost Analysis (optional)
-Query `mz_catalog.mz_cluster_replica_sizes` to get credit rates per cluster
-size, then calculate: `credits_per_hour * replication_factor * 730 hours/month`.
+Use the Cost Analysis queries in `references/queries.md` (per-replica pricing).
 
-When writing recommendations, **always quantify the credit impact**.
+When writing recommendations, **always quantify the credit impact** (credits
+are a Cloud billing unit; on self-managed the shipped sizes carry Cloud's
+numbers and operator-defined sizes whatever the operator set, 0 by default,
+so present them as relative weights at best).
 
 ### Object Dependencies
 Query `mz_internal.mz_object_dependencies` to understand the dependency graph.
 
 ## Step 4: Report — Generate the Analysis
 
-Produce a structured markdown report:
+Produce a structured markdown report following
+`references/report-template.md`: executive summary, cluster topology,
+deployed objects, performance analysis (freshness, hydration, utilization,
+worker skew, source and sink health), cost analysis, index advice, SQL-level
+analysis, and numbered recommendations with specific SQL.
 
-```markdown
-# Environment Analysis
-
-**Date**: <date>
-**Materialize Version**: <version>
-
-## Executive Summary
-<2-3 paragraph high-level assessment>
-
-## Cluster Topology
-| Cluster | Size | Replicas | Credits/Hr | Monthly Credits | Utilization |
-
-## Deployed Objects
-### Sources (<count>)
-### Materialized Views (<count>)
-### Sinks (<count>)
-### Indexes (<count>)
-
-## Performance Analysis
-### Freshness
-### Hydration
-### Cluster Utilization
-### Worker Skew
-
-## Cost Analysis (if requested)
-
-## Index Advice Summary
-
-## SQL-Level Analysis
-### Materialized View Definitions
-### Index Analysis
-
-## Optimization Recommendations
-<numbered list with specific SQL for each>
-```
+The Cluster Topology table comes from the `Cluster Topology` query in
+`references/queries.md` plus the credit columns of `Current Compute Cost per
+Cluster` there.
 
 ### Writing Recommendations
 
@@ -310,9 +294,9 @@ Produce a structured markdown report:
 Good:
 > **Recommendation:** Dematerialize `my_schema.unused_mv` to save memory.
 > ```sql
-> SHOW CREATE MATERIALIZED VIEW my_schema.unused_mv;
-> DROP MATERIALIZED VIEW my_schema.unused_mv;
-> CREATE VIEW my_schema.unused_mv AS <definition>;
+> SHOW CREATE MATERIALIZED VIEW my_schema.unused_mv
+> DROP MATERIALIZED VIEW my_schema.unused_mv
+> CREATE VIEW my_schema.unused_mv AS <definition>
 > ```
 
 Bad:
@@ -320,51 +304,83 @@ Bad:
 
 ## Troubleshooting Runbooks
 
-For focused troubleshooting, use these diagnostic paths.
-**Always end with specific SQL commands to fix the issue.**
+**Always end with specific SQL commands to fix the issue**, and never apply
+one without the user's yes: scaling up or adding replicas costs money, and
+dropping or altering objects loses state. Every fix below is DDL, which both
+tools reject, so hand the commands to the user.
 
 ### "Why is my materialized view stale?"
 
 **Diagnostic steps:**
-1. Check `mz_internal.mz_materialization_lag` for the MV's lag
-2. Check `mz_internal.mz_hydration_statuses` — is it hydrated?
-3. Check `mz_internal.mz_cluster_replica_statuses` — is the replica healthy?
-4. Check `mz_internal.mz_cluster_replica_utilization` — memory pressure causing restarts?
+1. Check whether the MV's cluster has any replica first: `mz_clusters` LEFT
+   JOIN `mz_cluster_replicas` (the Clusters and Replicas query), not
+   `replication_factor`, which is NULL on unmanaged clusters and blind to
+   unbilled replicas. A cluster with no replicas runs nothing, and the steps
+   below don't work well.
+2. Check `mz_internal.mz_hydration_statuses` — is the MV hydrated, and is
+   everything else on its cluster (the Non-Hydrated Objects query, restricted
+   to that cluster)?
+3. Check `mz_internal.mz_cluster_replica_status_history` for recent `offline`
+   events with reason `oom-killed`, which covers the cgroup OOM killer, the
+   heap limiter and a full lgalloc spill disk alike (the Replica Restarts
+   query; the emulator records no reason, so there judge by the `offline`
+   count): an OOM loop often reads `online` in the current status and modest
+   in a utilization sample. Most OOMs happen during hydration, so the loop is
+   over when step 2 shows everything hydrated and the latest history row per
+   process is `online`; kills that recur after hydration completes are a
+   steady-state loop, which only a size change or less on the cluster ends.
+4. Check `mz_internal.mz_cluster_replica_utilization`: `memory_percent` near
+   100 means RAM is full and further growth lands on swap where there is
+   swap, felt as slow hydration or lag; `heap_percent` (RAM plus swap against
+   the limit) climbing while `memory_percent` stays put is that swap in use,
+   and near 100 the next spike kills the replica. Either way: scale up, move
+   the MV, or shrink what the cluster holds (the fixes below, and step 7).
 5. Check `mz_internal.mz_source_statuses` — upstream source errors?
-6. If the `query` tool is available, run
+6. Check `mz_internal.mz_materialization_lag` for the MV's lag (see Freshness)
+7. If the `query` tool is available, run
    `EXPLAIN ANALYZE MEMORY FOR MATERIALIZED VIEW <schema>.<mv>` on the MV's
    cluster to see per-operator memory and spot expensive shapes (large
    arrangements, joins without indexes, missing temporal filters).
 
 **Common fixes:**
 
-*If the cluster is overloaded (high memory/CPU):*
+*If the MV's cluster has no replicas:*
 ```sql
--- Option A: Scale up the cluster
-ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>');
-
--- Option B: Move the MV to a different cluster
-SHOW CREATE MATERIALIZED VIEW <schema>.<mv_name>;
-DROP MATERIALIZED VIEW <schema>.<mv_name>;
-CREATE MATERIALIZED VIEW <schema>.<mv_name> IN CLUSTER <new_cluster> AS <definition>;
+ALTER CLUSTER <cluster_name> SET (REPLICATION FACTOR 1)
+```
+```sql
+-- Unmanaged cluster: add a replica directly
+CREATE CLUSTER REPLICA <cluster_name>.r1 (SIZE = '<size>')
 ```
 
-*If the MV is not hydrated and the cluster recently restarted:*
-Hydration will complete on its own once the cluster stabilizes. If it persists,
-the cluster likely needs more memory.
+*If the cluster is overloaded (high memory/CPU):*
+```sql
+-- Option A: Scale up the cluster (unmanaged: DROP and CREATE its replicas
+-- at the bigger size instead)
+ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>')
+```
+```sql
+-- Option B: Move the MV to a different cluster
+SHOW CREATE MATERIALIZED VIEW <schema>.<mv_name>
+DROP MATERIALIZED VIEW <schema>.<mv_name>
+CREATE MATERIALIZED VIEW <schema>.<mv_name> IN CLUSTER <new_cluster> AS <definition>
+```
 
-*If an upstream source has errors:*
+*If an upstream source is not running:*
 ```sql
 SELECT name, status, error, last_status_change_at
 FROM mz_internal.mz_source_statuses
 WHERE status != 'running'
 ```
-Fix the upstream source issue first — MV freshness depends on source health.
+Not every non-`running` status is a fault, and only `stalled` carries an
+`error`; "Are my sources healthy?" below lists what each status means.
+Fix the upstream source issue first. MV freshness depends on source health.
 
 ### "Why is my cluster running out of memory?"
 
 **Diagnostic steps:**
-1. Check `mz_internal.mz_cluster_replica_utilization` for memory percentage
+1. Check `mz_internal.mz_cluster_replica_utilization` for memory percentage and
+   `mz_cluster_replica_status_history` for `oom-killed` events (Replica Restarts)
 2. Check `mz_internal.mz_index_advice` for MVs that can be dematerialized
 3. Check MV definitions for missing temporal filters
 4. Check for redundant indexes
@@ -383,11 +399,17 @@ FROM mz_internal.mz_index_advice ia
 JOIN mz_catalog.mz_objects o ON ia.object_id = o.id
 JOIN mz_catalog.mz_schemas sc ON o.schema_id = sc.id
 WHERE ia.hint = 'convert to a view'
+```
 
+`convert to a view with an index` and `convert to materialized view` are memory
+recommendations too, with different remediations, so read the whole advice set
+(the Index Advice query in `references/queries.md`) before acting on this one.
+
+```sql
 -- For each candidate:
-SHOW CREATE MATERIALIZED VIEW <schema>.<mv_name>;
-DROP MATERIALIZED VIEW <schema>.<mv_name>;
-CREATE VIEW <schema>.<mv_name> AS <definition>;
+SHOW CREATE MATERIALIZED VIEW <schema>.<mv_name>
+DROP MATERIALIZED VIEW <schema>.<mv_name>
+CREATE VIEW <schema>.<mv_name> AS <definition>
 ```
 
 *Drop unused indexes:*
@@ -397,14 +419,17 @@ FROM mz_internal.mz_index_advice ia
 JOIN mz_catalog.mz_objects o ON ia.object_id = o.id
 JOIN mz_catalog.mz_schemas sc ON o.schema_id = sc.id
 WHERE ia.hint = 'drop unless queried directly'
-
--- Verify with the user before dropping
-DROP INDEX <schema>.<index_name>;
 ```
 
-*Scale up the cluster:*
 ```sql
-ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>');
+-- Verify with the user before dropping
+DROP INDEX <schema>.<index_name>
+```
+
+*Scale up the cluster (unmanaged: DROP and CREATE its replicas at the bigger
+size instead):*
+```sql
+ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>')
 ```
 
 ### "Are my sources healthy? / Has my source finished snapshotting?"
@@ -416,23 +441,42 @@ ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>');
 
 **Common fixes:**
 
-*If a source is stalled or erroring:*
+*If a source is not running:*
 ```sql
 SELECT name, status, error
 FROM mz_internal.mz_source_statuses
 WHERE status != 'running'
+```
 
--- If the connection credentials are wrong:
-ALTER SECRET <secret_name> AS '<new_value>';
+The status is one of `created` (no status recorded yet), `starting`,
+`running`, `paused`, `stalled` or `dropped`; the docs also list `failed`,
+which the code never produces. Only `stalled` carries an `error`. Webhook and
+`progress` rows always read `running`. `created` and `starting` are transient
+and normal; `paused` means the source's cluster has no replicas, which no
+amount of waiting fixes:
+
+```sql
+-- paused: give the source's cluster a replica
+ALTER CLUSTER <cluster_name> SET (REPLICATION FACTOR 1)
+-- unmanaged cluster: CREATE CLUSTER REPLICA <cluster_name>.r1 (SIZE = '<size>')
+```
+```sql
+-- stalled/failed on bad credentials:
+ALTER SECRET <secret_name> AS '<new_value>'
 ```
 
 If `snapshot_committed` is `false`, the source is still loading its initial
-snapshot. This is normal for large sources — wait for it to complete.
+snapshot. This is normal for large sources — wait for it to complete; it also
+reads `false` with zero counters for about two minutes after a source or
+replica starts. A source with no `mz_source_statistics` row at all never ran,
+so check its status and whether its cluster has any replica instead of
+waiting; a paused source keeps a stale row, so read `status` first.
 
 ### "What's the health of my environment?"
 
 Run these checks in order:
-1. `mz_internal.mz_cluster_replica_statuses` — all replicas ready?
+1. `mz_internal.mz_cluster_replica_statuses` — all replicas of user clusters
+   ready, and no recent `oom-killed` in `mz_cluster_replica_status_history`?
 2. `mz_internal.mz_source_statuses` — all sources running?
 3. `mz_internal.mz_sink_statuses` — all sinks running?
 4. `mz_internal.mz_cluster_replica_utilization` — resource pressure?
@@ -445,7 +489,12 @@ Run these checks in order:
 
 ## Notes
 
-- All queries run through the MCP Developer endpoint are read-only.
-- Query results are limited to system catalog tables — no access to user data.
-- Access is governed by RBAC — you only see objects your credentials have access to.
+- Access is governed by RBAC, so you only see the *data* your credentials have
+  access to. The catalog is not gated the same way: a role with no object
+  grants still reads the full object inventory, every view and MV `definition`,
+  and all of `mz_index_advice`. Where RBAC is on, `query` and every read that
+  is not auto-routed also need `USAGE` on the cluster they run on
+  (`mz_catalog_server` grants it to `PUBLIC`). Whether RBAC checks are on
+  depends on the deployment and its configuration; `SHOW enable_rbac_checks`
+  and `SHOW enable_session_rbac_checks` tell (either `on` enables them).
 - Freshness numbers are point-in-time snapshots. Re-run to check if lag is stable or growing.

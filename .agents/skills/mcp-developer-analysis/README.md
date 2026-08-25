@@ -16,10 +16,11 @@ Materialize environment and ask natural language questions like:
 
 The skill provides the AI agent with:
 
-- **Exact system catalog schemas** to prevent query errors (wrong column names, type mismatches)
+- **Verified diagnostic queries** against the system catalog
+- **Client setup** for Claude Code, Claude Desktop, Cursor, VS Code, Zed, Continue, and Windsurf (`mcp-client-connect.md`)
 - **Diagnostic workflows** for common troubleshooting scenarios
 - **Remediation runbooks** with copy-pasteable SQL commands
-- **Guardrails** against known pitfalls (cluster-scoped queries, uint8 ID mismatches)
+- **Guardrails** against known pitfalls (cluster-scoped introspection reads, per-process replica relations, clusters without replicas)
 
 ## Setup
 

@@ -63,9 +63,14 @@ The canonical "minimum-drama" path for getting Claude Code talking to a local Ma
 ### State-detection probes (run before each step; skip the step if state is already in place)
 
 ```sh
-# 1. Emulator reachable?
-curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:6876/api/mcp/developer
-# Expect: 405 (GET-not-allowed; the endpoint is up). 503 = enable_mcp_developer is off.
+# 1. Emulator reachable, and is the endpoint actually enabled?
+# Must be a POST: GET is answered 405 by the router before the feature flag is
+# ever consulted, so it reads "up" whether or not the endpoint is enabled.
+curl -sS -o /dev/null -w "%{http_code}\n" -X POST \
+  http://localhost:6876/api/mcp/developer \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+# Expect: 200 (endpoint up and enabled). 503 = enable_mcp_developer is off.
 # Connection refused / no response = Emulator not running; stop and direct user to environment-setup.
 
 # 2. my_dev_agent role exists?
@@ -137,8 +142,11 @@ The walkthrough is **idempotent** — re-running on a partly-configured machine 
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Smoke query returns a role other than `my_dev_agent` | The user's `MCP_DEV_TOKEN` was set to a different role's base64 | Repeat step 4 with the right `read`/`base64` invocation, then restart again. |
-| HTTP 422 on the smoke query | Token doesn't decode to a known role; or empty token because the env var wasn't exported in the shell that launched `claude` | Confirm `echo "$MCP_DEV_TOKEN"` in the launching shell shows `bXlfZGV2X2FnZW50Og==`; if it's empty, `export` was missed. |
-| HTTP 503 on the smoke query | `enable_mcp_developer` system parameter is `false` on this Emulator | See the [server config docs](https://materialize.com/docs/integrations/mcp-server/mcp-developer-config/). Not a walkthrough fix. |
+| Smoke query returns `anonymous_http_user` | No usable `Authorization` header reached the server: the env var was unset in the shell that launched `claude`, or the token is malformed. The Emulator downgrades both to anonymous rather than rejecting them. | Confirm `echo "$MCP_DEV_TOKEN"` in the launching shell shows `bXlfZGV2X2FnZW50Og==`; if it's empty, `export` was missed. |
+| HTTP 422 on the smoke query | The request body failed to deserialize: a malformed JSON-RPC body, not a credential problem. | Check the JSON-RPC body shape, not the token. |
+| HTTP 503 on the smoke query | Usually `enable_mcp_developer` is `false` on this Emulator; the server also answers 503 when it cannot fetch a catalog snapshot in time, so retry once. | See the [server config docs](https://materialize.com/docs/integrations/mcp-server/mcp-developer-config/). Not a walkthrough fix. |
+| HTTP 403 | The request's `Origin` header is not on the server's allowlist (a browser-based client, or a proxy adding one) | Send the request without an `Origin`, or from an allowed origin. |
+| HTTP 200 whose body carries a JSON-RPC `error` instead of a `result` | The request reached the tool; the error's `data.error_type` is `ValidationError` (the statement was refused: not read-only, not a system table, two statements), `ExecutionError` (the SQL ran and failed, read the message), `ToolNotFound` (the `query` tool is disabled), or `InternalError` (a server-side failure). Every tool-level failure looks like this, never like a non-200 status. | Read `error_type` and the message; fix the statement, not the connection. |
 | `claude mcp list` shows the server but the smoke query times out | Claude Code wasn't restarted after the env var was set | Step 5 again. |
 
 ### What the walkthrough does NOT cover
@@ -146,7 +154,7 @@ The walkthrough is **idempotent** — re-running on a partly-configured machine 
 - **Cloud or self-managed setup** — different URLs, different credentials, possibly Bearer tokens. Use the deep reference content below.
 - **Pattern B (multiple registrations)** or **Pattern C (literal-token edit)** — the walkthrough only sets up Pattern A. Cover those if the user explicitly asks to switch identities.
 - **Skill installation** — `npx skills add MaterializeInc/agent-skills` is a terminal-side step done before the user can invoke the walkthrough at all. If the slash command isn't found, point the user there first.
-- **RBAC tightening** — the walkthrough leaves `my_dev_agent` at `PUBLIC` defaults, which is appropriate for training but not for production. Direct the user to the Materialize RBAC docs for production scoping.
+- **RBAC tightening** — the walkthrough leaves `my_dev_agent` at `PUBLIC` defaults, which is appropriate for training but not for production. Direct the user to the Materialize RBAC docs for production scoping. RBAC gates data, not the catalog (see the Notes section of `SKILL.md`), so the analysis workflow still works for a narrowly-scoped agent role.
 
 ---
 
@@ -155,9 +163,9 @@ The walkthrough is **idempotent** — re-running on a partly-configured machine 
 | Deployment | URL pattern | Auth backend |
 |---|---|---|
 | **Materialize Emulator** (Docker) | `http://localhost:6876/api/mcp/developer` | None — Basic-auth username is the role; password is empty |
-| **Materialize Cloud** | `https://<region-id>.materialize.cloud/api/mcp/developer` | Frontegg — Basic with `<email>:<app_password>` (or Bearer JWT) |
-| **Self-managed (Password mode)** | `http(s)://<host>:6876/api/mcp/developer` | Internal password hashes — Basic with `<role>:<password>` |
-| **Self-managed (OIDC mode)** | `https://<host>:6876/api/mcp/developer` | External IdP — Bearer JWT |
+| **Materialize Cloud** | `<baseURL>/api/mcp/developer`; copy `<baseURL>` from the Console's Connect modal, MCP Server tab, Developer tab | OAuth through the browser, or Frontegg — Basic with `<email>:<app_password>` (or Bearer JWT) |
+| **Self-managed (Password mode)** | `http(s)://<host>:6876/api/mcp/developer`, `<host>` being the balancerd load balancer address, or `localhost` behind `kubectl port-forward svc/<instance>-balancerd 6876:6876 -n materialize-environment` | Internal password hashes — Basic only, with `<role>:<password>` |
+| **Self-managed (OIDC mode)** | `https://<host>:6876/api/mcp/developer` | OAuth through the browser (SSO), or External IdP — Bearer JWT; a Basic `<role>:<password>` is also accepted for roles that have a password |
 
 For deployment-specific details (where to find the URL, how to mint app passwords, how to set `enable_mcp_developer`, etc.), see the upstream docs at <https://materialize.com/docs/integrations/mcp-server/>:
 
@@ -167,9 +175,31 @@ For deployment-specific details (where to find the URL, how to mint app password
 
 ---
 
-## Authentication header — what to put where
+## OAuth (Cloud from v26.30, self-managed with SSO from v26.31)
 
-The server reads either header type:
+The client signs the user in through the browser and holds the token itself,
+so the registration carries a URL and no `Authorization` header:
+
+```sh
+claude mcp add --transport http materialize-developer <baseURL>/api/mcp/developer
+```
+
+A self-managed IdP without dynamic client registration needs a pre-registered
+OIDC client: add `--client-id <id> --callback-port <port>`, the port matching
+the `http://localhost:<port>/callback` redirect URI registered on the client.
+The SSO docs list the other IdP requirements (the authentication claim, for
+example `email`, present in access tokens, and a Materialize-specific
+audience): <https://materialize.com/docs/security/self-managed/sso/#connecting-mcp-clients>.
+The identity is then the signed-in user, so the token patterns below do not
+apply. `Incompatible auth server: does not support dynamic client
+registration` from the client means the IdP needs that pre-registered client
+(Okta and most enterprise IdPs do), or use token-based auth instead. Docs: <https://materialize.com/docs/integrations/mcp-server/mcp-developer/>.
+
+## Authentication header — what to put where (token-based auth)
+
+Which header the server reads depends on the authenticator: password mode
+takes Basic only, OIDC takes Bearer and also a Basic `<role>:<password>` for
+roles that have one, Cloud takes either:
 
 ```
 Authorization: Basic <base64(username:password)>
@@ -248,7 +278,7 @@ Functionally identical to Pattern B but inside the existing registration's file.
 
 - Cloud **app passwords are non-recoverable**. Lost ones must be regenerated from the Console.
 - OIDC **Bearer tokens expire**. Pattern A makes refresh trivial (re-export + `claude --continue`); Pattern B/C are awkward for rotating tokens.
-- The MCP query tool **blocks `SET` statements**, so post-auth role-switching does not work — pick the right principal at connect time.
+- The MCP tools **block `SET` statements**, so post-auth role-switching does not work — pick the right principal at connect time. The cluster is chosen per call instead, through the `query` tool's `cluster` argument.
 - In Cloud, the role of record is the *user*, not a SQL role. To scope an agent narrowly, mint a dedicated user with restricted role membership rather than expecting `SET ROLE` to confine it.
 
 ---
@@ -448,7 +478,7 @@ curl -sS -X POST <baseURL>/api/mcp/developer \
   -H "Authorization: Basic <base64-token>" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 
 # Identify the connected role/user — proves which principal the token resolves to
 curl -sS -X POST <baseURL>/api/mcp/developer \
@@ -460,7 +490,9 @@ curl -sS -X POST <baseURL>/api/mcp/developer \
 
 Note: `query_system_catalog` requires the SQL to **reference at least one `mz_*` / `pg_catalog` / `information_schema` table** — a bare `SELECT current_role` is rejected with `Query must reference at least one system catalog table`.
 
-A 422 response indicates the credentials don't resolve to a known principal (typo in the role name, wrong app password, expired JWT). HTTP 503 means the `enable_mcp_developer` system parameter is `false` — see the [server config docs](https://materialize.com/docs/integrations/mcp-server/mcp-developer-config/).
+`tools/list` takes no `params`: sending `"params":{}` is a type error and comes back as HTTP 422 `Failed to deserialize the JSON body ...`.
+
+A 422 with a `Failed to deserialize` body is a malformed request, not a credential problem. Bad or missing credentials (a typo in the role name, a wrong app password, an expired JWT) are HTTP 401 on Cloud and self-managed deployments, for any method, so an unauthenticated GET is 401 there rather than the Emulator's 405; the Emulator never answers that way: an unknown role name creates that role, and a missing or malformed `Authorization` header downgrades to `anonymous_http_user`, neither of which is a rejection. So on the Emulator, read the *principal the smoke query reports*, not the status code. HTTP 503 usually means the `enable_mcp_developer` system parameter is `false`, but the server also answers 503 when it cannot fetch a catalog snapshot in time, so retry once before concluding the flag is off — see the [server config docs](https://materialize.com/docs/integrations/mcp-server/mcp-developer-config/).
 
 ---
 
@@ -471,9 +503,9 @@ A 422 response indicates the credentials don't resolve to a known principal (typ
 - **Continue's directory format.** One JSON file per server inside `.continue/mcpServers/`, each with a `name` field — not a single config file with an array or object.
 - **Cursor's startup-only loading.** Edits during a session don't take effect; users assume the config is wrong when it's just stale.
 - **`base64 -w0` on macOS.** Drop the flag on Darwin.
-- **Empty password is Emulator-only.** Real deployments will reject `<role>:` (empty password) with HTTP 422.
+- **Empty password is Emulator-only.** Real deployments reject `<role>:` (empty password) with HTTP 401.
 - **TLS redirect on Cloud / TLS-enabled self-managed.** Hitting plain `http://` returns a redirect to `https://`. Some clients follow it; some don't. Specify `https://` in the URL up front.
-- **`SET` is blocked.** You cannot switch role/cluster after auth via `query_system_catalog`. Pick the right principal in the auth header, or use `mz_catalog_server` defaults.
+- **`SET` is blocked.** You cannot switch role after auth, so pick the right principal in the auth header. Cluster is per call: the `query` tool takes a required `cluster` argument (and `cluster_replica` from v26.33); `query_system_catalog` always uses auto-routing plus the session default.
 - **Project-vs-global precedence.** Each client has its own rule; verify in the linked doc when configs collide.
 
 ---
