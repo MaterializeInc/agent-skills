@@ -97,8 +97,10 @@ returns another cluster's numbers or an empty result, with no error. Read it
 through the `query` tool with the `cluster` argument (and `cluster_replica` on
 a multi-replica cluster). Its `id` column is a dataflow id (`uint8`), not
 `mz_catalog.mz_objects.id` (`text`), so a JOIN on ids fails with
-`operator does not exist: uint8 = text`; match on `name` instead
-(`Dataflow: <database>.<schema>.<object>`).
+`operator does not exist: uint8 = text`. Reach the catalog through
+`mz_introspection.mz_compute_exports` instead (`dataflow_id` matches its
+`id`, `export_id` matches `mz_catalog.mz_objects.id`), or match `name`, which
+reads `Dataflow: <database>.<schema>.<object>`.
 
 Without the `query` tool, use:
 - `mz_internal.mz_cluster_replica_utilization`: memory/CPU/disk percentage
