@@ -12,9 +12,12 @@ recommendations.
 The developer endpoint exposes two read-only tools:
 
 - **`query_system_catalog`** — `SELECT`/`SHOW`/`EXPLAIN` restricted to system
-  catalog tables (`mz_*`, `pg_catalog`, `information_schema`). Does not take a
-  cluster argument; runs on the catalog server cluster (`mz_catalog_server`).
-  Use for most catalog lookups.
+  catalog tables (`mz_*`, `pg_catalog`, `information_schema`). Takes no cluster
+  argument, and one passed anyway is silently ignored rather than rejected.
+  Catalog reads are auto-routed to the catalog server cluster
+  (`mz_catalog_server`), but anything the router cannot serve there — notably
+  every `mz_introspection` relation — runs on the environment's default
+  cluster. Use for most catalog lookups.
 - **`query`** (added in Materialize v26.30) — `SELECT`/`SHOW`/`EXPLAIN` against
   any object the role can access, including user objects on a named cluster.
   Required for `EXPLAIN ANALYZE` (it must run on the MV/index's cluster) and
@@ -94,13 +97,23 @@ the fallback. This section keeps only what those instructions do not say.
 relation, is cluster-scoped: it answers about the session's current cluster,
 and `query_system_catalog` cannot target a cluster, so through that tool it
 returns another cluster's numbers or an empty result, with no error. Read it
-through the `query` tool with the `cluster` argument (and `cluster_replica` on
-a multi-replica cluster). Its `id` column is a dataflow id (`uint8`), not
-`mz_catalog.mz_objects.id` (`text`), so a JOIN on ids fails with
-`operator does not exist: uint8 = text`. Reach the catalog through
-`mz_introspection.mz_compute_exports` instead (`dataflow_id` matches its
-`id`, `export_id` matches `mz_catalog.mz_objects.id`), or match `name`, which
-reads `Dataflow: <database>.<schema>.<object>`.
+through the `query` tool with the `cluster` argument, plus `cluster_replica` on
+a cluster with more than one replica — that one is not a refinement but a hard
+requirement for *any* `mz_introspection` read there, and without it the read
+fails with `log source reads must target a replica`. Its `id` column is a
+dataflow id (`uint8`), not `mz_catalog.mz_objects.id` (`text`), so a JOIN on
+ids fails with `operator does not exist: uint8 = text`. Reach the catalog
+through `mz_introspection.mz_compute_exports` instead (`dataflow_id` matches
+its `id`, `export_id` matches `mz_catalog.mz_objects.id`), or match `name`,
+which reads `Dataflow: <database>.<schema>.<object>` for user objects — system
+dataflows such as `Dataflow: introspection-subscribe-t65` do not follow that
+shape, so neither path accounts for all the arrangement memory on the cluster.
+
+On builds that predate materialize#38462, the server's own `initialize`
+instructions still say never to query `mz_dataflow_arrangement_sizes`. That
+rule was written for `query_system_catalog`, before the `query` tool existed;
+with a `cluster` argument the relation is readable, and the guidance here
+supersedes it.
 
 Without the `query` tool, use:
 - `mz_internal.mz_cluster_replica_utilization`: memory/CPU/disk percentage
@@ -140,14 +153,25 @@ If `query_system_catalog` fails, check:
 
 ### Running Queries
 
-Both tools accept a single read-only statement per call (no semicolons; no
-`SET`).
+Both tools accept a single read-only statement per call. Write it without a
+trailing semicolon — one is tolerated today, but two statements are rejected
+with `Only one query allowed at a time` — and no `SET`.
+
+Results come back as a bare array of rows with no column names; every `AS`
+alias is discarded and you map columns positionally, so keep the `SELECT` list
+short and in the order you intend to read it. A response is capped at 1 MB and
+a request at 60 seconds, both surfacing as errors, so put a `LIMIT` on anything
+that could enumerate a whole large catalog.
 
 **`query_system_catalog`** — preferred for catalog work:
 - `SELECT`, `SHOW`, `EXPLAIN` only
-- System tables only: `mz_*`, `pg_catalog`, `information_schema` (no user
-  tables)
-- No cluster argument; runs on `mz_catalog_server`
+- System tables only for `SELECT` and `EXPLAIN`: `mz_*`, `pg_catalog`,
+  `information_schema` (no user tables). `SHOW` forms are not checked against
+  that list, so `SHOW TABLES`, `SHOW COLUMNS` and `SHOW CREATE …` do reach user
+  objects here. Treat that as a fallback for when `query` is missing, not as
+  what this tool is for — use `query` for user objects.
+- No cluster argument; catalog reads are auto-routed to `mz_catalog_server`,
+  everything else runs on the environment's default cluster
 
 **`query`** — required for cluster-bound operations:
 - Same `SELECT`/`SHOW`/`EXPLAIN` allowlist
@@ -157,7 +181,9 @@ Both tools accept a single read-only statement per call (no semicolons; no
   user data while debugging
 
 When filtering out system schemas, always exclude: `mz_catalog`, `mz_internal`,
-`pg_catalog`, `information_schema`, and `mz_introspection`.
+`pg_catalog`, `information_schema`, and `mz_introspection`. Two more system
+schemas exist, `mz_catalog_unstable` and `mz_unsafe`; they hold no user-visible
+objects, but they do show up when you enumerate schemas.
 
 ## Step 2: Discover — Inventory the Environment
 
@@ -322,7 +348,7 @@ Good:
 > ```sql
 > SHOW CREATE MATERIALIZED VIEW my_schema.unused_mv;
 > DROP MATERIALIZED VIEW my_schema.unused_mv;
-> CREATE VIEW my_schema.unused_mv AS <definition>;
+> CREATE VIEW my_schema.unused_mv AS <definition>
 > ```
 
 Bad:
@@ -496,6 +522,12 @@ Run these checks in order:
 ## Notes
 
 - All queries run through the MCP Developer endpoint are read-only.
-- Query results are limited to system catalog tables — no access to user data.
-- Access is governed by RBAC — you only see objects your credentials have access to.
+- `query_system_catalog` cannot `SELECT` user tables, though `SHOW` still
+  reaches user-object metadata and DDL through it. The `query` tool reads user
+  data directly, by design.
+- Access is governed by RBAC, so you only see the *data* your credentials have
+  access to. The catalog is not gated the same way: a role with no object
+  grants still reads the full object inventory, every view and MV `definition`,
+  and all of `mz_index_advice`. RBAC checks are off by default on the Emulator,
+  where every principal sees everything.
 - Freshness numbers are point-in-time snapshots. Re-run to check if lag is stable or growing.

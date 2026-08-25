@@ -63,9 +63,14 @@ The canonical "minimum-drama" path for getting Claude Code talking to a local Ma
 ### State-detection probes (run before each step; skip the step if state is already in place)
 
 ```sh
-# 1. Emulator reachable?
-curl -sS -o /dev/null -w "%{http_code}\n" http://localhost:6876/api/mcp/developer
-# Expect: 405 (GET-not-allowed; the endpoint is up). 503 = enable_mcp_developer is off.
+# 1. Emulator reachable, and is the endpoint actually enabled?
+# Must be a POST: GET is answered 405 by the router before the feature flag is
+# ever consulted, so it reads "up" whether or not the endpoint is enabled.
+curl -sS -o /dev/null -w "%{http_code}\n" -X POST \
+  http://localhost:6876/api/mcp/developer \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+# Expect: 200 (endpoint up and enabled). 503 = enable_mcp_developer is off.
 # Connection refused / no response = Emulator not running; stop and direct user to environment-setup.
 
 # 2. my_dev_agent role exists?
@@ -137,7 +142,8 @@ The walkthrough is **idempotent** — re-running on a partly-configured machine 
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Smoke query returns a role other than `my_dev_agent` | The user's `MCP_DEV_TOKEN` was set to a different role's base64 | Repeat step 4 with the right `read`/`base64` invocation, then restart again. |
-| HTTP 422 on the smoke query | Token doesn't decode to a known role; or empty token because the env var wasn't exported in the shell that launched `claude` | Confirm `echo "$MCP_DEV_TOKEN"` in the launching shell shows `bXlfZGV2X2FnZW50Og==`; if it's empty, `export` was missed. |
+| Smoke query returns `anonymous_http_user` | No usable `Authorization` header reached the server: the env var was unset in the shell that launched `claude`, or the token is malformed. The Emulator downgrades both to anonymous rather than rejecting them. | Confirm `echo "$MCP_DEV_TOKEN"` in the launching shell shows `bXlfZGV2X2FnZW50Og==`; if it's empty, `export` was missed. |
+| HTTP 422 on the smoke query | The request body failed to deserialize — a malformed JSON-RPC body, not a credential problem. (On Cloud and self-managed deployments a 422 can also mean unresolvable credentials.) | Check the JSON-RPC body shape, not the token. |
 | HTTP 503 on the smoke query | `enable_mcp_developer` system parameter is `false` on this Emulator | See the [server config docs](https://materialize.com/docs/integrations/mcp-server/mcp-developer-config/). Not a walkthrough fix. |
 | `claude mcp list` shows the server but the smoke query times out | Claude Code wasn't restarted after the env var was set | Step 5 again. |
 
@@ -146,7 +152,7 @@ The walkthrough is **idempotent** — re-running on a partly-configured machine 
 - **Cloud or self-managed setup** — different URLs, different credentials, possibly Bearer tokens. Use the deep reference content below.
 - **Pattern B (multiple registrations)** or **Pattern C (literal-token edit)** — the walkthrough only sets up Pattern A. Cover those if the user explicitly asks to switch identities.
 - **Skill installation** — `npx skills add MaterializeInc/agent-skills` is a terminal-side step done before the user can invoke the walkthrough at all. If the slash command isn't found, point the user there first.
-- **RBAC tightening** — the walkthrough leaves `my_dev_agent` at `PUBLIC` defaults, which is appropriate for training but not for production. Direct the user to the Materialize RBAC docs for production scoping.
+- **RBAC tightening** — the walkthrough leaves `my_dev_agent` at `PUBLIC` defaults, which is appropriate for training but not for production. Direct the user to the Materialize RBAC docs for production scoping. Note that RBAC gates data, not the catalog: even a role with no object grants still reads the whole object inventory, every view and MV `definition`, and all of `mz_index_advice`. The analysis workflow therefore works for a narrowly-scoped agent role.
 
 ---
 
@@ -448,7 +454,7 @@ curl -sS -X POST <baseURL>/api/mcp/developer \
   -H "Authorization: Basic <base64-token>" \
   -H "Content-Type: application/json" \
   -H "Accept: application/json, text/event-stream" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 
 # Identify the connected role/user — proves which principal the token resolves to
 curl -sS -X POST <baseURL>/api/mcp/developer \
@@ -460,7 +466,9 @@ curl -sS -X POST <baseURL>/api/mcp/developer \
 
 Note: `query_system_catalog` requires the SQL to **reference at least one `mz_*` / `pg_catalog` / `information_schema` table** — a bare `SELECT current_role` is rejected with `Query must reference at least one system catalog table`.
 
-A 422 response indicates the credentials don't resolve to a known principal (typo in the role name, wrong app password, expired JWT). HTTP 503 means the `enable_mcp_developer` system parameter is `false` — see the [server config docs](https://materialize.com/docs/integrations/mcp-server/mcp-developer-config/).
+`tools/list` takes no `params`. Sending `"params":{}` is a type error and comes back as HTTP 422 `Failed to deserialize the JSON body ...`; drop the key entirely.
+
+A 422 with a `Failed to deserialize` body is a malformed request, not a credential problem. On Cloud and self-managed deployments a 422 can also mean the credentials don't resolve to a known principal (typo in the role name, wrong app password, expired JWT); the Emulator never answers that way, because it auto-creates an unknown role and silently downgrades an unusable `Authorization` header to `anonymous_http_user`. So on the Emulator, read the *principal the smoke query reports*, not the status code. HTTP 503 means the `enable_mcp_developer` system parameter is `false` — see the [server config docs](https://materialize.com/docs/integrations/mcp-server/mcp-developer-config/).
 
 ---
 

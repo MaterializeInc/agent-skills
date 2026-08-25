@@ -1,27 +1,41 @@
 # Diagnostic Queries Reference
 
 All queries in this file target system catalog tables and run through the MCP
-`query_system_catalog` tool, which runs on the catalog server cluster
-(`mz_catalog_server`). For cluster-bound operations — `EXPLAIN ANALYZE` on a
-materialized view or index, reading user data — use the `query` tool instead
-(added in Materialize v26.30; takes a required `cluster` argument).
+`query_system_catalog` tool. That tool takes no cluster argument: catalog reads
+are auto-routed to the catalog server cluster (`mz_catalog_server`), while
+anything the router cannot serve there — notably every `mz_introspection`
+relation — runs on the environment's default cluster. For cluster-bound
+operations — `EXPLAIN ANALYZE` on a materialized view or index, reading user
+data — use the `query` tool instead (added in Materialize v26.30; takes a
+required `cluster` argument).
 
 **Shared constraints (both tools):**
-- One statement per call (no semicolons, no multi-statement batches)
+- One statement per call; write it without a trailing semicolon (one is
+  tolerated today, two statements are rejected)
 - SELECT, SHOW, or EXPLAIN only
+- Rows come back with no column names — every `AS` alias below is discarded, so
+  map columns positionally, in the order the `SELECT` list gives them
+- A response is capped at 1 MB and a request at 60 seconds; narrow or `LIMIT`
+  anything that could enumerate a whole large catalog
 
 **`query_system_catalog` only:**
 - System catalog tables only (`mz_*`, `pg_catalog`, `information_schema`)
-- No cluster argument; cluster-scoped queries are not supported
+- No cluster argument; passing one is silently ignored, not rejected, so a
+  cluster-scoped query answers about the wrong cluster instead of failing
 
 **`query` only:**
 - `cluster` argument required
+- `cluster_replica` required as well for any `mz_introspection` read on a
+  cluster with more than one replica
 - Can also reach user objects
 
 **Important column name notes:**
 - `mz_source_statuses` and `mz_sink_statuses` use `last_status_change_at` (NOT `updated_at`)
 - `mz_cluster_replica_statuses` uses `updated_at`
-- `mz_cluster_replica_utilization` only has `replica_id` — must JOIN to get names
+- `mz_cluster_replica_utilization` carries no cluster or replica *name* — JOIN
+  `mz_cluster_replicas` and `mz_clusters` to get them. It is keyed by
+  `(replica_id, process_id)`, so aggregate or filter by process on
+  multi-process sizes.
 - When unsure, run `SHOW COLUMNS FROM <table>` first
 
 ---
