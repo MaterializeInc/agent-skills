@@ -264,7 +264,7 @@ against Materialize:
 | --- | --- |
 | [**Strict Serializable**](#strict-serializable) | **Default.** Provides serializability and linearizability. |
 | [**Serializable**](#serializable) | Provides serializability but not linearizability. |
-| [**Bounded Staleness `<duration>`**](#bounded-staleness) | **Public preview.** Serves reads at a timestamp at most `<duration>` stale; never blocks, errors if the bound cannot be met. |
+| [**Bounded Staleness `<duration>`**](#bounded-staleness) | Serves reads at a timestamp at most `<duration>` stale; never blocks, errors if the bound cannot be met. |
 | Read Uncommitted, Read Committed, Repeatable Read | Accepted for compatibility; treated as Serializable. |
 
 ## Serializable
@@ -394,8 +394,6 @@ made available to us (e.g., querying PostgreSQL for the replication slot's LSN).
     when our client connection communicates with the external system.
 
 ## Bounded Staleness
-
-> **Public Preview:** This feature is in public preview.
 
 The Bounded Staleness isolation level lets you trade exact freshness for
 predictable latency. A query under bounded staleness is served at a timestamp
