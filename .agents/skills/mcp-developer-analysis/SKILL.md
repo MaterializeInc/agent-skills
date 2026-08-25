@@ -36,59 +36,57 @@ to analyze the environment.
 
 ## Discovering Tables and Columns
 
-**Do NOT guess column names.** Before writing queries, check if the `mz_ontology`
-schema is available by running:
+**Do NOT guess column names.** Before writing queries, check whether the
+ontology views are available (they live in `mz_internal` and are views, so
+`SHOW TABLES` does not list them):
 
 ```sql
-SHOW TABLES FROM mz_ontology
+SHOW VIEWS FROM mz_internal LIKE 'mz_ontology%'
 ```
 
-### If mz_ontology is available
+### If the ontology views are available
 
 Use it to discover the correct tables, columns, join paths, and ID types:
 
 | Table | What it tells you |
 |-------|-------------------|
-| `mz_ontology.mz_ontology_entity_types` | What catalog entities exist and which `mz_*` table they map to. |
-| `mz_ontology.mz_ontology_link_types` | Relationships between entities (foreign keys, metrics, etc.). |
-| `mz_ontology.mz_ontology_properties` | Column names, types, and descriptions for each entity. |
-| `mz_ontology.mz_ontology_semantic_types` | Typed ID domains (CatalogItemId, ReplicaId, etc.). |
+| `mz_internal.mz_ontology_entity_types` | What catalog entities exist and which `mz_*` table they map to. |
+| `mz_internal.mz_ontology_link_types` | Relationships between entities (foreign keys, metrics, etc.). |
+| `mz_internal.mz_ontology_properties` | Column names, types, and descriptions for each entity. |
+| `mz_internal.mz_ontology_semantic_types` | Typed ID domains (CatalogItemId, ReplicaId, etc.). |
 
 Example queries:
 ```sql
 -- Find the right table for an entity
 SELECT name, relation, description
-FROM mz_ontology.mz_ontology_entity_types
+FROM mz_internal.mz_ontology_entity_types
 WHERE name LIKE '%source%'
 
 -- Find join paths between entities
 SELECT name, source_entity, target_entity, properties, description
-FROM mz_ontology.mz_ontology_link_types
+FROM mz_internal.mz_ontology_link_types
 WHERE source_entity = 'source' OR target_entity = 'source'
 
 -- Find columns for a table
 SELECT column_name, semantic_type, description
-FROM mz_ontology.mz_ontology_properties
+FROM mz_internal.mz_ontology_properties
 WHERE entity_type = 'source_status'
 ```
 
-### If mz_ontology is NOT available
+### If the ontology views are NOT available
 
-Use `SHOW COLUMNS FROM <schema>.<table>` to verify column names before querying.
-Refer to the Critical Rules below for known pitfalls.
+Use `SHOW COLUMNS FROM <schema>.<table>` to verify column names before
+querying. Do NOT use `SHOW TABLES FROM mz_internal LIKE '...'` to find
+relations: it lists tables only, and most system catalog objects are views;
+use `SHOW VIEWS FROM mz_internal LIKE '...'` instead.
 
 ## Critical Rules
 
-### Known column name pitfalls
-
-Even with the ontology, be aware of these common mistakes:
-
-| Wrong | Correct | Table |
-|-------|---------|-------|
-| `updated_at` | `last_status_change_at` | `mz_source_statuses`, `mz_sink_statuses` |
-| `cluster_name` | Must JOIN through `replica_id` to `mz_cluster_replicas` then `mz_clusters` | `mz_cluster_replica_utilization` |
-
-When unsure, run `SHOW COLUMNS FROM <schema>.<table>` to verify.
+The server's own `initialize` instructions carry the catalog gotchas (the
+column-name pitfalls such as `last_status_change_at`, the replica-to-cluster
+JOIN for `mz_cluster_replica_utilization`, the ontology views, `SHOW COLUMNS`
+to verify). Most clients forward them; if yours does not, `SHOW COLUMNS` is
+the fallback. This section keeps only what those instructions do not say.
 
 ### mz_dataflow_arrangement_sizes needs the `query` tool
 
@@ -106,20 +104,6 @@ Without the `query` tool, use:
 - `mz_internal.mz_cluster_replica_utilization`: memory/CPU/disk percentage
 - `mz_internal.mz_cluster_replica_metrics`: raw memory bytes
 - `mz_internal.mz_index_advice`: find MVs/indexes that can be removed
-
-### Type casting notes
-
-Some `mz_introspection` views use `uint8` for ID columns instead of `text`.
-**Avoid JOINing `mz_introspection` views with `mz_catalog` views unless you
-cast IDs explicitly.** The `mz_internal` views all use `text` IDs and are safe
-to JOIN with `mz_catalog`.
-
-### Discovering tables without the ontology
-
-If `mz_ontology` is not available, use these fallbacks:
-- `SHOW COLUMNS FROM <schema>.<table>` to check a table's columns
-- **Do NOT use `SHOW TABLES FROM mz_internal LIKE '...'`** — this only shows
-  tables, not views. Most system catalog objects are views.
 
 ## Workflow Overview
 
