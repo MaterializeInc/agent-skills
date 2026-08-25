@@ -1534,6 +1534,56 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>honeycomb</code></td>
     </tr>
     <tr>
+      <td><code>mz_persist_blob_hedge_armed</code></td>
+      <td>1 if this process opened a hedge sibling and can hedge when enabled</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_blob_hedge_errors</code></td>
+      <td>hedge requests (the hedge leg only, not the primary) that completed with an error</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_blob_hedge_rtt_latency</code></td>
+      <td>roundtrip-time of the most recent successful warm-path liveness gets on the hedge sibling</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_blob_hedge_warm_errors</code></td>
+      <td>warm-path liveness gets on the hedge sibling that failed or timed out</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_blob_hedge_won_seconds_bucket</code></td>
+      <td>end-to-end latency of blob gets won by the hedge request</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_blob_hedge_won_seconds_count</code></td>
+      <td>end-to-end latency of blob gets won by the hedge request</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_blob_hedge_won_seconds_sum</code></td>
+      <td>end-to-end latency of blob gets won by the hedge request</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_blob_hedges_fired</code></td>
+      <td>blob gets that fired a hedge request</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_blob_hedges_skipped</code></td>
+      <td>hedge requests not fired for a get that exceeded the hedge delay, by reason</td>
+      <td><code>reason</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_blob_hedges_won</code></td>
+      <td>blob gets where the hedge request won the race</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_persist_cmd_cas_mismatch_count</code></td>
       <td>count of command retries from CaS mismatch</td>
       <td><code>cmd</code></td>
