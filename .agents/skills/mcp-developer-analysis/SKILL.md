@@ -141,14 +141,17 @@ The `FROM` clause is not decoration: `query_system_catalog` rejects any
 `SELECT mz_version()` fails with `Query must reference at least one system
 catalog table` and looks like a broken connection.
 
-Check `tools/list` for `query` as well. If it's there, you can also run
-`EXPLAIN ANALYZE` and queries against user objects on a named cluster. If
-it's not listed (operator has disabled it, or the environment is on a
+Check whether a `query` tool is among the tools your client exposes to you
+(a shell-capable agent can also ask the endpoint directly with the
+`tools/list` curl in `mcp-client-connect.md`). If it's there, you can also
+run `EXPLAIN ANALYZE` and queries against user objects on a named cluster.
+If it's not listed (operator has disabled it, or the environment is on a
 pre-v26.30 build), fall back to `query_system_catalog` for everything that
 fits.
 
 If `query_system_catalog` fails, check:
-- The MCP server is configured in `.mcp.json`
+- The MCP server is registered in your client's MCP configuration (the
+  file and key differ per client, see `mcp-client-connect.md`)
 - The `enable_mcp_developer` feature flag is enabled on the environment
 - Your authentication credentials are valid
 

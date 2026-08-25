@@ -178,7 +178,7 @@ SELECT
     conn.type AS connection_type
 FROM mz_catalog.mz_connections conn
 JOIN mz_catalog.mz_schemas sc ON conn.schema_id = sc.id
-WHERE sc.name NOT IN ('mz_catalog', 'mz_internal', 'pg_catalog', 'information_schema')
+WHERE sc.name NOT IN ('mz_catalog', 'mz_internal', 'pg_catalog', 'information_schema', 'mz_introspection')
 ORDER BY conn.name
 ```
 
@@ -533,7 +533,7 @@ SELECT
 FROM mz_catalog.mz_sinks sk
 JOIN mz_internal.mz_sink_statuses ss ON sk.id = ss.id
 JOIN mz_catalog.mz_schemas sc ON sk.schema_id = sc.id
-WHERE sc.name NOT IN ('mz_catalog', 'mz_internal', 'pg_catalog', 'information_schema')
+WHERE sc.name NOT IN ('mz_catalog', 'mz_internal', 'pg_catalog', 'information_schema', 'mz_introspection')
 ORDER BY ss.status DESC, sk.name
 ```
 
