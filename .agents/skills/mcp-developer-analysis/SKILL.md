@@ -119,8 +119,13 @@ Without the `query` tool, use:
 Confirm you have access to the `query_system_catalog` tool. Run a quick test:
 
 ```
-query_system_catalog: SELECT mz_version()
+query_system_catalog: SELECT mz_version() FROM mz_catalog.mz_databases LIMIT 1
 ```
+
+The `FROM` clause is not decoration: `query_system_catalog` rejects any
+`SELECT` that references no system catalog table, so a bare
+`SELECT mz_version()` fails with `Query must reference at least one system
+catalog table` and looks like a broken connection.
 
 Check `tools/list` for `query` as well. If it's there, you can also run
 `EXPLAIN ANALYZE` and queries against user objects on a named cluster. If
@@ -160,12 +165,18 @@ Run the discovery queries to understand what is deployed. See
 `references/queries.md` for the full query set. The discovery phase covers:
 
 ### Environment Overview
-- Materialize version (`SELECT mz_version()`)
-- Clusters and replicas — names, sizes, and replica counts
+- Materialize version
+- Clusters and replicas — names, sizes, and replica counts. Start from
+  `mz_clusters` and LEFT JOIN the replicas: a cluster at replication factor 0
+  has no replica rows and drops out of any inner join, which is exactly the
+  cluster a stale object tends to be sitting on.
 - Schemas in use
 
 ### Deployed Objects Inventory
-- **Sources**: type (Kafka, Postgres, MySQL, Webhook, etc.), cluster assignment, status
+- **Sources**: type (Kafka, Postgres, MySQL, Webhook, etc.), cluster
+  assignment, status. `mz_sources` also has a row for every subsource and
+  `progress` collection, so filter `type NOT IN ('subsource', 'progress')`
+  before reporting a source count.
 - **Materialized Views**: cluster assignment, indexes, dependencies
 - **Views**: (non-materialized) and their usage patterns
 - **Sinks**: type, destination, cluster assignment
@@ -188,16 +199,24 @@ the SQL definitions tell you *how* things are computed:
 ## Step 3: Analyze — Performance and Resource Metrics
 
 ### Freshness (Lag Analysis)
-Query `mz_internal.mz_materialization_lag` for per-object lag.
+Query `mz_internal.mz_materialization_lag` for per-object lag. Its `local_lag`
+and `global_lag` columns are plain `interval`s, so they compare and sort
+directly, and `slowest_global_input_id` names the input holding the object
+back.
 
-**Important**: The `write_frontier` column is of type `mz_timestamp` (a uint8),
-not a standard timestamp. You cannot subtract it from `now()` directly. Cast to
-get a human-readable time: `to_timestamp(write_frontier::bigint / 1000)`.
+**Important**: the relation with a `write_frontier` column is
+`mz_internal.mz_frontiers`, and its type is `mz_timestamp`, not a standard
+timestamp. You cannot subtract it from `now()` directly, and it casts to `text`
+and to nothing else, so the human-readable form is
+`to_timestamp(write_frontier::text::bigint / 1000)` — a direct `::bigint` fails
+with `CAST does not support casting from mz_timestamp to bigint`.
 
 ### Hydration Status
 Query `mz_internal.mz_hydration_statuses` to check whether all dataflows are
 hydrated. Non-hydrated objects after initial startup may indicate resource
-pressure or configuration issues.
+pressure or configuration issues. Join the replica columns with a LEFT JOIN:
+`replica_id` is NULL when there is no replica to hydrate on, and an inner join
+hides precisely the objects worth finding.
 
 ### Memory and Resource Consumption
 - `mz_internal.mz_cluster_replica_utilization` for memory/CPU percentage per replica
@@ -233,14 +252,21 @@ If skew is present: identify the skewed operator (often TopK/window/agg/join/dis
 ### Index Advice
 Query `mz_internal.mz_index_advice` — Materialize's built-in advisor. Hint types:
 - **"keep"** — the MV/index is needed as-is
-- **"drop unless queried directly"** — no structural dependencies; only useful for direct SELECT queries
+- **"drop unless queried directly"** — fewer than two downstream dependencies (or none at all, or an index on a source); only useful for direct SELECT queries
 - **"convert to a view"** — MV can be dematerialized entirely, saving all arrangement memory
 - **"convert to a view with an index"** — convert MV to a view but keep its indexes
+- **"convert to materialized view"** — a view carrying indexes on more than one cluster should be an MV instead
 - **"add index"** — object would benefit from an index
+
+Those six are the whole set the advisor emits; anything filtering on a subset
+of them silently drops real recommendations.
 
 ### Cost Analysis (optional)
 Query `mz_catalog.mz_cluster_replica_sizes` to get credit rates per cluster
-size, then calculate: `credits_per_hour * replication_factor * 730 hours/month`.
+size, then calculate `credits_per_hour * replication_factor * 730 hours/month`
+over **one row per cluster** from `mz_catalog.mz_clusters`. Joining
+`mz_cluster_replicas` in as well multiplies an N-replica cluster by N a second
+time, and drops zero-replica clusters from the picture entirely.
 
 When writing recommendations, **always quantify the credit impact**.
 
@@ -305,45 +331,61 @@ Bad:
 ## Troubleshooting Runbooks
 
 For focused troubleshooting, use these diagnostic paths.
-**Always end with specific SQL commands to fix the issue.**
+**Always end with specific SQL commands to fix the issue.** Every fix below is
+DDL, which both tools reject (`Only SELECT, SHOW, and EXPLAIN statements are
+allowed`), so hand the commands to the user to run rather than trying to apply
+them yourself.
 
 ### "Why is my materialized view stale?"
 
 **Diagnostic steps:**
-1. Check `mz_internal.mz_materialization_lag` for the MV's lag
-2. Check `mz_internal.mz_hydration_statuses` — is it hydrated?
-3. Check `mz_internal.mz_cluster_replica_statuses` — is the replica healthy?
-4. Check `mz_internal.mz_cluster_replica_utilization` — memory pressure causing restarts?
-5. Check `mz_internal.mz_source_statuses` — upstream source errors?
-6. If the `query` tool is available, run
+1. Check `mz_catalog.mz_clusters.replication_factor` for the MV's cluster
+   first. A cluster with zero replicas runs nothing: its objects never hydrate,
+   their frontiers never advance, and it appears in no replica-joined query, so
+   the steps below all come back empty and read as health.
+2. Check `mz_internal.mz_materialization_lag` for the MV's lag
+3. Check `mz_internal.mz_hydration_statuses` — is it hydrated?
+4. Check `mz_internal.mz_cluster_replica_statuses` — is the replica healthy?
+5. Check `mz_internal.mz_cluster_replica_utilization` — memory pressure causing restarts?
+6. Check `mz_internal.mz_source_statuses` — upstream source errors?
+7. If the `query` tool is available, run
    `EXPLAIN ANALYZE MEMORY FOR MATERIALIZED VIEW <schema>.<mv>` on the MV's
    cluster to see per-operator memory and spot expensive shapes (large
    arrangements, joins without indexes, missing temporal filters).
 
 **Common fixes:**
 
+*If the MV's cluster has no replicas:*
+```sql
+ALTER CLUSTER <cluster_name> SET (REPLICATION FACTOR 1)
+```
+
 *If the cluster is overloaded (high memory/CPU):*
 ```sql
 -- Option A: Scale up the cluster
-ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>');
-
+ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>')
+```
+```sql
 -- Option B: Move the MV to a different cluster
 SHOW CREATE MATERIALIZED VIEW <schema>.<mv_name>;
 DROP MATERIALIZED VIEW <schema>.<mv_name>;
-CREATE MATERIALIZED VIEW <schema>.<mv_name> IN CLUSTER <new_cluster> AS <definition>;
+CREATE MATERIALIZED VIEW <schema>.<mv_name> IN CLUSTER <new_cluster> AS <definition>
 ```
 
 *If the MV is not hydrated and the cluster recently restarted:*
 Hydration will complete on its own once the cluster stabilizes. If it persists,
 the cluster likely needs more memory.
 
-*If an upstream source has errors:*
+*If an upstream source is not running:*
 ```sql
 SELECT name, status, error, last_status_change_at
 FROM mz_internal.mz_source_statuses
 WHERE status != 'running'
 ```
-Fix the upstream source issue first — MV freshness depends on source health.
+`status != 'running'` covers more than errors: `created` and `starting` are
+transient, `paused` means the source's cluster has no replicas, and only
+`stalled` and `failed` carry an `error`. Fix the upstream source issue first —
+MV freshness depends on source health.
 
 ### "Why is my cluster running out of memory?"
 
@@ -367,11 +409,19 @@ FROM mz_internal.mz_index_advice ia
 JOIN mz_catalog.mz_objects o ON ia.object_id = o.id
 JOIN mz_catalog.mz_schemas sc ON o.schema_id = sc.id
 WHERE ia.hint = 'convert to a view'
+```
 
+This filter sees one of the advisor's six hints. Read the whole advice set
+first (the Index Advice query in `references/queries.md`): `convert to a view
+with an index` and `convert to materialized view` are real memory
+recommendations with different remediations, and a single-hint filter can come
+back empty on an environment that has several.
+
+```sql
 -- For each candidate:
 SHOW CREATE MATERIALIZED VIEW <schema>.<mv_name>;
 DROP MATERIALIZED VIEW <schema>.<mv_name>;
-CREATE VIEW <schema>.<mv_name> AS <definition>;
+CREATE VIEW <schema>.<mv_name> AS <definition>
 ```
 
 *Drop unused indexes:*
@@ -381,14 +431,16 @@ FROM mz_internal.mz_index_advice ia
 JOIN mz_catalog.mz_objects o ON ia.object_id = o.id
 JOIN mz_catalog.mz_schemas sc ON o.schema_id = sc.id
 WHERE ia.hint = 'drop unless queried directly'
+```
 
+```sql
 -- Verify with the user before dropping
-DROP INDEX <schema>.<index_name>;
+DROP INDEX <schema>.<index_name>
 ```
 
 *Scale up the cluster:*
 ```sql
-ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>');
+ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>')
 ```
 
 ### "Are my sources healthy? / Has my source finished snapshotting?"
@@ -400,18 +452,32 @@ ALTER CLUSTER <cluster_name> SET (SIZE = '<next_size_up>');
 
 **Common fixes:**
 
-*If a source is stalled or erroring:*
+*If a source is not running:*
 ```sql
 SELECT name, status, error
 FROM mz_internal.mz_source_statuses
 WHERE status != 'running'
+```
 
--- If the connection credentials are wrong:
-ALTER SECRET <secret_name> AS '<new_value>';
+The status is one of `created`, `starting`, `running`, `paused`, `stalled`,
+`failed`, `dropped`, and only `stalled` and `failed` carry an `error`.
+`created` and `starting` are transient and normal; `paused` means the source's
+cluster has no replicas, which no amount of waiting fixes:
+
+```sql
+-- paused: give the source's cluster a replica
+ALTER CLUSTER <cluster_name> SET (REPLICATION FACTOR 1)
+```
+```sql
+-- stalled/failed on bad credentials:
+ALTER SECRET <secret_name> AS '<new_value>'
 ```
 
 If `snapshot_committed` is `false`, the source is still loading its initial
-snapshot. This is normal for large sources — wait for it to complete.
+snapshot. This is normal for large sources — wait for it to complete. A source
+with no `mz_source_statistics` row at all is a different case: it is not
+snapshotting, so check its status and its cluster's `replication_factor`
+instead of waiting.
 
 ### "What's the health of my environment?"
 

@@ -29,21 +29,45 @@ materialized view or index, reading user data — use the `query` tool instead
 ## Environment Overview
 
 ### Version
+`query_system_catalog` rejects a `SELECT` that references no system catalog
+table, so the version probe needs a `FROM`.
+
 ```sql
-SELECT mz_version()
+SELECT mz_version() FROM mz_catalog.mz_databases LIMIT 1
 ```
 
 ### Clusters and Replicas
+LEFT JOIN, not JOIN: a cluster at replication factor 0 has no replica rows, and
+an inner join makes it invisible.
+
 ```sql
 SELECT
     c.name AS cluster_name,
-    r.name AS replica_name,
-    r.size,
+    c.size,
+    c.replication_factor,
     c.managed,
-    c.replication_factor
+    r.name AS replica_name
 FROM mz_catalog.mz_clusters c
-JOIN mz_catalog.mz_cluster_replicas r ON c.id = r.cluster_id
+LEFT JOIN mz_catalog.mz_cluster_replicas r ON c.id = r.cluster_id
 ORDER BY c.name, r.name
+```
+
+### Cluster Topology
+One row per cluster, with the replica count and peak utilization the report
+template's Cluster Topology table asks for.
+
+```sql
+SELECT
+    c.name AS cluster_name,
+    c.size,
+    c.replication_factor,
+    count(r.id) AS replicas,
+    max(u.memory_percent) AS peak_memory_percent
+FROM mz_catalog.mz_clusters c
+LEFT JOIN mz_catalog.mz_cluster_replicas r ON r.cluster_id = c.id
+LEFT JOIN mz_internal.mz_cluster_replica_utilization u ON u.replica_id = r.id
+GROUP BY c.name, c.size, c.replication_factor
+ORDER BY c.name
 ```
 
 ### Schemas
@@ -62,6 +86,10 @@ ORDER BY d.name, s.name
 ## Object Inventory
 
 ### Sources
+`mz_sources` has a row for every subsource and `progress` collection too, so
+this returns many more rows than the user would call sources. Add
+`AND s.type NOT IN ('subsource', 'progress')` before reporting a count.
+
 ```sql
 SELECT
     s.name AS source_name,
@@ -173,7 +201,8 @@ ORDER BY sc.name, v.name
 
 ### Index Definitions
 Note: `mz_indexes` does not have a `definition` column — use `create_sql` for
-the full DDL.
+the full DDL. `mz_sources` is the same. `mz_views` and `mz_materialized_views`
+*do* have `definition`.
 
 ```sql
 SELECT
@@ -197,11 +226,10 @@ SELECT
     sc.name AS schema_name,
     s.name AS source_name,
     s.type AS source_type,
-    s.definition
+    s.create_sql
 FROM mz_catalog.mz_sources s
 JOIN mz_catalog.mz_schemas sc ON s.schema_id = sc.id
 WHERE sc.name NOT IN ('mz_catalog', 'mz_internal', 'pg_catalog', 'information_schema', 'mz_introspection')
-  AND s.definition IS NOT NULL
 ORDER BY sc.name, s.name
 ```
 
@@ -224,12 +252,14 @@ WHERE sc.name NOT IN ('mz_catalog', 'mz_internal', 'pg_catalog', 'information_sc
 ORDER BY ia.hint, o.name
 ```
 
-Hint types:
-- `keep` — object is needed (feeds a sink or cross-cluster dependency)
-- `drop unless queried directly` — no structural dependencies; only useful if
-  SELECT queries hit it
+Hint types — these six are the whole set, so do not filter on a subset:
+- `keep` — the object is needed as-is
+- `drop unless queried directly` — fewer than two downstream dependencies (or
+  none at all, or an index on a source); only useful if SELECT queries hit it
 - `convert to a view` — MV can be dematerialized entirely
 - `convert to a view with an index` — MV can be a view, but keep its indexes
+- `convert to materialized view` — a view with indexes on more than one cluster
+  should be an MV instead
 - `add index` — object would benefit from an index
 
 ### Summary by Hint Type
@@ -259,19 +289,22 @@ ORDER BY credits_per_hour
 ### Current Compute Cost per Cluster
 Monthly credit consumption per cluster (assuming 730 hours/month).
 
+Size the cluster from `mz_clusters`, not from a join to `mz_cluster_replicas`.
+Joining the replicas *and* multiplying by `replication_factor` counts an
+N-replica cluster N² times, and hides the zero-replica clusters, which cost
+nothing but also run nothing.
+
 ```sql
 SELECT
     c.name AS cluster_name,
-    r.name AS replica_name,
-    r.size,
-    s.credits_per_hour,
+    c.size,
     c.replication_factor,
-    s.credits_per_hour * c.replication_factor AS total_credits_per_hour,
+    s.credits_per_hour,
+    (s.credits_per_hour * c.replication_factor) AS cluster_credits_per_hour,
     (s.credits_per_hour * c.replication_factor * 730)::numeric(10,1) AS monthly_credits
 FROM mz_catalog.mz_clusters c
-JOIN mz_catalog.mz_cluster_replicas r ON c.id = r.cluster_id
-JOIN mz_catalog.mz_cluster_replica_sizes s ON r.size = s.size
-ORDER BY monthly_credits DESC
+JOIN mz_catalog.mz_cluster_replica_sizes s ON c.size = s.size
+ORDER BY cluster_credits_per_hour DESC
 ```
 
 ### Total Monthly Compute Cost
@@ -280,25 +313,34 @@ SELECT
     SUM(s.credits_per_hour * c.replication_factor)::numeric(10,2) AS total_credits_per_hour,
     (SUM(s.credits_per_hour * c.replication_factor) * 730)::numeric(10,1) AS total_monthly_credits
 FROM mz_catalog.mz_clusters c
-JOIN mz_catalog.mz_cluster_replicas r ON c.id = r.cluster_id
-JOIN mz_catalog.mz_cluster_replica_sizes s ON r.size = s.size
+JOIN mz_catalog.mz_cluster_replica_sizes s ON c.size = s.size
 ```
+
+Both cover the system clusters as well. Only `mz_catalog_server` adds anything;
+the others sit at replication factor 0 and contribute zero. Subtract it if the
+report is about user-owned spend.
 
 ---
 
 ## Performance: Freshness / Lag
 
 ### Materialization Lag
+`local_lag` and `global_lag` are plain `interval`s, so they sort and compare
+directly. `slowest_global_input_id` names the input that is holding the object
+back.
+
 ```sql
 SELECT
     o.name AS object_name,
     o.type AS object_type,
     sc.name AS schema_name,
     l.local_lag,
-    l.global_lag
+    l.global_lag,
+    si.name AS slowest_global_input
 FROM mz_internal.mz_materialization_lag l
 JOIN mz_catalog.mz_objects o ON l.object_id = o.id
 JOIN mz_catalog.mz_schemas sc ON o.schema_id = sc.id
+LEFT JOIN mz_catalog.mz_objects si ON l.slowest_global_input_id = si.id
 WHERE sc.name NOT IN ('mz_catalog', 'mz_internal', 'pg_catalog', 'information_schema', 'mz_introspection')
 ORDER BY l.global_lag DESC NULLS LAST
 LIMIT 30
@@ -306,9 +348,13 @@ LIMIT 30
 
 ### Write Frontiers (sorted oldest first)
 
-The `write_frontier` is of type `mz_timestamp` (uint8 milliseconds since epoch).
-You **cannot** subtract it from `now()`. Sort ascending to find the most-lagging
-objects, and use `to_timestamp()` for human-readable time.
+`write_frontier` lives on `mz_internal.mz_frontiers` and is of type
+`mz_timestamp` (milliseconds since epoch). You **cannot** subtract it from
+`now()`, and it casts to `text` and to nothing else: `::bigint` fails with
+`CAST does not support casting from mz_timestamp to bigint`, so go through
+`::text::bigint`. Sort ascending to find the most-lagging objects, and use
+`to_timestamp()` for human-readable time. A frontier of `0` means the object
+has never been written, not that it was written in 1970.
 
 ```sql
 SELECT
@@ -316,7 +362,7 @@ SELECT
     o.type AS object_type,
     sc.name AS schema_name,
     f.write_frontier::text AS write_frontier,
-    to_timestamp(f.write_frontier::bigint / 1000) AS frontier_time
+    to_timestamp(f.write_frontier::text::bigint / 1000) AS frontier_time
 FROM mz_internal.mz_frontiers f
 JOIN mz_catalog.mz_objects o ON f.object_id = o.id
 JOIN mz_catalog.mz_schemas sc ON o.schema_id = sc.id
@@ -334,7 +380,7 @@ SELECT
     ss.error,
     sc.name AS schema_name,
     f.write_frontier::text AS write_frontier,
-    to_timestamp(f.write_frontier::bigint / 1000) AS frontier_time
+    to_timestamp(f.write_frontier::text::bigint / 1000) AS frontier_time
 FROM mz_catalog.mz_sources s
 JOIN mz_internal.mz_source_statuses ss ON s.id = ss.id
 LEFT JOIN mz_internal.mz_frontiers f ON s.id = f.object_id
@@ -348,8 +394,12 @@ ORDER BY f.write_frontier ASC NULLS FIRST
 ## Performance: Hydration
 
 ### Non-Hydrated Objects
-Returns only objects that are NOT fully hydrated. Empty result = everything is
-healthy.
+Returns only objects that are NOT fully hydrated. The replica joins have to be
+LEFT JOINs: `mz_hydration_statuses` records `replica_id IS NULL` when there is
+no replica to hydrate on, so inner joins drop every object on a zero-replica
+cluster — exactly the objects this query exists to find. A NULL replica in the
+result means there is no replica to hydrate on; check
+`mz_clusters.replication_factor` for that object's cluster.
 
 ```sql
 SELECT
@@ -362,8 +412,8 @@ SELECT
 FROM mz_internal.mz_hydration_statuses h
 JOIN mz_catalog.mz_objects o ON h.object_id = o.id
 JOIN mz_catalog.mz_schemas sc ON o.schema_id = sc.id
-JOIN mz_catalog.mz_cluster_replicas r ON h.replica_id = r.id
-JOIN mz_catalog.mz_clusters c ON r.cluster_id = c.id
+LEFT JOIN mz_catalog.mz_cluster_replicas r ON h.replica_id = r.id
+LEFT JOIN mz_catalog.mz_clusters c ON r.cluster_id = c.id
 WHERE sc.name NOT IN ('mz_catalog', 'mz_internal', 'pg_catalog', 'information_schema', 'mz_introspection')
   AND h.hydrated = false
 ORDER BY o.name
@@ -389,15 +439,19 @@ ORDER BY u.memory_percent DESC NULLS LAST
 ```
 
 ### Cluster Replica Statuses
+Driven from `mz_clusters` so that a cluster with no replicas still shows up,
+with a NULL replica name and status.
+
 ```sql
 SELECT
     c.name AS cluster_name,
+    c.replication_factor,
     r.name AS replica_name,
     rs.status,
     rs.reason,
     rs.updated_at
-FROM mz_catalog.mz_cluster_replicas r
-JOIN mz_catalog.mz_clusters c ON r.cluster_id = c.id
+FROM mz_catalog.mz_clusters c
+LEFT JOIN mz_catalog.mz_cluster_replicas r ON r.cluster_id = c.id
 LEFT JOIN mz_internal.mz_cluster_replica_statuses rs ON r.id = rs.replica_id
 ORDER BY c.name, r.name
 ```
@@ -466,9 +520,16 @@ ORDER BY ss.status DESC, sk.name
 ```
 
 ### Source Statistics
+`mz_source_statistics` holds one row per (source, replica), so a source on a
+multi-replica cluster appears once per replica — select `replica_id` and do not
+sum the counters across rows. A source that is not ingesting at all has **no**
+row here, so its `snapshot_committed` reads as missing rather than `false`;
+check `mz_source_statuses` and the cluster's `replication_factor` for those.
+
 ```sql
 SELECT
     s.name AS source_name,
+    st.replica_id,
     st.snapshot_committed,
     st.messages_received,
     st.bytes_received,
@@ -478,5 +539,5 @@ FROM mz_catalog.mz_sources s
 JOIN mz_internal.mz_source_statistics st ON s.id = st.id
 JOIN mz_catalog.mz_schemas sc ON s.schema_id = sc.id
 WHERE sc.name NOT IN ('mz_catalog', 'mz_internal', 'pg_catalog', 'information_schema', 'mz_introspection')
-ORDER BY s.name
+ORDER BY s.name, st.replica_id
 ```
