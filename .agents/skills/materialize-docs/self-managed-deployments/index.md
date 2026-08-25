@@ -1063,6 +1063,20 @@ To configure the Materialize operator, you can:
 </tr>
 
 <tr>
+<td><a href='#operatorargsstatementloggingmaxsamplerate'><code>operator.args.statementLoggingMaxSampleRate</code></a></td>
+<td>
+<code>0.99</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorargsstatementloggingtargetdatarate'><code>operator.args.statementLoggingTargetDataRate</code></a></td>
+<td>
+<code>nil</code>
+</td>
+</tr>
+
+<tr>
 <td><a href='#operatorargswebhookcertreloadinterval'><code>operator.args.webhookCertReloadInterval</code></a></td>
 <td>
 <code>nil</code>
@@ -1682,6 +1696,18 @@ Whether to install the v1 version of the Materialize CRD and the conversion webh
 **Default**: <code>&quot;INFO,mz_orchestratord=TRACE&quot;</code>
 
 Log filtering settings for startup logs
+
+#### operator.args.statementLoggingMaxSampleRate
+
+**Default**: <code>0.99</code>
+
+Caps the fraction of statements recorded in query history, via environmentd&rsquo;s <code>statement_logging_max_sample_rate</code>. This is the rate Materialize Cloud runs at. Sampling costs CPU on environmentd, but the volume written is bounded by <code>statementLoggingTargetDataRate</code> rather than by this, so lowering this gives up query history completeness without lowering the ceiling on what statement logging stores. Set it to <code>0</code> to disable statement logging entirely, or to <code>null</code> to inherit environmentd&rsquo;s default.
+
+#### operator.args.statementLoggingTargetDataRate
+
+**Default**: <code>nil</code>
+
+Caps the sustained volume statement logging writes, in bytes per second, via environmentd&rsquo;s <code>statement_logging_target_data_rate</code>. This is what actually bounds how fast query history grows, and the recorded history is retained for the lifetime of the environment, so lower it on environments with limited storage. Must be greater than 0. Set it to <code>null</code> to inherit environmentd&rsquo;s default of 2071 bytes per second, which is the rate Materialize Cloud runs at.
 
 #### operator.args.webhookCertReloadInterval
 

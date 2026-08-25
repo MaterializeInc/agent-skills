@@ -2529,6 +2529,18 @@ view. You will need to add the inheriting tables via <code>CREATE TABLE .. FROM 
 table.</p>
 </li>
 </ul>
+<h3 id="partitioned-tables">Partitioned tables</h3>
+<p>When you add a <a href="https://www.postgresql.org/docs/current/ddl-partitioning.html" >declaratively partitioned
+table</a> to a
+publication, PostgreSQL expands it to the table&rsquo;s leaf partitions; the parent
+table is not itself replicated. Materialize ingests one table per partition,
+which you can reassemble into the parent table using <code>UNION ALL</code>.</p>
+<p>Materialize does <strong>not</strong> support ingesting from a publication created with
+<a href="https://www.postgresql.org/docs/current/sql-createpublication.html" ><code>publish_via_partition_root = true</code></a>,
+and doing so can produce incorrect results.</p>
+<p>See <a href="/ingest-data/postgres/partitioned-tables/" >Ingest from partitioned
+tables</a> for the supported
+approaches, including how to add and remove partitions over time.</p>
 <h3 id="replication-slots">Replication slots</h3>
 <p>Each source ingests the raw replication stream data for all tables in the
 specified publication using <strong>a single</strong> replication slot. To manage
