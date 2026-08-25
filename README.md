@@ -112,6 +112,24 @@ Using the [`mz-deploy`](https://materialize.com/) CLI to manage a declarative SQ
 </details>
 
 <details>
+<summary><strong>mz-ontology-design</strong></summary>
+
+Designing the semantic layer of a Materialize SQL code base as a canonical ontology: a shared `raw` database, a shared `core` database, and one database per use case.
+
+**Use when:**
+
+- Deciding how to organize databases and schemas across a Materialize code base
+- Deciding whether a new relation belongs in the shared ontology or at a consumer edge
+- Defining semantic objects (entities, events, measurements, relationship objects) with a documented grain
+- Resolving cross-source identity, or declaring temporal semantics for a public object
+- Building or validating the `core.public.relationships` reference-edge registry
+- Reviewing an existing code base for leaked private schemas, duplicated concepts, or undocumented public objects
+
+**Covers:** the `raw` -> `core.<source_system>` -> `core.internal` -> `core.public` -> `<use_case>` dependency direction and how to enforce it, the admission test for a public semantic object, identity and time rules, normalization and denormalization, reference edges versus relationship objects, and the `comment on` documentation contract plus the tests and CI checks that keep the boundaries honest. Includes the relationship registry SQL as a reference.
+
+</details>
+
+<details>
 <summary><strong>mcp-developer-analysis</strong></summary>
 
 Analyze a Materialize environment via the MCP Developer endpoint, and/or configure an MCP client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to connect to the materialize-developer server.
@@ -226,6 +244,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-08-24: Add mz-ontology-design skill
 - 2026-08-18: Add materialize-debug-freshness skill
 - 2026-08-14: Add mz-deploy skill
 - 2026-07-29: Add mz-sql-lsp Claude Code plugin
