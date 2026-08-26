@@ -1,5 +1,5 @@
 ---
-name: materialize-debug-freshness
+name: mz-debug-freshness
 description: Use when a Materialize object is behind wall-clock time — high lag in mz_wallclock_global_lag, a stale or lagging materialized view, index, or sink, a freshness alert, results that keep showing old data, or a dataflow whose output cannot keep up with its input.
 ---
 

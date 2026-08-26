@@ -23,20 +23,20 @@ skills/
 
 | Skill | Description |
 |-------|-------------|
-| `materialize-dbt` | Using the dbt-materialize adapter to manage Materialize streaming pipelines with dbt |
-| `materialize-debug-freshness` | Diagnosing why a Materialize object is behind wall-clock time, down to the operator and the SQL responsible |
-| `materialize-docs` | Materialize documentation for SQL syntax, data ingestion, concepts, and best practices |
-| `materialize-terraform-provider` | Using the Materialize Terraform provider to manage Materialize resources declaratively |
-| `materialize-terraform-self-managed` | Terraform modules for deploying self-managed Materialize on AWS, Azure, and GCP |
-| `mcp-developer-analysis` | Analyze a Materialize environment via the MCP Developer endpoint and configure MCP clients |
+| `mz-dbt` | Using the dbt-materialize adapter to manage Materialize streaming pipelines with dbt |
+| `mz-debug-freshness` | Diagnosing why a Materialize object is behind wall-clock time, down to the operator and the SQL responsible |
 | `mz-deploy` | Using the mz-deploy CLI to manage a declarative SQL project and deploy changes to Materialize |
+| `mz-docs` | Materialize documentation for SQL syntax, data ingestion, concepts, and best practices |
+| `mz-mcp-developer-analysis` | Analyze a Materialize environment via the MCP Developer endpoint and configure MCP clients |
 | `mz-ontology-design` | Designing the semantic layer of a Materialize code base as a canonical ontology (raw/core/use-case boundaries, semantic objects, relationship registry) |
+| `mz-terraform-provider` | Using the Materialize Terraform provider to manage Materialize resources declaratively |
+| `mz-terraform-self-managed` | Terraform modules for deploying self-managed Materialize on AWS, Azure, and GCP |
 
 ## Working with Skills
 
 ### Reading Documentation
 
-When answering questions about Materialize, navigate the `skills/materialize-docs/` directory:
+When answering questions about Materialize, navigate the `skills/mz-docs/` directory:
 
 - **SQL syntax and commands**: `sql/` (120+ command references)
 - **Core concepts**: `concepts/` (clusters, sources, sinks, views, indexes)
@@ -71,7 +71,7 @@ skills/
 
 ### Naming Conventions
 
-- **Skill directory**: `kebab-case` (e.g., `materialize-docs`, `materialize-recipes`)
+- **Skill directory**: `kebab-case` (e.g., `mz-docs`, `mz-recipes`)
 - **SKILL.md**: Always uppercase, always this exact filename
 - **Topic directories**: `kebab-case` matching the documentation topic
 
@@ -133,7 +133,7 @@ Skills load in three stages:
 
 When adding new documentation to an existing skill:
 
-1. Create the appropriate directory under the skill (e.g., `skills/materialize-docs/{section}/{topic}/`)
+1. Create the appropriate directory under the skill (e.g., `skills/mz-docs/{section}/{topic}/`)
 2. Add an `index.md` file with the documentation content
 3. Update the skill's `SKILL.md` to reference the new documentation in the appropriate section
 
@@ -201,7 +201,7 @@ Install skills from this repository using the [Skills CLI](https://github.com/ve
 npx skills add MaterializeInc/agent-skills
 
 # Install a specific skill
-npx skills add MaterializeInc/agent-skills@materialize-docs
+npx skills add MaterializeInc/agent-skills@mz-docs
 ```
 
 The CLI auto-detects installed agents (Claude Code, Cursor, Cline, etc.) and
@@ -223,7 +223,7 @@ After installing, confirm the skill is available:
 
 ```bash
 # Check the skill was copied/symlinked correctly
-ls ~/.claude/skills/materialize-docs/SKILL.md
+ls ~/.claude/skills/mz-docs/SKILL.md
 
 # For a local (development) install from a checkout of this repo
 npx skills add ./

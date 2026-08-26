@@ -15,7 +15,7 @@ Once installed, skills activate automatically when your prompt matches their use
 ## Available Skills
 
 <details>
-<summary><strong>materialize-docs</strong></summary>
+<summary><strong>mz-docs</strong></summary>
 
 Materialize documentation for SQL syntax, data ingestion, concepts, and best practices.
 
@@ -44,7 +44,7 @@ Materialize documentation for SQL syntax, data ingestion, concepts, and best pra
 </details>
 
 <details>
-<summary><strong>materialize-terraform-provider</strong></summary>
+<summary><strong>mz-terraform-provider</strong></summary>
 
 Using the Materialize Terraform provider to manage Materialize resources declaratively, for both Cloud and self-managed deployments.
 
@@ -61,7 +61,7 @@ Using the Materialize Terraform provider to manage Materialize resources declara
 </details>
 
 <details>
-<summary><strong>materialize-terraform-self-managed</strong></summary>
+<summary><strong>mz-terraform-self-managed</strong></summary>
 
 Terraform modules for deploying self-managed Materialize on AWS (EKS), Azure (AKS), and GCP (GKE).
 
@@ -78,7 +78,7 @@ Terraform modules for deploying self-managed Materialize on AWS (EKS), Azure (AK
 </details>
 
 <details>
-<summary><strong>materialize-dbt</strong></summary>
+<summary><strong>mz-dbt</strong></summary>
 
 Using the dbt-materialize adapter to manage Materialize streaming pipelines with dbt.
 
@@ -130,7 +130,7 @@ Designing the semantic layer of a Materialize SQL code base as a canonical ontol
 </details>
 
 <details>
-<summary><strong>mcp-developer-analysis</strong></summary>
+<summary><strong>mz-mcp-developer-analysis</strong></summary>
 
 Analyze a Materialize environment via the MCP Developer endpoint, and/or configure an MCP client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to connect to the materialize-developer server.
 
@@ -149,7 +149,7 @@ Analyze a Materialize environment via the MCP Developer endpoint, and/or configu
 </details>
 
 <details>
-<summary><strong>materialize-debug-freshness</strong></summary>
+<summary><strong>mz-debug-freshness</strong></summary>
 
 Diagnosing why a Materialize object is behind wall-clock time, from the lag ranking down to the operator and the SQL responsible.
 
@@ -207,7 +207,7 @@ What's the syntax for CREATE SINK?
 Skills can also be explicitly invoked in user prompts:
 
 ```
-❯ /materialize-docs what sources are supported?
+❯ /mz-docs what sources are supported?
 ```
 
 ## Compatibility
@@ -244,6 +244,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-08-26: Prefix all skills with `mz-` (CDX-11)
 - 2026-08-24: Add mz-ontology-design skill
 - 2026-08-18: Add materialize-debug-freshness skill
 - 2026-08-14: Add mz-deploy skill

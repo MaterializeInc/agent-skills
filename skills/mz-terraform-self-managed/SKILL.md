@@ -1,5 +1,5 @@
 ---
-name: materialize-terraform-self-managed
+name: mz-terraform-self-managed
 description: >-
   Terraform modules for deploying self-managed Materialize on AWS (EKS),
   Azure (AKS), and GCP (GKE). Covers networking, Kubernetes clusters,
@@ -364,7 +364,7 @@ kubectl port-forward svc/grafana 3000:80 -n monitoring
 **With Terraform:**
 Update `environmentd_version` (and optionally `operator_version`) in your variables, then `terraform apply`. For v1alpha1, also update `request_rollout` to a new UUID.
 
-For the full upgrade procedure, see the `materialize-docs` skill in this repository at `skills/materialize-docs/self-managed-deployments/upgrading/index.md` (with per-cloud guides in the sibling `upgrade-on-*` directories), or the [online upgrading documentation](https://materialize.com/docs/self-managed-deployments/upgrading/). Always review the [version notes](https://materialize.com/docs/self-managed-deployments/upgrading/version-notes/) for breaking changes before upgrading.
+For the full upgrade procedure, see the `mz-docs` skill in this repository at `skills/mz-docs/self-managed-deployments/upgrading/index.md` (with per-cloud guides in the sibling `upgrade-on-*` directories), or the [online upgrading documentation](https://materialize.com/docs/self-managed-deployments/upgrading/). Always review the [version notes](https://materialize.com/docs/self-managed-deployments/upgrading/version-notes/) for breaking changes before upgrading.
 
 ## Instance Sizing
 
