@@ -1,5 +1,5 @@
 ---
-name: materialize-terraform-provider
+name: mz-terraform-provider
 description: >-
   Using the Materialize Terraform provider to manage Materialize resources
   declaratively. Covers clusters, sources (Kafka, Postgres, MySQL, SQL

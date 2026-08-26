@@ -1,5 +1,5 @@
 ---
-name: materialize-terraform-self-managed
+name: mz-terraform-self-managed
 description: >-
   Terraform modules for deploying self-managed Materialize on AWS (EKS),
   Azure (AKS), and GCP (GKE). Covers networking, Kubernetes clusters,
