@@ -1,5 +1,5 @@
 ---
-name: materialize-dbt
+name: mz-dbt
 description: >-
   Using the dbt-materialize adapter to manage Materialize streaming
   pipelines with dbt. Covers materializations (source, source_table,

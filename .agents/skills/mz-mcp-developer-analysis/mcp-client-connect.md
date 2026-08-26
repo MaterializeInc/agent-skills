@@ -130,7 +130,7 @@ The walkthrough is **idempotent** — re-running on a partly-configured machine 
 
    Expected: `my_dev_agent`. The query needs to reference a system catalog table — a bare `SELECT current_role` is rejected with `Query must reference at least one system catalog table`.
 
-7. **Confirm success** in one short sentence and offer a follow-up. Example: *"You're connected as `my_dev_agent`. Try `/mcp-developer-analysis what's the health of my environment?` next."*
+7. **Confirm success** in one short sentence and offer a follow-up. Example: *"You're connected as `my_dev_agent`. Try `/mz-mcp-developer-analysis what's the health of my environment?` next."*
 
 ### Failure handling
 
