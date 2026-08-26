@@ -2420,6 +2420,13 @@ table in Materialize to resume:
 
 ---
 
+## Patterns
+
+The following section provides examples of implementing some common ingestion
+patterns in Materialize:
+
+---
+
 ## PostgreSQL
 
 ## Change Data Capture (CDC)

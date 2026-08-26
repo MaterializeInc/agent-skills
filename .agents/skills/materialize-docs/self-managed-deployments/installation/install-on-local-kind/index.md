@@ -120,7 +120,7 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    the Materialize repo:
 
    ```shell
-   mz_version=v26.37.0
+   mz_version=v26.38.2
 
    curl -o sample-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
    curl -o sample-postgres.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/postgres.yaml
@@ -195,7 +195,7 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
       ```shell {hl_lines="5"}
       helm install my-materialize-operator materialize/materialize-operator \
           --namespace=materialize --create-namespace \
-          --version v26.37.0 \
+          --version v26.38.2 \
           --set observability.podMetrics.enabled=true \
           --set operator.args.installV1CRD=true \
           -f sample-values.yaml

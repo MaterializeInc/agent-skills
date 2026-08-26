@@ -55,7 +55,7 @@ Best practices for ingesting data into Materialize from external systems.
 - **Kafka**: `ingest-data/kafka/index.md`
 - **MongoDB**: `ingest-data/mongodb/index.md`
 - **Monitoring data ingestion**: `ingest-data/monitoring-data-ingestion/index.md`
-- _(and 13 more files in this section)_
+- _(and 14 more files in this section)_
 
 ### Manage Materialize
 
