@@ -1,7 +1,5 @@
 # Get started with mz-deploy
 Set up mz-deploy and deploy your first project to Materialize.
-> **Warning:** `mz-deploy` is a v0.2 release and is not yet recommended for production use.
-
 `mz-deploy` is a deployment tool that gives you compile-time validation, unit
 testing, and zero-downtime blue/green deployments for Materialize — all from
 plain SQL files in a git repository. This quickstart walks you through creating
