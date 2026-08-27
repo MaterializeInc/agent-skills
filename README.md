@@ -164,6 +164,22 @@ Diagnosing why a Materialize object is behind wall-clock time, from the lag rank
 
 </details>
 
+<details>
+<summary><strong>mz-optimize-memory</strong></summary>
+
+Reducing the memory footprint and cost of Materialize compute clusters, with every verdict backed by a measurement.
+
+**Use when:**
+
+- A cluster or replica uses too much memory, is OOMing, or is crash-looping
+- You want to downsize a replica or cut Materialize spend
+- You are deciding which indexes to add or drop, or tuning GROUP SIZE hints
+- Someone hands you a list of proposed index or view changes to adjudicate
+
+**Covers:** the arrangement cost model with a per-operator table, reading introspection safely (hydration gating, replica targeting, the MCP developer endpoint's two tools), a top-down workflow from census to replica resize, a lever table from measured signatures to fixes (hints, shared and boundary indexes, delta-join flips, payload slimming, projection pushdown, outer-join lowerings, subquery decorrelation, window-function rewrites), the landmines each change carries, change mechanics (experiment clusters, pinning, cascades, plan caching) and the verification discipline. The eval harness it was developed against lives in `evals/mz-optimize-memory/`.
+
+</details>
+
 ## Claude Code Plugins
 
 This repo also doubles as a [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces), for capabilities that go beyond what a portable skill can express — such as registering a language server.
@@ -244,6 +260,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-08-27: Add mz-optimize-memory skill and its eval harness
 - 2026-08-24: Add mz-ontology-design skill
 - 2026-08-18: Add materialize-debug-freshness skill
 - 2026-08-14: Add mz-deploy skill

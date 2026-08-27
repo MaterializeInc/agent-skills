@@ -1,0 +1,27 @@
+The change window is still open. Before this goes to the customer, one more
+pass: look for optimizations you have NOT yet considered. Go back to the
+measured memory of this cluster (the dataflows and operators that are still
+large after your changes, the ones you left alone, the ones you never
+opened) and look for further levers of any kind: index or boundary changes,
+hint changes, query rewrites, drops, anything that reduces this cluster's
+memory while keeping the results of every materialized view exactly
+unchanged and every materialized view a materialized view.
+
+Do not stop at ideas. For each new optimization you find, validate it on
+this bench: build the candidate, prove exactness in both directions, measure
+before and after, and apply it if it clears the same gate as before (low
+risk, or an estimated saving of at least __GATE__ MB). Where a candidate
+fails validation, say so and keep the measurement. Where it is a big
+structural rewrite of the SQL, deliver the design, the estimate and the
+invariant it depends on, and STOP, as before.
+
+Your report must have exactly these sections:
+1. NEW FINDINGS: each new optimization, how you found it, and what it is
+   worth (estimated MB saved, with confidence).
+2. VALIDATION: per finding, what you built, the exactness proof, the
+   before/after measurement, and the outcome (applied, rejected, or design
+   only).
+3. CHANGES: the exact SQL you applied this round, in the order you applied
+   it.
+4. UPDATED CUSTOMER DOC: the consolidated change document updated for this
+   round (self-contained, supersession explicit).

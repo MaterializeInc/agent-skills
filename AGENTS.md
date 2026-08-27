@@ -17,6 +17,9 @@ skills/
       README.md
     {topic}/              # Topic directories containing documentation
       index.md
+evals/
+  {skill-name}/           # Optional: the eval harness a skill was developed against
+    README.md             # (environment generator, runner, prompts, rubric, answer key)
 ```
 
 ### Current Skills
@@ -31,6 +34,7 @@ skills/
 | `mcp-developer-analysis` | Analyze a Materialize environment via the MCP Developer endpoint and configure MCP clients |
 | `mz-deploy` | Using the mz-deploy CLI to manage a declarative SQL project and deploy changes to Materialize |
 | `mz-ontology-design` | Designing the semantic layer of a Materialize code base as a canonical ontology (raw/core/use-case boundaries, semantic objects, relationship registry) |
+| `mz-optimize-memory` | Reducing the memory footprint and cost of Materialize compute clusters: attribution, lever selection, adjudication of index and view proposals, measured experiments, verified changes and replica sizing |
 
 ## Working with Skills
 

@@ -1,0 +1,29 @@
+The customer has granted the change window: you now have write access (the
+wrapper was swapped; CREATE/DROP/ALTER etc. now work, still only in schema
+__RUN__ and cluster __RUN__).
+
+Validate the recommendations from your round-1 package, revise them where the
+evidence disagrees with what you predicted, then implement what clears this
+gate: implement a change only if it is low-risk, or its estimated saving is
+at least __GATE__ MB. For anything complex (big structural rewrites of the
+SQL), deliver the design + the estimate + the invariant it depends on, and
+STOP. The customer implements those themselves. Results of every
+materialized view must remain exactly unchanged, and materialized views stay
+materialized views.
+
+Verify exactness of everything you change, and measure before/after per
+change.
+
+Then write the customer-facing consolidated change document: content anchors
+(object names, not line numbers), explicit supersession where a change
+replaces an earlier recommendation, concise enough for the customer's
+engineering team to execute their part.
+
+Your report must have exactly these sections:
+1. REVISIONS: every difference between this package and your round-1
+   package, each with the evidence that drove it.
+2. CHANGES: the exact SQL you applied, in the order you applied it.
+3. EVIDENCE: before/after measurements per change.
+4. ESTIMATES vs MEASURED: your round-1 MB estimates against measurements.
+5. CORRECTNESS: how you verified results unchanged.
+6. CUSTOMER DOC: the consolidated change document (self-contained).

@@ -1,0 +1,63 @@
+STRICT SAFETY RULES, read these first: they override everything else.
+- This is a LOCAL test bench on a developer laptop. Your ONLY permitted command is ./bench-psql (in your working directory); everything else is deny-listed by the harness.
+- NEVER connect to any other host, service, cloud environment, or remote system of any kind. No network access beyond localhost psql. Never use web search or web fetch.
+- File access: you may READ the Materialize source/docs tree at __MZ_SRC__ and read/write your private ./scratch directory. Nothing else on disk, and no other shell commands; the harness denies them.
+- Touch ONLY schema __RUN__ and cluster __RUN__. Never modify, drop, or write to anything in any other schema or cluster. Never run ALTER SYSTEM. Never kill processes, modify system state, or install anything.
+
+You are working on a private local Materialize test bench that mirrors a
+customer engagement (nothing here is production; run the SQL you need freely,
+within the rules above).
+
+Your ONLY way to interact with the bench is the wrapper script in your working
+directory: run  ./bench-psql 'SQL...'  (or pipe SQL via heredoc:
+./bench-psql <<'SQLEOF' ... SQLEOF). It connects to the local Materialize,
+presets your schema and cluster, and executes the statements. Plain SQL only
+(no psql meta-commands except \d, \l, \x). Each invocation is a fresh session,
+so put statements that must share a session into one invocation.
+
+IMPORTANT, THIS ROUND IS READ-ONLY: the wrapper additionally rejects any
+statement that writes or changes the catalog (CREATE/DROP/ALTER/INSERT/
+UPDATE/DELETE/GRANT). This mirrors the real engagement: before the customer
+grants a change window, you analyze and RECOMMEND only. SELECT, EXPLAIN
+(including EXPLAIN ANALYZE against already-running dataflows), SHOW, and the
+system catalogs are all available.
+
+You also have a private scratch directory ./scratch, the ONLY place you may
+read or write files, for drafting SQL and saving output. You may keep notes
+there for later rounds of this engagement; there will be later rounds.
+
+You may also consult the Materialize SOURCE CODE and OFFICIAL DOCS, read-only,
+at __MZ_SRC__ (docs under doc/user/content/).
+
+All objects live in schema __RUN__ on cluster __RUN__ (preset by the wrapper).
+
+SITUATION: This cluster backs a customer's feature-extraction pipeline and
+costs more than they would like. The goal of the engagement is to reduce the
+cluster's memory usage while keeping the results of every materialized view
+exactly unchanged. Materialized views must stay materialized views. The
+customer will not upsize or split the cluster.
+
+TASK FOR THIS ROUND: produce the FIRST RECOMMENDATION PACKAGE that would go
+to the customer, based on analysis alone. One thing to look at could be
+mz_internal.mz_index_advice, but look for other optimizations as well,
+wherever the cluster's memory actually turns out to be. Your report must have
+exactly these sections:
+
+1. DIAGNOSIS: what dominates this cluster's memory and how you attributed
+   it (objects, operators, data characteristics).
+2. RECOMMENDATIONS: your recommended changes, each with: what to do,
+   estimated MB saved, confidence (high/med/low), and any risk or
+   precondition that must be checked before deploying it.
+3. ESTIMATE BASIS: how you derived the MB estimates.
+
+Hard rules:
+- The only schemas you may query are __RUN__ and the system schemas
+  (mz_catalog, mz_introspection, mz_internal). Other user schemas belong to
+  other exercises: never query, inspect, or copy from them.
+- mz_introspection.* relations are per-cluster (the wrapper presets your
+  cluster). EXPLAIN ANALYZE needs the dataflow hydrated; if it returns 0
+  rows, wait a moment (sleep is permitted) and re-run.
+- Work persistently within the read-only limits. If something is blocked by
+  the harness or by the rules above, do NOT look for workarounds or test the
+  boundaries. Note the blocker in your report and continue. An honest
+  partial result is fine.
