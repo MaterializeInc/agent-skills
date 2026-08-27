@@ -1,4 +1,4 @@
-# MCP Environment Analysis
+# Materialize Environment Analysis
 
 A skill for analyzing Materialize environments via the built-in
 [MCP developer endpoint](https://materialize.com/docs/integrations/mcp-server/mcp-developer/)
