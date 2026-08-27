@@ -28,7 +28,7 @@ skills/
 | `materialize-docs` | Materialize documentation for SQL syntax, data ingestion, concepts, and best practices |
 | `materialize-terraform-provider` | Using the Materialize Terraform provider to manage Materialize resources declaratively |
 | `materialize-terraform-self-managed` | Terraform modules for deploying self-managed Materialize on AWS, Azure, and GCP |
-| `mcp-developer-analysis` | Analyze a Materialize environment via the MCP Developer endpoint and configure MCP clients |
+| `mcp-environment-analysis` | Analyze a Materialize environment via the MCP Developer endpoint and configure MCP clients |
 | `mz-deploy` | Using the mz-deploy CLI to manage a declarative SQL project and deploy changes to Materialize |
 | `mz-ontology-design` | Designing the semantic layer of a Materialize code base as a canonical ontology (raw/core/use-case boundaries, semantic objects, relationship registry) |
 

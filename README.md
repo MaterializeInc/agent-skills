@@ -130,7 +130,7 @@ Designing the semantic layer of a Materialize SQL code base as a canonical ontol
 </details>
 
 <details>
-<summary><strong>mcp-developer-analysis</strong></summary>
+<summary><strong>mcp-environment-analysis</strong></summary>
 
 Analyze a Materialize environment via the MCP Developer endpoint, and/or configure an MCP client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to connect to the materialize-developer server.
 
@@ -244,6 +244,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-08-27: Rename mcp-developer-analysis to mcp-environment-analysis
 - 2026-08-24: Add mz-ontology-design skill
 - 2026-08-18: Add materialize-debug-freshness skill
 - 2026-08-14: Add mz-deploy skill
