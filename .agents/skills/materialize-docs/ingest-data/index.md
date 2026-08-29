@@ -77,6 +77,40 @@ we recommend:
   the steady-state resource needs of your upsert source(s). See [Best practices:
   Upsert sources](#upsert-sources).
 
+### Parallelism
+
+Materialize can parallelize snapshotting across the workers of the cluster
+hosting the source.
+
+- **PostgreSQL sources** are parallelized by table, i.e., different tables
+  are read concurrently by different workers. On PostgreSQL 14 and later,
+  Materialize additionally attempts to partition each table's read across
+  workers. Tables that cannot be partitioned fall back to a single worker.
+
+- **MySQL sources** are parallelized by table, i.e., different tables are
+  read concurrently by different workers. For tables that meet certain
+  requirements, Materialize can additionally partition the table's read
+  across workers <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
+. See [MySQL snapshot
+  parallelism](/ingest-data/mysql/snapshot-parallelism/).
+
+- **Kafka sources** are parallelized by topic partition, with partitions
+  distributed across workers, so parallelism is bounded by the topic's
+  partition count.
+
+- **SQL Server sources** are not parallelized: a single worker reads all
+  tables.
+
+The degree of snapshot parallelism depends on the number of workers. A
+cluster's [size](/sql/create-cluster/#available-sizes) determines its number
+of workers, so a larger cluster can shorten the snapshot, to the extent the
+work parallelizes and the upstream database keeps up. The volume read from
+the upstream database is unchanged, it is compressed into a shorter window
+of more concurrent queries and connections. To determine whether
+snapshotting is overloading the upstream database, and for ways to mitigate
+the load, see [Is the upstream database
+overloaded?](/ingest-data/troubleshooting/#is-the-upstream-database-overloaded)
+
 ### Monitoring progress
 
 While snapshotting is taking place, you can monitor the progress of the
@@ -2261,6 +2295,12 @@ gives you the following benefits:
   read-replica to build views on top of your MySQL data that are efficiently
   maintained and always up-to-date.
 
+When a source is created, Materialize parallelizes the initial snapshot
+across the cluster's workers and can split the read of large tables that meet
+certain requirements <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
+. See [Snapshot
+parallelism](/ingest-data/mysql/snapshot-parallelism/).
+
 ## Supported versions and services
 
 > **Note:** MySQL-compatible database systems are not guaranteed to work with the MySQL
@@ -2452,6 +2492,11 @@ Materialize gives you the following benefits:
     are computationally expensive and require manual refreshes. You can use
     Materialize as a read-replica to build views on top of your PostgreSQL data
     that are efficiently maintained and always up-to-date.
+
+When a source is created, Materialize parallelizes the initial snapshot
+across the cluster's workers and, on PostgreSQL 14 and later, splits each
+table's read across workers. See [Snapshot
+parallelism](/concepts/snapshotting/#parallelism).
 
 ## Supported versions and services
 
@@ -4435,6 +4480,41 @@ For upsert sources, a larger cluster can not only speed up snapshotting, but may
 also be necessary to support increased memory usage during the process. For more
 information, see [Use a larger cluster for upsert source
 snapshotting](/ingest-data/#use-a-larger-cluster-for-upsert-source-snapshotting).
+
+## Is the upstream database overloaded?
+
+Snapshotting can put significant load on the upstream database (see [Impact
+on upstream system](/concepts/snapshotting/#impact-on-upstream-system)).
+
+Check the upstream database when a snapshot progresses more slowly than
+expected, when applications sharing the database slow down while
+it runs, or when the source reports upstream connection errors or timeouts.
+The relevant metrics are in your cloud provider's monitoring console, or in
+OS tools like `iostat` and the database's activity views for self-hosted
+databases. Look for:
+
+- **Read IOPS or throughput** flat at a provisioned cap.
+- **CPU** pinned at the instance's limit for the duration of the snapshot.
+- **Network throughput** at the instance type's cap.
+- **Connections** near the database's limit. For PostgreSQL and MySQL
+  sources, snapshotting opens connections in proportion to the source
+  cluster's workers.
+
+Also watch disk usage on the upstream database during a long-running
+snapshot: CDC database sources must retain their change log until Materialize
+consumes it (see [Impact on upstream
+system](/concepts/snapshotting/#impact-on-upstream-system)).
+
+If the database is overloaded, you can upsize the source database or cancel
+the snapshot by dropping the source, and retry:
+
+- on a smaller source cluster to spread the load over a longer window.
+- with more IOPS, throughput, or instance capacity provisioned for the
+  database.
+- during off-peak hours when the database is less busy, as recommended in the
+  [ingestion best practices](/ingest-data/#scheduling).
+- with a smaller [volume of data to
+  sync](/ingest-data/#limit-the-volume-of-data).
 
 ## Adding a new subsource to an existing source blocks replication. Should I just create a new source instead?
 
