@@ -158,7 +158,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.38.2
+  environmentdImageRef: materialize/environmentd:v26.39.0
 # ... additional fields omitted for brevity
 ```
 
@@ -173,7 +173,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.38.2
+  environmentdImageRef: materialize/environmentd:v26.39.0
 # ... additional fields omitted for brevity
 ```
 
@@ -413,7 +413,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.38.2
+  environmentdImageRef: materialize/environmentd:v26.39.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
   requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
@@ -430,7 +430,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.38.2
+  environmentdImageRef: materialize/environmentd:v26.39.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
 ```
@@ -2022,6 +2022,7 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
+| v26.39 | v26.39 | v26.39 | 2026-08-27 | See <a href="/releases/#v26390" >v26.39 release notes</a> |
 | v26.38.2 | v26.38.2 | v26.38.2 | 2026-08-25 | See <a href="/releases/#v26382" >v26.38.2 release notes</a> |
 | v26.38 | v26.38 | v26.38 | 2026-08-20 | See <a href="/releases/#v26382" >v26.38 release notes</a> |
 | v26.37 | v26.37 | v26.37 | 2026-08-13 | See <a href="/releases/#v26370" >v26.37 release notes</a> |
@@ -2325,7 +2326,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.38.2
+  --version v26.39.0
 ```
 
 ## Upgrading Materialize Instances

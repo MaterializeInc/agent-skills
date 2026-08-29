@@ -934,6 +934,13 @@ The `mz_cluster_replica_metrics` view gives the last known CPU and RAM utilizati
 for all processes of all extant cluster replicas.
 
 At this time, we do not make any guarantees about the exactness or freshness of these numbers.
+They are sampled roughly once a minute, so a spike shorter than the sampling interval is not
+visible here at all. For a view of a single replica sampled every few seconds, including high-water
+marks that survive a spike the sampling missed, see [Replica resource
+usage](/manage/monitor/replica-resource-usage/).
+
+Where a replica's disk is provided as swap rather than as a filesystem, `disk_bytes` reports swap
+usage.
 
 <!-- RELATION_SPEC mz_internal.mz_cluster_replica_metrics -->
 | Field               | Type         | Meaning
@@ -952,6 +959,11 @@ The `mz_cluster_replica_metrics_history` table records resource utilization metr
 for all processes of all extant cluster replicas.
 
 At this time, we do not make any guarantees about the exactness or freshness of these numbers.
+They are sampled roughly once a minute, so a spike shorter than the sampling interval leaves no
+trace. Unlike
+[`mz_introspection.mz_cluster_replica_resource_usage`](/reference/system-catalog/mz_introspection/#mz_cluster_replica_resource_usage),
+which is sampled every few seconds but is replica-local and resets when a replica restarts, this
+history is retained across restarts.
 
 <!-- RELATION_SPEC mz_internal.mz_cluster_replica_metrics_history -->
 | Field            | Type      | Meaning
@@ -1426,6 +1438,33 @@ The `mz_object_history` view enriches the [`mz_catalog.mz_objects`](/reference/s
 | `object_type`   | [`text`]                       | The type of the object: one of `table`, `source`, `view`, `materialized-view`, `sink`, `index`, `connection`, `secret`, `type`, or `function`. |
 | `created_at`    | [`timestamp with time zone`]                       | Wall-clock timestamp of when the object was created. `NULL` for built in system objects.                                                                                                |
 | `dropped_at`   | [`timestamp with time zone`]   | Wall-clock timestamp of when the object was dropped. `NULL` for built in system objects or if the object hasn't been dropped.                                              |
+
+## `mz_object_hydration_history`
+
+The `mz_object_hydration_history` table records completed hydration of indexes and
+materialized views, with one row for each time a dataflow hydrated on a replica.
+By default, rows are retained for 30 days while collection is enabled. Disabling
+collection also suspends retention, so existing rows remain until collection is
+enabled again. `object_id`, `cluster_id`, and `replica_id` may name objects that no
+longer exist.
+
+Recording is best effort. Only successful hydration is recorded, an episode can be
+missed if the object or its replica goes away before the episode is recorded, and a
+schema change to this table in a future release may clear its contents. On a
+multi-process replica, timestamps come from process-local logging clocks and include
+their clock skew. A process whose clock is ahead can be absent at the sampled
+logical timestamp, so the recorded finish can precede the latest process's finish.
+
+<!-- RELATION_SPEC mz_internal.mz_object_hydration_history -->
+| Field          | Type                         | Meaning                                                                                                                  |
+| -------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `object_id`    | [`text`]                     | The ID of the object's dataflow, as reported by the replica. Join `mz_internal.mz_object_global_ids` to reach the index or materialized view while that mapping exists. Dropping the dataflow retracts the mapping, so historical IDs may no longer resolve. |
+| `cluster_id`   | [`text`]                     | The ID of the object's cluster.                                                                                          |
+| `replica_id`   | [`text`]                     | The ID of the cluster replica. May name a replica that no longer exists.                                                 |
+| `installed_at` | [`timestamp with time zone`] | When the object's dataflow was installed on the replica.                                                                 |
+| `started_at`   | [`timestamp with time zone`] | When hydration work began, or `NULL` if the replica reported none. A replica that observed no start reports the installation time instead, so a zero interval between the two does not mean the dataflow started immediately. |
+| `hydrated_at`  | [`timestamp with time zone`] | When hydration finished.                                                                                                 |
+| `status`       | [`text`]                     | The terminal status. Currently always `hydrated`.                                                                        |
 
 ## `mz_object_transitive_dependencies`
 
@@ -2433,6 +2472,27 @@ Summaries are flattened into separate quantile, sum, and count rows.
 | `labels`      | [`map`]                | The label key-value pairs associated with the metric.                |
 | `value`       | [`double precision`]   | The numeric value of the metric.                                     |
 | `help`        | [`text`]               | The help string describing the metric.                               |
+
+## `mz_cluster_replica_resource_usage`
+
+The `mz_cluster_replica_resource_usage` source reports the resource usage of each process of a
+cluster replica, as one row per measurement source and metric. Each row is what that source
+reported, without interpretation: sources measure overlapping but distinct quantities, so combining
+them into a single figure for memory usage, or for how close a replica is to its limit, is left to
+queries over this relation.
+
+The replica samples its sources every few seconds, and reports a high-water mark alongside the
+instantaneous value where one is available. For the sources and metrics that appear here, how to
+interpret them, and an example query, see [Replica resource
+usage](/manage/monitor/replica-resource-usage/).
+
+<!-- RELATION_SPEC mz_introspection.mz_cluster_replica_resource_usage NO_COMMENTS -->
+| Field        | Type      | Meaning                                                              |
+|--------------|-----------|----------------------------------------------------------------------|
+| `process_id` | [`uint8`] | The ID of the process within the replica.                            |
+| `source`     | [`text`]  | The measurement source, for example `cgroup` or `rusage`.             |
+| `metric`     | [`text`]  | What the source measured, for example `memory_current`.               |
+| `value`      | [`uint8`] | The reported value, in bytes for a size and as a count otherwise.     |
 
 ## `mz_dataflows`
 

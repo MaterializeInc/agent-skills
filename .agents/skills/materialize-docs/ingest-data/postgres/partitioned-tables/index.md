@@ -29,8 +29,8 @@ parent table with a `UNION ALL` over them.
 > that uses this option, and doing so can produce incorrect results.
 > The configuration is accepted rather than rejected: the source is created, the
 > initial snapshot is correct, and inserts, updates, and deletes appear to
-> replicate normally. Problems surface only once partitions are added, attached,
-> or detached. Use one of the approaches on this page instead.
+> replicate normally. Problems surface only once partitions are attached,
+> detached, or truncated. Use one of the approaches on this page instead.
 
 ## Approach 1: Ingest the leaf partitions
 

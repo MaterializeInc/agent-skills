@@ -110,7 +110,7 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     </tr>
     <tr>
       <td><code>mz_active_internal_subscribes</code></td>
-      <td>The number of active internal subscribes, which serve frontend-sequenced read-then-write.</td>
+      <td>The number of active internal subscribes used by read-then-write operations and background maintenance.</td>
       <td><code>session_type</code></td>
     </tr>
     <tr>
@@ -874,6 +874,36 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_hydration_history_mutations_total</code></td>
+      <td>Total hydration-history collection and retention mutations since process start.</td>
+      <td><code>operation</code>, <code>outcome</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_hydration_history_retention_batch_full_total</code></td>
+      <td>Total hydration-history sweeps whose retention batch was full. Repeated increments mean retention may not be keeping up with its schedule.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_hydration_history_rows_affected_total</code></td>
+      <td>Total rows changed by hydration-history maintenance since process start.</td>
+      <td><code>action</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_hydration_history_sweep_duration_seconds_bucket</code></td>
+      <td>Wall time of a complete hydration-history collection and retention sweep.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_hydration_history_sweep_duration_seconds_count</code></td>
+      <td>Wall time of a complete hydration-history collection and retention sweep.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_hydration_history_sweep_duration_seconds_sum</code></td>
+      <td>Wall time of a complete hydration-history collection and retention sweep.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_index_peek_cursor_setup_seconds_bucket</code></td>
       <td>Time setting up cursor and literal constraints.</td>
       <td><code>le</code></td>
@@ -1267,6 +1297,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_metrics_libc_ru_utime_seconds_total</code></td>
       <td>user CPU time used</td>
       <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_metrics_resource_usage</code></td>
+      <td>Resource usage observations, by source and metric.</td>
+      <td><code>metric</code>, <code>source</code></td>
     </tr>
     <tr>
       <td><code>mz_metrics_update_duration_bucket</code></td>
