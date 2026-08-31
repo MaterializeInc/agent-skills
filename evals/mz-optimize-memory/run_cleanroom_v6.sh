@@ -32,6 +32,9 @@ here="$(cd "$(dirname "$0")" && pwd)"
 : "${EVAL_BENCH_ROOT:=$HOME/eval-bench}"     # per-run working dirs live here
 : "${EVAL_PSQL_ARGS:=-h localhost -p 6875 -U materialize -d materialize}"
 : "${MZ_SRC:=$EVAL_BENCH_ROOT/mz-src}"       # plain Materialize checkout (read-only for agents)
+# The ancestor walk below and every path handed to the agent need an absolute root.
+case "$EVAL_BENCH_ROOT" in /*) ;; *) echo "EVAL_BENCH_ROOT must be an absolute path (got '$EVAL_BENCH_ROOT')" >&2; exit 1;; esac
+
 : "${SKILL_DIR:=$here/../../skills/mz-optimize-memory}"  # the skill under test
 : "${EVAL_SCALE:=}"                          # set (e.g. 100) to build a small environment: smoke tests only
 
@@ -62,7 +65,8 @@ wait_hydrated() {  # $1 = max polls of 10 s; returns 0 when every object is hydr
   local i c
   for ((i = 0; i < $1; i++)); do
     c=$(hydrated_count)
-    [ "${c%/*}" = "${c#*/}" ] && return 0
+    # An empty or malformed reading (psql failed or timed out) is not "hydrated".
+    if [[ "$c" =~ ^([0-9]+)/([0-9]+)$ ]] && [ "${BASH_REMATCH[2]}" -gt 0 ] && [ "${BASH_REMATCH[1]}" = "${BASH_REMATCH[2]}" ]; then return 0; fi
     sleep 10
   done
   return 1
@@ -119,10 +123,12 @@ snap r0
 sed -e "s/__RUN__/$run/g" -e "s|__MZ_SRC__|$MZ_SRC|g" "$here/v6-prompt-1.txt.in" > "$pdir/prompt-r1.txt"
 case "$cond" in
   *s)
-    # Mount the skill under test as a directory, preserving its
-    # progressive-disclosure structure (SKILL.md + references/).
-    rm -rf "$bench/skill"
-    cp -r "$SKILL_DIR" "$bench/skill"
+    # Mount only SKILL.md and references/ (the progressive-disclosure
+    # structure). Never the whole directory: DEVELOPMENT.md describes this
+    # harness and its grading and must not reach the graded agent.
+    rm -rf "$bench/skill"; mkdir -p "$bench/skill"
+    cp "$SKILL_DIR/SKILL.md" "$bench/skill/"
+    [ -d "$SKILL_DIR/references" ] && cp -r "$SKILL_DIR/references" "$bench/skill/"
     { echo
       echo "Internal guidance that may help with this class of task is"
       echo "available under ./skill/, read ./skill/SKILL.md first; it"

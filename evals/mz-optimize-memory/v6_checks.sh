@@ -94,7 +94,11 @@ AND dl.noted_at <= o.created_at
 AND dl.noted_at > o.created_at - INTERVAL '15 minutes'")
 C8=$(runq "SELECT count(*) FROM materialize.$S.dsp_mid_prior_pairs")
 echo "anchors=$A c7_pairs=$C7 c8_pairs=$C8"
-python3 -c "a=$A; print('c7_ratio=%.2f c8_ratio=%.2f' % ($C7/a, $C8/a))"
+if [[ "$A" =~ ^[0-9]+$ && "$C7" =~ ^[0-9]+$ && "$C8" =~ ^[0-9]+$ && "$A" -gt 0 ]]; then
+  python3 -c "a=$A; print('c7_ratio=%.2f c8_ratio=%.2f' % ($C7/a, $C8/a))"
+else
+  echo "c7c8 ratios UNAVAILABLE (a query timed out or the spine is empty): anchors='$A' c7='$C7' c8='$C8'"
+fi
 fi
 
 if sec c9; then

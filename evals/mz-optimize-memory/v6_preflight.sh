@@ -26,6 +26,9 @@ done
 : "${EVAL_BENCH_ROOT:=$HOME/eval-bench}"
 : "${EVAL_PSQL_ARGS:=-h localhost -p 6875 -U materialize -d materialize}"
 : "${MZ_SRC:=$EVAL_BENCH_ROOT/mz-src}"
+# The ancestor walk below and every path handed to the agent need an absolute root.
+case "$EVAL_BENCH_ROOT" in /*) ;; *) echo "EVAL_BENCH_ROOT must be an absolute path (got '$EVAL_BENCH_ROOT')" >&2; exit 1;; esac
+
 : "${EVAL_CLUSTER_SIZE:=100cc}"
 run=v6_preflight
 bench="$EVAL_BENCH_ROOT/$run"
@@ -89,6 +92,14 @@ check "ro: ALTER SYSTEM"                    deny  "$(wrap_verdict 'ALTER SYSTEM 
 check "ro: flag argument"                   deny  "$(wrap_verdict --help)"
 check "ro: \\! shell escape"                deny  "$(wrap_verdict '\! id')"
 check "ro: \\copy"                          deny  "$(wrap_verdict '\copy t to /tmp/x')"
+check "ro: block comment before CREATE"     deny  "$(wrap_verdict "/* try 1 */ CREATE TABLE $run.t (a int)")"
+check "ro: COPY FROM STDIN"                 deny  "$(printf 'COPY %s.t FROM STDIN;\n1\n\\.\n' "$run" | wrap_verdict_stdin)"
+check "ro: PREPARE an INSERT"               deny  "$(wrap_verdict "PREPARE p AS INSERT INTO $run.t VALUES (1)")"
+check "ro: EXECUTE"                         deny  "$(wrap_verdict 'EXECUTE p')"
+check "ro: COPY TO STDOUT (a read)"         allow "$(wrap_verdict 'COPY (SELECT 1) TO STDOUT')"
+check "ro: literal containing ; create"     allow "$(wrap_verdict "SELECT 'x; create y' AS s")"
+check "ro: REASSIGN OWNED"                  deny  "$(wrap_verdict 'REASSIGN OWNED BY materialize TO materialize')"
+check "ro: NBSP before CREATE"              deny  "$(wrap_verdict "$(printf '\xc2\xa0CREATE TABLE %s.t (a int)' "$run")")"
 
 echo "== Part 1: wrapper checks (write mode) =="
 write_wrapper rw

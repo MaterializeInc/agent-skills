@@ -71,7 +71,9 @@ derives from any real customer environment.
   plus one graded run's schema (180) fits and a fourth environment does
   not. The failure is a clean error at the first table over the line
   (`creating table would violate max_tables limit`), which aborts the load
-  partway. Drop schemas you are done with before starting another build.
+  partway. Drop schemas you are done with before starting another build,
+  or raise the limit first for a multi-cell campaign (`ALTER SYSTEM SET
+  max_tables = 400` as `mz_system` on the emulator's port 6877).
 - For graded agent runs: the Claude Code CLI (`claude`). The
   environment build and signature checks need no agent at all.
 - A plain checkout of MaterializeInc/materialize for the agent to read

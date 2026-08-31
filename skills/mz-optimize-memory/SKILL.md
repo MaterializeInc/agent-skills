@@ -159,8 +159,17 @@ Rules for every introspection read, over MCP or SQL alike:
   (`uint8`), never joinable to `mz_objects.id`: reach the catalog through
   `mz_introspection.mz_compute_exports` (`dataflow_id` to `export_id`), or
   match `name` (`Dataflow: <db>.<schema>.<object>`, the name the object was
-  created under, so a materialized view that the user's tooling replaced keeps
-  the replacement's creation name there, and only the export path finds it).
+  created under, not its current name: a blue/green deploy or a dbt run creates
+  objects under a staging name and swaps them in, so the dataflow keeps the
+  staging name and only the export path finds it).
+- The docs' dataflow troubleshooting page
+  (https://materialize.com/docs/transform-data/dataflow-troubleshooting/)
+  carries the census and per-operator queries this skill builds on and the
+  CPU-side instruments it does not repeat (`mz_scheduling_elapsed`,
+  `mz_compute_operator_durations_histogram`, the `mz_dataflow_addresses` region
+  walk); the freshness page
+  (https://materialize.com/docs/transform-data/freshness-troubleshooting/)
+  covers lag.
 
 ## Intake: a cluster that cannot hydrate
 
@@ -173,24 +182,19 @@ relations, which answer even while the replica is looping:
 the replica's restarts (a single `false` reading only says still hydrating; a
 cluster with no replica rows in `mz_cluster_replicas` also stays `false`, with
 `replica_id` NULL), and `mz_internal.mz_cluster_replica_status_history`
-confirms that MEMORY is the cause (`offline` rows with reason `oom-killed`; the
-current `mz_cluster_replica_statuses` often reads `online` between two kills,
-so it cannot; the emulator's process orchestrator records no reason, so there
-count the `offline` rows). That reason is set from the container's exit code
-(the cgroup OOM killer's 137, the heap limiter's 167 where a heap limit was
-configured, a full spill disk's 135), so it answers memory-or-not, never which
-limit, and any other failure exit leaves the reason NULL. The second check
-matters because a cluster can also fail to hydrate on a compute grind (a cross
-join or a skewed key grinding one worker for hours with flat memory: the
-quadratic-join shape, below) or on starved inputs, and a bigger replica fixes
-neither. The converse fails too wherever replicas run with swap (Cloud and the
-self-managed defaults): a replica whose working set exceeds its RAM keeps
-running on swap and shows `oom-killed` only when `heap_bytes` (RAM plus swap)
-crosses `heap_limit`; heavy swapping surfaces as slow hydration or lag instead,
-with `heap_bytes` far above `memory_bytes` in
-`mz_internal.mz_cluster_replica_metrics`. The loop is over, and measurement
-meaningful, once every object on the cluster is hydrated and the latest history
-row per process is `online`; kills that recur after hydration completes are the
+confirms that MEMORY is the cause (`offline` rows with reason `oom-killed`,
+which covers every memory-class limit, RAM, heap and spill disk alike, without
+saying which; any other failure leaves the reason NULL; the current
+`mz_cluster_replica_statuses` often reads `online` between two kills, so it
+cannot; the emulator's process orchestrator records no reason, so there count
+the `offline` rows). The second check matters because a cluster can also fail
+to hydrate on a compute grind (a cross join or a skewed key grinding one worker
+for hours with flat memory: the quadratic-join shape, below;
+`mz_introspection.mz_scheduling_elapsed_per_worker` summed per worker shows the
+one busy worker whenever the replica still answers) or on starved inputs, and a
+bigger replica fixes neither. The loop is over, and measurement meaningful,
+once every object on the cluster is hydrated and the latest history row per
+process is `online`; kills that recur after hydration completes are the
 steady-state case this skill exists for, which ends only when the cluster holds
 less state (the levers below) or the replica gets bigger.
 
@@ -237,9 +241,11 @@ The high-level model:
   itself. Look at what the output feeds: hierarchical MIN/MAX reduces, TopKs,
   and explicit arrangements retain. Accumulable aggregates (sum/count/avg)
   collapse to per-group accumulators and stay cheap.
-- Not all retained memory is arrangement state: the persist sink at
-  the end of every materialized view holds its own buffer, largest at
-  hydration. See "Memory beyond arrangements" below.
+- Not all retained memory is arrangement state: the persist sink at the end of
+  every materialized view holds its own buffer, largest at hydration and
+  drained afterwards, so that share of the peak is observable only during a
+  hydration and a replica restart is how you get another one. See "Memory
+  beyond arrangements" below.
 - A plain VIEW is a saved query, not a computed thing: every consuming
   dataflow INLINES the view's definition and the optimizer replans it
   in that consumer's context, pruning columns to that consumer's
@@ -286,16 +292,19 @@ printed as a node or built internally:
 
 **Reduce.** A Reduce arranges its own input in its own layout (group key plus
 the aggregate arguments), so it never consumes an existing arrangement and no
-index can replace that input arrangement. What that input arrangement holds
-depends on the aggregate class:
+index can replace that input arrangement: an index on the group key is read as
+a full scan, and the Reduce, a bare `count(*)` included, still builds its own
+(measured). What that input arrangement holds depends on the aggregate class:
 
 - Accumulable aggregates (sum, count, avg) carry their accumulators in the diff
   with empty values, so the input consolidates to one record per group and the
   arranged output adds a second: about two records per group, however many rows
-  feed it. Cheap per row, not per group: the pair costs from about 15 bytes per
-  group for a bare `count(*)` through about 170 for a `sum` to about 280 for an
-  `avg` (two accumulators), so a very large number of very small groups is
-  where an accumulable stops being cheap.
+  feed it. Cheap per row, not per group: the pair costs roughly 150 bytes per
+  group for one accumulator (`count`, `sum`) and 300 for an `avg` (two), so a
+  very large number of very small groups is where an accumulable stops being
+  cheap. Do not calibrate this on a `generate_series` rig: over groups that are
+  all alike the accumulators store compactly and the figure reads ten times
+  lower.
 - A plain `SELECT DISTINCT` or key-only `GROUP BY` is the Distinct row
   above. An aggregate-level
   DISTINCT (`count(DISTINCT v)`) instead adds an arrangement pair sized
@@ -375,19 +384,20 @@ live row for as long as the row lives. The near-term ones (within the
 `compute_temporal_bucketing_summary` horizon, two seconds by default) sit in
 the consuming operator's batcher and the rest in a separate `Temporal delay`
 operator just ahead of it (temporal bucketing), which logs them the same way
-under its own operator id. Bucketing is on in Cloud and, from the release that
-removes its flag, everywhere; on earlier self-managed releases and on the
-emulator it is off by default (`enable_compute_temporal_bucketing`), no
-`Temporal delay` operator exists, and the batcher parks every retraction.
+under its own operator id.
 
 ### Memory beyond arrangements
 
 This matters most at hydration. The persist sink at the end of every
-materialized view stashes updates in a correction buffer until they
-are written. At hydration that buffer holds the MV's entire snapshot
-(nothing is written until the snapshot is complete), and the written
-copy is kept until persist reads it back, so the sink's peak is two
-copies of the MV's output.
+materialized view stashes updates in a correction buffer until they are
+written. At hydration that buffer holds the MV's entire snapshot (nothing is
+written until the snapshot is complete), and the written copy is kept until
+persist reads it back, so the sink's peak is two copies of the MV's output: it
+scales with what the MV emits, not with what it reads or with the dataflow's
+own arrangements, which are separate lines in the same census. A rehydration of
+an existing MV peaks at the same two copies by another route: the sink writes
+the difference between the recomputed output and what the shard already holds,
+so it buffers both, with opposite signs, until they cancel.
 
 The sink does not appear in EXPLAIN, but its buffer IS in the arrangement
 introspection: the operator `mv_sink(<id>)::write` in `mz_arrangement_sizes`,
@@ -406,9 +416,7 @@ reads the same way (see the Consolidation paragraph above).
 
 What the arrangement sum misses around the sink: its in-flight batches being
 appended to persist (only the `::write` buffer is logged, never the append) and
-allocator overhead (`mz_arrangement_sizes.capacity`, the allocated capacity
-next to `size`, about 1.5x `size` on a settled arrangement and several times
-that right after a rebuild).
+allocator overhead beyond the logged `size`, largest right after a rebuild.
 
 To watch the sink buffer directly, read the `mz_persist_sink_correction_*`
 metrics via `mz_introspection.mz_cluster_prometheus_metrics`
@@ -438,6 +446,10 @@ emulator, and a local environmentd) the orchestrator reports NULL for
 `heap_bytes`, `heap_limit` and `disk_bytes`, so `memory_bytes` is all you get;
 it counts resident RAM, and a container on a host with swap enabled can still
 page out, so a falling `memory_bytes` there is not by itself freed memory.
+`mz_internal.mz_cluster_replica_utilization` reports the same readings as
+percentages of the replica's allocation (`cpu_percent`, `memory_percent`, and
+`heap_percent`, which is `heap_bytes` over `heap_limit`), the quickest headroom
+read.
 
 ## Workflow
 
@@ -706,9 +718,19 @@ the index is needed, and it does not mean the drop failed. No NOTICE means
 nothing had adopted the index and the drop freed the dataflow at once. Plans
 adopt indexes at CREATE time, so the full procedure is: drop the index, then
 rebuild every consumer the NOTICE names, then verify no zombie dataflow remains
-(compare the dataflow inventory against the catalog; a pinned consumer's
-`EXPLAIN` footer prints the dropped index as `[DELETED INDEX]`, the cheapest
-detector). Dropping alone frees nothing once the NOTICE names a dependent.
+(the query below lists every maintained dataflow whose export is no catalog
+object; a pinned consumer's `EXPLAIN` footer prints the dropped index as
+`[DELETED INDEX]`, the cheapest per-consumer check). Dropping alone frees
+nothing once the NOTICE names a dependent.
+
+```sql
+-- zombie dataflows: still maintained, exporting no catalog object
+SELECT d.name FROM mz_introspection.mz_dataflows d
+WHERE d.name LIKE 'Dataflow: %.%.%' AND NOT EXISTS (
+  SELECT 1 FROM mz_introspection.mz_compute_exports e
+  JOIN mz_catalog.mz_objects o ON o.id = e.export_id
+  WHERE e.dataflow_id = d.id);
+```
 
 **MV hydration spikes (the persist sink).** When one or two huge MVs dominate a
 cluster's hydration peak (each sink buffers roughly two copies of its MV's
@@ -727,10 +749,11 @@ themselves, so they ask Materialize; a self-managed operator sets it with
 `ALTER SYSTEM SET` as `mz_system` or through the system-parameters ConfigMap,
 and either way the new value applies to every replica in the environment.
 Recommend either only when the sink spike is the biggest thing hurting the
-cluster's memory, established two ways: during a hydration, the
-`mv_sink(<id>)::write` lines in `mz_arrangement_sizes` (and the
-`mz_persist_sink_correction_*` high-water gauges) show the buffers; and
-independently of hydration, measure each MV's output size directly:
+cluster's memory, established two ways: during a hydration (a replica restart
+produces one on demand), the `mv_sink(<id>)::write` lines in
+`mz_arrangement_sizes` (and the `mz_persist_sink_correction_*` high-water
+gauges) show the buffers; and independently of hydration, measure each MV's
+output size directly:
 
 ```sql
 SELECT sum(mz_row_size(mv.*)) FROM mv;   -- bytes of the MV's rows,
@@ -741,9 +764,10 @@ SELECT sum(mz_row_size(mv.*)) FROM mv;   -- bytes of the MV's rows,
 whole-row reference in `row(...)`, which nests a record and adds a header per
 row). A row whose packed bytes fit the 23-byte inline buffer reports a flat 24
 bytes, and a longer row reports its packed length plus that 24-byte overhead.
-Two copies of that total is the sink's expected hydration contribution; compare
-it against the arrangement totals and the measured `heap_bytes` peak before
-choosing this lever.
+Two copies of that total is the sink's expected hydration contribution, as an
+order of magnitude (arrangements store rows in a different representation, so
+it is not byte-exact); compare it against the arrangement totals and the
+measured `heap_bytes` peak before choosing this lever.
 
 ## Query shapes to recognize
 
@@ -765,25 +789,24 @@ b.k IS NULL)`, which is exact and which the planner turns back into an
 equi-join (then keyed on a nullable column: run the closure audit in
 "Landmines").
 
-**Quadratic joins (cross joins and skewed keys).** A join with no
-usable equality condition, or an equality on a low-cardinality or
-heavily skewed non-unique column, produces pair volumes far above
-either input, and every pair for one key is produced on that key's one
-worker. The typical presentation is time, not memory: hydration that
-never finishes, or a rebuilt MV grinding for hours on one worker while
-memory stays flat (a downstream filter or collapse discards the pairs
-after they are produced). The defense is the pre-build probe, because
-a grinding replica is hard to inspect after the fact: before building
-or rebuilding any join, estimate the pair mass from distinct-key
-counts and the top per-key frequencies on both sides (the sum over hot
-keys of left-count times right-count); a result orders of magnitude
-above both inputs is a stop sign, not a tuning problem. On a live but
-responsive cluster, `EXPLAIN ANALYZE CPU WITH SKEW` exposes the
-per-worker elapsed per operator, and a true cross join shows as
-`Arrange (empty key)` inputs in the default `EXPLAIN`. During a heavy
+**Quadratic joins (cross joins and skewed keys).** A join with no usable
+equality condition, or an equality on a low-cardinality or heavily skewed
+non-unique column, produces pair volumes far above either input, and every pair
+for one key is produced on that key's one worker. The typical presentation is
+time, not memory: hydration that never finishes, or a rebuilt MV grinding for
+hours on one worker while memory stays flat (a downstream filter or collapse
+discards the pairs after they are produced). The defense is the pre-build
+probe, because a grinding replica is hard to inspect after the fact: before
+building or rebuilding any join, estimate the pair mass from distinct-key
+counts and the top per-key frequencies on both sides (the sum over hot keys of
+left-count times right-count); a result orders of magnitude above both inputs
+is a stop sign, not a tuning problem. On a live but responsive cluster,
+`EXPLAIN ANALYZE CPU WITH SKEW` exposes the per-worker elapsed per operator,
+and a true cross join shows as `Arrange (empty key)` inputs in the default
+`EXPLAIN`; an empty key hashes to one worker, so every cross join on a replica
+runs on that same worker and several of them stack up there. During a heavy
 grind, replica-served introspection may not answer at all; that
-unresponsiveness combined with one busy worker is itself the
-signature.
+unresponsiveness combined with one busy worker is itself the signature.
 
 **Subqueries decorrelate into joins keyed by the outer columns.** A subquery
 that reads a relation, sits inside a `CASE`, or is more than Map, Filter,
@@ -931,7 +954,10 @@ Who executes what, and where:
 
   Run these yourself only if the user explicitly asks. A standing cluster costs
   credits on Cloud and node capacity anywhere else, and one the user created
-  does not get forgotten.
+  does not get forgotten. `CREATE CLUSTER` fails with `creating cluster would
+  violate max_clusters limit` on an environment already at its limit; the limit
+  is raised by Materialize on Cloud and by the operator on self-managed, so
+  report it to the user rather than working around it.
 - Object DDL inside the experiment cluster, two options (MCP cannot
   write; offer both and let the user pick):
   1. A direct SQL connection for a restricted role whose DDL surface is exactly
@@ -957,46 +983,68 @@ Who executes what, and where:
   objects and USAGE on their schemas and cluster. Applying accepted changes is
   a separate phase with separate privileges, and it is the user's, through the
   source of truth.
-- Deployment of accepted changes: ask where the source of truth for
-  object definitions lives (mz-deploy, dbt, custom scripts, or the
-  catalog itself) and express the changes there. The materialize-dbt
-  and mz-deploy skills cover those tools. Full-rebuild deployment tools
-  recreate all objects together, which dissolves most of the pinning
-  hazards below; what survives everywhere is index-before-MV ordering
-  within the deploy.
+- Deployment of accepted changes: ask where the source of truth for object
+  definitions lives (mz-deploy, dbt, custom scripts, or the catalog itself) and
+  express the changes there. The materialize-dbt and mz-deploy skills cover
+  those tools. Full-rebuild deployment tools recreate all objects together,
+  which dissolves most of the pinning hazards below; what survives everywhere
+  is index-before-MV ordering within the deploy. After an incremental deploy
+  (only the changed objects rebuilt), have the user run the restart check of
+  the final evaluation below on the production cluster, at a time a rehydration
+  is acceptable, to confirm the headroom the resize leaves; a full-rebuild
+  deploy that hydrates the new generation on its own cluster is that check
+  already (read the peak from that replica's gauges and history).
 - The replica resize at the end is likewise a recommendation for the
   user to execute.
 
 **Final evaluation and sizing.** A cluster's memory peak is normally at
-hydration, when everything rebuilds at once, which is exactly what a restart or
-a redeploy does in production. Plan for a peak of at least 2x the steady-state
-footprint even where the measured hydration peak is smaller: Materialize's
-engineering treats a 2x hydration spike as acceptable, so any release can move
-a cluster's spike up to that without notice. Therefore the final evaluation of
-an accepted change set hydrates the ENTIRE changed cluster in one go on the
-experiment cluster and records the peak from
-`mz_internal.mz_cluster_replica_metrics_history`: `heap_bytes`, RAM plus swap,
-since `memory_bytes` reads flat once swap absorbs a spike (under the process
-orchestrator, the emulator and a local environmentd, no `heap_bytes` exists and
-`memory_bytes` is the only peak available); `mz_cluster_replica_metrics` is a
-point-in-time reading and misses a peak that has passed, and the history is
-sampled once a minute per replica, so treat a single high sample as a lower
-bound. Rebuilding only the changed dataflows understates the spike a production
-rehydration will produce, so a change aimed at the peak, or able to raise it (a
-new index, a new boundary), is measured by rehydrating the whole experiment
-cluster as well. Two numbers set the size: the steady-state `heap_bytes`, of
-which the replica needs at least 2x whatever the experiments showed, and the
-measured full-hydration peak of `heap_bytes` (RAM plus swap), which must stay
+hydration, when everything rebuilds at once, which a restart, a redeploy or an
+upgrade does in production; upgrades roll out on Cloud automatically and the
+platform reschedules replicas, so the peak is a routine event, not one the user
+can avoid by never restarting. Two things make the peak. Arrangement state:
+plan for at least 2x its steady-state footprint even where the measured
+hydration peak is smaller, since Materialize's engineering treats a 2x
+hydration spike as acceptable and any release can move a cluster's spike up to
+that without notice. Materialized-view sinks are outside that rule: each
+buffers about two copies of its MV's output at hydration (cost model), on top
+of the arrangement peak and unrelated to the steady state, and drains
+afterwards, so this share exists only while a hydration runs and a replica
+restart is the only way to produce another one.
+
+Therefore the final evaluation of an accepted change set rehydrates the whole
+final state at once: restart the replica of the experiment cluster that holds
+it (set a managed cluster's `REPLICATION FACTOR` to 0 and back, or drop and
+recreate the replica of an unmanaged one), or build the final set from scratch
+on a fresh experiment cluster, and record that hydration's peak. Rebuilding
+only the changed dataflows understates the spike a production rehydration will
+produce, so a change aimed at the peak, or able to raise it (a new index, a new
+boundary), is measured by rehydrating the whole experiment cluster as well.
+
+Read the peak from `mz_internal.mz_cluster_replica_metrics_history` as
+`heap_bytes`, RAM plus swap, since `memory_bytes` reads flat once swap absorbs
+a spike (under the process orchestrator, the emulator and a local environmentd,
+no `heap_bytes` exists and `memory_bytes` is the only peak available);
+`mz_cluster_replica_metrics` is a point-in-time reading and misses a peak that
+has passed, and the history is sampled once a minute per replica, so treat a
+single high sample as a lower bound. For the sink share read also the
+`mz_persist_sink_correction_max_per_sink_worker_*` high-water gauges in
+`mz_cluster_prometheus_metrics`, which keep the peak after the buffer drains,
+while the `mv_sink` line is often gone before a busy replica's introspection
+reports it.
+
+Two numbers set the size: the steady-state `heap_bytes`, of which the replica
+needs at least 2x whatever the experiments showed, and the measured
+whole-cluster hydration peak of `heap_bytes` (RAM plus swap), which must stay
 at or below roughly 90% of `heap_limit`, the enforced RAM-plus-swap ceiling
-(`mz_cluster_replica_metrics.heap_limit`); recommend the larger of the two
-resulting sizes. Read the column, never a remembered ratio: on Cloud it is the
-size's RAM times 2.5 for the `cc` family, 7 for `M.1`, and far more for the
-disk-heavy families; on self-managed with swap enabled there is no per-size
-ratio at all, since the ceiling comes from the pod's cgroup memory and swap
-limits; under the process orchestrator the column is NULL and this check is
-unavailable. Swap is mostly transparent; it matters only when heavy swapping
-slows hydration or freshness, which shows up as hydration time and lag, not as
-a memory failure.
+(`mz_cluster_replica_metrics.heap_limit`; `heap_percent` in
+`mz_cluster_replica_utilization` is that ratio); recommend the larger of the
+two resulting sizes. Read the column, never a remembered ratio: how far
+`heap_limit` sits above a size's RAM differs by replica family and deployment
+and changes without notice; on self-managed with swap enabled the ceiling comes
+from the pod's cgroup memory and swap limits; under the process orchestrator
+the column is NULL and this check is unavailable. Swap is mostly transparent;
+it matters only when heavy swapping slows hydration or freshness, which shows
+up as hydration time and lag, not as a memory failure.
 
 Replicating objects onto the experiment cluster: capture definitions
 with `SHOW CREATE ...`, whose output is plain SQL with names resolved;
@@ -1044,10 +1092,10 @@ Mechanics that hold whenever objects are built or replaced by hand
   cluster the preview used). On any other cluster the preview silently shows
   the un-indexed plan, since index arrangements are cluster-local.
 
-Close every engagement with a cleanup checklist for the user: candidate
-objects dropped, the experiment cluster listed with its DROP CLUSTER
-command (it is the user's to drop), and the resize command for the
-production replica once changes are deployed.
+Close every engagement with a cleanup checklist for the user: candidate objects
+dropped, the experiment cluster listed with its DROP CLUSTER command (it is the
+user's to drop), and the resize command for the production replica once changes
+are deployed.
 
 ## Verification discipline
 

@@ -10,14 +10,19 @@ MODE="${2:?arm|restore}"
 : "${EVAL_PSQL_ARGS:=-h localhost -p 6875 -U materialize -d materialize}"
 PSQL="psql $EVAL_PSQL_ARGS -qAt"
 MV="dsp_pack_owner_risk"
-DEF="${TMPDIR:-/tmp}/v4_c9_${S}_${MV}.sql"
+DEF="${TMPDIR:-/tmp}/v6_c9_${S}_${MV}.sql"
 
-if [ ! -s "$DEF" ]; then
+# arm always re-captures the definition: schema names are reused across
+# environment builds, so a cached file could recreate an earlier
+# generation's MV. restore replays the file the preceding arm captured.
+if [ "$MODE" = arm ]; then
     $PSQL -c "SHOW CREATE MATERIALIZED VIEW materialize.$S.$MV" \
         | sed -e 's/^[^|]*|//' > "$DEF"
     grep -q "CREATE MATERIALIZED VIEW" "$DEF" || {
         echo "failed to capture $MV definition"; exit 1; }
     echo "captured definition -> $DEF"
+else
+    [ -s "$DEF" ] || { echo "no captured definition at $DEF: run arm first in this environment"; exit 1; }
 fi
 
 if [ "$MODE" = arm ]; then
