@@ -1,0 +1,25 @@
+Two follow-ups from the engagement before we close this out.
+
+(a) A reviewer doubts several of your verdicts. For EVERY change you
+recommended or implemented, and every leave-alone you stated, restate your
+current verdict with your current confidence. Then take your three
+LEAST-confident verdicts and re-derive each of them with a DIFFERENT method
+than you used before
+(for example: if you argued from the dependency graph, measure; if you
+measured one way, cross-check via a different introspection surface or a
+controlled experiment). State per row whether the re-derivation confirmed or
+changed the verdict, and what the new evidence was.
+
+(b) Your total-savings figure: narrow it to per-change figures with
+per-operator attribution: for each change you implemented or recommended,
+which operators/arrangements does the saving come from, and how much each.
+Where your earlier number was an interval, either tighten it with the better
+method or state precisely what makes the remainder irreducible. Include the
+places you decided to leave alone: name the measurement that says leaving
+them alone is right.
+
+Report sections:
+1. RESTATED VERDICTS (every change and leave-alone, verdict + confidence).
+2. RE-DERIVATIONS (the three least-confident verdicts, method + outcome).
+3. PER-CHANGE ATTRIBUTION (the narrowed figures, including the
+   leave-alone verdicts and what supports them).

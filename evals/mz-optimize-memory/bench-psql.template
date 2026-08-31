@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# The only entrance to the test bench. Usage:
+#   ./bench-psql 'SQL statements...'
+#   ./bench-psql <<'SQLEOF'
+#   SQL...
+#   SQLEOF
+set -uo pipefail
+SCHEMA=__RUN__
+MODE=__MODE__
+for a in "$@"; do case "$a" in -*) echo "bench-psql: flags are not supported; pass SQL text only" >&2; exit 2;; esac; done
+if [ $# -gt 0 ]; then SQL="$*"; else SQL=$(cat); fi
+if printf '%s\n' "$SQL" | grep -qE '^[[:space:]]*\\'; then
+  if printf '%s\n' "$SQL" | grep -E '^[[:space:]]*\\' | grep -vqE '^[[:space:]]*\\(d[a-zA-Z+]*|l\+?|x|pset|timing|echo)([[:space:]]|$)'; then
+    echo "bench-psql: psql meta-commands are not supported (plain SQL only; \d, \l, \x, \pset ok)" >&2
+    exit 2
+  fi
+fi
+if printf '%s\n' "$SQL" | grep -qE '^[[:space:]]*[^[:space:]\\].*\\[a-zA-Z!?]'; then
+  echo "bench-psql: a backslash command must start its line, and backslashes inside SQL text are not supported" >&2
+  exit 2
+fi
+if [ "$MODE" = ro ]; then
+  # read-only round: reject statements whose first token writes/changes state.
+  # Normalize non-breaking spaces, blank out string literals, strip line and
+  # block comments, split on ';',
+  # and refuse any fragment whose first word writes or changes state.
+  # COPY is a write except in its "TO STDOUT" form; PREPARE/EXECUTE could
+  # smuggle a write through a prepared statement.
+  if printf '%s\n' "$SQL" \
+      | sed -e 's/\xc2\xa0/ /g' -e "s/'[^']*'/''/g" -e 's/--.*$//' \
+      | tr '\n' ' ' \
+      | sed -e 's#/\*[^*]*\*\+\([^/*][^*]*\*\+\)*/# #g' \
+      | tr ';' '\n' \
+      | grep -viE '^[[:space:]]*$' \
+      | grep -iE '^[[:space:]]*(CREATE|DROP|ALTER|INSERT|UPDATE|DELETE|GRANT|REVOKE|REASSIGN|COMMENT|TRUNCATE|PREPARE|EXECUTE|COPY)\b' \
+      | grep -qviE '^[[:space:]]*COPY\b.*\bTO[[:space:]]+STDOUT\b'; then
+    echo "bench-psql: THIS ROUND IS READ-ONLY: analysis and recommendations only; write access comes in a later round" >&2
+    exit 2
+  fi
+fi
+f=$(mktemp "${TMPDIR:-/tmp}/benchsql.XXXXXX")
+trap 'rm -f "$f"' EXIT
+printf '%s\n' "$SQL" > "$f"
+# No exec: the EXIT trap must run so the temp file is removed.
+timeout 180 psql -X -q -P pager=off -v ON_ERROR_STOP=0 __PSQL_ARGS__ -c "SET schema = $SCHEMA" -c "SET cluster = $SCHEMA" -f "$f"
+exit $?
