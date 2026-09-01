@@ -146,3 +146,10 @@ then drop the old pool.
 
 For the full procedure, see
 [Resize node pools](/self-managed-deployments/deployment-guidelines/resize-node-pools/).
+
+## Node pool upgrades
+
+GKE upgrades node pools automatically, and this cannot be disabled. Configure
+the operator's node upgrade rollout trigger so Materialize moves its pods to
+the replacement nodes gracefully instead of being evicted. See [GKE node pool
+upgrades](/self-managed-deployments/deployment-guidelines/gke-node-pool-upgrades/).
