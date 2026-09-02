@@ -880,7 +880,7 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     </tr>
     <tr>
       <td><code>mz_hydration_history_retention_batch_full_total</code></td>
-      <td>Total hydration-history sweeps whose retention batch was full. Repeated increments mean retention may not be keeping up with its schedule.</td>
+      <td>Total hydration-history retention batches that were full. Repeated increments mean retention may not be keeping up with its schedule.</td>
       <td></td>
     </tr>
     <tr>
