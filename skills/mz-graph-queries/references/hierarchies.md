@@ -30,7 +30,8 @@ On the fixture this returns 4, 5, 7, 8: everyone under Bob.
 
 It converges because `subtree` holds a set of ids drawn from `employees`, the
 `UNION` makes re-deriving a row a no-op, and each iteration adds at most the
-next level down. The number of iterations is the height of the subtree.
+next level down. It runs one iteration per level below the seed, plus one
+more that changes nothing and ends the loop.
 
 Standard SQL brings the same shape: `WITH RECURSIVE subtree AS (SELECT id FROM
 employees WHERE manager_id = 2 UNION ALL SELECT e.id FROM employees e JOIN
@@ -70,7 +71,8 @@ column is safe here only because the walk terminates. A cycle in `manager_id`
 makes `distance` climb forever and the binding never converges, even under
 `UNION`, since every trip around the loop produces a row nobody has seen
 before. Put `ERROR AT RECURSION LIMIT` on any ancestor walk over data you do
-not control; the Cycles section below shows the failure.
+not control; the counter-carrying closure block in the Cycles section below
+is that failure.
 
 Standard SQL brings the identical walk with `WITH RECURSIVE`. Nothing about the
 logic changes; only the header, the declared types, and the union operator do.
@@ -124,9 +126,11 @@ from the parent; that one lives in `rollups.md`.
 
 Standard SQL brings `WITH RECURSIVE levels AS (SELECT id, 0 AS depth, id AS
 root_id FROM employees WHERE manager_id IS NULL UNION ALL ...)`. Beyond the
-header and the type declarations, the change worth noting is that `UNION`
-deduplicates on a tree without costing anything, and it is what keeps the query
-answering rather than hanging if a parent pointer ever forms a loop.
+header and the type declarations, the change worth noting is `UNION`. On a
+tree it removes nothing, because each node derives exactly once, and
+consolidation runs either way. It is there for the day a parent pointer forms a
+loop, when it is the difference between an answer and a query that never
+finishes.
 
 ## A maintained closure table
 
@@ -151,15 +155,24 @@ SELECT descendant, distance FROM employee_closure WHERE ancestor = 2 ORDER BY di
 On the fixture the read returns (2, 0), (4, 1), (5, 1), (7, 2), (8, 2): Bob at
 distance 0 from himself, his two reports, then his two grandchildren.
 
+It converges because on a tree every `(ancestor, descendant)` pair has exactly
+one path and therefore exactly one `distance`, which is bounded by the height
+of the tree. The pair set stops growing after height-plus-one iterations. Read
+the `ERROR AT RECURSION LIMIT 1000` as a guardrail against data that is not a
+tree, not as something the recursion needs to terminate.
+
 This is the closure table from Karwin's *SQL Antipatterns*, the standard fix
 for slow parent-pointer queries, except that nothing has to maintain it.
 Elsewhere the closure rows are a second table kept in step by triggers or
 application code, and every insert, move or delete has to fix them up. Here the
-recursion is the maintenance job: the view is incrementally maintained, so a
-hire, a departure or a reorg lands in the closure without any fixup code
+recursion is the maintenance job. The `CREATE INDEX` is what turns the view
+into a maintained dataflow: with the index in place the closure is computed
+once and kept up to date as `employees` changes, so a hire, a departure or a
+reorg lands in it without any fixup code
 ([semantics.md#update-locality](semantics.md#update-locality)).
 
-The index turns a subtree question into a lookup instead of a scan:
+The index does two jobs. It maintains the closure, and it turns a subtree
+question into a lookup instead of a scan:
 
 ```sql
 EXPLAIN SELECT descendant, distance FROM employee_closure WHERE ancestor = 2;
@@ -362,6 +375,12 @@ reachable set, and a recursion limit when you need to carry a counter.
 - Carrying `name`, `salary` or other payload through the loop. Every declared
   column stays live in the arrangement across every iteration. Recurse on ids
   and join the payload back in the body, as both display blocks do.
-- Reading the closure without an index on the column you filter. The view is
-  maintained either way, but the answer is a scan of the whole closure rather
-  than a lookup.
+- Assuming a plain `CREATE VIEW` is maintained. Without an index it is not
+  computed at all until something reads it, and then it is recomputed from
+  scratch: a view is a named query, and the index is what makes it a standing
+  dataflow. Materializing the closure means creating the index (or a
+  materialized view).
+- Filtering an indexed closure on the column the index does not cover. With
+  `employee_closure_by_ancestor` in place, `WHERE ancestor = 2` is a lookup but
+  `WHERE descendant = 7` is a scan of the whole closure. Index each column you
+  ask about.
