@@ -309,7 +309,8 @@ Run it as a maintained view over any graph that is supposed to be acyclic, a
 dependency DAG or a parent-pointer table, and it is a standing alarm. It tells
 you which nodes are on some cycle. It does not tell you which nodes are on the
 same cycle, or how many cycles there are; that is the strongly connected
-component problem, and it lives in `components.md`.
+component problem, and it lives in
+[components.md#strongly-connected-components-from-the-closure](components.md#strongly-connected-components-from-the-closure).
 
 Standard SQL brings Postgres 14's `CYCLE id SET is_cycle USING path` clause, or
 a hand-rolled path array with a containment guard before that, both of which
@@ -500,7 +501,8 @@ column being followed visible in the header.
 - Leaving the direction unstated. "Everything connected to this account" and
   "everything downstream of this model" are two queries, and on a directed
   graph they give different answers. Undirected reachability needs the edge
-  relation symmetrized first, which is `components.md`.
+  relation symmetrized first, which is
+  [components.md#connected-components-by-min-label-propagation](components.md#connected-components-by-min-label-propagation).
 - Reading "all the paths within n hops" literally. The node set with its
   minimum hop count is almost always the question; path enumeration is
   exponential and, on a graph with a cycle inside the bound, exponential in the
