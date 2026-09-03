@@ -1450,17 +1450,17 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     <tr>
       <td><code>mz_occ_read_then_write_retry_count_bucket</code></td>
       <td>Number of OCC retries per read-then-write operation.</td>
-      <td><code>le</code></td>
+      <td><code>caller</code>, <code>le</code></td>
     </tr>
     <tr>
       <td><code>mz_occ_read_then_write_retry_count_count</code></td>
       <td>Number of OCC retries per read-then-write operation.</td>
-      <td></td>
+      <td><code>caller</code></td>
     </tr>
     <tr>
       <td><code>mz_occ_read_then_write_retry_count_sum</code></td>
       <td>Number of OCC retries per read-then-write operation.</td>
-      <td></td>
+      <td><code>caller</code></td>
     </tr>
     <tr>
       <td><code>mz_optimization_notices</code></td>
