@@ -366,9 +366,8 @@ Where the answer needs the route and not only the cost, the argmin form in
 predecessor column alongside the winning value. That is the closer match to
 `USING KEY` with payload columns.
 
-### Enumerate, then aggregate
-
-Most recursive SQL in the wild has this shape because standard SQL leaves no
+**Enumerate, then aggregate.** Most recursive SQL in the wild has this shape
+because standard SQL leaves no
 alternative: walk everything, then reduce in the outer query. The canonical
 connected-components recipe is the "parallel walks" shape, written up by Max
 Halford in *Graph components with DuckDB* and credited there to a tutorial by

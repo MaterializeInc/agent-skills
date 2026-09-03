@@ -232,11 +232,17 @@ installs successfully. It simply never hydrates: `mz_internal.mz_hydration_statu
 reports `hydrated = f` for it indefinitely, and its dataflow keeps iterating on
 the cluster until the view is dropped.
 
-Put `ERROR AT RECURSION LIMIT` on every maintained recursive view, with the
-limit well above the expected graph diameter. It converts a silent
-never-hydrating dataflow into a loud failure. Use `RETURN AT RECURSION LIMIT`
-for debugging, and for fixed-iteration numeric methods where the iteration
-count is the answer's definition.
+Guard every maintained recursive view, and take the guard from the shape of the
+binding. A `UNION`-topped binding takes `ERROR AT RECURSION LIMIT`, with the
+limit well above the expected graph diameter: every change such a binding can
+make is a row change, so the limit fires and turns a silent never-hydrating
+dataflow into a loud failure. A reduce- or TopK-topped binding takes `RETURN AT
+RECURSION LIMIT`, with the limit above the expected iteration count, plus a
+check on the returned state that rejects it when it looks like an unfinished
+iteration; `ERROR AT` on that shape goes quiet exactly when the values are the
+thing still moving. `RETURN AT RECURSION LIMIT` is also the debugging tool, and
+the right option for fixed-iteration numeric methods where the iteration count
+is the answer's definition.
 
 ## What the optimizer will not do
 
