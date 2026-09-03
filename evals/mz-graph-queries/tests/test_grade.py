@@ -83,5 +83,42 @@ class TimeoutFallback(unittest.TestCase):
         self.assertIn("skipped: initial read timed out", sheet)
 
 
+class ExistsFromCatalog(unittest.TestCase):
+    """A view that is in the catalog but answers the wrong column list is a
+    wrong answer, not a missing view. The grader used to read "column ... does
+    not exist" as "view missing", which undercounts `exists`, the denominator
+    of the guardrail component in Axis 3."""
+
+    def grade_one(self, task, error_line, definition):
+        f = fx.eval_fixture(1, 20)
+
+        def fake_run(sql, **kw):
+            if "mz_catalog.mz_views" in sql:
+                return mzclient.Result(rc=0, rows=[[definition]] if definition else [])
+            if f" FROM s.{task.view}" in sql:
+                return mzclient.Result(rc=1, rows=[], stderr=error_line)
+            return mzclient.Result(rc=0, rows=[])
+
+        with mock.patch.object(grade.mzclient, "run", fake_run), \
+                mock.patch.object(grade.T, "TASKS", [task]), \
+                tempfile.TemporaryDirectory() as d:
+            return grade.grade("s", f, "c", Path(d))["tasks"][task.id]
+
+    def test_wrong_column_name_is_not_a_missing_view(self):
+        t = next(x for x in tasks.TASKS if x.id == "t08")
+        rec = self.grade_one(t, 'ERROR:  column "account_id" does not exist',
+                             "CREATE VIEW t08_scc AS WITH MUTUALLY RECURSIVE "
+                             "(ERROR AT RECURSION LIMIT 50) r(a text) AS (SELECT id FROM accounts) SELECT a FROM r")
+        self.assertTrue(rec["exists"])
+        self.assertFalse(rec["initial_ok"])
+        self.assertTrue(rec["guardrail"])
+
+    def test_view_absent_from_the_catalog_is_missing(self):
+        t = next(x for x in tasks.TASKS if x.id == "t08")
+        rec = self.grade_one(t, "ERROR:  unknown catalog item 's.t08_scc'", None)
+        self.assertFalse(rec["exists"])
+        self.assertIsNone(rec["guardrail"])
+
+
 if __name__ == "__main__":
     unittest.main()

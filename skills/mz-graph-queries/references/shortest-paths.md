@@ -249,14 +249,19 @@ WITH MUTUALLY RECURSIVE
         FROM route r JOIN best b ON b.city = r.city
         WHERE b.prev IS NOT NULL
     )
-SELECT city, step FROM route ORDER BY step DESC;
+SELECT r.step, r.city, b.km
+FROM route r JOIN best b ON b.city = r.city
+ORDER BY r.step DESC;
 ```
 
-On the fixture this returns A at step 4, B at 3, C at 2, D at 1 and E at 0:
-read top to bottom, the route A, B, C, D, E, the 14 km way to E. `best` itself
-holds (A, 0, NULL), (B, 4, A), (C, 7, B), (D, 9, C) and (E, 14, D), which is
-the same distance column the previous section computed plus the predecessor
-that achieved it.
+On the fixture this returns (4, A, 0), (3, B, 4), (2, C, 7), (1, D, 9) and
+(0, E, 14): read top to bottom, the route A, B, C, D, E, with the running cost
+at each stop and the total, 14 km, on the last row. Joining `route` back to
+`best` in the body is what puts the distance and the route in one answer, and
+"the shortest path" usually wants both; `SELECT city, step FROM route` alone
+gives the sequence without the cost. `best` itself holds (A, 0, NULL),
+(B, 4, A), (C, 7, B), (D, 9, C) and (E, 14, D), which is the same distance
+column the previous section computed plus the predecessor that achieved it.
 
 `DISTINCT ON (city) ... ORDER BY city, km, prev` is an argmin. It keeps the
 cheapest row per city and carries that row's other columns along, which is the

@@ -47,14 +47,13 @@ def view_definition(schema: str, view: str) -> str | None:
 
 
 def query_task(schema: str, cluster: str, t: T.Task) -> dict:
+    """Read the answer view with the required column list. `error` is None when
+    the read succeeded or timed out. Whether the view exists is decided from the
+    catalog, not from this error text: "column ... does not exist" is a view
+    that exists and answers the wrong shape."""
     cols = ", ".join(c for c, _ in t.columns)
     r = mzclient.run(f"SELECT {cols} FROM {schema}.{t.view};", cluster=cluster, timeout_s=TIMEOUT_S)
-    out = {"exists": True, "timed_out": r.timed_out, "error": None, "rows": r.rows}
-    if not r.ok and not r.timed_out:
-        out["error"] = r.error_line
-        if "unknown catalog item" in r.error_line or "does not exist" in r.error_line:
-            out["exists"] = False
-    return out
+    return {"timed_out": r.timed_out, "error": None if r.ok or r.timed_out else r.error_line, "rows": r.rows}
 
 
 def count_task(schema: str, cluster: str, t: T.Task) -> int | None:
@@ -72,10 +71,15 @@ def grade(schema: str, f: fx.Fixture, cluster: str, out_dir: Path) -> dict:
     results: dict[str, dict] = {}
     for t in T.TASKS:
         q = query_task(schema, cluster, t)
-        rec = {"task": t.id, "family": t.family, "view": t.view, "exists": q["exists"], "timed_out": q["timed_out"],
+        d = view_definition(schema, t.view)
+        # The view exists if the catalog holds it, or if the read got far
+        # enough to answer or to time out. An error is only evidence of a
+        # missing view when the catalog has nothing under that name.
+        exists = d is not None or q["error"] is None
+        rec = {"task": t.id, "family": t.family, "view": t.view, "exists": exists, "timed_out": q["timed_out"],
                "error": q["error"], "initial_ok": False, "missing_rows": [], "extra_rows": [],
                "partial": None, "post_mutation_ok": None, "guardrail": None}
-        if q["exists"] and not q["timed_out"] and q["error"] is None:
+        if not q["timed_out"] and q["error"] is None:
             missing, extra = diff(t.reference(f), q["rows"])
             rec["initial_ok"] = not missing and not extra
             rec["missing_rows"], rec["extra_rows"] = [repr(x) for x in missing[:20]], [repr(x) for x in extra[:20]]
@@ -84,7 +88,6 @@ def grade(schema: str, f: fx.Fixture, cluster: str, out_dir: Path) -> dict:
             if n is not None:
                 rec["initial_ok"] = n == len(t.reference(f))
                 rec["partial"] = "count-only"
-        d = view_definition(schema, t.view)
         rec["guardrail"] = None if d is None else ("RECURSION LIMIT" in d.upper())
         results[t.id] = rec
     cur = f
