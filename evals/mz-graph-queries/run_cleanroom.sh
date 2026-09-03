@@ -7,6 +7,7 @@
 # relies on are documented in README.md so other harnesses can port them.
 set -euo pipefail
 cond=$1; seed=${2:-1}
+case "$cond" in sb|ss|ob|os|hb|hs) ;; *) echo "unknown cond $cond (want sb|ss|ob|os|hb|hs)"; exit 1;; esac
 run="gq_${cond}_s${seed}"
 case "$cond" in
   s*) model=claude-sonnet-5;;
@@ -40,6 +41,8 @@ $PSQL -c "DROP SCHEMA IF EXISTS $run CASCADE" -c "DROP CLUSTER IF EXISTS $run CA
 $PSQL -c "CREATE CLUSTER $run (SIZE = '$EVAL_CLUSTER_SIZE')"
 (cd "$here" && python3 build_fixture.py --eval --seed "$seed" --scale "$EVAL_SCALE" --schema "$run") | $PSQL -f -
 n=$(psql -X -At $EVAL_PSQL_ARGS -c "SELECT count(*) FROM $run.employees")
+case "$n" in ''|*[!0-9]*) echo "BUILD VERIFY FAILED for $run (employees='$n')" >&2; exit 1;; esac
+[ "$n" -gt 0 ] || { echo "BUILD VERIFY FAILED for $run (employees=0)" >&2; exit 1; }
 echo "$run built (employees=$n)"
 
 # ---- 2. prompt + skill -----------------------------------------------------
@@ -70,16 +73,40 @@ sed -e "s/__RUN__/$run/" -e "s|__PSQL_ARGS__|$EVAL_PSQL_ARGS|" "$here/bench-psql
 chmod 555 "$bench/bench-psql"
 
 # ---- 3. the round ----------------------------------------------------------
-rm -f "$bench/scratch/report.md"   # a rerun of this cell must not copy out the old report
+rm -f "$bench/scratch/report.md" "$pdir/round.killed"   # a rerun must not carry the last run's report or kill marker
 allowed=( "Bash(./bench-psql:*)" "Bash($bench/bench-psql:*)" "Bash(sleep :*)" "Bash(sleep:*)"
           "Read(//$bench/scratch/**)" "Edit(//$bench/scratch/**)" "Write(//$bench/scratch/**)" "Read(//$bench/skill/**)" )
-# macOS ships no GNU timeout; without it the round runs uncapped.
-if command -v timeout >/dev/null 2>&1; then TO="timeout $EVAL_TIMEOUT"; else TO=""
-  echo "warning: no timeout binary found; the round runs without a wall-clock cap" >&2; fi
-(cd "$bench" && CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 $TO \
-  claude -p --model "$model" --setting-sources project \
+# The round is bounded by a plain-bash watchdog, not GNU timeout, which macOS
+# does not ship. claude is backgrounded directly (not inside a subshell) so the
+# watchdog's signal reaches the process itself; the watchdog polls every five
+# seconds, exits on its own when the round finishes, and holds no descriptor of
+# this script's stdout.
+cd "$bench"
+CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 claude -p --model "$model" --setting-sources project \
   --allowedTools "${allowed[@]}" --disallowedTools "Skill" "WebSearch" "WebFetch" \
-  < "$pdir/prompt.txt" | tee "$pdir/transcript.txt") || echo "agent exited $?"
+  < "$pdir/prompt.txt" > "$pdir/transcript.txt" 2>&1 &
+apid=$!
+( n=0
+  while [ "$n" -lt "$EVAL_TIMEOUT" ]; do
+    sleep 5
+    kill -0 "$apid" 2>/dev/null || exit 0
+    n=$((n + 5))
+  done
+  : > "$pdir/round.killed"
+  kill -TERM "$apid" 2>/dev/null
+  sleep 10
+  kill -KILL "$apid" 2>/dev/null ) >/dev/null 2>&1 </dev/null &
+wpid=$!
+arc=0; { wait "$apid" || arc=$?; } 2>/dev/null
+kill -TERM "$wpid" 2>/dev/null || true
+{ wait "$wpid" || true; } 2>/dev/null
+cd "$here"
+if [ -e "$pdir/round.killed" ]; then
+  echo "round killed by the watchdog after ${EVAL_TIMEOUT}s; grading what the agent left behind"
+elif [ "$arc" -ne 0 ]; then
+  echo "agent exited $arc"
+fi
+cat "$pdir/transcript.txt"
 cp "$bench/scratch/report.md" "$pdir/report.md" 2>/dev/null || echo "no report.md written"
 
 # ---- 4. grade --------------------------------------------------------------

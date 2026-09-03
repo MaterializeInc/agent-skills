@@ -6,6 +6,12 @@
 #   SQLEOF
 set -uo pipefail
 SCHEMA=__RUN__
+# Wall-clock cap per invocation, in seconds. Overridable for harness tests
+# only, and never upward: a run always gets at most the 180 s the prompt
+# promises.
+CAP=${BENCH_STATEMENT_CAP:-180}
+case "$CAP" in ''|*[!0-9]*) CAP=180;; esac
+[ "$CAP" -ge 1 ] && [ "$CAP" -le 180 ] || CAP=180
 for a in "$@"; do case "$a" in -*) echo "bench-psql: flags are not supported; pass SQL text only" >&2; exit 2;; esac; done
 if [ $# -gt 0 ]; then SQL="$*"; else SQL=$(cat); fi
 if printf '%s\n' "$SQL" | grep -qE '^[[:space:]]*\\'; then
@@ -18,14 +24,49 @@ if printf '%s\n' "$SQL" | grep -qE '^[[:space:]]*[^[:space:]\\].*\\[a-zA-Z!?]'; 
   echo "bench-psql: a backslash command must start its line, and backslashes inside SQL text are not supported" >&2
   exit 2
 fi
+# The statement cap is the harness's, not the session's. Normalize
+# non-breaking spaces, blank out string literals, strip line and block
+# comments, and refuse any statement that touches statement_timeout.
+if printf '%s\n' "$SQL" \
+    | sed -e 's/\xc2\xa0/ /g' -e "s/'[^']*'/''/g" -e 's/--.*$//' \
+    | tr '\n' ' ' \
+    | sed -e 's#/\*[^*]*\*\+\([^/*][^*]*\*\+\)*/# #g' \
+    | grep -qi 'statement_timeout'; then
+  echo "bench-psql: statement_timeout is fixed by the harness and cannot be changed" >&2
+  exit 2
+fi
 f=$(mktemp "${TMPDIR:-/tmp}/benchsql.XXXXXX")
-trap 'rm -f "$f"' EXIT
+trap 'rm -f "$f" "$f.killed"' EXIT
 printf '%s\n' "$SQL" > "$f"
-# Statements are capped at 180 s. The server-side statement_timeout is the
-# portable half of that cap (macOS has no GNU timeout); the timeout binary,
-# when present, also caps a connection that never answers.
-TO=""
-command -v timeout >/dev/null 2>&1 && TO="timeout 190"
-# No exec: the EXIT trap must run so the temp file is removed.
-$TO psql -X -q -P pager=off -v ON_ERROR_STOP=0 __PSQL_ARGS__ -c "SET statement_timeout = '180s'" -c "SET schema = $SCHEMA" -c "SET cluster = $SCHEMA" -f "$f"
-exit $?
+# Statements are capped at CAP seconds by a client-side watchdog. The
+# server-side statement_timeout is a second layer only: Materialize does not
+# cancel a diverging WITH MUTUALLY RECURSIVE peek on statement_timeout, which
+# is exactly the runaway this bench provokes. GNU timeout is not assumed
+# (macOS does not ship it), so the watchdog is plain bash: it polls once a
+# second, exits on its own as soon as psql finishes, and holds no descriptor
+# of the caller's stdout.
+# No exec: the EXIT trap must run so the temp files are removed.
+psql -X -q -P pager=off -v ON_ERROR_STOP=0 __PSQL_ARGS__ \
+  -c "SET statement_timeout = '${CAP}s'" -c "SET schema = $SCHEMA" -c "SET cluster = $SCHEMA" -f "$f" &
+pid=$!
+( n=0
+  while [ "$n" -lt "$CAP" ]; do
+    sleep 1
+    kill -0 "$pid" 2>/dev/null || exit 0
+    n=$((n + 1))
+  done
+  : > "$f.killed"
+  kill -TERM "$pid" 2>/dev/null
+  sleep 5
+  kill -KILL "$pid" 2>/dev/null ) >/dev/null 2>&1 </dev/null &
+wd=$!
+# The stderr redirect suppresses the shell's own "Terminated" job notice;
+# psql's stderr was bound at launch and is unaffected.
+rc=0; { wait "$pid" || rc=$?; } 2>/dev/null
+kill -TERM "$wd" 2>/dev/null
+wait "$wd" 2>/dev/null
+if [ -e "$f.killed" ]; then
+  echo "bench-psql: statement killed after ${CAP} s" >&2
+  exit 124
+fi
+exit $rc

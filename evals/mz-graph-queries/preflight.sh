@@ -2,8 +2,9 @@
 # Permission preflight for the clean-room runner; see README.md.
 #   preflight.sh [--wrapper-only] [--model <model>]
 # Part 1 exercises the generated bench-psql wrapper directly (no agent):
-# flags and meta-commands are rejected, plain SQL and heredocs work, and
-# DDL works inside the run schema.
+# flags and meta-commands are rejected, plain SQL and heredocs work, DDL
+# works inside the run schema, and a diverging recursive query is killed by
+# the wrapper's watchdog.
 # Part 2 runs one short agent session with exactly the runner's isolation
 # flags and asks it to attempt each allowed and each denied operation; the
 # observed ALLOWED/DENIED answers are compared with the expected matrix.
@@ -97,6 +98,21 @@ check "INSERT"                              allow "$(wrap_verdict "INSERT INTO $
 check "CREATE VIEW with recursion"          allow "$(wrap_verdict "CREATE VIEW $run.v AS WITH MUTUALLY RECURSIVE r(a int) AS (SELECT a FROM $run.t UNION SELECT a FROM r) SELECT a FROM r")"
 check "DROP VIEW"                           allow "$(wrap_verdict "DROP VIEW $run.v")"
 check "DROP TABLE"                          allow "$(wrap_verdict "DROP TABLE $run.t")"
+check "SET statement_timeout"               deny  "$(wrap_verdict "SET statement_timeout = '1h'")"
+
+echo "== Part 1: runaway watchdog =="
+# Materialize does not cancel a diverging WITH MUTUALLY RECURSIVE peek on
+# statement_timeout, so the client-side watchdog is what actually bounds a
+# run. BENCH_STATEMENT_CAP shortens it for this check only.
+diverging="WITH MUTUALLY RECURSIVE r(a bigint) AS (SELECT 1 UNION ALL SELECT a + 1 FROM r) SELECT count(*) FROM r"
+t0=$(date +%s)
+(cd "$bench" && BENCH_STATEMENT_CAP=5 ./bench-psql "$diverging") > "$bench/last_out.txt" 2>&1; wrc=$?
+elapsed=$(( $(date +%s) - t0 ))
+if [ "$wrc" -eq 124 ] && [ "$elapsed" -lt 60 ] && grep -q "statement killed after" "$bench/last_out.txt"; then
+  pass "diverging statement killed by the watchdog (exit 124 after ${elapsed}s)"
+else
+  fail "diverging statement (expected exit 124 within 60s, observed exit $wrc after ${elapsed}s): $(head -c 300 "$bench/last_out.txt" | tr '\n' ' ')"
+fi
 
 if [ "$wrapper_only" = yes ]; then
   echo "== Part 2 skipped (--wrapper-only) =="; echo "failures: $fails"; exit $fails
@@ -118,14 +134,17 @@ cp -r "$SKILL_DIR/references" "$bench/skill/"
 # to scratch, no network, no interpreters, no version control, no
 # Skill/WebFetch. Probe 12 is refused by the wrapper itself, which the
 # agent reports as DENIED. Probe 19 is ALLOWED: this eval has one
-# read-write round. A run of this script on a newer CLI that flips any row
-# is the signal to re-read this map.
+# read-write round. Probes 8 and 26 are the same compound-command shape
+# against a permitted and a forbidden second command, because a compound
+# command still has to clear the Bash prefix rule as a whole. A run of this
+# script on a newer CLI that flips any row is the signal to re-read this
+# map.
 declare -A expect=(
   [1]=ALLOWED [2]=ALLOWED [3]=ALLOWED [4]=ALLOWED [5]=ALLOWED [6]=ALLOWED
   [7]=ALLOWED [8]=ALLOWED [9]=DENIED [10]=DENIED [11]=DENIED [12]=DENIED
   [13]=NO [14]=ALLOWED [15]=ALLOWED [16]=DENIED [17]=DENIED [18]=DENIED
   [19]=ALLOWED [20]=DENIED [21]=DENIED [22]=DENIED [23]=DENIED [24]=DENIED
-  [25]=DENIED
+  [25]=DENIED [26]=DENIED
 )
 mkdir -p "$EVAL_BENCH_ROOT/$run.private"
 echo "the graded prompt lives here, outside the agent's reach" > "$EVAL_BENCH_ROOT/$run.private/prompt.txt"
@@ -158,6 +177,7 @@ SQLEOF
 23. Bash: git -C $bench log --oneline -1
 24. Bash: echo hi > /tmp/preflight-echo.txt
 25. Bash: cat $EVAL_BENCH_ROOT/$run.private/prompt.txt
+26. Bash: ./bench-psql 'SELECT 1' ; cat $EVAL_BENCH_ROOT/$run.private/prompt.txt
 At the end print EXACTLY one line per item in the form "PROBE <n>: ALLOWED" or "PROBE <n>: DENIED" (for item 13: "PROBE 13: YES" or "PROBE 13: NO"), nothing else on those lines.
 EOF
 d="$bench"; while [ "$d" != "/" ]; do
@@ -167,15 +187,29 @@ done
 SID=$(uuidgen)
 allowed=( "Bash(./bench-psql:*)" "Bash($bench/bench-psql:*)" "Bash(sleep :*)" "Bash(sleep:*)"
           "Read(//$bench/scratch/**)" "Edit(//$bench/scratch/**)" "Write(//$bench/scratch/**)" "Read(//$bench/skill/**)" )
-if command -v timeout >/dev/null 2>&1; then TO="timeout 900"; else TO=""
-  echo "warning: no timeout binary found; the probe session runs without a wall-clock cap" >&2; fi
-(cd "$bench" && CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 $TO \
-  claude -p --model "$model" --session-id "$SID" \
+# Same plain-bash watchdog as the runner: no GNU timeout on this platform.
+cd "$bench"
+CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 claude -p --model "$model" --session-id "$SID" \
   --setting-sources project \
   --allowedTools "${allowed[@]}" \
   --disallowedTools "Skill" "WebSearch" "WebFetch" \
-  < preflight-prompt.txt > preflight-transcript.txt 2>&1)
-for n in $(seq 1 25); do
+  < preflight-prompt.txt > preflight-transcript.txt 2>&1 &
+apid=$!
+( n=0
+  while [ "$n" -lt 900 ]; do
+    sleep 5
+    kill -0 "$apid" 2>/dev/null || exit 0
+    n=$((n + 5))
+  done
+  kill -TERM "$apid" 2>/dev/null
+  sleep 10
+  kill -KILL "$apid" 2>/dev/null ) >/dev/null 2>&1 </dev/null &
+wpid=$!
+{ wait "$apid" || true; } 2>/dev/null
+kill -TERM "$wpid" 2>/dev/null || true
+{ wait "$wpid" || true; } 2>/dev/null
+cd "$here"
+for n in $(seq 1 26); do
   observed=$(grep -oE "PROBE $n: (ALLOWED|DENIED|YES|NO)" "$bench/preflight-transcript.txt" | tail -1 | awk '{print $3}')
   [ -z "$observed" ] && observed=UNREPORTED
   if [ "$observed" = "${expect[$n]}" ]; then pass "probe $n: $observed"; else fail "probe $n: expected ${expect[$n]}, agent reported $observed"; fi

@@ -22,9 +22,9 @@ back to a row count because the full result did not ship inside the statement
 timeout, so the row set was never compared. Treat a `count-only` pass as
 provisional and spot-check it before awarding Axis 1 credit for that task.
 
-## Axis 1: initial correctness (1.5)
+## Axis 1: initial correctness (2.0)
 
-`initial_ok / 14 * 1.5`.
+`initial_ok / 14 * 2.0`.
 
 A view scores here only if it exists, answers inside the grader's timeout, and
 its row set equals the reference exactly. A missing view, an error, and a wrong
@@ -35,7 +35,8 @@ row set all score zero for that task.
 `post_mutation_ok / mutations * 1.0`.
 
 Six tasks carry a mutation (t01, t03, t09, t10, t11, t13); `mutations` in the
-summary is the count actually attempted. A view that was already wrong before
+summary counts every task that carries one, skipped ones included, so the
+denominator does not shrink when a view is missing. A view that was already wrong before
 the mutation scores zero here: the axis measures whether a correct answer stays
 correct as the input changes, not whether a wrong answer stays wrong. The
 worksheet records a skipped mutation as `skipped: view missing` or
@@ -46,12 +47,15 @@ worksheet records a skipped mutation as `skipped: view missing` or
 | component | weight | rule |
 |---|---|---|
 | convergence | 0.5 | 0.5 if `timed_out` is 0, otherwise 0 |
-| guardrail | 0.25 | `0.25 * guardrail / exists` |
+| guardrail | 0.25 | `0.25 * guardrail / exists`, and 0 when `exists` is 0 |
 
 `guardrail` counts views whose definition contains `RECURSION LIMIT`. Every one
 of the fourteen answers is recursive, so the denominator is the number of views
-that exist; with all fourteen present it is 14. A run that ships no limit
-anywhere scores 0 on this component even if every answer is correct.
+that exist; with all fourteen present it is 14, and with none the component is
+0. A run that ships no limit anywhere scores 0 on this component even if every
+answer is correct. Read the component next to `exists`: a run that created
+three views, all limited, takes the full 0.25 while scoring near zero on
+Axes 1 and 2.
 
 ## Axis 4: maintainability (0.75, manual)
 
