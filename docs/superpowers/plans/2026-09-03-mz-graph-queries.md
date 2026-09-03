@@ -1051,8 +1051,9 @@ small fixture and compare with recorded expected output.
 
   verify_skill_sql.py [--record] [--only NAME] [--keep]
 
-Conventions in the markdown: only ```sql fences run (other dialects use
-```postgresql etc.). An HTML comment line <!-- verify: error --> above a fence
+Conventions in the markdown: only ```sql fences run; other dialects use
+fences such as ```postgresql and are skipped. An HTML comment line
+<!-- verify: error --> above a fence
 means the block must fail and its ERROR line is compared; <!-- verify: skip -->
 means the block is not run. Expected files: expected/<name>/<NN>.txt.
 """
