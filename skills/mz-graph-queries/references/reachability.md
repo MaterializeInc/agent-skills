@@ -173,11 +173,11 @@ entirely still converges on this cyclic fixture: it returns the full shortest
 hop count, (a2, 1), (a3, 2), (a1, 3), (a4, 3), (a5, 4), because a value that
 only descends toward a floor cannot cycle forever.
 
-This binding's top level is an aggregate, so `ERROR AT RECURSION LIMIT` will
-not raise on it on v26.38.1
-([semantics.md#recursion-limits](semantics.md#recursion-limits)). It does not
-need to here, because the hop guard bounds the loop by construction. Do not
-add a limit and call the query guarded.
+Do not add `ERROR AT RECURSION LIMIT` to this binding and call it guarded. The
+limit tracks changes to the row set and not to values, so a binding topped by a
+reduce goes silent once its keys have settled and only its numbers keep moving
+([semantics.md#recursion-limits](semantics.md#recursion-limits)). What makes
+this query safe is the hop guard, which bounds the loop by construction.
 
 The phrase to push back on is "all the paths within three hops". Nearly always
 the asker wants this set, the nodes and how far away they are. Enumerating
@@ -357,11 +357,14 @@ that appears in no dependency row at all is still a task, and seeding from the
 node table puts it at level 0 instead of dropping it.
 
 On cyclic data this recursion has no fixpoint, and the limit does not save it.
-The binding is topped by an aggregate, so on v26.38.1 `ERROR AT RECURSION
-LIMIT` does not raise
+`level` is topped by a reduce, and on v26.38.1 the limit notices row changes
+and not value changes, so once every task has a row it stops raising while the
+levels climb forever
 ([rollups.md#the-same-with-the-aggregate-inside](rollups.md#the-same-with-the-aggregate-inside)).
-This block runs the same shape over inline data where `t0` feeds `t1`, and
-`t1`, `t2`, `t3` form a cycle among themselves:
+That is exactly the shape of a cyclic level query: the task set is small and
+settles immediately, and the counters are the part that never does. This block
+runs the same shape over inline data where `t0` feeds `t1`, and `t1`, `t2`,
+`t3` form a cycle among themselves:
 
 ```sql
 WITH MUTUALLY RECURSIVE (ERROR AT RECURSION LIMIT 20)
@@ -487,11 +490,13 @@ column being followed visible in the header.
   ([hierarchies.md#cycles-in-a-tree](hierarchies.md#cycles-in-a-tree)). Wrap it
   in `min` inside the binding, as the `hops` block does.
 - Trusting `ERROR AT RECURSION LIMIT` on `hops` or `level`. Both are topped by
-  an aggregate, and on v26.38.1 the limit returns the iteration-n state instead
-  of raising. A materialized `level` over cyclic data then hydrates like any
-  other view and serves those counters as levels, so no signal flags it.
-  `hops` is bounded by its own guard; `level` needs the `on_cycle` audit
-  standing next to it.
+  a reduce, and on v26.38.1 the limit notices changes to the row set and not to
+  values, so it stops raising once every key has a row and returns the
+  iteration-n state instead. A cyclic `level` settles its task set in the first
+  few rounds and climbs forever after that, which is precisely the case the
+  limit cannot see: materialized, it hydrates like any other view and serves
+  those counters as levels, so no signal flags it. `hops` is bounded by its own
+  guard; `level` needs the `on_cycle` audit standing next to it.
 - Leaving the direction unstated. "Everything connected to this account" and
   "everything downstream of this model" are two queries, and on a directed
   graph they give different answers. Undirected reachability needs the edge
