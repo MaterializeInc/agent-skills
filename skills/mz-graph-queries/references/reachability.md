@@ -387,13 +387,14 @@ SELECT task, level FROM level ORDER BY task;
 It returns `t0` at 0, `t2` at 17, `t3` at 18 and `t1` at 19, with no error.
 Those are not levels; they are the running counters at iteration 20, and at
 `ERROR AT RECURSION LIMIT 30` they come back as 27, 28 and 29 instead. A
-materialized view of this shape installs, and it serves. A read of one built
-over this exact block returns those same four rows in well under a second, and
-`mz_internal.mz_hydration_statuses` reports `hydrated = f` for it the whole
-time. The limit is what makes that possible: it stops the loop, so the view has
-a state to hand out, and iteration-20 counters are indistinguishable from
-levels to whatever reads them. Only the unlimited form behaves the way an
-unconverged view is supposed to, holding a dataflow and returning nothing
+materialized view of this shape installs, hydrates and serves, all inside a
+second. A read of one built over this exact block returns those same four rows,
+and `mz_internal.mz_hydration_statuses` reports `hydrated = t` for it. That is
+the sharper warning. The limit stops the loop, so the view reaches a state and
+every health signal says it is healthy, while the numbers it serves are
+iteration-20 counters that nothing distinguishes from levels. Only the
+unlimited form behaves the way an unconverged view is supposed to, holding a
+dataflow and never returning
 ([semantics.md#recursion-limits](semantics.md#recursion-limits)).
 
 Guard it with the `on_cycle` audit above, which converges on exactly the data
@@ -487,8 +488,10 @@ column being followed visible in the header.
   in `min` inside the binding, as the `hops` block does.
 - Trusting `ERROR AT RECURSION LIMIT` on `hops` or `level`. Both are topped by
   an aggregate, and on v26.38.1 the limit returns the iteration-n state instead
-  of raising. `hops` is bounded by its own guard; `level` needs the `on_cycle`
-  audit standing next to it.
+  of raising. A materialized `level` over cyclic data then hydrates like any
+  other view and serves those counters as levels, so no signal flags it.
+  `hops` is bounded by its own guard; `level` needs the `on_cycle` audit
+  standing next to it.
 - Leaving the direction unstated. "Everything connected to this account" and
   "everything downstream of this model" are two queries, and on a directed
   graph they give different answers. Undirected reachability needs the edge
