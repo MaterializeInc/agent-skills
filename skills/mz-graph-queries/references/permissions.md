@@ -148,13 +148,16 @@ SELECT group_id, doc_id, level FROM effective;
 ```
 
 `ERROR:  Evaluation error: Recursive query exceeded the recursion limit 20.`
-The distinct triples settled after three iterations, but every lap through
-d3 to d4 to d3 adds another copy of each, so the multiplicities climb forever.
-The limit is what makes that visible; without one the statement runs until it
-is cancelled
+The distinct triples settled after three iterations. The limit counts changes
+to the multiset, not to the distinct set, and every lap through d3 to d4 to d3
+adds another copy of each triple, so after iteration 3 it is the multiplicities
+that keep changing and they never stop
 ([semantics.md#multisets-and-convergence](semantics.md#multisets-and-convergence)).
-This binding is topped by a union rather than a reduce, so every change it
-makes is a row change and `ERROR AT RECURSION LIMIT` always fires
+The limit is what makes that visible; without one the statement runs until it
+is cancelled. This binding is topped by a union rather than a reduce, so every
+change it makes is a change to the multiset and `ERROR AT RECURSION LIMIT`
+always fires; a binding topped by a reduce can go quiet once only its values
+are still moving
 ([semantics.md#recursion-limits](semantics.md#recursion-limits)).
 
 Standard SQL brings the same two outcomes: `WITH RECURSIVE ... UNION` also
@@ -219,7 +222,11 @@ user_access_by_user_doc)` with `Lookup values: ("u1", "doc1")`: it is answered
 from the index arrangement rather than by rerunning the recursion, and the
 arrangement is current with the inputs. Index the columns your checks filter
 on; a filter on a column the index does not cover is a scan of the whole
-expansion.
+expansion. The lookup returns one row per level the user holds on that
+document, which is one row on a group tree but can be several once a group has
+two parents that disagree
+([Multiple parents and cycles](#multiple-parents-and-cycles)), so a service
+that reads a single row needs the conflict resolved first.
 
 This binding converges exactly as the first one does; wrapping it in a view and
 joining `memberships` in the body changes nothing about the fixpoint. Note that
@@ -348,8 +355,8 @@ index it on `(object, relation, user_id)`, and `EXISTS` over that index answers
 "may Ann view doc:d1" as a point lookup instead of an expansion.
 
 Standard SQL cannot write this one. The recursive term references `holds`
-three times across three branches, and standard `WITH RECURSIVE` allows exactly
-one reference to the recursive relation
+twice, in two of its three branches, and standard `WITH RECURSIVE` allows
+exactly one reference to the recursive relation
 ([semantics.md#what-standard-sql-forbids-that-wmr-allows](semantics.md#what-standard-sql-forbids-that-wmr-allows)).
 A Postgres user either chains several recursive CTEs, one per rewrite rule, and
 accepts that a rule feeding back into an earlier one is not expressible, or
@@ -363,6 +370,10 @@ implementations do.
   level. A point check written to expect a single row silently gets two.
   `UNION` deduplicates identical rows, not conflicting ones; pick a winner in
   the body.
+- `UNION ALL` on a group graph that is not a tree. Extra inheritance paths and
+  laps around a cycle keep adding copies of triples the distinct answer already
+  holds, so the binding never settles
+  ([Multiple parents and cycles](#multiple-parents-and-cycles)).
 - Not stating the override rule. "Nearest explicit ancestor wins", the rule in
   this file, and "most permissive grant wins" are both common and they give
   different answers for the same data. Neither is a default; write down which
