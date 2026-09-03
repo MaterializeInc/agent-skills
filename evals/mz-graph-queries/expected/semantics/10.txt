@@ -1,0 +1,24 @@
+
+
+
+                  →Stream l0
+                  →Stream l1
+                →Arrange (#0{src})
+                →Arrange (#1{dst})
+              →Differential Join %0:l1[#1{dst}] » %1:l0[#0{src}]
+              →Stream l0
+            →Union
+          →Distinct GroupAggregate
+        →Unarranged Raw Stream
+      cte [recursion_limit=100] l1 =
+      →Read materialize.verify_semantics.transfers
+      →Stream l1
+    cte l0 =
+    →Return
+    →With Mutually Recursive
+  project=(#0, #1)
+  →Return
+  →With
+Explained Query:
+Source materialize.verify_semantics.transfers
+Target cluster: quickstart
