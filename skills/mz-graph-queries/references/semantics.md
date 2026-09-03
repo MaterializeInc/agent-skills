@@ -43,11 +43,11 @@ A binding is a multiset, not a set. The back edge consolidates rows with the
 same values into one row with a count, but it never deduplicates them. "Nothing
 changed" therefore means no row's count changed, not merely that no new
 distinct row appeared. A recursion whose row counts keep growing never
-converges even when the set of distinct rows stopped growing on iteration two.
+converges, however long ago the set of distinct rows stopped growing.
 
 This shape is the common accident. It carries the binding forward with
-`UNION ALL` and reaches a stable distinct set immediately, but the counts
-double forever.
+`UNION ALL`, so every row the binding already holds is re-added each iteration
+and the counts climb without bound, long after the distinct rows have settled.
 
 <!-- verify: error -->
 
@@ -86,9 +86,10 @@ After two iterations every one of the fixture's six base edges already carries
 `copies = 2`, while the pairs derived in that iteration carry 1. Those
 multiplicities are the problem: the `SELECT src, dst FROM reach` branch re-adds
 every row the binding already holds, so the binding's total row count roughly
-doubles each iteration (17, 38, 79, 160, 321 on this fixture). The distinct set
-is complete after four iterations; the counts keep climbing, so the loop never
-stops.
+doubles each iteration (17, 38, 79, 160, 321 for iterations 2 through 6 on this
+fixture). The distinct pairs settle long before that: 11, 16, then the full 17
+at iterations 2, 3 and 4. The counts keep climbing after the distinct set is
+complete, so the loop never stops.
 
 The fix is `UNION`, which deduplicates, and dropping the redundant
 carry-forward branch. Deduplicating the union makes the counts idempotent, so
@@ -163,8 +164,10 @@ WITH MUTUALLY RECURSIVE bar(x int8) AS (SELECT '1') SELECT x FROM bar;
 ```
 
 `ERROR:  WITH MUTUALLY RECURSIVE query "bar" declared types (bigint), but query returns types (text)`.
-Write `SELECT '1'::int8`, and give every `NULL` placeholder a type, as in
-`NULL::text`.
+Write `SELECT '1'::int8`, and cast every `NULL` placeholder to the declared
+type, as in `NULL::int` for an `int` column. A bare `NULL` types as `text` just
+like a string literal, so it passes for a `text` column and fails against every
+other declared type.
 
 Assignment casts do apply, and they can change values. A declared
 `numeric(38,2)` rounds:
@@ -256,7 +259,8 @@ The plan has an outer `With` holding the non-recursive read of `transfers` as
 `cte l0`, then a `With Mutually Recursive` node, then `Return`. That outer
 `With` is the hoist: the base table read happens once, not per iteration.
 Inside the recursive node each recursive binding is one
-`cte [recursion_limit=100] lN =` block, so the limit is visible per binding. A
+`cte [recursion_limit=100] lN =` block; the block's single limit is rendered on
+every binding's cte, so seeing it repeated does not mean it is per binding. A
 `Stream l1` appearing inside `cte l1` is the back edge. The `Distinct
 GroupAggregate` is where `UNION` planned its deduplication, and it is the
 operator that makes the fixpoint reachable. The `Arrange (#1{dst})` over
@@ -293,8 +297,8 @@ A maintained recursive view is cheap to keep up to date when one input change
 touches a bounded number of rows per iteration. Reachability over a graph with
 many redundant paths has that property: removing one edge rarely removes any
 reachable pair, and adding one edge adds few. A rollup over a tree of height h
-has it too: one leaf change touches at most 2h rows, one per level in each
-direction. Recursions without update locality are the ones that make a
+has it too: one leaf change touches at most 2h rows, a retraction and an
+addition at each of h levels. Recursions without update locality are the ones that make a
 maintained view expensive: naive PageRank, k-means, and any all-pairs score
 recompute a large fraction of their state for a single input change, because
 every row's value depends on every other row's. Compute those one-shot with
@@ -318,7 +322,7 @@ rather than a queue-driven expansion.
 | Subquery or `NOT EXISTS` over the recursive relation | Both | One witness path per pair, cycle guards, negation-based fixpoints |
 | `ORDER BY ... LIMIT` and `DISTINCT ON` in the recursive term | Both | Top-k per node kept inside the loop instead of after it |
 | More than one recursive relation | Mutual recursion across the whole binding list | Two-relation problems such as alternating levels or reachable-plus-frontier |
-| Nested recursive blocks | A `WITH MUTUALLY RECURSIVE` inside another | Inner fixpoints per outer iteration |
+| Nested recursive blocks | A `WITH MUTUALLY RECURSIVE` in derived-table position inside another, `FROM (WITH MUTUALLY RECURSIVE ...) AS x` | Inner fixpoints per outer iteration |
 | Omitting the non-recursive base case | Bindings may reference each other with no seed branch | Constraint-propagation shapes with no natural seed |
 
 Postgres and SQL Server users reach for `WITH RECURSIVE ... UNION ALL` with a
@@ -338,8 +342,13 @@ a recursion limit.
 - Assuming a cycle in the data is what makes a recursion diverge. Multiset
   growth diverges on an acyclic graph too, and `UNION` converges on a cyclic
   one.
-- Untyped literals in a binding. `SELECT '1'` is `text`, `SELECT NULL` has no
-  type; both fail against the declared types before anything runs.
+- Untyped literals in a binding. `SELECT '1'` and a bare `SELECT NULL` both
+  type as `text`, and both fail against any non-`text` declared type before
+  anything runs.
+- Nesting a recursive block in a scalar subquery. On current versions a nested
+  `WITH MUTUALLY RECURSIVE` belongs in derived-table position,
+  `FROM (WITH MUTUALLY RECURSIVE ...) AS x`; the scalar-subquery form has been
+  observed to abort `environmentd` on v26.38.1.
 - Filtering in the body instead of in the binding. The predicate is not pushed
   into the recursion, so the binding still computes everything.
 - Reading a binding defined later and expecting this iteration's value. It is
