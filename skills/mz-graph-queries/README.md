@@ -15,7 +15,8 @@ npx skills add MaterializeInc/agent-skills@mz-graph-queries
 
 `SKILL.md` is the decision procedure: classify the ask, write the recursion,
 prove it terminates, guard and verify it, make it maintainable. Behind it are
-nine reference files.
+nine reference files, each ending in a Pitfalls list of the failures that
+section actually produces.
 
 - `references/semantics.md`: how the fixpoint loop evaluates, why multisets
   and not sets decide convergence, the one-iteration delay idiom, mandatory

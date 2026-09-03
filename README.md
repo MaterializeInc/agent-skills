@@ -194,7 +194,7 @@ Writing graph and hierarchy queries in Materialize with `WITH MUTUALLY RECURSIVE
 - Translating `WITH RECURSIVE`, `CONNECT BY`, or DuckDB `USING KEY` to Materialize
 - A recursive view never returns, never hydrates, or serves numbers that are not the answer
 
-**Covers:** problem classification from the user's phrasing to a named pattern, and nine reference files: WMR semantics (multisets, convergence, mandatory types, recursion limits, optimizer blind spots, `EXPLAIN`, update locality), trees and hierarchies, rollups and bill-of-materials explosion, reachability and impact analysis, shortest paths with a witness route, connected and strongly connected components, permission inheritance with overrides, migration from other dialects, and context-graph traversal for agents. Every SQL block is verified against a bundled fixture and ships with the output it produces on it. The eval harness it was developed against lives in `evals/mz-graph-queries/`.
+**Covers:** problem classification from the user's phrasing to a named pattern, and nine reference files: WMR semantics (multisets, convergence, mandatory types, recursion limits, optimizer blind spots, `EXPLAIN`, update locality), trees and hierarchies, rollups and bill-of-materials explosion, reachability and impact analysis, shortest paths with a witness route, connected and strongly connected components, permission inheritance with overrides, migration from other dialects, and context-graph traversal for agents. Every SQL block the verifier runs is checked against recorded output on a bundled fixture (79 of 81 blocks; two are marked skip, and ten record the error they must raise). The eval harness it was developed against lives in `evals/mz-graph-queries/`.
 
 </details>
 

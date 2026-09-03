@@ -34,11 +34,10 @@ it converges, and keep it cheap to maintain.
 
 ## Step 1: Classify the ask
 
-Answer four questions before writing anything. **Structure**: tree, DAG, or
-general graph with cycles. **Direction**: directed, undirected and therefore
-symmetrized first, or mutual. **Output**: membership, a per-node min, max or
-sum, or a witness path. **Lifetime**: a one-shot `SELECT`, or a maintained view
-with an index on it.
+Answer four questions first. **Structure**: tree, DAG, or general graph with
+cycles. **Direction**: directed, undirected and therefore symmetrized first, or
+mutual. **Output**: membership, a per-node min, max or sum, or a witness path.
+**Lifetime**: a one-shot `SELECT`, or a maintained, indexed view.
 
 | The ask sounds like | Family | Pattern | Where |
 |---|---|---|---|
@@ -54,10 +53,10 @@ with an index on it.
 | "build order", "which first" | topological level | `level` | [reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag) |
 | "effective permissions", "inherits access", "can user see" | permissions | `effective`, `user_access`, `holds` | [permissions.md#inheritance-down-a-group-tree-with-overrides](references/permissions.md#inheritance-down-a-group-tree-with-overrides), [#per-user-and-a-point-check](references/permissions.md#per-user-and-a-point-check) |
 | "convert this `WITH RECURSIVE` / `CONNECT BY` / `USING KEY`" | migration | the same pattern, quoted verbatim | [migrating.md#translation-table](references/migrating.md#translation-table) |
+| "never returns", "never hydrates", "stuck hydrating" | convergence | the binding's top, and what it is unioned with | [semantics.md#multisets-and-convergence](references/semantics.md#multisets-and-convergence), [#pitfalls](references/semantics.md#pitfalls) |
 | "agent", "context graph", "knowledge graph traversal" | routes to one of the above | typed `edges` from the registry | [context-graphs.md#agent-questions-to-patterns](references/context-graphs.md#agent-questions-to-patterns) |
 
-Resolve these mis-specifications before writing SQL. They change the answer,
-not just the phrasing.
+Resolve these mis-specifications first; each one changes the answer.
 
 - "All paths" almost always means reachability. Path enumeration is a different
   query whose output grows exponentially
@@ -99,7 +98,7 @@ loop and computed once. The canonical shape:
 <!-- verify: skip -->
 
 ```sql
-WITH MUTUALLY RECURSIVE (ERROR AT RECURSION LIMIT 1000)
+WITH MUTUALLY RECURSIVE (RETURN AT RECURSION LIMIT 1000)
     -- non-recursive prep (symmetrize, filter, type) is hoisted out of the loop
     edges(src text, dst text) AS (
         SELECT src, dst FROM base_edges
@@ -123,9 +122,9 @@ FROM result r JOIN nodes n ON n.id = r.node;
 ```
 
 That skeleton names tables outside the bundled fixture, so it is marked
-`verify: skip`; every SQL block in `references/` is machine-verified. Note that
-`result` is reduce-topped, so its `ERROR AT` bounds runtime rather than proving
-convergence. Step 4 says what to guard it with instead.
+`verify: skip`; every block the verifier runs is checked against recorded
+output. `result` is reduce-topped, so the guard is `RETURN AT` and the body
+owes a check on the returned state, per Step 4.
 
 ## Step 3: Prove termination
 
@@ -145,8 +144,7 @@ Before running it, state which of these holds
   ([semantics.md#binding-order-and-the-delay-idiom](references/semantics.md#binding-order-and-the-delay-idiom)).
 
 "Nothing changed" counts multiplicities, not distinct rows: a `UNION ALL`
-carry-forward branch keeps re-adding rows the binding holds, and the loop never
-stops even though the distinct answer settled iterations ago.
+carry-forward branch re-adds rows the binding holds, so the loop never stops.
 
 ## Step 4: Guard and verify
 
@@ -162,18 +160,22 @@ The guard depends on what tops the binding
   a check on the returned state that rejects a value at or near the limit
   ([reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag)).
 
+When a block mixes shapes, the recursive binding's top governs the choice: the
+limit is per block
+([semantics.md#recursion-limits](references/semantics.md#recursion-limits)),
+and a non-recursive prep binding is hoisted out of the loop anyway
+([semantics.md#what-the-optimizer-will-not-do](references/semantics.md#what-the-optimizer-will-not-do)).
+
 A limited recursion over cyclic data is not a safe fallback. A materialized
 view of that shape installs, hydrates, reports `hydrated = t`, and serves
-iteration-n counters that look exactly like real answers; only the unlimited
-form fails visibly, by never hydrating
-([reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag),
-[semantics.md#recursion-limits](references/semantics.md#recursion-limits)).
+iteration-n counters that look like real answers; only the unlimited form fails
+visibly, by never hydrating
+([reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag)).
 
 Then verify. Step the binding with `RETURN AT RECURSION LIMIT 1`, `2`, `3` and
-watch it grow; one that does not settle on small data will not settle on large
-data. For a maintained view, insert an edge and confirm the answer moves, then
-delete it and confirm it moves back. Three typing errors account for most
-first-run failures
+watch it grow. For a maintained view, insert an edge and confirm the answer
+moves, then delete it and confirm it moves back. The three typing errors that
+surface before the recursion runs
 ([semantics.md#column-types](references/semantics.md#column-types)):
 
 | Error or symptom | Cause | Fix |
@@ -188,16 +190,14 @@ Index the loop-invariant inputs on the join key. Imported indexes on base
 tables are usable inside the loop, and they are the main performance lever;
 arrangements of the binding itself do not survive the back edge
 ([semantics.md#what-the-optimizer-will-not-do](references/semantics.md#what-the-optimizer-will-not-do)).
-Carry narrow keys, for the same reason.
 
 Then check update locality: one input change should touch a bounded number of
 rows per iteration
 ([semantics.md#update-locality](references/semantics.md#update-locality)).
 Reachability has it, and a rollup over a tree of height h touches at most 2h
 rows. Naive PageRank and k-means do not: every row's value depends on every
-other row's, so one input change recomputes most of the state. Compute those
-one-shot with `RETURN AT RECURSION LIMIT`, or outside the database, and
-maintain only their inputs.
+other's, so one input change recomputes most of the state. Compute those
+one-shot with `RETURN AT RECURSION LIMIT` or outside the database.
 
 ## Reading the plan
 
@@ -213,12 +213,12 @@ maintain only their inputs.
   operator that makes the fixpoint reachable.
 - An `Arrange` over the `Stream` under a join is the binding re-arranged every
   iteration, the cost the back edge imposes.
-- `EXPLAIN OPTIMIZED PLAN WITH (linear chains)` is rejected for recursive plans.
+- `EXPLAIN OPTIMIZED PLAN WITH (linear chains) AS TEXT FOR ...` is rejected
+  for recursive plans.
 
 ## What is allowed inside a binding
 
-Standard SQL's `WITH RECURSIVE` forbids all of this; WMR allows it, and the
-patterns in this skill depend on it
+Standard SQL forbids all of this; the patterns in this skill depend on it
 ([semantics.md#what-standard-sql-forbids-that-wmr-allows](references/semantics.md#what-standard-sql-forbids-that-wmr-allows)).
 
 | Allowed | What it unlocks |
