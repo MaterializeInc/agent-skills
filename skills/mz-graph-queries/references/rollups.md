@@ -381,8 +381,9 @@ plus a cycle audit is the safer default in both.
 
 - Forgetting whether the node's own value is in or out. `team` includes it, so
   Bob's 605 is his own 200 plus his reports. For "everyone below me but not
-  me", subtract in the body (`SELECT id, total - salary`), not in the binding,
-  where the subtraction would compound at every level.
+  me", subtract in the body (`SELECT t.id, t.total - e.salary FROM team t JOIN
+  employees e ON e.id = t.id`), not in the binding, where the subtraction would
+  compound at every level.
 - Using a tree rollup on DAG data. `needed`'s 14 bolts is correct because each
   use consumes bolts; the same shape over an org chart where someone reports to
   two managers counts that person twice at the top. Pick the operator from the
@@ -392,9 +393,12 @@ plus a cycle audit is the safer default in both.
   iteration-20 numbers with no error, where the `needed` form raises. Guard
   aggregate rollups with a standing cycle audit as well as a limit.
 - A plain `sum` where the rollup is signed. A chart of accounts with contra
-  accounts, or an inventory with returns, needs the sign multiplied into the
-  amount inside the binding (`sum(t.total * a.sign)`), because flipping it
-  afterwards flips whole subtrees at once.
+  accounts, or an inventory with returns, signs the node's own amount inside
+  the binding and adds the children's totals unchanged: `e.amount * e.sign +
+  coalesce(sum(t.total), 0)` in the `team` shape. Signing the children's totals
+  instead (`sum(t.total * e.sign)`) applies the sign again at every level
+  below, so a contra account flips its whole subtree rather than its own
+  amount, and flipping signs after the recursion has the same effect.
 - `UNION` over a quantity-carrying binding. Two paths that happen to derive the
   same `(part_id, qty)` pair collapse into one and the total silently drops.
   Quantity rollups need `UNION ALL` and a cycle guard, never `UNION`.

@@ -202,6 +202,14 @@ until the statement is cancelled or, for a maintained view, forever.
 | `ERROR AT RECURSION LIMIT n` | Errors if iteration n still changed something |
 | `RETURN AT RECURSION LIMIT n` | Returns the state after n iterations |
 
+`ERROR AT RECURSION LIMIT` has one observed exception on v26.38.1: it does not
+raise when the recursive binding's top level is an aggregate, and the binding
+silently returns the iteration-n state instead
+([rollups.md#the-same-with-the-aggregate-inside](rollups.md#the-same-with-the-aggregate-inside)).
+For an aggregate-topped binding the guardrail is `RETURN AT RECURSION LIMIT`
+plus a check on the returned state, or a `UNION`-topped shape, which does
+raise. The rest of this section describes the ordinary case.
+
 ```sql
 WITH MUTUALLY RECURSIVE (RETURN AT RECURSION LIMIT 3)
     counter(n int) AS (
