@@ -62,10 +62,13 @@ so the loop stops after roughly as many iterations as the component's diameter.
 
 That fixed row set is also why a recursion limit is not the guardrail here. A
 reduce-topped binding stops raising `ERROR AT RECURSION LIMIT` once its keys
-have settled, and these keys settle immediately
-([semantics.md#recursion-limits](semantics.md#recursion-limits)). Nothing is
-lost: this shape cannot diverge, because a value that only descends toward a
-floor has nowhere to go.
+have settled, and these keys settle in the first iteration
+([semantics.md#recursion-limits](semantics.md#recursion-limits)). A limit set
+too low does not fail; it returns a partial labelling as if it were the answer.
+The 0.3-threshold block below, run with `ERROR AT RECURSION LIMIT 2`, returns
+c6 labelled c5 and raises nothing, because iteration 3 changes only a value.
+Nothing is lost by leaving the limit off: this shape cannot diverge, because a
+value that only descends toward a floor has nowhere to go.
 
 Four choices carry the whole pattern.
 
@@ -353,12 +356,28 @@ The delay idiom is what makes round one different from every later round
 value, which is empty on the first pass. Without it the full edge set would be
 re-added every round and nothing would ever be trimmed.
 
-Sharing a forward label means both endpoints are reachable from the same
-smallest-id node; sharing a backward label means both reach it. Two nodes with
-the same pair of labels are therefore mutually reachable, which is exactly
-membership in one strongly connected component, and an edge between them is an
-intra-component edge. Those are the edges the loop keeps, and they are
-recoverable from the view:
+Sharing a forward label means both endpoints are reachable from one
+smallest-id node; sharing a backward label means both endpoints reach one
+smallest-id node, which is a different node and a different minimum. Neither
+test, nor the two together, proves in a single round that the endpoints are
+mutually reachable. Take an acyclic diamond over four nodes: d1 to m1 and to
+m2, and m1 and m2 each to d0. After one round d1, m1 and m2 all carry the
+forward label d1 and the backward label d0, so the two edges out of d1 pass the
+test and survive into round two, although the graph has no cycle at all and
+every node is its own component. Agreement on both labels is necessary for two
+nodes to share a component, not sufficient.
+
+What makes the fixpoint exact is that necessary direction, applied every round.
+Two mutually reachable nodes agree on both labels over any edge set that still
+holds their cycle, so an intra-component edge passes the test in every round
+and is never trimmed. Only crossing edges are ever removed, so the cycles stay
+intact, so the invariant holds again next round. The loop repeats until a round
+removes nothing, and the edges that survive that fixpoint are exactly the
+intra-component ones. The same diamond run through this shape converges to four
+singletons, and it takes three rounds to get there.
+
+Those surviving edges are the ones the component labels agree on, so the view
+alone corroborates them without reading `intra`:
 
 ```sql
 SELECT t.src, t.dst
@@ -373,14 +392,26 @@ This returns the three ring edges, a1 to a2, a2 to a3 and a3 to a1. The three
 edges whose endpoints sit in different components, a3 to a4, a4 to a5 and a6 to
 a7, are gone.
 
-The outer loop converges because `intra` only shrinks after round one. Fewer
-edges give coarser labels, coarser labels admit fewer edges, and the edge set is
-finite, so the sequence is monotone decreasing and has a fixpoint. Each nested
-block converges by the min-label argument of the first section. The outer
-`ERROR AT RECURSION LIMIT 100` does see this loop's progress, because the outer
-loop's changes are edges leaving `intra`, and those are row changes. On this
-fixture the outer loop reaches its fixpoint in two rounds, and the same block
-written with `ERROR AT RECURSION LIMIT 1` raises where `2` returns the answer.
+The outer loop converges on that invariant rather than on anything the SQL
+makes obvious. The recursive branch of `intra` reads the whole `transfers`
+table every round, so a trimmed edge is not deleted; it is retested from
+scratch and would return if the test ever admitted it again. It does not. An
+edge inside a component always passes, so every removal is a crossing edge, and
+removing crossing edges only raises each node's label toward its own id, which
+makes the partition finer rather than coarser. A finer partition does not
+readmit an edge a coarser one rejected, so `intra` descends toward the
+intra-component edges on a finite edge set instead of oscillating. Each nested
+block converges by the min-label argument of the first section. On this fixture
+the outer loop reaches its fixpoint in two rounds.
+
+The outer `ERROR AT RECURSION LIMIT 100` is not a check on that answer. It
+raises while rows are still being added, which on this shape is the first
+iteration only, and it goes quiet after that even while `intra` is still losing
+edges. The diamond shows it: its fixpoint takes three rounds, limit 1 raises,
+and limit 2 returns m1 and m2 both labelled d1, an unconverged partition, with
+no error. Keep the limit, set it far above the graph's diameter, and read it as
+a stop on a runaway dataflow rather than as a signal that the labels are
+finished. The convergence argument above is what says that.
 
 The two forms agree on every account:
 
@@ -403,7 +434,7 @@ Both views above are plain views, so nothing runs until they are read. Adding
 `MATERIALIZED` to either one installs and hydrates on v26.38.1, nested recursive
 block included, and then maintains the labels as transfers arrive: inserting a
 transfer from a5 back to a3 closes a larger loop, and both maintained views
-relabel a4 and a5 into a1's component without being recomputed.
+relabel a4 and a5 into a1's component.
 
 Note where a nested block is allowed to go: derived-table position, as `fwd` and
 `bwd` use it here. The scalar-subquery form aborts `environmentd` on this
@@ -447,9 +478,14 @@ in a procedural language, or pulls the edges out to a graph library.
 - Adding `ERROR AT RECURSION LIMIT` to a label binding and calling it guarded.
   The row set of a min-propagation is fixed from the first iteration, so the
   limit has no row change to notice
-  ([semantics.md#recursion-limits](semantics.md#recursion-limits)). The
-  propagation cannot diverge, so nothing is lost, but the limit is not what is
-  protecting you.
+  ([semantics.md#recursion-limits](semantics.md#recursion-limits)). Set it too
+  low and it returns a half-propagated labelling in silence rather than
+  raising: the 0.3-threshold block at limit 2 comes back with c6 labelled c5.
+  The propagation cannot diverge, so nothing is lost by omitting the limit, but
+  the limit is not what is protecting you. A block that only contains a label
+  binding inherits this, `scc_trim` included; the closure block is the one
+  whose limit does raise on every unconverged iteration, because its single
+  binding is topped by a `UNION`.
 - The closure form on a dense graph. `reach` approaches the square of the node
   count and is then joined to itself. Use the trimming form when the closure
   will not fit ([reachability.md#whole-graph-closure](reachability.md#whole-graph-closure)).
