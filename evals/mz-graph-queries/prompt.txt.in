@@ -10,7 +10,10 @@ with it is the wrapper script in your working directory: run
 It connects to the local Materialize, presets your schema and cluster, and
 executes the statements. Plain SQL only (no psql meta-commands except \d, \l,
 \x). Each invocation is a fresh session, so put statements that must share a
-session into one invocation. Statements time out after 180 seconds.
+session into one invocation. An invocation is killed after 180 seconds and
+reports that it was killed; the limit is fixed by the harness and setting
+statement_timeout yourself is refused. A query that has to be killed is a
+query that does not converge, so treat a kill as a result, not as a flake.
 
 Schema __RUN__ holds these tables: employees(id int, manager_id int, name text,
 salary int); parts(id int, name text, unit_cost numeric); bom(parent_id int,

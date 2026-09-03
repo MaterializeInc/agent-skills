@@ -79,9 +79,11 @@ customer environment.
 
 - A disposable Materialize instance reachable via `psql`. Never point this at a
   real environment.
-- `python3` and `psql`. `uuidgen` and a `timeout` binary for the agent parts;
-  both scripts run without `timeout` and say so (macOS ships no GNU `timeout`,
-  and the wrapper's 180 s statement cap is enforced server-side either way).
+- `python3` and `psql`, plus `uuidgen` for the preflight's agent part. GNU
+  `timeout` is not required: the wrapper's 180 s statement cap and the runner's
+  round budget are both enforced by a plain-bash watchdog, because macOS ships
+  no GNU `timeout` and, more importantly, Materialize does not cancel a
+  diverging recursive peek on `statement_timeout` alone.
 - For graded agent runs: the Claude Code CLI (`claude`). Building the fixture,
   running the tests, and grading need no agent at all.
 
@@ -93,7 +95,7 @@ customer environment.
 | `EVAL_BENCH_ROOT` | `$HOME/eval-bench` | Per-run working directories. Must be absolute. |
 | `EVAL_CLUSTER_SIZE` | `25cc` | Replica size for the cluster the runner creates per run. |
 | `EVAL_SCALE` | `100` | Fixture scale. 100 is the graded size. |
-| `EVAL_TIMEOUT` | `7200` | Wall-clock budget for the round, in seconds. |
+| `EVAL_TIMEOUT` | `7200` | Wall-clock budget for the round, in seconds. Enforced by a plain-bash watchdog in the runner, not by GNU `timeout`. |
 | `SKILL_DIR` | `../../skills/mz-graph-queries` (relative to the runner) | The skill under test, mounted for `*s` conditions. |
 
 ## How to run
@@ -145,8 +147,10 @@ python3 grade.py --schema gq_ss_s1 --seed 1 --scale 100 --out $EVAL_BENCH_ROOT/g
 ## How grading works
 
 `grade.py` writes `results.json` (a `summary` block plus a record per task) and
-`worksheet.md` (one row per task) into the run's private directory. Axes 1 to 3
-of `rubric.md` are computed from the summary keys `initial_ok`,
+`worksheet.md` (one row per task) into the run's private directory. The five
+axes of `rubric.md` weigh 2.0 (initial correctness), 1.0 (correctness after
+mutation), 0.75 (convergence and guardrails), 0.75 (maintainability) and 0.5
+(explanation), summing to 5.0. Axes 1 to 3 are computed from the summary keys `initial_ok`,
 `post_mutation_ok`, `mutations`, `timed_out`, `guardrail`, and `exists`. Axes 4
 (maintainability) and 5 (explanation) are manual and read the agent's
 `report.md`, the transcript, and the view definitions in the run schema.
@@ -173,7 +177,9 @@ inherit context. The runner enforces, per run:
   which would be loaded regardless of those flags.
 - **One route to the database**: the generated `bench-psql` wrapper, pinned to
   the run's schema and cluster, flags and most meta-commands rejected,
-  statements capped at 180 seconds. Around it the CLI's permission layer allows
+  statements killed at 180 seconds by a watchdog the agent cannot raise
+  (changing `statement_timeout` is refused, and the cap override exists for
+  harness tests and clamps downward only). Around it the CLI's permission layer allows
   plain read-only shell commands inside the run directory, allows writes only
   inside the run's `scratch/` directory, and denies network access,
   interpreters, version control, and every file outside those directories. The
@@ -195,10 +201,16 @@ needs equivalents for the same four guarantees.
 
 Everything here is for disposable local instances. The runner creates and drops
 schemas and clusters, and the fixture plants cycles that make a careless
-recursive query run until it is cancelled. Never run any of it against a shared
-or production environment.
+recursive query run until the wrapper kills it. Never run any of it against a
+shared or production environment.
+
+Two watchdog limits worth knowing. The round watchdog signals the agent process
+itself; a process the agent had already spawned can outlive it, so check for
+strays after a killed round. And a run whose round was killed is still graded,
+on whatever views the agent had created by then; the runner says so on the line
+above the grade.
 
 ## Recorded results
 
-| run | condition | seed | initial_ok | post_mutation_ok | timed_out | guardrail | axis total |
+| run | condition | seed | initial_ok | post_mutation_ok | timed_out | guardrail | axis total (/5) |
 |---|---|---|---|---|---|---|---|
