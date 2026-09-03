@@ -45,7 +45,7 @@ SET (
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  If `FALSE`, enables the use of the <em>deprecated</em> [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) command.  Default: `TRUE`  |
 | `AUTO SCALING STRATEGY` | Optional. While the cluster has un-hydrated objects, provisions an extra burst replica at a larger size to speed up hydration. The steady-size replicas will continue to run, and hydrate in parallel. Once a steady-size replica hydrates and catches up with the burst, the burst replica is retired. This helps optimize costs while speeding up hydration. Only available on managed clusters.  Specify a single `ON HYDRATION` sub-policy, which supports the following options:  \| Option \| Description \| \|--------\|-------------\| \| `HYDRATION SIZE` \| The size of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration. For valid size values, see [Available sizes](#available-sizes). \| \| `LINGER DURATION` \| Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`. \|  Set an empty strategy (`AUTO SCALING STRATEGY = ()`) to disable autoscaling.  |
 | `EXPERIMENTAL ARRANGEMENT COMPRESSION` | {{< warn-if-unreleased-inline "v26.38" >}}  Optional. Whether to enable [dictionary compression](#dictionary-compression) for the arrangements maintained by the cluster's replicas. Compression reduces the memory those arrangements use, at the cost of CPU, and does not benefit every workload. Only available on managed clusters.  {{< warning >}} Because changing this option never changes an existing replica, Materialize creates a new set of replicas carrying the new setting and cuts over to them once they have hydrated. For more information, see [Dictionary compression](#dictionary-compression). {{< /warning >}}  Default: `FALSE`  |
-| `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under active development.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* A fixed duration to wait for the new replicas to be ready. This option can lead to downtime. As such, we recommend using the `WAIT UNTIL READY` option instead.\|  |
+| `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under active development.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Equivalent to `WAIT UNTIL READY` with `ON TIMEOUT = 'ROLLBACK'`. Materialize cuts over once the new replicas hydrate. When Materialize processes an expired timeout, it rolls back the resize and keeps the current size if the target replicas are still unhydrated.\|  |
 
 **Reset to default:**
 
@@ -244,9 +244,11 @@ The resize still proceeds in the background.
   SET (SIZE = '100cc') WITH (WAIT UNTIL READY (TIMEOUT = '10m'));
   ```
 
-- `WAIT FOR '<duration>'` sets the timeout and commits when it expires,
-  regardless of hydration status, which can cause downtime. Prefer
-  `WAIT UNTIL READY`.
+- `WAIT FOR '<duration>'` is equivalent to `WAIT UNTIL READY (TIMEOUT =
+  '<duration>', ON TIMEOUT = 'ROLLBACK')`. Materialize cuts over once the target
+  replicas hydrate. When Materialize processes an expired timeout, it
+  rolls back the resize and keeps the current size if the target replicas are
+  still unhydrated.
 
 See [Monitoring a resize](#monitoring-a-resize) to track progress and
 [cancel](#monitoring-a-resize) an in-flight resize.
