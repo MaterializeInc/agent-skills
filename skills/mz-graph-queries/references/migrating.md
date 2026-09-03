@@ -33,16 +33,17 @@ apart.
 | `SYS_CONNECT_BY_PATH(col, '/')` | A `text list` path, `LIST[col]` in the seed and `path \|\| col` in the step |
 | `ORDER SIBLINGS BY col` | `ORDER BY path` in the body, with `col` inside the path element |
 | `START WITH pred CONNECT BY PRIOR id = parent_id` | The seed branch's `WHERE pred`, and the recursive branch's join |
-| `ORDER BY` at the end of the recursive term (SQLite's breadth-first or depth-first knob) | Nothing. Order the body |
+| A bare `ORDER BY` at the end of the recursive term (SQLite's breadth-first or depth-first knob) | Nothing. Order the body |
+| `ORDER BY ... LIMIT` in the recursive term (top-k per node, which standard SQL forbids) | Keep it. It plans as a TopK and the loop honors it |
 | DuckDB `USING KEY (k)` reading `recurring.<cte>` | An aggregate or `DISTINCT ON` inside the binding, keyed on the same columns |
 | A window function meant as "rank within this level" | An aggregate inside the binding, and a level column if the level is needed |
 | Enumerate every path, then `MIN`, `MAX` or `SUM` in the outer query | The same aggregate inside the binding, recursing from the reduced relation |
 
-Two rows have no counterpart and are worth stating as absences. There is no
-default recursion limit here, so a query that relied on MySQL's 1000 or
-BigQuery's 500 to stop is a query that now runs until it is cancelled. And
-there is no `RECURSIVE` keyword at all, which is the subject of the next
-section.
+Two things in that table are absences rather than translations. There is no
+default recursion limit here, so a query that relied on SQL Server's implicit
+100, MySQL's 1000 or BigQuery's 500 to stop is a query that now runs until it
+is cancelled; write the limit yourself. And there is no `RECURSIVE` keyword at
+all, which is the subject of the next section.
 
 ## Anchor and recursive member
 
@@ -64,9 +65,9 @@ CTE and then expects `AS`.
 <!-- verify: error -->
 
 ```sql
-WITH RECURSIVE subtree(id) AS (
+WITH RECURSIVE subtree AS (
     SELECT id FROM employees WHERE manager_id = 2
-    UNION ALL
+  UNION ALL
     SELECT e.id FROM employees e JOIN subtree s ON e.manager_id = s.id
 )
 SELECT id FROM subtree ORDER BY id;
@@ -74,7 +75,8 @@ SELECT id FROM subtree ORDER BY id;
 
 `ERROR:  Expected AS, found SUBTREE`. The caret points at the CTE name, which
 makes the message look like a syntax error in the name rather than a missing
-feature. It is neither: it is `RECURSIVE` not being a keyword.
+feature. It is the latter: `RECURSIVE` is not a keyword here, so the parser
+takes it for the CTE's name and then wants `AS` where `subtree` is.
 
 The translation is
 [hierarchies.md#descendants-of-one-node](hierarchies.md#descendants-of-one-node):
@@ -175,7 +177,7 @@ moves.
 | Source device | Fate |
 |---|---|
 | `WHERE h.depth < 3` | Survives, and stays inside the binding. It is a real hop bound: the question is "within three hops" |
-| `path` and `t.dst = ANY(h.path)` | Gone. The binding holds one row per `dst`, so a lap around the ring re-derives a row that is already there |
+| `path` and `t.dst = ANY(h.path)` | Gone. `min` inside the binding keeps one row per `dst`, and a lap around the ring can only offer that key a value that is not lower, which `min` discards |
 | `is_cycle` | Gone with the path it was computed from |
 | `MIN(depth)` in the outer query | Moves inside the binding, which is what makes the row set one per node ([semantics.md#what-standard-sql-forbids-that-wmr-allows](semantics.md#what-standard-sql-forbids-that-wmr-allows)) |
 
@@ -355,7 +357,8 @@ was doing by hand. Three things fall out of the source query as a result. The
 explicit improvement test goes, because `min` keeps the better value anyway.
 The two-relation split between `dist` and `recurring.dist` goes, because there
 is only one relation here, the binding's current value. And the `ORDER BY km`
-inside the term goes, because it has no evaluation-order meaning here.
+inside the term goes, because it carries no `LIMIT` and a bare `ORDER BY` has
+no evaluation-order meaning here.
 
 Where the answer needs the route and not only the cost, the argmin form in
 [shortest-paths.md#one-witness-path](shortest-paths.md#one-witness-path) uses
@@ -367,8 +370,9 @@ predecessor column alongside the winning value. That is the closer match to
 
 Most recursive SQL in the wild has this shape because standard SQL leaves no
 alternative: walk everything, then reduce in the outer query. The canonical
-connected-components recipe is Max Halford's "parallel walks", after Torsten
-Grust, and it is the same enumerate-then-aggregate move:
+connected-components recipe is the "parallel walks" shape, written up by Max
+Halford in *Graph components with DuckDB* and credited there to a tutorial by
+Torsten Grust. It is the same enumerate-then-aggregate move:
 
 ```postgresql
 WITH RECURSIVE
@@ -473,11 +477,9 @@ and never stops, rather than one that fails to parse.
   idiom
   ([semantics.md#binding-order-and-the-delay-idiom](semantics.md#binding-order-and-the-delay-idiom)).
 - **Aggregates and window functions apply to the whole binding, not to "the
-  current level".** There is no level unless a column says so. A
-  `row_number()` inside a binding over the fixture's `employees` tree numbers
-  all eight rows 1 through 8 at the fixpoint; it does not restart per level.
-  Carry a `depth` column and partition by it if per-level ranking is what the
-  source query meant.
+  current level".** There is no level unless a column says so, and the block
+  below shows what that costs a ported query. Carry a `depth` column and
+  partition by it if per-level ranking is what the source query meant.
 - **There is no linear-recursion rule to work around.** One reference to the
   recursive relation, no subquery over it, no outer join with it on the nullable
   side, no aggregate, no `DISTINCT`, no `ORDER BY ... LIMIT`: none of those
@@ -492,6 +494,31 @@ and never stops, rather than one that fails to parse.
   one you write, as `UNION`, `SELECT DISTINCT`, or an aggregate. A recursive
   view ported from an engine with set semantics needs that `DISTINCT` supplied
   by hand, and the symptom of forgetting is the first bullet.
+
+The window-function bullet is the one worth seeing run. This binding walks the
+fixture tree and numbers its rows:
+
+```sql
+WITH MUTUALLY RECURSIVE
+    walk(id int, depth int, rn bigint) AS (
+        SELECT id, depth, row_number() OVER (ORDER BY id)
+        FROM (
+            SELECT id, 0 AS depth FROM employees WHERE manager_id IS NULL
+            UNION
+            SELECT e.id, w.depth + 1 FROM employees e JOIN walk w ON e.manager_id = w.id
+        ) AS x(id, depth)
+    )
+SELECT id, depth, rn FROM walk ORDER BY id;
+```
+
+On the fixture this returns the eight employees with `rn` running 1 through 8
+in id order, Ada at depth 0 and Gus and Hal at depth 3. A per-level numbering
+would restart at every level: 1 for Ada, then 1 and 2 for Bob and Cy. It
+converges because the row set settles after four iterations and the window is
+then computed over a relation that no longer changes. Read it as a
+demonstration rather than a pattern: a window over a binding whose rows are
+still arriving has no meaning until the fixpoint, so anything you want to be
+per-level has to come from a column you carry.
 
 ## Pitfalls
 
@@ -520,9 +547,13 @@ and never stops, rather than one that fails to parse.
   stopped the walk; nothing here does, and a binding carrying a depth or a path
   diverges on the first loop in the data
   ([hierarchies.md#cycles-in-a-tree](hierarchies.md#cycles-in-a-tree)).
-- Reproducing an `ORDER BY` from inside the source's recursive term. It is
-  accepted and it changes nothing: SQLite's queue order has no counterpart in a
-  fixpoint. Order the body.
+- Dropping an `ORDER BY` from the recursive term without checking for a
+  `LIMIT`. A bare one is inert, because SQLite's queue order has no counterpart
+  in a fixpoint; order the body instead. `ORDER BY ... LIMIT` is a different
+  thing: it plans as a TopK, the loop honors it, and a top-k-per-node query
+  needs it. On the fixture, the `levels` binding with
+  `(SELECT ... ORDER BY 1 LIMIT 1)` as its recursive branch returns 2 rows
+  instead of 8.
 - Translating a query without translating the deployment. Most of these source
   queries are batch jobs or per-request expansions. The reason to port one is
   usually an indexed view or a materialized view that stays current, and that
