@@ -74,8 +74,10 @@ chmod 555 "$bench/bench-psql"
 
 # ---- 3. the round ----------------------------------------------------------
 rm -f "$bench/scratch/report.md" "$pdir/round.killed"   # a rerun must not carry the last run's report or kill marker
+# One Edit rule covers every file-editing tool, Write included; a separate
+# Write(...) rule is rejected by the CLI's permission layer with a warning.
 allowed=( "Bash(./bench-psql:*)" "Bash($bench/bench-psql:*)" "Bash(sleep :*)" "Bash(sleep:*)"
-          "Read(//$bench/scratch/**)" "Edit(//$bench/scratch/**)" "Write(//$bench/scratch/**)" "Read(//$bench/skill/**)" )
+          "Read(//$bench/scratch/**)" "Edit(//$bench/scratch/**)" "Read(//$bench/skill/**)" )
 # The round is bounded by a plain-bash watchdog, not GNU timeout, which macOS
 # does not ship. claude is backgrounded directly (not inside a subshell) so the
 # watchdog's signal reaches the process itself; the watchdog polls every five

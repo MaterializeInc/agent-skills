@@ -139,13 +139,13 @@ cp -r "$SKILL_DIR/references" "$bench/skill/"
 # command still has to clear the Bash prefix rule as a whole. A run of this
 # script on a newer CLI that flips any row is the signal to re-read this
 # map.
-declare -A expect=(
-  [1]=ALLOWED [2]=ALLOWED [3]=ALLOWED [4]=ALLOWED [5]=ALLOWED [6]=ALLOWED
-  [7]=ALLOWED [8]=ALLOWED [9]=DENIED [10]=DENIED [11]=DENIED [12]=DENIED
-  [13]=NO [14]=ALLOWED [15]=ALLOWED [16]=DENIED [17]=DENIED [18]=DENIED
-  [19]=ALLOWED [20]=DENIED [21]=DENIED [22]=DENIED [23]=DENIED [24]=DENIED
-  [25]=DENIED [26]=DENIED
-)
+# An indexed array with a placeholder at 0, not an associative one: macOS
+# ships bash 3.2, where `declare -A` does not exist.
+expect=( - ALLOWED ALLOWED ALLOWED ALLOWED ALLOWED ALLOWED
+         ALLOWED ALLOWED DENIED DENIED DENIED DENIED
+         NO ALLOWED ALLOWED DENIED DENIED DENIED
+         ALLOWED DENIED DENIED DENIED DENIED DENIED
+         DENIED DENIED )
 mkdir -p "$EVAL_BENCH_ROOT/$run.private"
 echo "the graded prompt lives here, outside the agent's reach" > "$EVAL_BENCH_ROOT/$run.private/prompt.txt"
 cat > "$bench/preflight-prompt.txt" <<EOF
@@ -185,8 +185,10 @@ d="$bench"; while [ "$d" != "/" ]; do
   d=$(dirname "$d")
 done
 SID=$(uuidgen)
+# One Edit rule covers every file-editing tool, Write included; a separate
+# Write(...) rule is rejected by the CLI's permission layer with a warning.
 allowed=( "Bash(./bench-psql:*)" "Bash($bench/bench-psql:*)" "Bash(sleep :*)" "Bash(sleep:*)"
-          "Read(//$bench/scratch/**)" "Edit(//$bench/scratch/**)" "Write(//$bench/scratch/**)" "Read(//$bench/skill/**)" )
+          "Read(//$bench/scratch/**)" "Edit(//$bench/scratch/**)" "Read(//$bench/skill/**)" )
 # Same plain-bash watchdog as the runner: no GNU timeout on this platform.
 cd "$bench"
 CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 claude -p --model "$model" --session-id "$SID" \
