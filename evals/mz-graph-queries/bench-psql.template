@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# The only entrance to the test bench. Usage:
+#   ./bench-psql 'SQL statements...'
+#   ./bench-psql <<'SQLEOF'
+#   SQL...
+#   SQLEOF
+set -uo pipefail
+SCHEMA=__RUN__
+for a in "$@"; do case "$a" in -*) echo "bench-psql: flags are not supported; pass SQL text only" >&2; exit 2;; esac; done
+if [ $# -gt 0 ]; then SQL="$*"; else SQL=$(cat); fi
+if printf '%s\n' "$SQL" | grep -qE '^[[:space:]]*\\'; then
+  if printf '%s\n' "$SQL" | grep -E '^[[:space:]]*\\' | grep -vqE '^[[:space:]]*\\(d[a-zA-Z+]*|l\+?|x|pset|timing|echo)([[:space:]]|$)'; then
+    echo "bench-psql: psql meta-commands are not supported (plain SQL only; \d, \l, \x, \pset ok)" >&2
+    exit 2
+  fi
+fi
+if printf '%s\n' "$SQL" | grep -qE '^[[:space:]]*[^[:space:]\\].*\\[a-zA-Z!?]'; then
+  echo "bench-psql: a backslash command must start its line, and backslashes inside SQL text are not supported" >&2
+  exit 2
+fi
+f=$(mktemp "${TMPDIR:-/tmp}/benchsql.XXXXXX")
+trap 'rm -f "$f"' EXIT
+printf '%s\n' "$SQL" > "$f"
+# Statements are capped at 180 s. The server-side statement_timeout is the
+# portable half of that cap (macOS has no GNU timeout); the timeout binary,
+# when present, also caps a connection that never answers.
+TO=""
+command -v timeout >/dev/null 2>&1 && TO="timeout 190"
+# No exec: the EXIT trap must run so the temp file is removed.
+$TO psql -X -q -P pager=off -v ON_ERROR_STOP=0 __PSQL_ARGS__ -c "SET statement_timeout = '180s'" -c "SET schema = $SCHEMA" -c "SET cluster = $SCHEMA" -f "$f"
+exit $?
