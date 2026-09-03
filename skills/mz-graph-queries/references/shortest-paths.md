@@ -8,8 +8,10 @@ cheapest route and what does it cost, which roads does that route actually use,
 why is the two-hop way more expensive than the three-hop way, and why does
 filtering to one target not make the query cheaper.
 
-Fixture tables used: `cities`, `roads`. Every block assumes
-`references/fixture.sql` is loaded.
+Fixture tables used: `roads`. Every block assumes `references/fixture.sql` is
+loaded. The node table `cities` is not read by any block below, because every
+city in this fixture is reachable from the seed; it is what you left-join
+against when that is not true.
 
 `roads` stores each road once, in one direction: (A, B, 4), (B, C, 3),
 (A, C, 10), (C, D, 2), (B, D, 8), (D, E, 5). Driving is not one-way, so every
@@ -195,15 +197,16 @@ SELECT city, km FROM dist ORDER BY city;
 
 It returns A at -6, B at -5 and C at -7, and it does not raise. Those are not
 distances; they are the running totals at iteration 20, and they get more
-negative if the limit does. This is the aggregate-topped exception to
-`ERROR AT RECURSION LIMIT`
-([semantics.md#recursion-limits](semantics.md#recursion-limits)), and on a
-distance recursion it has a sharp edge worth knowing. Measured on v26.38.1
-against this block, the limit raises at 2 and 3, the iterations in which a new
-city first appears, and stops raising from 4 onward, once every city is present
-and only the numbers are still falling. A shortest-path binding reaches all its
-keys early and then spends the rest of the loop lowering values, so the
-guardrail goes quiet at exactly the point it would have to speak. Check the
+negative if the limit does. The limit did not miss this because the binding is
+topped by an aggregate. It missed it because it tracks changes to the row set
+and not to values
+([semantics.md#recursion-limits](semantics.md#recursion-limits)). Measured on
+v26.38.1 against this exact block, it raises at 2 and 3, the iterations in
+which a new city first appears, and stops raising from 4 onward, once every
+city is present and only the numbers are still falling. A shortest-path binding
+reaches all its keys early and then spends the rest of the loop lowering
+values, so the guardrail goes quiet at exactly the point it would have to
+speak. Check the
 weights instead, with a standing `SELECT count(*) FROM roads WHERE km <= 0`, and
 treat the limit as a bound on runtime rather than as a correctness check.
 
@@ -350,9 +353,13 @@ WITH MUTUALLY RECURSIVE
 SELECT city, km FROM dist ORDER BY city;
 ```
 
-On the fixture this returns A at 0, B at 4, C at 7 and D at 9. E is gone,
-because it is 14 km away and the budget was 12. It converges for the `dist`
-reason plus a structural one: the guard bounds the total weight, so with
+On the fixture this returns A at 0, B at 4, C at 7 and D at 9. The 12 is not
+arbitrary: it is the cost of a route to D that is already in hand, the two-hop
+A to B to D way, so any cheaper route to D stays inside the budget and nothing
+that could beat the known route is pruned. E is gone, because it is 14 km away.
+That is the shape of the trade. A budget bounds the search for the one target
+it was derived from and silently truncates every other. It converges for the
+`dist` reason plus a structural one: the guard bounds the total weight, so with
 positive weights the loop can only run a bounded number of rounds whatever the
 values do. The budget must be an upper bound you can defend, such as a known
 route's cost or a service-level limit. Set it too low and the target quietly
@@ -379,11 +386,15 @@ has to be a deliberate choice rather than a habit.
   ([semantics.md#multisets-and-convergence](semantics.md#multisets-and-convergence)).
 - Negative or zero weights. `min` converges because it descends toward a floor,
   and a negative cycle removes the floor. Zero-weight edges leave `dist` and
-  `best` converging, and they break `route`: a zero-weight road between two
-  cities gives them the same `km`, the `prev` tiebreak then points each at the
-  other, and the walk back never reaches the seed. A zero road out of the seed
-  is the worst case, because `NULL` sorts last and the seed's own row loses the
-  tie.
+  `best` converging and can break `route`. Two cities joined by a zero-weight
+  road have the same `km`, so the `prev` tiebreak decides, and when a city's
+  zero-weight neighbour sorts ahead of its real predecessor the two point at
+  each other and the walk back never reaches the seed. It depends on the names:
+  with roads (A, B, 4) and (B, C, 0) the tiebreak prefers A over C, `best` gives
+  B the predecessor A, and `route` from C terminates; rename the seed to Z and
+  the same two roads give B the predecessor C and C the predecessor B, and
+  `route` runs forever. A zero road out of the seed always loses, because `NULL`
+  sorts last and the seed's own row cannot win the tie.
 - Treating `ERROR AT RECURSION LIMIT` as a correctness check on `hops`, `dist`
   or `best`. All three are topped by a reduce, and on v26.38.1 the limit stops
   raising once the set of keys has settled, which on a distance recursion is
@@ -401,6 +412,10 @@ has to be a deliberate choice rather than a habit.
 - Asking for "the shortest path" and building the all-shortest-paths query, or
   the reverse. One witness is a breadcrumb column and an argmin; every witness
   is a set of predecessors per city and an output that can be exponential.
+- Reaching for this file when the question is "can I get there at all". A `min`
+  over weights is an expensive way to compute a reachable set, and it needs a
+  weight column that the question does not care about. That is
+  [reachability.md](reachability.md).
 - Assuming the whole graph is connected. `dist` returns nothing at all for a
   city in another component, rather than a row with a null or infinite
   distance. If the answer needs one row per city, left-join `cities` against

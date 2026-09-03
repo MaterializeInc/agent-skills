@@ -202,13 +202,15 @@ until the statement is cancelled or, for a maintained view, forever.
 | `ERROR AT RECURSION LIMIT n` | Errors if iteration n still changed something |
 | `RETURN AT RECURSION LIMIT n` | Returns the state after n iterations |
 
-`ERROR AT RECURSION LIMIT` has one observed exception on v26.38.1: it does not
-raise when the recursive binding's top level is an aggregate, and the binding
-silently returns the iteration-n state instead
+`ERROR AT RECURSION LIMIT` tracks changes to the row set, not to values, and on
+v26.38.1 the difference is observable. A binding topped by a reduce or a TopK
+raises while it is still adding or removing rows, then goes silent once only
+its values keep changing, returning the iteration-n state instead
 ([rollups.md#the-same-with-the-aggregate-inside](rollups.md#the-same-with-the-aggregate-inside)).
-For an aggregate-topped binding the guardrail is `RETURN AT RECURSION LIMIT`
-plus a check on the returned state, or a `UNION`-topped shape, which does
-raise. The rest of this section describes the ordinary case.
+For such a shape the guardrail is `RETURN AT RECURSION LIMIT` plus a check on
+the returned state, or a `UNION`-topped shape, whose every change is a row
+change and which therefore always raises. The rest of this section describes
+that ordinary case.
 
 ```sql
 WITH MUTUALLY RECURSIVE (RETURN AT RECURSION LIMIT 3)
