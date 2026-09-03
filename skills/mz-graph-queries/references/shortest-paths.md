@@ -420,4 +420,5 @@ has to be a deliberate choice rather than a habit.
   city in another component, rather than a row with a null or infinite
   distance. If the answer needs one row per city, left-join `cities` against
   the fixpoint in the body. Which cities are mutually reachable at all is a
-  separate question, and it belongs in components.md.
+  separate question, and it belongs in
+  [components.md#connected-components-by-min-label-propagation](components.md#connected-components-by-min-label-propagation).
