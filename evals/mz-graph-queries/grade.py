@@ -92,13 +92,17 @@ def grade(schema: str, f: fx.Fixture, cluster: str, out_dir: Path) -> dict:
         m = T.mutation_for(t, cur)
         if m is None:
             continue
-        r = mzclient.run(fx.mutation_sql(m, schema))
+        r = mzclient.run(fx.mutation_sql(m, schema), cluster=cluster)
         if not r.ok:
             results[t.id]["post_mutation_ok"] = f"mutation failed: {r.error_line}"
             continue
         cur = fx.apply_mutation(cur, m)
         rec = results[t.id]
-        if rec["exists"] and not rec["timed_out"]:
+        if not rec["exists"]:
+            rec["post_mutation_ok"] = "skipped: view missing"
+        elif rec["timed_out"]:
+            rec["post_mutation_ok"] = "skipped: initial read timed out"
+        else:
             q = query_task(schema, cluster, t)
             if q["timed_out"] or q["error"]:
                 rec["post_mutation_ok"] = False
@@ -120,7 +124,8 @@ def grade(schema: str, f: fx.Fixture, cluster: str, out_dir: Path) -> dict:
              "| task | exists | initial | after mutation | timed out | guardrail | maintainability (manual) | explanation (manual) |",
              "|---|---|---|---|---|---|---|---|"]
     for r in results.values():
-        lines.append(f"| {r['task']} | {r['exists']} | {r['initial_ok']} | {r['post_mutation_ok']} | "
+        initial = f"{r['initial_ok']} ({r['partial']})" if r["partial"] else f"{r['initial_ok']}"
+        lines.append(f"| {r['task']} | {r['exists']} | {initial} | {r['post_mutation_ok']} | "
                      f"{r['timed_out']} | {r['guardrail']} |  |  |")
     lines += ["", f"summary: {json.dumps(summary)}"]
     (out_dir / "worksheet.md").write_text("\n".join(lines) + "\n")
