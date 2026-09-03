@@ -29,6 +29,19 @@ class Result:
         return self.stderr.strip().splitlines()[-1] if self.stderr.strip() else ""
 
 
+def parse_rows(stdout: str) -> list[list[str]]:
+    """Split psql -At output into rows of tab-separated fields.
+
+    psql terminates every row with a newline, so the split leaves one trailing
+    empty element; that one is dropped. Every other empty line is a real row
+    holding a single empty-string column and is kept.
+    """
+    lines = stdout.split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
+    return [line.split("\t") for line in lines]
+
+
 def run(sql: str, *, schema: str | None = None, cluster: str | None = None,
         timeout_s: int = 120, on_error_stop: bool = True) -> Result:
     with tempfile.NamedTemporaryFile("w", suffix=".sql", delete=False) as fh:
@@ -54,6 +67,6 @@ def run_file(path: str, *, schema: str | None = None, cluster: str | None = None
         p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout_s + 30)
     except subprocess.TimeoutExpired as e:
         return Result(rc=124, stderr=(e.stderr or "") if isinstance(e.stderr, str) else "", timed_out=True)
-    rows = [line.split("\t") for line in p.stdout.splitlines() if line != ""]
+    rows = parse_rows(p.stdout)
     timed_out = "canceling statement due to statement timeout" in p.stderr
     return Result(rc=p.returncode, rows=rows, stderr=p.stderr, timed_out=timed_out)

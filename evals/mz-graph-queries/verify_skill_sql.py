@@ -67,6 +67,16 @@ def normalize(rows: list[list[str]]) -> str:
     return "".join("\t".join(r) + "\n" for r in sorted(rows))
 
 
+def select_files(only: str | None) -> list[Path]:
+    """Reference files to verify. A --only that matches nothing is an error,
+    not an empty run: the reference-file tasks use --only as their gate, and a
+    typo must not look like a clean pass."""
+    paths = [p for p in sorted(REFS.glob("*.md")) if only is None or p.stem == only]
+    if only is not None and not paths:
+        raise LookupError(f"--only {only}: no such reference file in {REFS}")
+    return paths
+
+
 def generated_fixture_sql() -> str:
     out = subprocess.run([sys.executable, str(HERE / "build_fixture.py"), "--small"],
                          capture_output=True, text=True, check=True).stdout
@@ -82,14 +92,16 @@ def load_fixture(schema: str) -> None:
         raise SystemExit(f"fixture load failed for {schema}: {r.stderr}")
 
 
-def verify_file(path: Path, record: bool, keep: bool) -> int:
+def verify_file(path: Path, record: bool, keep: bool) -> tuple[int, int]:
+    """Verify one reference file. Returns (failures, blocks run)."""
     name = path.stem
     schema = f"verify_{name.replace('-', '_')}"
     load_fixture(schema)
-    fails = 0
+    fails = blocks = 0
     for b in extract_blocks(path.read_text()):
         if b.mode == "skip":
             continue
+        blocks += 1
         r = mzclient.run(b.sql, schema=schema, cluster="quickstart", timeout_s=60)
         if b.mode == "error":
             actual = r.error_line + "\n"
@@ -126,7 +138,7 @@ def verify_file(path: Path, record: bool, keep: bool) -> int:
             print(f"PASS  {name} #{b.index}")
     if not keep:
         mzclient.run(f"DROP SCHEMA IF EXISTS {schema} CASCADE;")
-    return fails
+    return fails, blocks
 
 
 def main() -> int:
@@ -135,7 +147,12 @@ def main() -> int:
     ap.add_argument("--only", default=None)
     ap.add_argument("--keep", action="store_true")
     a = ap.parse_args()
-    fails = 0
+    try:
+        paths = select_files(a.only)
+    except LookupError as e:
+        print(f"FAIL  {e}")
+        return 1
+    fails = blocks = 0
     fx_path = REFS / "fixture.sql"
     if not fx_path.exists() or fx_path.read_text() != generated_fixture_sql():
         if a.record:
@@ -144,11 +161,12 @@ def main() -> int:
         else:
             print("FAIL  references/fixture.sql is out of date (run with --record)")
             fails += 1
-    for path in sorted(REFS.glob("*.md")):
-        if a.only and path.stem != a.only:
-            continue
-        fails += verify_file(path, a.record, a.keep)
-    print(f"{'OK' if fails == 0 else 'FAILURES: ' + str(fails)}")
+    for path in paths:
+        f, b = verify_file(path, a.record, a.keep)
+        fails += f
+        blocks += b
+    counts = f"{len(paths)} file(s), {blocks} block(s)"
+    print(f"OK  ({counts})" if fails == 0 else f"FAILURES: {fails}  ({counts})")
     return fails
 
 
