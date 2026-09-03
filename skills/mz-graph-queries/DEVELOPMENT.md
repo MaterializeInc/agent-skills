@@ -94,8 +94,13 @@ Success prints `OK  (9 file(s), N block(s))`. Conventions in the markdown:
   and its `ERROR` line is compared against the recording. Several claims in the
   skill are held up by these.
 - `<!-- verify: skip -->` means the block is not run. Use it only for blocks
-  that name objects outside the fixture, such as the skeleton in `SKILL.md` and
-  the relationship-registry example in `context-graphs.md`.
+  that name objects outside the fixture, such as the relationship-registry
+  example in `context-graphs.md`, or that are fragments rather than runnable
+  statements, such as the shared `sym` binding quoted in `shortest-paths.md`.
+  The skeleton in `SKILL.md` carries the same marker, for the first reason.
+
+Of the 81 `sql` blocks in `references/`, the verifier runs 79: two are skipped,
+and ten of the 79 are `verify: error` blocks whose failure is the claim.
 
 Re-record with `--record` (optionally `--only <file>`) when the block itself
 changed and the new output is correct, or when a Materialize upgrade changes
