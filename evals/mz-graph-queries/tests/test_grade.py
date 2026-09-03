@@ -47,26 +47,40 @@ class Compare(unittest.TestCase):
 
 
 class TimeoutFallback(unittest.TestCase):
-    def test_count_only_when_the_full_read_times_out(self):
-        """A result set too large to ship in the timeout is graded on its size."""
-        t = next(x for x in tasks.TASKS if x.id == "t14")
+    """Grade one task against a stub whose full read always times out."""
+
+    def grade_one(self, task, count):
         f = fx.eval_fixture(1, 20)
-        n = len(t.reference(f))
 
         def fake_run(sql, **kw):
             if "count(*)" in sql:
-                return mzclient.Result(rc=0, rows=[[str(n)]])
-            if sql.startswith("SELECT src, dst FROM"):
+                return mzclient.Result(rc=0, rows=[[str(count)]])
+            if f" FROM s.{task.view}" in sql:
                 return mzclient.Result(rc=124, timed_out=True)
             return mzclient.Result(rc=0, rows=[])
 
         with mock.patch.object(grade.mzclient, "run", fake_run), \
-                mock.patch.object(grade.T, "TASKS", [t]), \
+                mock.patch.object(grade.T, "TASKS", [task]), \
                 tempfile.TemporaryDirectory() as d:
-            rec = grade.grade("s", f, "c", Path(d))["tasks"]["t14"]
+            out = grade.grade("s", f, "c", Path(d))
+            return out, (Path(d) / "worksheet.md").read_text()
+
+    def test_count_only_when_the_full_read_times_out(self):
+        """A result set too large to ship in the timeout is graded on its size."""
+        t = next(x for x in tasks.TASKS if x.id == "t14")
+        out, sheet = self.grade_one(t, len(t.reference(fx.eval_fixture(1, 20))))
+        rec = out["tasks"]["t14"]
         self.assertTrue(rec["timed_out"])
         self.assertTrue(rec["initial_ok"])
         self.assertEqual(rec["partial"], "count-only")
+        self.assertIn("| True (count-only) |", sheet)
+
+    def test_skipped_mutation_is_recorded_and_counted(self):
+        t = next(x for x in tasks.TASKS if x.id == "t13")
+        out, sheet = self.grade_one(t, 0)
+        self.assertEqual(out["tasks"]["t13"]["post_mutation_ok"], "skipped: initial read timed out")
+        self.assertEqual(out["summary"]["mutations"], 1)
+        self.assertIn("skipped: initial read timed out", sheet)
 
 
 if __name__ == "__main__":
