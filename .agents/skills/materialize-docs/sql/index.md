@@ -309,7 +309,7 @@ SET (
 | `MANAGED` | Optional. Whether to automatically manage the cluster's replicas based on the configured size and replication factor.  If `FALSE`, enables the use of the <em>deprecated</em> [`CREATE CLUSTER REPLICA`](/sql/create-cluster-replica) command.  Default: `TRUE`  |
 | `AUTO SCALING STRATEGY` | Optional. While the cluster has un-hydrated objects, provisions an extra burst replica at a larger size to speed up hydration. The steady-size replicas will continue to run, and hydrate in parallel. Once a steady-size replica hydrates and catches up with the burst, the burst replica is retired. This helps optimize costs while speeding up hydration. Only available on managed clusters.  Specify a single `ON HYDRATION` sub-policy, which supports the following options:  \| Option \| Description \| \|--------\|-------------\| \| `HYDRATION SIZE` \| The size of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration. For valid size values, see [Available sizes](#available-sizes). \| \| `LINGER DURATION` \| Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`. \|  Set an empty strategy (`AUTO SCALING STRATEGY = ()`) to disable autoscaling.  |
 | `EXPERIMENTAL ARRANGEMENT COMPRESSION` | {{< warn-if-unreleased-inline "v26.38" >}}  Optional. Whether to enable [dictionary compression](#dictionary-compression) for the arrangements maintained by the cluster's replicas. Compression reduces the memory those arrangements use, at the cost of CPU, and does not benefit every workload. Only available on managed clusters.  {{< warning >}} Because changing this option never changes an existing replica, Materialize creates a new set of replicas carrying the new setting and cuts over to them once they have hydrated. For more information, see [Dictionary compression](#dictionary-compression). {{< /warning >}}  Default: `FALSE`  |
-| `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under active development.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* A fixed duration to wait for the new replicas to be ready. This option can lead to downtime. As such, we recommend using the `WAIT UNTIL READY` option instead.\|  |
+| `WITH (<with_option>[,...])` |  The following `<with_option>`s are supported: \| Option  \| Description \| \|--------\|-------------\| \| `WAIT UNTIL READY(...)`    \| ***Private preview.** This option has known performance or stability issues and is under active development.* {{< include-from-yaml data="examples/alter_cluster" name="wait-until-ready-cmd-option" >}} \| \| `WAIT FOR` \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Equivalent to `WAIT UNTIL READY` with `ON TIMEOUT = 'ROLLBACK'`. Materialize cuts over once the new replicas hydrate. When Materialize processes an expired timeout, it rolls back the resize and keeps the current size if the target replicas are still unhydrated.\|  |
 
 **Reset to default:**
 
@@ -508,9 +508,11 @@ The resize still proceeds in the background.
   SET (SIZE = '100cc') WITH (WAIT UNTIL READY (TIMEOUT = '10m'));
   ```
 
-- `WAIT FOR '<duration>'` sets the timeout and commits when it expires,
-  regardless of hydration status, which can cause downtime. Prefer
-  `WAIT UNTIL READY`.
+- `WAIT FOR '<duration>'` is equivalent to `WAIT UNTIL READY (TIMEOUT =
+  '<duration>', ON TIMEOUT = 'ROLLBACK')`. Materialize cuts over once the target
+  replicas hydrate. When Materialize processes an expired timeout, it
+  rolls back the resize and keeps the current size if the target replicas are
+  still unhydrated.
 
 See [Monitoring a resize](#monitoring-a-resize) to track progress and
 [cancel](#monitoring-a-resize) an in-flight resize.
@@ -5556,13 +5558,14 @@ CREATE CONNECTION sqlserver_connection TO SQL SERVER (
 An Iceberg catalog connection establishes a link to an [Apache Iceberg](https://iceberg.apache.org/)
 catalog. You can use Iceberg catalog connections to create [Iceberg sinks](/sql/create-sink/iceberg).
 
-Materialize supports two catalog types:
+Materialize supports the following catalog type and destination combinations:
 
 | Catalog type | Destination | Authentication |
 | --- | --- | --- |
 | `'s3tablesrest'` | [AWS S3 Tables](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables.html) | [AWS connection](#aws) |
 | `'rest'` | [Google Cloud BigLake](https://docs.cloud.google.com/lakehouse/docs/lakehouse-iceberg-rest-catalog) <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
  | [GCP connection](#gcp) |
+| `'rest'` | Any [Iceberg REST catalog](https://iceberg.apache.org/spec/), including [Databricks Unity Catalog](/serve-results/sink/iceberg-databricks/) | OAuth2 credentials in a secret |
 
 #### Syntax {#iceberg-catalog-syntax}
 
@@ -5603,6 +5606,33 @@ CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
 | `URL` | *Value:* `text`. Required.  GCP BigLake Iceberg catalog URL: `https://biglake.googleapis.com/iceberg/v1/restcatalog`  |
 | `WAREHOUSE` | *Value:* `text`. Required.  GCS bucket URI: `gs://<bucket>`  |
 | `GCP CONNECTION` | *Value:* object name. Required.  The name of a [GCP connection](#gcp) to use for authentication.  |
+
+**Iceberg REST catalog:**
+
+> **Public Preview:** This feature is in public preview.
+
+```mzsql
+CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
+    CATALOG TYPE = 'rest',
+    URL = '<catalog_url>',
+    WAREHOUSE = '<warehouse>',
+    CREDENTIAL = SECRET <secret_name>,
+    OAUTH2 SERVER URL = '<token_url>',
+    SCOPE = '<scope>',
+    ACCESS DELEGATION = 'vended-credentials'
+);
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<connection_name>` | A name for the connection.  |
+| `URL` | *Value:* `text`. Required.  The catalog's Iceberg REST endpoint, the path the catalog serves `/v1/` under. Consult your catalog's documentation for the exact URL.  |
+| `WAREHOUSE` | *Value:* `text`. Optional.  The warehouse to operate in. What this names is catalog-specific: some catalogs expect a storage location, others the name of a catalog or warehouse object.  |
+| `CREDENTIAL` | *Value:* secret name or `text`. Required unless `GCP CONNECTION` is used.  OAuth2 client credentials as `<client_id>:<client_secret>`. A value with no colon is sent as the client secret alone.  |
+| `OAUTH2 SERVER URL` | *Value:* `text`. Optional.  The token endpoint to exchange `CREDENTIAL` at. Defaults to `<url>/v1/oauth/tokens`, the endpoint the Iceberg REST specification derives from the catalog URL.  Required for catalogs that serve their token endpoint elsewhere, or behind an auth gateway that will not serve an unauthenticated exchange.  |
+| `SCOPE` | *Value:* `text`. Optional.  The OAuth2 scope to request. Defaults to `catalog`, the scope the Iceberg REST specification defines.  |
+| `ACCESS DELEGATION` | *Value:* `'vended-credentials'`. Optional.  Requests temporary, table-scoped storage credentials from the catalog. Required for catalogs that manage their own storage and vend credentials as the only way to reach it.  See [Storage access delegation](/sql/create-connection/#iceberg-catalog-access-delegation).  |
 
 #### Examples {#iceberg-catalog-examples}
 
@@ -5646,6 +5676,65 @@ CREATE CONNECTION iceberg_catalog_connection TO ICEBERG CATALOG (
 );
 
 ```
+
+**Iceberg REST catalog:**
+
+> **Public Preview:** This feature is in public preview.
+
+The following example creates an [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) for Databricks Unity Catalog:
+```mzsql
+-- Store the service principal's OAuth credentials as `<client_id>:<client_secret>`.
+CREATE SECRET databricks_oauth
+  AS '<client_id>:<client_secret>';
+
+-- Create the Iceberg catalog connection pointing to Unity Catalog.
+CREATE CONNECTION iceberg_catalog_connection TO ICEBERG CATALOG (
+    CATALOG TYPE = 'rest',
+    URL = 'https://<workspace>.cloud.databricks.com/api/2.1/unity-catalog/iceberg-rest',
+    WAREHOUSE = '<catalog_name>',
+    CREDENTIAL = SECRET databricks_oauth,
+    OAUTH2 SERVER URL = 'https://<workspace>.cloud.databricks.com/oidc/v1/token',
+    SCOPE = 'all-apis',
+    ACCESS DELEGATION = 'vended-credentials'
+);
+
+```
+
+#### Storage access delegation {#iceberg-catalog-access-delegation}
+
+Some Iceberg catalogs manage the object storage behind their tables and mint
+temporary, table-scoped credentials for it on request, rather than expecting
+clients to hold credentials of their own. The Iceberg specification calls this
+credential vending.
+
+The `ACCESS DELEGATION` option asks the catalog to vend credentials:
+
+| | |
+| --- | --- |
+| **Value** | `'vended-credentials'`. This is the only accepted value. |
+| **Default** | Unset, meaning Materialize does not request delegation. |
+| **Valid with** | `CATALOG TYPE = 'rest'` using `CREDENTIAL`. Not supported for `CATALOG TYPE = 's3tablesrest'`, which authenticates to storage through an [AWS connection](#aws), or for REST catalogs using `GCP CONNECTION`. |
+
+Exactly one source of storage credentials is used, determined by how the
+connection is configured. There is no fallback between them:
+
+| Connection | Storage credentials used |
+| --- | --- |
+| `CATALOG TYPE = 'rest'` with `CREDENTIAL` and `ACCESS DELEGATION` | Only the table-scoped credentials the catalog vends, refreshed as they expire. Any storage credentials the catalog returns in its configuration are ignored. |
+| `CATALOG TYPE = 'rest'` with `CREDENTIAL` and no `ACCESS DELEGATION` | Only the storage credentials the catalog returns in its configuration. |
+| `CATALOG TYPE = 'rest'` with `GCP CONNECTION` | Only the GCP connection's service account. |
+| `CATALOG TYPE = 's3tablesrest'` | Only the AWS connection's credentials, for both the catalog and its storage. |
+
+Delegation is opt-in rather than always requested, because a catalog that gates
+it behind privileges the principal does not hold rejects the whole request
+rather than falling back. Requesting it unconditionally would break connections
+that work today.
+
+Some catalogs, including [Databricks Unity
+Catalog](/serve-results/sink/iceberg-databricks/), vend
+credentials as the only
+way to reach their storage, so `ACCESS DELEGATION` is required there rather than
+optional.
 
 For more information about using Iceberg sinks, see the [Iceberg sink documentation](/serve-results/sink/iceberg/).
 
