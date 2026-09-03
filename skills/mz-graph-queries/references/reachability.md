@@ -9,8 +9,8 @@ what is within three hops, how do I keep a closure honest as edges age out, is
 there a cycle in my dependency graph, what order do these tasks run in, what
 breaks if I change this table, and what fed the table that is wrong.
 
-Fixture tables used: `transfers`, `pipelines`, `depends_on`. Every block
-assumes `references/fixture.sql` is loaded.
+Fixture tables used: `accounts`, `transfers`, `pipelines`, `depends_on`. Every
+block assumes `references/fixture.sql` is loaded.
 
 The fixture's transfers form a ring, a1 to a2 to a3 and back to a1, with a3 to
 a4 to a5 hanging off it and a separate a6 to a7 in its own component. The
@@ -166,8 +166,9 @@ whole graph first and then filter
 The `min` is inside because without it a node reachable two ways at two
 different lengths is two rows, and the row set never settles into one row per
 node; that is the same failure the `distance` column causes in
-[hierarchies.md](hierarchies.md#depth-and-root-for-every-node). With `min` in
-place the bound is the only thing the loop needs, and removing the bound
+[hierarchies.md#cycles-in-a-tree](hierarchies.md#cycles-in-a-tree), where the
+counter-carrying closure diverges on a loop. With `min` in place the bound is
+the only thing the loop needs, and removing the bound
 entirely still converges on this cyclic fixture: it returns the full shortest
 hop count, (a2, 1), (a3, 2), (a1, 3), (a4, 3), (a5, 4), because a value that
 only descends toward a floor cannot cycle forever.
@@ -262,9 +263,11 @@ The read returns a1 through a5. A recursive binding accepts `mz_now()`, and a
 materialized view over one installs and hydrates. This is the difference
 between a filter on the clock and a filter on a column: the view is a standing
 dataflow, so a pair leaves it when the edge supporting it ages past the window,
-with no input change and no recomputation
-([semantics.md#update-locality](semantics.md#update-locality)). `mz_now()` is
-the function that does this, and it is the only one available: swapping in
+with no input change and no recomputation. That retraction is Materialize's
+documented temporal-filter behavior: an `mz_now()` bound in a `WHERE` clause
+drops a row when the clock passes it, which is what the `now()` and `mz_now()`
+function reference calls a temporal filter. `mz_now()` is the function that
+does this, and it is the only one available: swapping in
 `now()` makes the same view fail to create, with `ERROR:  cannot materialize
 call to current_timestamp`.
 
@@ -384,13 +387,22 @@ SELECT task, level FROM level ORDER BY task;
 It returns `t0` at 0, `t2` at 17, `t3` at 18 and `t1` at 19, with no error.
 Those are not levels; they are the running counters at iteration 20, and at
 `ERROR AT RECURSION LIMIT 30` they come back as 27, 28 and 29 instead. A
-maintained view of this shape over cyclic data installs, never hydrates, and
-raises nothing
-([semantics.md#recursion-limits](semantics.md#recursion-limits)). Guard it with the `on_cycle` audit above, which converges on exactly
-the data that breaks this one, and if you want a self-check inside the query
-itself, use `RETURN AT RECURSION LIMIT` and reject the result when any level
-reaches the number of tasks, since no level on a DAG of n tasks can exceed
-n-1.
+materialized view of this shape installs, and it serves. A read of one built
+over this exact block returns those same four rows in well under a second, and
+`mz_internal.mz_hydration_statuses` reports `hydrated = f` for it the whole
+time. The limit is what makes that possible: it stops the loop, so the view has
+a state to hand out, and iteration-20 counters are indistinguishable from
+levels to whatever reads them. Only the unlimited form behaves the way an
+unconverged view is supposed to, holding a dataflow and returning nothing
+([semantics.md#recursion-limits](semantics.md#recursion-limits)).
+
+Guard it with the `on_cycle` audit above, which converges on exactly the data
+that breaks this one. For a self-check inside the query itself, use `RETURN AT
+RECURSION LIMIT` with the limit set above the number of tasks, and reject the
+result when any level reaches that number: no level on a DAG of n tasks can
+exceed n-1, and a cycle's counters top out at the limit minus one, so the check
+only means something when the limit is larger than n. At or below n it passes
+on fabricated levels.
 
 Standard SQL brings "traverse every path from every root, then `GROUP BY task`
 with `MAX(depth)` outside". It gives the same answer on a DAG and it
