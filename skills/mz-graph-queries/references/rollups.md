@@ -247,10 +247,12 @@ row is final one iteration after all of its parents' rows are, and the DAG has
 finitely many levels.
 
 The guardrail from the previous section does not transfer, and this is worth
-knowing before relying on it. On v26.38.1 a binding whose top level is an
-aggregate does not trip `ERROR AT RECURSION LIMIT`; the block behaves like
-`RETURN AT RECURSION LIMIT` and hands back whatever state it had reached. Run
-`needed_agg` over the same self-containing data:
+knowing before relying on it. On v26.38.1 `ERROR AT RECURSION LIMIT` tracks
+changes to the row set and not to values, so a binding topped by a reduce
+raises only while it is still adding or removing rows. Once its keys have
+settled and only the quantities keep climbing, the limit goes quiet and the
+block behaves like `RETURN AT RECURSION LIMIT`, handing back whatever state it
+had reached. Run `needed_agg` over the same self-containing data:
 
 ```sql
 WITH MUTUALLY RECURSIVE (ERROR AT RECURSION LIMIT 20)
@@ -273,9 +275,12 @@ SELECT part_id, qty FROM needed_agg ORDER BY part_id;
 
 It returns part 2 at 59048 and part 3 at 177144, with no error. Those are not
 answers; they are the running totals at iteration 20, and they get bigger if
-the limit does. The `needed` form over the same data errors. So for an
-aggregate-inside explosion, do not treat the limit as the safety net: keep a
-cycle check standing next to it. The counter-free closure audit in
+the limit does. Parts 2 and 3 are both present after the first laps, so from
+then on nothing about the row set changes and there is nothing left for the
+limit to notice. The `needed` form over the same data errors, because there
+every lap adds a row. So for an aggregate-inside explosion, do not treat the
+limit as the safety net: keep a cycle check standing next to it. The
+counter-free closure audit in
 [hierarchies.md](hierarchies.md#cycles-in-a-tree) works on `bom` with
 `parent_id` and `child_id` in place of `manager_id` and `id`, and it converges
 on cyclic input, so it can alarm on exactly the data that would corrupt this
@@ -388,10 +393,11 @@ plus a cycle audit is the safer default in both.
   use consumes bolts; the same shape over an org chart where someone reports to
   two managers counts that person twice at the top. Pick the operator from the
   "once or per path" table before writing the recursion.
-- Trusting `ERROR AT RECURSION LIMIT` on an aggregate-topped binding. On
-  v26.38.1 it does not fire; `needed_agg` over self-containing data returns
-  iteration-20 numbers with no error, where the `needed` form raises. Guard
-  aggregate rollups with a standing cycle audit as well as a limit.
+- Trusting `ERROR AT RECURSION LIMIT` on a binding topped by a reduce. On
+  v26.38.1 the limit notices row changes, not value changes, so it stops firing
+  once the keys have settled: `needed_agg` over self-containing data returns
+  iteration-20 numbers with no error, where the row-adding `needed` form raises.
+  Guard aggregate rollups with a standing cycle audit as well as a limit.
 - A plain `sum` where the rollup is signed. A chart of accounts with contra
   accounts, or an inventory with returns, signs the node's own amount inside
   the binding and adds the children's totals unchanged: `e.amount * e.sign +
