@@ -180,6 +180,24 @@ Reducing the memory footprint and cost of Materialize compute clusters, with eve
 
 </details>
 
+<details>
+<summary><strong>mz-graph-queries</strong></summary>
+
+Writing graph and hierarchy queries in Materialize with `WITH MUTUALLY RECURSIVE`: pick the pattern, prove it converges, guard it, and keep it cheap to maintain.
+
+**Use when:**
+
+- Anything over a tree, a DAG, or a graph: org charts, bills of materials, category trees, lineage, context graphs
+- Descendants, ancestors, depth, rollups, reachability, transitive closure, k-hop neighbourhoods, shortest or cheapest path
+- Connected components, entity-resolution clusters, strongly connected components, cycle detection, topological order
+- Permission or role inheritance, and "can this user see this record" as an indexed point check
+- Translating `WITH RECURSIVE`, `CONNECT BY`, or DuckDB `USING KEY` to Materialize
+- A recursive view never returns, never hydrates, or serves numbers that are not the answer
+
+**Covers:** problem classification from the user's phrasing to a named pattern, and nine reference files: WMR semantics (multisets, convergence, mandatory types, recursion limits, optimizer blind spots, `EXPLAIN`, update locality), trees and hierarchies, rollups and bill-of-materials explosion, reachability and impact analysis, shortest paths with a witness route, connected and strongly connected components, permission inheritance with overrides, migration from other dialects, and context-graph traversal for agents. Every SQL block is verified against a bundled fixture and ships with the output it produces on it. The eval harness it was developed against lives in `evals/mz-graph-queries/`.
+
+</details>
+
 ## Claude Code Plugins
 
 This repo also doubles as a [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces), for capabilities that go beyond what a portable skill can express — such as registering a language server.
@@ -260,6 +278,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-09-03: Add mz-graph-queries skill and its eval harness
 - 2026-08-27: Add mz-optimize-memory skill and its eval harness
 - 2026-08-24: Add mz-ontology-design skill
 - 2026-08-18: Add materialize-debug-freshness skill
