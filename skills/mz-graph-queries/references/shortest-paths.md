@@ -404,7 +404,8 @@ has to be a deliberate choice rather than a habit.
   `route` runs forever. A zero road out of the seed always loses, because `NULL`
   sorts last and the seed's own row cannot win the tie.
 - Treating `ERROR AT RECURSION LIMIT` as a correctness check on `hops`, `dist`
-  or `best`. All three are topped by a reduce, and on v26.38.1 the limit stops
+  or `best`. All three are topped by a reduce or a TopK, and on v26.38.1 the
+  limit stops
   raising once the set of keys has settled, which on a distance recursion is
   long before the values have
   ([semantics.md#recursion-limits](semantics.md#recursion-limits)). Validate the

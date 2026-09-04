@@ -42,7 +42,9 @@ def view_definition(schema: str, view: str) -> str | None:
         "  SELECT schema_id, name, definition FROM mz_catalog.mz_views"
         "  UNION ALL SELECT schema_id, name, definition FROM mz_catalog.mz_materialized_views"
         ") v JOIN mz_catalog.mz_schemas s ON s.id = v.schema_id "
-        f"WHERE s.name = '{schema}' AND v.name = '{view}';")
+        "  JOIN mz_catalog.mz_databases d ON d.id = s.database_id "
+        f"WHERE d.name = current_database() AND s.name = '{schema}' "
+        f"AND v.name = '{view}';")
     return r.rows[0][0] if r.ok and r.rows else None
 
 
@@ -78,7 +80,7 @@ def grade(schema: str, f: fx.Fixture, cluster: str, out_dir: Path) -> dict:
         exists = d is not None or q["error"] is None
         rec = {"task": t.id, "family": t.family, "view": t.view, "exists": exists, "timed_out": q["timed_out"],
                "error": q["error"], "initial_ok": False, "missing_rows": [], "extra_rows": [],
-               "partial": None, "post_mutation_ok": None, "guardrail": None}
+               "partial": None, "post_mutation_ok": None, "recursive": None, "guardrail": None}
         if not q["timed_out"] and q["error"] is None:
             missing, extra = diff(t.reference(f), q["rows"])
             rec["initial_ok"] = not missing and not extra
@@ -88,6 +90,9 @@ def grade(schema: str, f: fx.Fixture, cluster: str, out_dir: Path) -> dict:
             if n is not None:
                 rec["initial_ok"] = n == len(t.reference(f))
                 rec["partial"] = "count-only"
+        # `recursive` is the guardrail denominator: an answer written without
+        # WITH MUTUALLY RECURSIVE has no recursion to limit and is not counted.
+        rec["recursive"] = None if d is None else ("MUTUALLY RECURSIVE" in d.upper())
         rec["guardrail"] = None if d is None else ("RECURSION LIMIT" in d.upper())
         results[t.id] = rec
     cur = f
@@ -119,17 +124,19 @@ def grade(schema: str, f: fx.Fixture, cluster: str, out_dir: Path) -> dict:
         "post_mutation_ok": sum(r["post_mutation_ok"] is True for r in results.values()),
         "mutations": sum(r["post_mutation_ok"] is not None for r in results.values()),
         "timed_out": sum(r["timed_out"] for r in results.values()),
+        "recursive": sum(r["recursive"] is True for r in results.values()),
         "guardrail": sum(r["guardrail"] is True for r in results.values()),
     }
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "results.json").write_text(json.dumps({"summary": summary, "tasks": results}, indent=2))
     lines = ["# Grading worksheet", "", f"schema `{schema}`", "",
-             "| task | exists | initial | after mutation | timed out | guardrail | maintainability (manual) | explanation (manual) |",
-             "|---|---|---|---|---|---|---|---|"]
+             "| task | exists | initial | after mutation | timed out | recursive | guardrail "
+             "| maintainability (manual) | explanation (manual) |",
+             "|---|---|---|---|---|---|---|---|---|"]
     for r in results.values():
         initial = f"{r['initial_ok']} ({r['partial']})" if r["partial"] else f"{r['initial_ok']}"
         lines.append(f"| {r['task']} | {r['exists']} | {initial} | {r['post_mutation_ok']} | "
-                     f"{r['timed_out']} | {r['guardrail']} |  |  |")
+                     f"{r['timed_out']} | {r['recursive']} | {r['guardrail']} |  |  |")
     lines += ["", f"summary: {json.dumps(summary)}"]
     (out_dir / "worksheet.md").write_text("\n".join(lines) + "\n")
     return {"summary": summary, "tasks": results}

@@ -118,6 +118,48 @@ class ExistsFromCatalog(unittest.TestCase):
         rec = self.grade_one(t, "ERROR:  unknown catalog item 's.t08_scc'", None)
         self.assertFalse(rec["exists"])
         self.assertIsNone(rec["guardrail"])
+        self.assertIsNone(rec["recursive"])
+
+
+class RecursiveDenominator(unittest.TestCase):
+    """Axis 3 divides the guardrail count by `recursive`, not by `exists`: an
+    answer written without WITH MUTUALLY RECURSIVE has no recursion to limit
+    and must not drag the component down. t06 and t05 were answered
+    non-recursively by a real bare cell."""
+
+    def grade_one(self, task, definition):
+        f = fx.eval_fixture(1, 20)
+
+        def fake_run(sql, **kw):
+            if "mz_catalog.mz_views" in sql:
+                return mzclient.Result(rc=0, rows=[[definition]])
+            return mzclient.Result(rc=0, rows=[])
+
+        with mock.patch.object(grade.mzclient, "run", fake_run), \
+                mock.patch.object(grade.T, "TASKS", [task]), \
+                tempfile.TemporaryDirectory() as d:
+            out = grade.grade("s", f, "c", Path(d))
+            return out, (Path(d) / "worksheet.md").read_text()
+
+    def test_non_recursive_answer_is_outside_the_denominator(self):
+        t = next(x for x in tasks.TASKS if x.id == "t06")
+        out, sheet = self.grade_one(
+            t, "CREATE VIEW t06_hops AS SELECT a.id FROM e a JOIN e b ON b.src = a.dst")
+        self.assertFalse(out["tasks"]["t06"]["recursive"])
+        self.assertFalse(out["tasks"]["t06"]["guardrail"])
+        self.assertEqual(out["summary"]["recursive"], 0)
+        self.assertEqual(out["summary"]["exists"], 1)
+        self.assertIn("| recursive | guardrail |", sheet)
+
+    def test_recursive_and_limited_answer_counts_in_both(self):
+        t = next(x for x in tasks.TASKS if x.id == "t06")
+        out, _ = self.grade_one(
+            t, "CREATE VIEW t06_hops AS with mutually recursive "
+               "(return at recursion limit 50) r(a text) AS (SELECT id FROM e) SELECT a FROM r")
+        self.assertTrue(out["tasks"]["t06"]["recursive"])
+        self.assertTrue(out["tasks"]["t06"]["guardrail"])
+        self.assertEqual(out["summary"]["recursive"], 1)
+        self.assertEqual(out["summary"]["guardrail"], 1)
 
 
 if __name__ == "__main__":

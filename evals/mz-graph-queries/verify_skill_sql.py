@@ -97,6 +97,17 @@ def verify_file(path: Path, record: bool, keep: bool) -> tuple[int, int]:
     name = path.stem
     schema = f"verify_{name.replace('-', '_')}"
     load_fixture(schema)
+    try:
+        fails, blocks = run_blocks(path, name, schema, record)
+    finally:
+        # Drop the scratch schema even when a block raises, unless --keep.
+        if not keep:
+            mzclient.run(f"DROP SCHEMA IF EXISTS {schema} CASCADE;")
+    return fails, blocks
+
+
+def run_blocks(path: Path, name: str, schema: str, record: bool) -> tuple[int, int]:
+    """Run every non-skipped block in one file against an already loaded schema."""
     fails = blocks = 0
     for b in extract_blocks(path.read_text()):
         if b.mode == "skip":
@@ -136,8 +147,6 @@ def verify_file(path: Path, record: bool, keep: bool) -> tuple[int, int]:
             fails += 1
         else:
             print(f"PASS  {name} #{b.index}")
-    if not keep:
-        mzclient.run(f"DROP SCHEMA IF EXISTS {schema} CASCADE;")
     return fails, blocks
 
 
@@ -167,7 +176,8 @@ def main() -> int:
         blocks += b
     counts = f"{len(paths)} file(s), {blocks} block(s)"
     print(f"OK  ({counts})" if fails == 0 else f"FAILURES: {fails}  ({counts})")
-    return fails
+    # A process exit code wraps at 256; 255 failures and 256 must not both be 0.
+    return min(fails, 255)
 
 
 if __name__ == "__main__":

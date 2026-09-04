@@ -67,8 +67,9 @@ have settled, and these keys settle in the first iteration
 too low does not fail; it returns a partial labelling as if it were the answer.
 The 0.3-threshold block below, run with `ERROR AT RECURSION LIMIT 2`, returns
 c6 labelled c5 and raises nothing, because iteration 3 changes only a value.
-Nothing is lost by leaving the limit off: this shape cannot diverge, because a
-value that only descends toward a floor has nowhere to go.
+The limit is not what protects this shape, which cannot diverge, because a
+value that only descends toward a floor has nowhere to go. Keep it as a runtime
+bound, and read the propagation argument above as the correctness case.
 
 Four choices carry the whole pattern.
 
@@ -481,11 +482,14 @@ in a procedural language, or pulls the edges out to a graph library.
   ([semantics.md#recursion-limits](semantics.md#recursion-limits)). Set it too
   low and it returns a half-propagated labelling in silence rather than
   raising: the 0.3-threshold block at limit 2 comes back with c6 labelled c5.
-  The propagation cannot diverge, so nothing is lost by omitting the limit, but
-  the limit is not what is protecting you. A block that only contains a label
-  binding inherits this, `scc_trim` included; the closure block is the one
-  whose limit does raise on every unconverged iteration, because its single
-  binding is topped by a `UNION`.
+  The propagation cannot diverge, but the limit is not what is protecting you:
+  keep it as a runtime bound and read the propagation argument as the
+  correctness case. A block whose only recursion is a label propagation
+  inherits this. `scc_trim`'s outer limit inherits it too, because its
+  recursive bindings' row sets settle in the first round while the labels keep
+  changing, so that limit has no row change to notice either. The closure block
+  is the one whose limit does raise on every unconverged iteration, because its
+  single binding is topped by a `UNION`.
 - The closure form on a dense graph. `reach` approaches the square of the node
   count and is then joined to itself. Use the trimming form when the closure
   will not fit ([reachability.md#whole-graph-closure](reachability.md#whole-graph-closure)).

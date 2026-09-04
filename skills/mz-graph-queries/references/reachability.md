@@ -391,8 +391,8 @@ SELECT task, level FROM level ORDER BY task;
 It returns `t0` at 0, `t2` at 17, `t3` at 18 and `t1` at 19, with no error.
 Those are not levels; they are the running counters at iteration 20, and at
 `ERROR AT RECURSION LIMIT 30` they come back as 27, 28 and 29 instead. A
-materialized view of this shape installs, hydrates and serves, all inside a
-second. A read of one built over this exact block returns those same four rows,
+materialized view of this shape installs, hydrates and serves, all within a
+second or two. A read of one built over this exact block returns those same four rows,
 and `mz_internal.mz_hydration_statuses` reports `hydrated = t` for it. That is
 the sharper warning. The limit stops the loop, so the view reaches a state and
 every health signal says it is healthy, while the numbers it serves are
