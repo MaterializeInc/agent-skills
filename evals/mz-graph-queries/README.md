@@ -214,3 +214,23 @@ above the grade.
 
 | run | condition | seed | initial_ok | post_mutation_ok | timed_out | guardrail | axis total (/5) |
 |---|---|---|---|---|---|---|---|
+| gq_sb_s1 | sonnet, bare | 1 | 14/14 | 6/6 | 0 | 0/14 | 4.325 |
+| gq_ss_s1 | sonnet, skill | 1 | 14/14 | 6/6 | 0 | 7/14 | 4.825 |
+
+Both cells: 2026-09-03, scale 100, Materialize v26.38.1, Claude Code 2.1.259,
+model `claude-sonnet-5`. Neither was killed by the watchdog and neither produced
+a `count-only` or `skipped` grade, so nothing above is provisional. The
+per-cell grading sheets are `GRADE.md` in each run's private directory; they
+record the hand re-checks behind the guardrail and index columns.
+
+The Opus cells (`ob`, `os`) are pending; they are not part of the plan that
+produced these two.
+
+What the two Sonnet cells say, for anyone reading the table before running
+more. The automatic correctness axes are at ceiling in both conditions: bare
+Sonnet already takes every planted data trap on this fixture and diagnoses the
+t14 `UNION ALL` correctly, so Axes 1 and 2 do not discriminate here and the
+0.5 of separation is entirely on guardrails, indexes, aggregate placement and
+whether the loose phrasings were interpreted out loud. A harder fixture, or a
+scale where the closure shapes stop finishing inside the statement cap, is what
+would move Axes 1 and 2.

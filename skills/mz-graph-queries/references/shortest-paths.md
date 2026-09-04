@@ -207,8 +207,11 @@ city is present and only the numbers are still falling. A shortest-path binding
 reaches all its keys early and then spends the rest of the loop lowering
 values, so the guardrail goes quiet at exactly the point it would have to
 speak. Check the
-weights instead, with a standing `SELECT count(*) FROM roads WHERE km <= 0`, and
-treat the limit as a bound on runtime rather than as a correctness check.
+weights instead, with a standing `SELECT count(*) FROM roads WHERE km <= 0`.
+That is what changes: the limit stops being the correctness check, not the
+limit. Keep `RETURN AT RECURSION LIMIT n` on the view, with n above the
+iteration count you expect, because it still bounds runtime and turns a runaway
+into a bad answer you can see rather than a dataflow that never hydrates.
 
 Standard SQL brings one of two things, and neither is a query. The first is
 Dijkstra in a procedural language, a priority queue in PL/pgSQL or a stored
@@ -405,7 +408,8 @@ has to be a deliberate choice rather than a habit.
   raising once the set of keys has settled, which on a distance recursion is
   long before the values have
   ([semantics.md#recursion-limits](semantics.md#recursion-limits)). Validate the
-  weights instead.
+  weights for correctness, and keep the limit for the runtime bound; dropping it
+  because it cannot prove correctness leaves the view with no bound at all.
 - Answering the hop question with the distance query or the other way round. On
   this fixture the cheapest route to D takes more hops than the shortest one,
   and both answers are correct for their own question.
