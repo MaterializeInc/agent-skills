@@ -102,6 +102,11 @@ Success prints `OK  (9 file(s), N block(s))`. Conventions in the markdown:
 Of the 81 `sql` blocks in `references/`, the verifier runs 79: two are skipped,
 and ten of the 79 are `verify: error` blocks whose failure is the claim.
 
+The verifier sorts the rows before diffing, so it checks the multiset a block
+returns and not the order it returns it in. A prose claim about row order, such
+as an `ORDER BY` producing a particular display sequence, is not machine
+verified; check those by hand.
+
 Re-record with `--record` (optionally `--only <file>`) when the block itself
 changed and the new output is correct, or when a Materialize upgrade changes
 `EXPLAIN` text. Never re-record to make a red block green: read the diff first,
@@ -187,9 +192,9 @@ Grading is automatic where it can be. `grade.py` diffs the agent's views
 against independent Python answer keys in `reference.py`, applies each task's
 mutation script, re-diffs, records which reads did not finish inside its
 60-second timeout, and reads the guardrail out of the view definition. Of the
-five axes in `rubric.md`, three are computed from that output — initial
-correctness, post-mutation correctness, convergence and guardrails — and two
-are read by hand from the agent's report and the view definitions:
+five axes in `rubric.md`, three are computed from that output: initial
+correctness, post-mutation correctness, convergence and guardrails. The other
+two are read by hand from the agent's report and the view definitions,
 maintainability and explanation.
 
 Clean-room rules carry over from `evals/mz-optimize-memory`: the agent's only
@@ -242,8 +247,20 @@ witness-path block returned `(city, step)` and no cost. Its body now joins
 with the total on the last row. `expected/shortest-paths/05.txt` was
 re-recorded.
 
-Two things the runs showed that were *not* folded back, recorded here so the
-next round does not rediscover them:
+**The guardrail denominator counted non-recursive answers. (`rubric.md`,
+`grade.py`.)** Axis 3's guardrail component divided by `exists`, on the
+rubric's assumption that every one of the fourteen answers is recursive. The
+`sb` cell answered t06 with three explicit joins and t05 with a body aggregate
+over t04, both legitimately non-recursive, so a run that limits every recursive
+view it writes could still be marked down for the views that have no recursion
+to limit. It changed no score in the two recorded cells. `grade.py` now reports
+`recursive`, the number of existing views whose definition contains
+`MUTUALLY RECURSIVE`, the worksheet carries it as a column, and the denominator
+is that count. The two recorded rows in `evals/mz-graph-queries/README.md` were
+scored under the old rule and say so.
+
+One thing the runs showed that was *not* folded back, recorded here so the next
+round does not rediscover it:
 
 - The usability pass runs against the same small fixture the reference files
   use as their worked example, so it exercises the happy path of each pattern
@@ -251,12 +268,6 @@ next round does not rediscover them:
   it is right; the graded cells are what cover the traps. Vary the fixture, or
   ask for a shape no block answers directly, if the pass is meant to find
   ambiguity rather than confirm the examples.
-- Axis 3's guardrail denominator is `exists`, on the rubric's assumption that
-  every one of the fourteen answers is recursive. The `sb` cell answered t06
-  with three explicit joins and t05 with a body aggregate over t04, both
-  legitimately non-recursive. It changed no score here, but a run that limits
-  every recursive view it writes can still be marked down for the views that
-  have no recursion to limit.
 
 ## Testing a change to the skill
 

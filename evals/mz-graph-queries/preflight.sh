@@ -5,8 +5,9 @@
 # flags and meta-commands are rejected, plain SQL and heredocs work, DDL
 # works inside the run schema, and a diverging recursive query is killed by
 # the wrapper's watchdog.
-# Part 2 runs one short agent session with exactly the runner's isolation
-# flags and asks it to attempt each allowed and each denied operation; the
+# Part 2 runs one short agent session with the runner's isolation flags, plus
+# a --session-id of its own, and asks it to attempt each allowed and each
+# denied operation; the
 # observed ALLOWED/DENIED answers are compared with the expected matrix.
 # Run it before a batch and after any harness or CLI upgrade. Every check
 # prints PASS or FAIL; the exit code is the number of failures.

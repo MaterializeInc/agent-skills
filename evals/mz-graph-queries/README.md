@@ -64,7 +64,7 @@ customer environment.
 | `tasks.py` | The task registry: one `Task` per prompt, with its answer key, its mutation, and its prompt file. Do not let evaluated agents read this file. |
 | `tasks/tNN.md` | The fourteen colleague requests, as templates with fixture parameters substituted at run time. |
 | `mzclient.py` | Talks to Materialize through the `psql` binary. Reads `EVAL_PSQL_ARGS`. |
-| `grade.py` | Automatic grading. Diffs every view against the key, applies the mutations, re-diffs, reads the recursion guardrail out of each view definition, and writes `results.json` and `worksheet.md`. |
+| `grade.py` | Automatic grading. Diffs every view against the key, applies the mutations, re-diffs, reads the recursion guardrail and whether the definition is recursive at all out of each view definition, and writes `results.json` and `worksheet.md`. |
 | `verify_skill_sql.py` | Runs every fenced `sql` block in the skill's reference files against the small fixture and compares with recorded output. `--record` re-records. |
 | `expected/` | Recorded output for `verify_skill_sql.py`, one directory per skill reference file. |
 | `tests/` | Unit tests for the fixture, the reference keys, the grader, and the SQL verifier. |
@@ -151,7 +151,10 @@ python3 grade.py --schema gq_ss_s1 --seed 1 --scale 100 --out $EVAL_BENCH_ROOT/g
 axes of `rubric.md` weigh 2.0 (initial correctness), 1.0 (correctness after
 mutation), 0.75 (convergence and guardrails), 0.75 (maintainability) and 0.5
 (explanation), summing to 5.0. Axes 1 to 3 are computed from the summary keys `initial_ok`,
-`post_mutation_ok`, `mutations`, `timed_out`, `guardrail`, and `exists`. Axes 4
+`post_mutation_ok`, `mutations`, `timed_out`, `guardrail`, `recursive`, and
+`exists`. The guardrail component divides by `recursive`, the number of existing
+views whose definition contains `MUTUALLY RECURSIVE`, not by `exists`: an answer
+written without recursion has no recursion to limit. Axes 4
 (maintainability) and 5 (explanation) are manual and read the agent's
 `report.md`, the transcript, and the view definitions in the run schema.
 
@@ -223,8 +226,10 @@ the reduce-topped guardrail passages in `references/shortest-paths.md` and
 `references/rollups.md` in response to what these two cells showed. A later cell
 is therefore not comparable to the `guardrail` column above on equal terms: a
 higher number in a fresh `ss` run is the expected effect of that edit, not a
-model or variance difference. Re-run `sb` alongside any fresh `ss` before
-reading a delta.
+model or variance difference. Axis 3's guardrail denominator also changed after
+these two rows were scored, from `exists` to `recursive`, so their axis totals
+are on the old rule and a fresh run's total is not comparable on that component
+either. Re-run `sb` alongside any fresh `ss` before reading a delta.
 
 Both cells: 2026-09-03, scale 100, Materialize v26.38.1, Claude Code 2.1.259,
 model `claude-sonnet-5`. Neither was killed by the watchdog and neither produced

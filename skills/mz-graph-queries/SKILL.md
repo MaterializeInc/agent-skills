@@ -50,7 +50,7 @@ mutual. **Output**: membership, a per-node min, max or sum, or a witness path.
 | "shortest", "cheapest", "fewest hops", "route" | shortest paths | `sym`, `hops`, `dist`, `best`, `route` | [shortest-paths.md#fewest-hops](references/shortest-paths.md#fewest-hops), [#cheapest-route](references/shortest-paths.md#cheapest-route), [#one-witness-path](references/shortest-paths.md#one-witness-path) |
 | "clusters", "groups of linked", "same customer", "duplicates", "rings" | components or SCC | `links`, `label`, `scc_closure`, `scc_trim` | [components.md#connected-components-by-min-label-propagation](references/components.md#connected-components-by-min-label-propagation), [#strongly-connected-components-without-the-closure](references/components.md#strongly-connected-components-without-the-closure) |
 | "loop", "circular", "is this a tree" | cycle audit | `closure` | [reachability.md#cycle-membership](references/reachability.md#cycle-membership) |
-| "build order", "which first" | topological level | `level` | [reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag) |
+| "build order", "which first", "longest path", "critical path" | topological level | `level` | [reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag) |
 | "effective permissions", "inherits access", "can user see" | permissions | `effective`, `user_access`, `holds` | [permissions.md#inheritance-down-a-group-tree-with-overrides](references/permissions.md#inheritance-down-a-group-tree-with-overrides), [#per-user-and-a-point-check](references/permissions.md#per-user-and-a-point-check) |
 | "convert this `WITH RECURSIVE` / `CONNECT BY` / `USING KEY`" | migration | the same pattern, quoted verbatim | [migrating.md#translation-table](references/migrating.md#translation-table) |
 | "never returns", "never hydrates", "stuck hydrating" | convergence | the binding's top, and what it is unioned with | [semantics.md#multisets-and-convergence](references/semantics.md#multisets-and-convergence), [#pitfalls](references/semantics.md#pitfalls) |
@@ -118,13 +118,13 @@ WITH MUTUALLY RECURSIVE (RETURN AT RECURSION LIMIT 1000)
     )
 -- payload joins and display filters live in the body
 SELECT r.node, r.value, n.name
-FROM result r JOIN nodes n ON n.id = r.node;
+FROM result r JOIN nodes n ON n.id = r.node
+WHERE r.value < 1000; -- rejects state that ran to the recursion limit
 ```
 
 That skeleton names tables outside the bundled fixture, so it is marked
-`verify: skip`; every block the verifier runs is checked against recorded
-output. `result` is reduce-topped, so the guard is `RETURN AT` and the body
-owes a check on the returned state, per Step 4.
+`verify: skip`; every other block is checked against recorded output. `result`
+is reduce-topped, so its guard is `RETURN AT` plus that body check, per Step 4.
 
 ## Step 3: Prove termination
 

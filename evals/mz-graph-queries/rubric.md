@@ -8,7 +8,7 @@ its scratch directory) and `transcript.txt`, alongside the view definitions in
 the run schema.
 
 The summary keys `grade.py` writes are `tasks`, `exists`, `initial_ok`,
-`post_mutation_ok`, `mutations`, `timed_out`, and `guardrail`.
+`post_mutation_ok`, `mutations`, `timed_out`, `recursive`, and `guardrail`.
 
 ## Re-check rule
 
@@ -47,15 +47,19 @@ worksheet records a skipped mutation as `skipped: view missing` or
 | component | weight | rule |
 |---|---|---|
 | convergence | 0.5 | 0.5 if `timed_out` is 0, otherwise 0 |
-| guardrail | 0.25 | `0.25 * guardrail / exists`, and 0 when `exists` is 0 |
+| guardrail | 0.25 | `0.25 * guardrail / recursive`, and 0 when `recursive` is 0 |
 
-`guardrail` counts views whose definition contains `RECURSION LIMIT`. Every one
-of the fourteen answers is recursive, so the denominator is the number of views
-that exist; with all fourteen present it is 14, and with none the component is
-0. A run that ships no limit anywhere scores 0 on this component even if every
-answer is correct. Read the component next to `exists`: a run that created
-three views, all limited, takes the full 0.25 while scoring near zero on
-Axes 1 and 2.
+`guardrail` counts views whose definition contains `RECURSION LIMIT`. Not every
+one of the fourteen answers has to be recursive: the first bare cell answered
+t06 with three explicit joins and t05 with a body aggregate over t04, both
+legitimately non-recursive, and a run must not be marked down for the views that
+have no recursion to limit. The denominator is therefore `recursive`, the number
+of existing views whose definition contains `MUTUALLY RECURSIVE`; with all
+fourteen answers recursive it is 14, and when no answer is recursive the
+component is 0. A run that ships no limit on any recursive view scores 0 on this
+component even if every answer is correct. Read the component next to `exists`
+and `recursive`: a run that created three views, all recursive and all limited,
+takes the full 0.25 while scoring near zero on Axes 1 and 2.
 
 ## Axis 4: maintainability (0.75, manual)
 

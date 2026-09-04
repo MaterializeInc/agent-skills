@@ -489,8 +489,10 @@ and never stops, rather than one that fails to parse.
   several mutually dependent relations are all writable directly.
 - **Nothing deduplicates implicitly.** Feldera compiles every mutually
   recursive view as if it had `SELECT DISTINCT`, precisely so that duplicate
-  rows cannot make it grow forever. WMR does not: the only deduplication is the
-  one you write, as `UNION`, `SELECT DISTINCT`, or an aggregate. A recursive
+  rows cannot make it grow forever
+  ([Feldera recursion documentation](https://docs.feldera.com/sql/recursion/)).
+  WMR does not: the only deduplication is the one you write, as `UNION`,
+  `SELECT DISTINCT`, or an aggregate. A recursive
   view ported from an engine with set semantics needs that `DISTINCT` supplied
   by hand, and the symptom of forgetting is the first bullet.
 
