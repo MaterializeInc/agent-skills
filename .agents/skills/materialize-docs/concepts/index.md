@@ -149,6 +149,21 @@ hierarchy:
 Clusters are pools of compute resources (CPU, memory, and scratch disk space)
 for running your workloads.
 
+## Resource isolation
+
+Clusters provide **resource isolation.** Each cluster provisions dedicated
+compute resources and can fail independently from other clusters. All workloads
+on a given cluster compete for access to that cluster's compute resources.
+
+Workloads on different clusters are strictly isolated from one another. That is,
+a given workload has access only to the CPU, memory, and scratch disk of the
+cluster it runs on.
+
+Resource isolation lets you place workloads on separate clusters to prevent
+them from competing for compute resources.
+
+See also [three-tier architecture](#three-tier-architecture-in-production).
+
 ## Clusters and workloads
 
 The following operations require a cluster in Materialize:
@@ -170,7 +185,8 @@ SET CLUSTER = 'my_transform_cluster';
 [`SELECT`] and [`SUBSCRIBE`] statements run in the session's active cluster.
 
 Objects that require compute (e.g., indexes, materialized views, sources) are
-associated with a cluster when they are created, either:
+associated with a cluster when they are created. The associated cluster is
+either:
 
 - the session's active cluster by default, or
 
@@ -191,22 +207,6 @@ memory](/concepts/clusters/#resource-isolation) cannot be accessed from
 another cluster.
 
 For more on indexes and clusters, see [Indexes](/concepts/indexes/).
-
-## Resource isolation
-
-Clusters provide **resource isolation.** Each cluster provisions dedicated
-compute resources and can fail independently from other clusters. All workloads
-on a given cluster compete for access to that cluster's compute resources.
-
-Workloads on different clusters are strictly isolated from one another. That is,
-a given workload has access only to the CPU, memory, and scratch disk of the
-cluster it runs on.
-
-Resource isolation lets you place workloads on separate clusters to prevent
-them from competing for compute resources: for example, sources in one
-cluster, materialized views in a second, and indexes that serve queries in a
-third, as in the recommended [three-tier
-architecture](#three-tier-architecture-in-production).
 
 ## Cluster replicas
 
@@ -248,6 +248,144 @@ When provisioning replicas,
   across availability zones **cannot** be guaranteed.
 
 See also [Hydration considerations](#hydration-considerations).
+
+## Lifecycle of a cluster
+
+Whenever a cluster starts running a workload (after you create it, resize it,
+or one of its replicas restarts), its replicas move through a sequence of states
+before results are fully up to date. Knowing which state a cluster is in tells
+you whether it is making progress or is stuck.
+
+The queries below monitor a cluster named `lifecycle_demo` that hosts the
+materialized view `bids_by_auction` and its index `bids_by_auction_idx`, both
+built on a continuously-updating `AUCTION` load-generator source. Substitute
+your own cluster and object names.
+
+### Provisioning
+
+Replicas are scheduled and brought online. A cluster with a [replication
+factor](#cluster-replicas) of `0` has no compute and never leaves this state. To
+monitor progress, check that replicas report `online` in
+[`mz_cluster_replica_statuses`](/reference/system-catalog/mz_internal/#mz_cluster_replica_statuses),
+and confirm the cluster has replicas via
+[`mz_clusters`](/reference/system-catalog/mz_catalog/#mz_clusters).
+
+```mzsql
+SELECT c.name AS cluster, r.name AS replica, r.size, st.status, st.reason
+FROM mz_internal.mz_cluster_replica_statuses st
+JOIN mz_catalog.mz_cluster_replicas r ON r.id = st.replica_id
+JOIN mz_catalog.mz_clusters c ON c.id = r.cluster_id
+WHERE c.name = 'lifecycle_demo'
+ORDER BY r.name;
+```
+
+```none
+    cluster     | replica | size | status | reason
+----------------+---------+------+--------+--------
+ lifecycle_demo | r1      | 25cc | online |
+(1 row)
+```
+
+The `reason` column is empty while the replica is `online`, and reports why a
+replica is unavailable otherwise.
+
+### Hydrating
+
+Each replica reconstructs its in-memory state by reading from Materialize's
+storage layer (see [hydration](/concepts/hydration/)). While an object is
+hydrating, its `hydrated` flag reads `f` and its lag is reported as `NULL`. To
+monitor progress, check the `hydrated` flag per object in
+[`mz_hydration_statuses`](/reference/system-catalog/mz_internal/#mz_hydration_statuses),
+where the `replica_id` stays blank until the object attaches to a replica. For
+indexes and materialized views,
+[`mz_compute_hydration_statuses`](/reference/system-catalog/mz_internal/#mz_compute_hydration_statuses)
+also reports how long hydration took.
+
+```mzsql
+SELECT o.name AS object, o.type, r.name AS replica, ch.hydrated, ch.hydration_time
+FROM mz_internal.mz_compute_hydration_statuses ch
+JOIN mz_objects o ON o.id = ch.object_id
+JOIN mz_catalog.mz_cluster_replicas r ON r.id = ch.replica_id
+WHERE o.name IN ('bids_by_auction', 'bids_by_auction_idx', 'bids_load')
+ORDER BY o.name;
+```
+
+```none
+       object        |       type        | replica | hydrated | hydration_time
+---------------------+-------------------+---------+----------+-----------------
+ bids_by_auction     | materialized-view | r1      | t        | 00:00:00.000074
+ bids_by_auction_idx | index             | r1      | t        | 00:00:00.000019
+ bids_load           | materialized-view | r1      | t        | 00:00:05.6032
+(3 rows)
+```
+
+The light view and index hydrate in microseconds, while the larger `bids_load`
+view takes about 5.6 seconds. A larger object with more state to reconstruct
+shows a longer, more visible hydration window.
+
+### Catching up
+
+Once hydrated, the cluster processes the backlog of input updates that
+accumulated while it was unavailable, so its total lag starts high and comes
+down. To monitor progress, watch `lag` decrease in
+[`mz_wallclock_global_lag_recent_history`](/reference/system-catalog/mz_internal/#mz_wallclock_global_lag_recent_history),
+or break the lag down by input with
+[`mz_materialization_lag`](/reference/system-catalog/mz_internal/#mz_materialization_lag).
+
+```mzsql
+SELECT o.name AS object, l.local_lag, l.global_lag,
+       si.name AS slowest_local_input, sg.name AS slowest_global_input
+FROM mz_internal.mz_materialization_lag l
+JOIN mz_objects o ON o.id = l.object_id
+LEFT JOIN mz_objects si ON si.id = l.slowest_local_input_id
+LEFT JOIN mz_objects sg ON sg.id = l.slowest_global_input_id
+WHERE o.name IN ('bids_by_auction', 'bids_load')
+ORDER BY o.name;
+```
+
+```none
+     object      |    local_lag     |    global_lag    | slowest_local_input | slowest_global_input
+-----------------+------------------+------------------+---------------------+----------------------
+ bids_by_auction | 00:00:34.001     | 00:00:34.001     | bids                | bids
+ bids_load        | 00:00:41.001     | 00:00:41.001     | bids                | bids
+```
+
+Both objects trail their slowest input, the `bids` source, by tens of seconds.
+As the cluster works through the backlog, these lags fall.
+
+### Steady state
+
+The cluster has caught up and its lag holds low and roughly constant, typically
+a few seconds. Re-running the lag query confirms the objects have caught up to
+their input.
+
+```mzsql
+SELECT o.name AS object, l.local_lag, l.global_lag,
+       si.name AS slowest_local_input, sg.name AS slowest_global_input
+FROM mz_internal.mz_materialization_lag l
+JOIN mz_objects o ON o.id = l.object_id
+LEFT JOIN mz_objects si ON si.id = l.slowest_local_input_id
+LEFT JOIN mz_objects sg ON sg.id = l.slowest_global_input_id
+WHERE o.name = 'bids_by_auction';
+```
+
+```none
+     object      | local_lag | global_lag | slowest_local_input | slowest_global_input
+-----------------+-----------+------------+---------------------+----------------------
+ bids_by_auction | 00:00:00  | 00:00:00   | bids                | bids
+(1 row)
+```
+
+Wallclock lag in
+[`mz_wallclock_global_lag_recent_history`](/reference/system-catalog/mz_internal/#mz_wallclock_global_lag_recent_history)
+holds near-constant at a few seconds. A lag that instead climbs steadily, at
+about one minute per minute, means the cluster has stopped making progress.
+
+> **Note:** Sources go through an additional
+> [snapshotting](/concepts/snapshotting/) step the first time they run, reading the
+> initial state of the upstream system before the states above apply. See
+> [Troubleshooting](/transform-data/freshness-troubleshooting/) for how to
+> diagnose a cluster that is not progressing through these states.
 
 <a name="sizing-your-clusters"></a>
 
@@ -518,16 +656,15 @@ memory is the bottleneck rather than as a default modeling pattern.
 
 ## Indexes
 
-In Materialize, you can create indexes on [views](/concepts/views/#views) and
-[materialized views](/concepts/views/#materialized-views) as well as tables,
-[sources](/concepts/sources/), and subsources.
-
 ## Overview
 
 Materialize indexes maintain the full result set of the indexed object in
-the memory of the [cluster](/concepts/clusters/) where the index is
-created.[^db-term] The indexed results are kept up-to-date as new data
-arrives.
+the memory of the [cluster](/concepts/clusters/) where the index is created.
+The cluster's workers keep the indexed results up-to-date as new data
+arrives. Like clustered[^db-term] hash indexes, Materialize indexes store
+the indexed results themselves and are efficient for equality lookups on the
+full index key. Materialize indexes are not themselves hash indexes; hashing
+is used only to distribute the index across the cluster's workers.
 
 ![Materialize index maintains the full result set in memory](/images/indexes/index_in_memory.svg)
 
@@ -536,138 +673,228 @@ and pointers to data rows.
 
 ![Materialize indexes do not use a key-pointer structure.](/images/indexes/index_not_key_pointer.svg)
 
-[^db-term]: Materialize indexes are like clustered hash indexes. The term
-*clustered index* is a database term unrelated to Materialize clusters,
-which are compute resources.
+[^db-term]: The term *clustered
+index* is a database term unrelated to Materialize clusters, which are
+compute resources.
 
-## Indexes on sources, tables, and subsources
+## Creating indexes on objects
+
+In Materialize, you can create indexes on [views](/concepts/views/#views) and
+[materialized views](/concepts/views/#materialized-views) as well as on
+[sources, tables, and subsources](/concepts/sources/).
+
+To create indexes on an object, use the [`CREATE INDEX`](/sql/create-index/)
+command. To create the index in a cluster other than the active cluster, include
+the `IN CLUSTER` clause in the `CREATE INDEX` statement.
+
+<no value>```mzsql
+CREATE INDEX [<index_name>]
+[IN CLUSTER <cluster_name>]
+ON <obj_name> [USING <method>] (<col_expr>, ...)
+[WITH (<with_options>)];
+
+```
+
+See [`CREATE INDEX`](/sql/create-index/) for the syntax details.
+
+### Indexes on sources, tables, and subsources
 
 > **Note:** In practice, you may find that you rarely need to index a source and its tables
 > or subsources without performing some transformation using a view, etc.
 
-In Materialize, you can create indexes on a [source and its tables or
-subsources](/concepts/sources/) to maintain in-memory up-to-date data within the
-cluster you create the index. This can help improve [query
-performance](#indexes-and-query-optimizations) such as when [using
+In Materialize, you can create indexes on [sources, tables, or
+subsources](/concepts/sources/) to maintain up-to-date data in the memory of
+the cluster where you create the index. This can help improve [query
+performance](#indexes-and-query-optimizations), for example when [using
 joins](/transform-data/optimization/#join) in your transformation. However, in
 practice, you may find that you rarely need to index these objects directly.
 
 ```mzsql
-CREATE INDEX idx_on_my_source_table ON my_source_table (...);
+CREATE INDEX idx_on_my_source_table ON my_source_table(...);
 ```
 
-## Indexes on views
+### Indexes on views
 
-In Materialize, you can create indexes on a [view](/concepts/views/#views "query
-saved under a name") to maintain **up-to-date view results in memory** within
-the [cluster](/concepts/clusters/) you create the index.
+In Materialize, you can [create indexes](/sql/create-index/) on a
+[view](/concepts/views/#views "query saved under a name") to maintain
+**up-to-date view results in memory** within the [cluster](/concepts/clusters/)
+where you create the index.
 
-```mzsql
-CREATE INDEX idx_on_my_view ON my_view_name(...) ;
-```
+- To create the index in the current active cluster (you can use the `SET
+  CLUSTER` command to change the active cluster):
 
-During the index creation on a [view](/concepts/views/#views "query saved under
-a name"), the view is executed and the view results are stored in memory within
-the cluster. **As new data arrives**, the index **incrementally updates** the
-view results in memory.
+  ```mzsql
+  CREATE INDEX idx_on_my_view ON my_view_name(...);
+  ```
 
-Within the cluster, querying an indexed view is **fast** because the results are
-already computed and are served from memory.
+- To create the index in a specified cluster:
 
-For best practices on using indexes, and understanding when to use indexed views
-vs. materialized views, see [Usage patterns](#usage-patterns).
+  ```mzsql
+  CREATE INDEX idx_on_my_view IN CLUSTER serving_cluster ON my_view_name(...);
+  ```
 
-## Indexes on materialized views
+During the index creation, the view is executed and the view results are stored
+in memory within the cluster. **As new data arrives**, the index **incrementally
+updates** the view results in memory.
+
+Querying a view from a cluster where the view is indexed is **fast** because
+the results are already computed and are served from memory. Querying a view
+from a cluster where the view isn't indexed requires executing the view each
+time you query it.
+
+### Indexes on materialized views
 
 In Materialize, materialized view results are stored in durable storage and
-**incrementally updated** as new data arrives. Indexing a materialized view
-makes the already up-to-date view results available **in memory** within the
-[cluster](/concepts/clusters/) you create the index. That is, indexes on
-materialized views require no additional computation to keep results up-to-date.
+**incrementally updated** as new data arrives. [Indexing](/sql/create-index/) a
+materialized view makes the already up-to-date view results available **in
+memory** within the [cluster](/concepts/clusters/) where you create the index.
+That is, indexes on materialized views require no additional computation to keep
+results up-to-date.
 
 > **Note:** A materialized view can be queried from any cluster whereas its indexed results
-> are available only within the cluster you create the index. Querying a
-> materialized view, whether indexed or not, from any cluster is fast since the
-> results are already computed. However, querying an indexed materialized view
-> within the cluster where the index is created is faster since the results are
-> served from memory rather than from storage.
+> are available only within the cluster where you create the index. Querying a
+> materialized view from any cluster, whether the materialized view is indexed or
+> not, is fast because the results are already computed. However, querying an
+> indexed materialized view from a cluster where the materialized view is indexed
+> is faster since the results are served from memory rather than from storage.
 
-For best practices on using indexes, and understanding when to use indexed views
-vs. materialized views, see [Usage patterns](#usage-patterns).
+- To create the index in the current active cluster (you can use the `SET
+  CLUSTER` command to change the active cluster):
 
-```mzsql
-CREATE INDEX idx_on_my_mat_view ON my_mat_view_name(...) ;
-```
+  ```mzsql
+  CREATE INDEX idx_on_my_mat_view ON my_mat_view_name(...);
+  ```
 
-## Indexes and clusters
+- To create the index in a specified cluster:
+
+  ```mzsql
+  CREATE INDEX idx_on_my_mat_view IN CLUSTER serving_cluster ON my_mat_view_name(...);
+  ```
+
+## Properties
+
+### Cluster-local
 
 Indexes are accessible only from their own cluster. Indexed results reside
 in the memory of the cluster where the index is created, and a [cluster's
 memory](/concepts/clusters/#resource-isolation) cannot be accessed from
 another cluster.
+ As
+such, references to the indexed object from a different cluster cannot use the
+index.
 
-As such, queries issued from a different cluster cannot use the index.
+### Data distribution and ordering
 
-For example, to create an index in the current cluster:
+The index data is distributed across the cluster's
+workers by a hash of the key, which spreads the maintenance and lookup work
+across the cluster.
 
-```mzsql
-CREATE INDEX idx_on_my_view ON my_view_name(...) ;
-```
+Within each worker, index keys are ordered by their internal representation
+(the encoded key's length, then its bytes), not by the data types' natural
+ordering.
 
-You can also explicitly specify the cluster:
+### Serving ad-hoc queries
 
-```mzsql
-CREATE INDEX idx_on_my_view IN CLUSTER active_cluster ON my_view (...);
-```
+Within a cluster, all ad-hoc queries that reference an indexed object read from
+the index, regardless of whether the index is optimized for the query. This
+includes queries that do not specify a `WHERE` condition on the index key.
+Because the indexed results are already up-to-date and in memory, reading from
+an index avoids recomputing the results.
 
-## Usage patterns
+- **Point lookups**: For queries that specify an equality condition on the full
+  index key, Materialize can perform a point lookup, reading only the matching
+  records from the index. Point lookups are the most efficient use of an index.
+  See [Point lookups](#point-lookups) for the exact requirements.
 
-### Index usage
+- **Index scans**: Otherwise, Materialize scans the index. Although the indexed
+  results are already up-to-date and in memory, a full index scan must examine
+  the indexed results and is less efficient than a point lookup. The performance
+  of full index scans degrades with data volume.
 
-> **Important:** Indexes are local to a cluster. Queries in one cluster cannot use the indexes in another, different cluster.
+### Index use by objects
 
-Unlike some other databases, Materialize can use an index to serve query results
-even if the query does not specify a `WHERE` condition on the index key. Serving
-queries from an index is fast since the results are already up-to-date and in
-memory.
+<p>Within a cluster, an index can be used not only by ad-hoc queries but also
+by other indexes and materialized views. For an index or materialized view
+to use another index, however, that index must exist when the dependent
+object is created. That is:</p>
+<ul>
+<li>
+<p>When you create an index or a materialized view, Materialize plans how
+to compute its results at creation time. As part of planning, Materialize
+checks whether it can reuse an <strong>existing</strong> index in the <strong>same</strong>
+cluster.</p>
+</li>
+<li>
+<p>Because the plan is bound at creation time, creation order matters. An
+index or materialized view that is already running will <strong>not</strong> adopt an
+index created afterward. To have an existing index or materialized view
+use a newer index, drop and recreate the existing object. However,
+recreating an index or a materialized view triggers
+<a href="/concepts/hydration/#when-hydration-occurs" >hydration</a>.</p>
+</li>
+</ul>
+<p>Ad-hoc queries, by contrast, are planned at query time. They can use any
+index that exists in the cluster when the query runs.</p>
+> **Note:** Reusing an index saves computation since the dependent objects read the
+> index's maintained results instead of recomputing them from the base data.
+> However, each new index has costs related to cluster memory and ongoing
+> maintenance, especially indexes on regular views.
 
-For example, consider the following index:
+To inspect index reuse and dependencies:
 
-```mzsql
-CREATE INDEX idx_orders_view_qty ON orders_view (quantity);
-```
+- To check whether a new index would reuse an existing index before creating
+  it, use [`EXPLAIN CREATE INDEX`](/sql/explain-plan/).
 
-Materialize will maintain the `orders_view` in memory in `idx_orders_view_qty`,
-and it will be able to use the index to serve a various queries on the
-`orders_view` (and not just queries that specify conditions on
-`orders_view.quantity`).
+- To find which indexes and materialized views use an index, query
+  [`mz_internal.mz_materialization_dependencies`](/reference/system-catalog/mz_internal/#mz_materialization_dependencies).
 
-Materialize can use the index for the following queries (issued from the same
-cluster as the index) on `orders_view`:
+### Limitations
 
-```mzsql
-SELECT * FROM orders_view;  -- scans the index
-SELECT * FROM orders_view WHERE status = 'shipped';  -- scans the index
-SELECT * FROM orders_view WHERE quantity = 10;  -- point lookup on the index
-```
+<p>Materialize indexes are not optimized for:</p>
+<ul>
+<li>
+<p>Ordered access, including:</p>
+<ul>
+<li>
+<p>Range queries, that is, queries using <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, or <code>BETWEEN</code>
+(e.g., <code>WHERE quantity &gt; 10</code>, <code>WHERE price &gt;= 10 AND price &lt;= 50</code>, and
+<code>WHERE quantity BETWEEN 10 AND 20</code>).</p>
+</li>
+<li>
+<p>Queries that use <code>ORDER BY</code> on the index key.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Lookups on a prefix of a multi-column index key. For example, an index
+with the key <code>(a, b)</code> is not optimized for a query that specifies an
+equality condition on <code>a</code> but not on <code>b</code>.</p>
+</li>
+<li>
+<p>Lookups that do not match the exact index key expression. For example,
+for an index with the key <code>lower(a)</code>, an equality condition on <code>a</code> does
+not match the index key; the query must specify an equality condition on
+<code>lower(a)</code> for a point lookup.</p>
+</li>
+<li>
+<p><code>GROUP BY</code> aggregations. An index on the grouping key does not reduce the work of computing the aggregation: Materialize reads the full index and maintains the aggregation separately.</p>
+</li>
+</ul>
 
-For the queries that do not specify a condition on the indexed field,
-Materialize scans the index. For the query that specifies an equality condition
-on the indexed field, Materialize performs a **point lookup** on the index
-(i.e., reads just the matching records from the index). Point lookups are the
-most efficient use of an index.
+## Point lookups vs index scans
 
-#### Point lookups
+### Point lookups
 
-Materialize performs **point lookup** (i.e., reads just the matching records
-from the index) on the index if the query's `WHERE` clause:
+Point lookups read just the matching records from the index and are the most
+efficient use of an index. Materialize performs a point lookup if the query's
+`WHERE` clause:
 
 - Specifies equality (`=` or `IN`) condition and **only** equality conditions on
   **all** the indexed fields. The equality conditions must specify the **exact**
   index key expression (including type) for point lookups. For example:
 
   - If the index is on `round(quantity)`, the query must specify equality
-    condition on `round(quantity)` (and not just `quanity`) for Materialize to
+    condition on `round(quantity)` (and not just `quantity`) for Materialize to
     perform a point lookup.
 
   - If the index is on `quantity * price`, the query must specify equality
@@ -679,34 +906,50 @@ from the index) on the index if the query's `WHERE` clause:
 
 - Only uses `AND` (conjunction) to combine conditions for **different** fields.
 
-Point lookups are the most efficient use of an index.
-
 For queries whose `WHERE` clause meets the point lookup criteria and includes
 conditions on additional fields (also using `AND` conjunction), Materialize
 performs a point lookup on the index keys and then filters the results using the
 additional conditions on the non-indexed fields.
 
-For queries that do not meet the point lookup criteria, Materialize performs a
-full index scan (including for range queries). That is, Materialize performs a
-full index scan if the `WHERE` clause:
+### Index scans
+
+For queries that do not meet the [point lookup criteria](#point-lookups),
+Materialize performs a full index scan (including for range queries). That is,
+Materialize performs a full index scan if the `WHERE` clause:
 
 - Does not specify **all** the indexed fields.
 - Does not specify only equality conditions on the index fields or specifies an
   equality condition that specifies a different value type than the index key
   type.
-- Uses OR (disjunction) to combine conditions for **different** fields.
+- Uses `OR` (disjunction) to combine conditions for **different** fields.
 
-Full index scans are less efficient than point lookups.  The performance of full
+Full index scans are less efficient than point lookups. The performance of full
 index scans will degrade with data volume; i.e., as you get more data, full
 scans will get slower.
 
-#### Examples
+### Examples
 
-Consider again the following index on a view:
+Within a cluster, indexes can serve queries that reference an indexed object,
+regardless of whether the index is optimized for the query.
+
+Consider the following index on the `orders_view`:
 
 ```mzsql
-CREATE INDEX idx_orders_view_qty on orders_view (quantity);
+CREATE INDEX idx_orders_view_qty ON orders_view (quantity);
 ```
+
+Materialize can use the index to serve various queries on the `orders_view`
+(and not just queries that specify conditions on `orders_view.quantity`). For
+example:
+
+```mzsql
+SELECT * FROM orders_view;  -- scans the index
+SELECT * FROM orders_view WHERE status = 'shipped';  -- scans the index
+SELECT * FROM orders_view WHERE quantity = 10;  -- point lookup on the index
+```
+
+For the queries that do not satisfy the [point-lookup
+conditions](#point-lookups), Materialize scans the index.
 
 The following table shows various queries and whether Materialize performs a
 point lookup or an index scan.
@@ -742,20 +985,7 @@ CREATE INDEX idx_orders_view_qty_price on orders_view (quantity, price);
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">quantity</span> <span class="o">=</span> <span class="mf">10</span> <span class="k">AND</span> <span class="n">price</span> <span class="o">=</span> <span class="mf">2.50</span> <span class="k">AND</span> <span class="n">item</span> <span class="o">=</span> <span class="s1">&#39;cupcake&#39;</span><span class="p">;</span> </span></span></code></pre></div> | Point lookup on the index keys <code>quantity</code> and <code>price</code>, then filter on <code>item</code>. |
 | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">orders_view</span> </span></span><span class="line"><span class="cl"><span class="k">WHERE</span> <span class="n">quantity</span> <span class="o">=</span> <span class="mf">10</span> <span class="k">AND</span> <span class="n">price</span> <span class="o">=</span> <span class="mf">2.50</span> <span class="k">OR</span> <span class="n">item</span> <span class="o">=</span> <span class="s1">&#39;cupcake&#39;</span><span class="p">;</span> </span></span></code></pre></div> | Index scan. Query uses <code>OR</code> to combine conditions on <strong>different</strong> fields. |
 
-#### Limitations
-
-Indexes in Materialize do not order their keys using the data type's natural
-ordering and instead orders by its internal representation of the key (the tuple
-of key length and value).
-
-As such, indexes in Materialize currently do not provide optimizations for:
-
-- Range queries; that is queries using `>`, `>=`,
-  `<`, `<=`, `BETWEEN` clauses (e.g., `WHERE
-  quantity > 10`,  `price >= 10 AND price <= 50`, and `WHERE quantity
-  BETWEEN 10 AND 20`).
-
-- `GROUP BY`, `ORDER BY` and `LIMIT` clauses.
+## Usage
 
 ### Indexes on views vs. materialized views
 
