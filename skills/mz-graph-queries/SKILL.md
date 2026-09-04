@@ -148,12 +148,12 @@ carry-forward branch re-adds rows the binding holds, so the loop never stops.
 
 ## Step 4: Guard and verify
 
-Every recursive view ships a limit; what tops the binding decides which one and
-what it proves ([semantics.md#recursion-limits](references/semantics.md#recursion-limits)):
+Every maintained recursive view ships a limit; what tops the binding decides
+which one and what it proves ([semantics.md#recursion-limits](references/semantics.md#recursion-limits)):
 
-- **`UNION`-topped**: `ERROR AT RECURSION LIMIT n` on every maintained view,
-  with n well above the expected graph diameter. Every change it can make is a
-  row change, so the limit fires.
+- **`UNION`-topped**: `ERROR AT RECURSION LIMIT n`, with n well above the
+  expected graph diameter. Every change it can make is a row change, so the
+  limit fires.
 - **Reduce- or TopK-topped** (`min`, `max`, `sum`, `DISTINCT ON`): `ERROR AT`
   goes silent once the key set settles and only the values keep moving. Ship
   `RETURN AT RECURSION LIMIT n` anyway, n above the expected iteration count: it
@@ -162,8 +162,7 @@ what it proves ([semantics.md#recursion-limits](references/semantics.md#recursio
   on ([reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag)).
 
 When a block mixes shapes, the recursive binding's top governs the choice: the
-limit is per block
-([semantics.md#recursion-limits](references/semantics.md#recursion-limits)),
+limit is per block ([semantics.md#recursion-limits](references/semantics.md#recursion-limits)),
 and a non-recursive prep binding is hoisted out of the loop anyway
 ([semantics.md#what-the-optimizer-will-not-do](references/semantics.md#what-the-optimizer-will-not-do)).
 
@@ -171,12 +170,13 @@ A limited recursion over cyclic data is not a safe fallback. A materialized view
 of that shape installs, hydrates, reports `hydrated = t`, and serves iteration-n
 counters that look like answers; only the unlimited form fails visibly, by never
 hydrating ([reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag)).
+That is why the reduce-topped guard is a limit *and* a check: the limit bounds
+runtime, the check on the returned state keeps iteration-n state out of answers.
 
 Then verify. Step the binding with `RETURN AT RECURSION LIMIT 1`, `2`, `3` and
 watch it grow. For a maintained view, insert an edge and confirm the answer
 moves, then delete it and confirm it moves back. The three typing errors that
-surface before the recursion runs
-([semantics.md#column-types](references/semantics.md#column-types)):
+surface before the recursion runs ([semantics.md#column-types](references/semantics.md#column-types)):
 
 | Error or symptom | Cause | Fix |
 |---|---|---|
