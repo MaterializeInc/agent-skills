@@ -185,10 +185,12 @@ correct after a mutation.
 
 Grading is automatic where it can be. `grade.py` diffs the agent's views
 against independent Python answer keys in `reference.py`, applies each task's
-mutation script, re-diffs, checks convergence through hydration status, and
-reads the guardrail out of the view definition. The manual axes are in
-`rubric.md`: initial correctness, post-mutation correctness, convergence and
-guardrails, maintainability, and explanation.
+mutation script, re-diffs, records which reads did not finish inside its
+60-second timeout, and reads the guardrail out of the view definition. Of the
+five axes in `rubric.md`, three are computed from that output — initial
+correctness, post-mutation correctness, convergence and guardrails — and two
+are read by hand from the agent's report and the view definitions:
+maintainability and explanation.
 
 Clean-room rules carry over from `evals/mz-optimize-memory`: the agent's only
 route to the database is a generated `psql` wrapper pinned to the run's schema,
@@ -206,7 +208,7 @@ skill, seed 1, scale 100, 2026-09-03), plus a usability pass on the small
 fixture. Both cells scored 14/14 on initial correctness and 6/6 after mutation,
 so the automatic correctness axes did not separate them at all: bare Sonnet
 already takes every planted data trap on this fixture. The whole difference,
-4.325 against 4.825, is on guardrails, indexes, aggregate placement and stated
+4.292 against 4.825, is on guardrails, indexes, aggregate placement and stated
 interpretations. Two edits came out of it.
 
 **The reduce-topped guardrail. (`SKILL.md` Step 4, `references/shortest-paths.md`,
@@ -218,9 +220,19 @@ binding and validates the road weights instead. That is the reference file read
 correctly, and it contradicts Step 4, which asks for `RETURN AT RECURSION LIMIT`
 on exactly those bindings. Both places now say the same thing: the limit stays
 on the view as a runtime bound, and the data audit is what covers correctness.
-Step 4 opens with "Every recursive view ships a limit" so the rule is not
-conditional, and the two pitfall passages say to keep the limit rather than to
-replace it.
+Step 4 now opens with "Every maintained recursive view ships a limit" so the
+rule is not conditional within that scope, and the two pitfall passages say to
+keep the limit rather than to replace it.
+
+The same finding has a second half, which the same edit addresses. Of the seven
+views the skill cell did guard, one carries the wrong guard: t03's `team`
+binding is topped by a `GROUP BY` and got `ERROR AT RECURSION LIMIT 1000`, which
+`rollups.md` says will not fire once only the values are still moving. The other
+six guarded views are `UNION`-topped closures where `ERROR AT` is right. So the
+cell did not miss the guard rule so much as apply the `ERROR AT`/`RETURN AT`
+split in only one direction: it dropped the guard where the reference file said
+the limit proves nothing, and reached for `ERROR AT` by default where it kept
+one. Step 4 now states the choice as which limit rather than whether.
 
 **Distance and route in one answer. (`references/shortest-paths.md`, witness
 path.)** The usability pass answered "the shortest route from A to E, with the
