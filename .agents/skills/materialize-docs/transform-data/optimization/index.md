@@ -430,18 +430,36 @@ The following are the possible index usage types:
 
 ### Limitations
 
-Indexes in Materialize do not order their keys using the data type's natural
-ordering and instead orders by its internal representation of the key (the tuple
-of key length and value).
-
-As such, indexes in Materialize currently do not provide optimizations for:
-
-- Range queries; that is queries using `>`, `>=`,
-  `<`, `<=`, `BETWEEN` clauses (e.g., `WHERE
-  quantity > 10`,  `price >= 10 AND price <= 50`, and `WHERE quantity
-  BETWEEN 10 AND 20`).
-
-- `GROUP BY`, `ORDER BY` and `LIMIT` clauses.
+<p>Materialize indexes are not optimized for:</p>
+<ul>
+<li>
+<p>Ordered access, including:</p>
+<ul>
+<li>
+<p>Range queries, that is, queries using <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>, or <code>BETWEEN</code>
+(e.g., <code>WHERE quantity &gt; 10</code>, <code>WHERE price &gt;= 10 AND price &lt;= 50</code>, and
+<code>WHERE quantity BETWEEN 10 AND 20</code>).</p>
+</li>
+<li>
+<p>Queries that use <code>ORDER BY</code> on the index key.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Lookups on a prefix of a multi-column index key. For example, an index
+with the key <code>(a, b)</code> is not optimized for a query that specifies an
+equality condition on <code>a</code> but not on <code>b</code>.</p>
+</li>
+<li>
+<p>Lookups that do not match the exact index key expression. For example,
+for an index with the key <code>lower(a)</code>, an equality condition on <code>a</code> does
+not match the index key; the query must specify an equality condition on
+<code>lower(a)</code> for a point lookup.</p>
+</li>
+<li>
+<p><code>GROUP BY</code> aggregations. An index on the grouping key does not reduce the work of computing the aggregation: Materialize reads the full index and maintains the aggregation separately.</p>
+</li>
+</ul>
 
 ## Query hints
 

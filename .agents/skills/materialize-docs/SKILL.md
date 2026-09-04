@@ -149,6 +149,7 @@ SQL commands reference.
 ### Tools and integrations
 Get details about third-party tools and integrations supported by Materialize
 
+- **ADBC (Arrow Database Connectivity)**: `integrations/adbc/index.md`
 - **Agent Skills**: `integrations/coding-agent-skills/index.md`
 - **Client libraries**: `integrations/client-libraries/index.md`
 - **Connect to Materialize via HTTP**: `integrations/http-api/index.md`
@@ -158,7 +159,7 @@ Get details about third-party tools and integrations supported by Materialize
 - **MCP Servers and agent skills**: `integrations/mcp-server/index.md`
 - **mz - Materialize CLI**: `integrations/cli/index.md`
 - **mz-debug**: `integrations/mz-debug/index.md`
-- **SQL clients**: `integrations/sql-clients/index.md`
+- _(and 1 more files in this section)_
 
 ## Quick Reference
 

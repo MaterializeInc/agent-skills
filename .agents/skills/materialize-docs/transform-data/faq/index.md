@@ -1,35 +1,35 @@
 # FAQ: Indexes
 Frequently asked questions about indexes.
-## Do indexes in Materialize support `ORDER BY`?
+## Are indexes in Materialize optimized for `ORDER BY`?
 
-No. Indexes in Materialize do not support `ORDER BY` clauses.
+No.
 
-Indexes in Materialize do not order their keys using the data type's natural
-ordering and instead orders by its internal representation of the key (the tuple
-of key length and value).
+The index data is distributed across the cluster's
+workers by a hash of the key, which spreads the maintenance and lookup work
+across the cluster.
 
-As such, indexes in Materialize currently do not provide optimizations for:
+Within each worker, index keys are ordered by their internal representation
+(the encoded key's length, then its bytes), not by the data types' natural
+ordering.
 
-- Range queries; that is queries using `>`, `>=`,
-  `<`, `<=`, `BETWEEN` clauses (e.g., `WHERE
-  quantity > 10`,  `price >= 10 AND price <= 50`, and `WHERE quantity
-  BETWEEN 10 AND 20`).
+As such, Materialize indexes are not optimized for ordered access, including
+`ORDER BY` clauses.
 
-- `GROUP BY`, `ORDER BY` and `LIMIT` clauses.
+## Are indexes in Materialize optimized for range queries?
 
-## Do indexes in Materialize support range queries?
+No.
 
-No. Indexes in Materialize do not support range queries.
+The index data is distributed across the cluster's
+workers by a hash of the key, which spreads the maintenance and lookup work
+across the cluster.
 
-Indexes in Materialize do not order their keys using the data type's natural
-ordering and instead orders by its internal representation of the key (the tuple
-of key length and value).
+Within each worker, index keys are ordered by their internal representation
+(the encoded key's length, then its bytes), not by the data types' natural
+ordering.
 
-As such, indexes in Materialize currently do not provide optimizations for:
+As such, Materialize indexes are not optimized for ordered access, including
+range queries.
 
-- Range queries; that is queries using `>`, `>=`,
-  `<`, `<=`, `BETWEEN` clauses (e.g., `WHERE
-  quantity > 10`,  `price >= 10 AND price <= 50`, and `WHERE quantity
-  BETWEEN 10 AND 20`).
+## Are indexes in Materialize optimized for `GROUP BY` aggregations?
 
-- `GROUP BY`, `ORDER BY` and `LIMIT` clauses.
+No. An index on the grouping key does not reduce the work of computing the aggregation: Materialize reads the full index and maintains the aggregation separately.

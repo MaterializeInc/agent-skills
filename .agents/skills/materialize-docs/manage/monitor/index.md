@@ -3683,21 +3683,6 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>compute_instance</code></td>
     </tr>
     <tr>
-      <td><code>mz_timestamp_difference_for_strict_serializable_ms_bucket</code></td>
-      <td>Difference in timestamp in milliseconds for running in strict serializable vs serializable isolation level.</td>
-      <td><code>compute_instance</code>, <code>le</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_timestamp_difference_for_strict_serializable_ms_count</code></td>
-      <td>Difference in timestamp in milliseconds for running in strict serializable vs serializable isolation level.</td>
-      <td><code>compute_instance</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_timestamp_difference_for_strict_serializable_ms_sum</code></td>
-      <td>Difference in timestamp in milliseconds for running in strict serializable vs serializable isolation level.</td>
-      <td><code>compute_instance</code></td>
-    </tr>
-    <tr>
       <td><code>mz_tokio_blocking_queue_depth</code></td>
       <td>The number of tasks currently scheduled in the blocking thread pool, spawned using spawn_blocking.</td>
       <td><code>runtime</code></td>
