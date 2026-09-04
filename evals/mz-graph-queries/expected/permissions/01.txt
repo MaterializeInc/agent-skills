@@ -1,0 +1,6 @@
+g1	doc1	read
+g2	doc1	read
+g2	doc2	edit
+g3	doc1	edit
+g3	doc2	edit
+g4	doc1	read

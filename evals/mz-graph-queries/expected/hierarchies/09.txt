@@ -1,0 +1,8 @@
+      Gus	90
+      Hal	85
+    Dee	120
+    Eli	110
+    Fay	100
+  Bob	200
+  Cy	190
+Ada	300
