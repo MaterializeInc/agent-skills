@@ -170,8 +170,8 @@ and they are the first things to check after a Materialize upgrade.
 
 ## The evaluation
 
-Designed, not yet run; the harness lands with the eval tasks and the recorded
-results table goes in `evals/mz-graph-queries/README.md`.
+Two Sonnet cells are run and recorded; the results table is in
+`evals/mz-graph-queries/README.md` and the Opus cells are pending.
 
 One graded run is a single authoring round against the eval-scale fixture. The
 agent gets about fourteen prompts, one per family and one per planted trap:
@@ -198,6 +198,53 @@ unmentioned; ancestor `CLAUDE.md` files refused; auto memory disabled. Run
 `preflight.sh` before a batch and after any harness or CLI upgrade. A cell is
 one model under one condition, run by `run_cleanroom.sh`, and cells are run one
 at a time.
+
+## Changes from graded runs
+
+The first two graded cells, `sb` and `ss` (Sonnet bare and Sonnet with the
+skill, seed 1, scale 100, 2026-09-03), plus a usability pass on the small
+fixture. Both cells scored 14/14 on initial correctness and 6/6 after mutation,
+so the automatic correctness axes did not separate them at all: bare Sonnet
+already takes every planted data trap on this fixture. The whole difference,
+4.325 against 4.825, is on guardrails, indexes, aggregate placement and stated
+interpretations. Two edits came out of it.
+
+**The reduce-topped guardrail. (`SKILL.md` Step 4, `references/shortest-paths.md`,
+`references/rollups.md`.)** The skill cell shipped a recursion limit on 7 of 14
+views and none at all on six reduce-topped ones, one of which the prompt had
+marked as maintained. Its report shows this was deliberate: it quotes the
+`shortest-paths.md` pitfall that the limit "goes silent" on a reduce-topped
+binding and validates the road weights instead. That is the reference file read
+correctly, and it contradicts Step 4, which asks for `RETURN AT RECURSION LIMIT`
+on exactly those bindings. Both places now say the same thing: the limit stays
+on the view as a runtime bound, and the data audit is what covers correctness.
+Step 4 opens with "Every recursive view ships a limit" so the rule is not
+conditional, and the two pitfall passages say to keep the limit rather than to
+replace it.
+
+**Distance and route in one answer. (`references/shortest-paths.md`, witness
+path.)** The usability pass answered "the shortest route from A to E, with the
+kilometres and the path" by running two blocks from two sections, because the
+witness-path block returned `(city, step)` and no cost. Its body now joins
+`route` back to `best`, so one query returns the sequence and the running cost,
+with the total on the last row. `expected/shortest-paths/05.txt` was
+re-recorded.
+
+Two things the runs showed that were *not* folded back, recorded here so the
+next round does not rediscover them:
+
+- The usability pass runs against the same small fixture the reference files
+  use as their worked example, so it exercises the happy path of each pattern
+  and none of the documented failure modes. The pass agent said so itself and
+  it is right; the graded cells are what cover the traps. Vary the fixture, or
+  ask for a shape no block answers directly, if the pass is meant to find
+  ambiguity rather than confirm the examples.
+- Axis 3's guardrail denominator is `exists`, on the rubric's assumption that
+  every one of the fourteen answers is recursive. The `sb` cell answered t06
+  with three explicit joins and t05 with a body aggregate over t04, both
+  legitimately non-recursive. It changed no score here, but a run that limits
+  every recursive view it writes can still be marked down for the views that
+  have no recursion to limit.
 
 ## Testing a change to the skill
 

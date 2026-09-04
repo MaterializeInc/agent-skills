@@ -278,8 +278,8 @@ answers; they are the running totals at iteration 20, and they get bigger if
 the limit does. Parts 2 and 3 are both present after the first laps, so from
 then on nothing about the row set changes and there is nothing left for the
 limit to notice. The `needed` form over the same data errors, because there
-every lap adds a row. So for an aggregate-inside explosion, do not treat the
-limit as the safety net: keep a cycle check standing next to it. The
+every lap adds a row. So for an aggregate-inside explosion, keep the limit, and
+do not treat it as the safety net: keep a cycle check standing next to it. The
 counter-free closure audit in
 [hierarchies.md](hierarchies.md#cycles-in-a-tree) works on `bom` with
 `parent_id` and `child_id` in place of `manager_id` and `id`, and it converges
