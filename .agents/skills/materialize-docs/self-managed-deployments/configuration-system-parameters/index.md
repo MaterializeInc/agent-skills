@@ -72,7 +72,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.39.0
+  environmentdImageRef: materialize/environmentd:v26.40.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
   requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
@@ -89,7 +89,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.39.0
+  environmentdImageRef: materialize/environmentd:v26.40.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
 ```

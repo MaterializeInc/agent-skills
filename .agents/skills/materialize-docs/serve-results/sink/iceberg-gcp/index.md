@@ -195,6 +195,8 @@ This will prevent Materialize Iceberg sinks from committing new data.
 - [Iceberg tables managed by BigQuery](https://docs.cloud.google.com/lakehouse/docs/key-concepts#iceberg-managed-tables)
 do receive automated maintenance, but only BigQuery can write to them.
 
+- You cannot create an Iceberg sink into an existing Iceberg table. Materialize creates and manages the target Iceberg table itself, so the table named by the sink must not already exist.
+
 - Partitioned tables are not supported.
 
 - Schema evolution of an Iceberg table is not supported. If the `SINK FROM` object's schema changes, you must drop and recreate the sink.

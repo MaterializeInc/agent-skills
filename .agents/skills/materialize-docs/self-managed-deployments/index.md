@@ -158,7 +158,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.39.0
+  environmentdImageRef: materialize/environmentd:v26.40.0
 # ... additional fields omitted for brevity
 ```
 
@@ -173,7 +173,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.39.0
+  environmentdImageRef: materialize/environmentd:v26.40.0
 # ... additional fields omitted for brevity
 ```
 
@@ -413,7 +413,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.39.0
+  environmentdImageRef: materialize/environmentd:v26.40.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
   requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
@@ -430,7 +430,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.39.0
+  environmentdImageRef: materialize/environmentd:v26.40.0
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
 ```
@@ -2327,7 +2327,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.39.0
+  --version v26.40.0
 ```
 
 ## Upgrading Materialize Instances

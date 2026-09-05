@@ -428,6 +428,8 @@ Materialize converts SQL types to Iceberg/Parquet types:
 
 ### Restrictions and limitations
 
+- You cannot create an Iceberg sink into an existing Iceberg table. Materialize creates and manages the target Iceberg table itself, so the table named by the sink must not already exist.
+
 - Partitioned tables are not supported.
 
 - Schema evolution of an Iceberg table is not supported. If the `SINK FROM` object's schema changes, you must drop and recreate the sink.
