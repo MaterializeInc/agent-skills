@@ -51,8 +51,7 @@ hosting the source.
 - **MySQL sources** are parallelized by table, i.e., different tables are
   read concurrently by different workers. For tables that meet certain
   requirements, Materialize can additionally partition the table's read
-  across workers <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
-. See [MySQL snapshot
+  across workers. See [MySQL snapshot
   parallelism](/ingest-data/mysql/snapshot-parallelism/).
 
 - **Kafka sources** are parallelized by topic partition, with partitions

@@ -1,6 +1,5 @@
 # Snapshot parallelism
 How Materialize splits the snapshot of a single MySQL table across the workers of a cluster.
-
 When you create a [MySQL source](/sql/create-source/mysql-v2/), Materialize
 performs an initial, snapshot-based sync of the selected tables before it
 starts ingesting change events from the binlog. For large tables, this

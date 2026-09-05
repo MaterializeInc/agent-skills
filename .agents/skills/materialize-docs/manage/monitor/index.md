@@ -984,32 +984,32 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     </tr>
     <tr>
       <td><code>mz_index_peek_cursor_setup_seconds_bucket</code></td>
-      <td>Time setting up cursor and literal constraints.</td>
+      <td>Time opening the trace cursor and sorting the literal constraints, excluding the seek to those literals.</td>
       <td><code>le</code></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_cursor_setup_seconds_count</code></td>
-      <td>Time setting up cursor and literal constraints.</td>
+      <td>Time opening the trace cursor and sorting the literal constraints, excluding the seek to those literals.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_cursor_setup_seconds_sum</code></td>
-      <td>Time setting up cursor and literal constraints.</td>
+      <td>Time opening the trace cursor and sorting the literal constraints, excluding the seek to those literals.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_error_scan_seconds_bucket</code></td>
-      <td>Time scanning the error trace for errors.</td>
+      <td>Time scanning the error trace for errors, summed over the slices the scan was cut into and observed only for scans that find no error.</td>
       <td><code>le</code></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_error_scan_seconds_count</code></td>
-      <td>Time scanning the error trace for errors.</td>
+      <td>Time scanning the error trace for errors, summed over the slices the scan was cut into and observed only for scans that find no error.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_error_scan_seconds_sum</code></td>
-      <td>Time scanning the error trace for errors.</td>
+      <td>Time scanning the error trace for errors, summed over the slices the scan was cut into and observed only for scans that find no error.</td>
       <td></td>
     </tr>
     <tr>
@@ -1028,48 +1028,83 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_index_peek_offload_seconds_bucket</code></td>
+      <td>Wall-clock time an offloaded index peek walk spent away from the timely worker, including the wait for a permit.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_offload_seconds_count</code></td>
+      <td>Wall-clock time an offloaded index peek walk spent away from the timely worker, including the wait for a permit.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_offload_seconds_sum</code></td>
+      <td>Wall-clock time an offloaded index peek walk spent away from the timely worker, including the wait for a permit.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_permit_queue_depth</code></td>
+      <td>The number of offloaded index peek walks waiting for a permit to run.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_permit_wait_seconds_bucket</code></td>
+      <td>Time an offloaded index peek walk waited for a permit, observed only for walks that were admitted.</td>
+      <td><code>le</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_permit_wait_seconds_count</code></td>
+      <td>Time an offloaded index peek walk waited for a permit, observed only for walks that were admitted.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_permit_wait_seconds_sum</code></td>
+      <td>Time an offloaded index peek walk waited for a permit, observed only for walks that were admitted.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_index_peek_result_sort_rows_bucket</code></td>
-      <td>Number of intermediate result rows sorted during peek collection, summed across sort operations.</td>
+      <td>Number of intermediate result rows handed to thinning during peek collection, summed across the times it ran.</td>
       <td><code>le</code></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_result_sort_rows_count</code></td>
-      <td>Number of intermediate result rows sorted during peek collection, summed across sort operations.</td>
+      <td>Number of intermediate result rows handed to thinning during peek collection, summed across the times it ran.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_result_sort_rows_sum</code></td>
-      <td>Number of intermediate result rows sorted during peek collection, summed across sort operations.</td>
+      <td>Number of intermediate result rows handed to thinning during peek collection, summed across the times it ran.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_result_sort_seconds_bucket</code></td>
-      <td>Time sorting intermediate results during peek collection.</td>
+      <td>Time thinning intermediate results down to the rows a peek&#39;s finishing needs.</td>
       <td><code>le</code></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_result_sort_seconds_count</code></td>
-      <td>Time sorting intermediate results during peek collection.</td>
+      <td>Time thinning intermediate results down to the rows a peek&#39;s finishing needs.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_result_sort_seconds_sum</code></td>
-      <td>Time sorting intermediate results during peek collection.</td>
+      <td>Time thinning intermediate results down to the rows a peek&#39;s finishing needs.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_row_collection_seconds_bucket</code></td>
-      <td>Time constructing RowCollection from peek results.</td>
+      <td>Time constructing RowCollection from peek results, including converting the row counts the scan produced.</td>
       <td><code>le</code></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_row_collection_seconds_count</code></td>
-      <td>Time constructing RowCollection from peek results.</td>
+      <td>Time constructing RowCollection from peek results, including converting the row counts the scan produced.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_row_collection_seconds_sum</code></td>
-      <td>Time constructing RowCollection from peek results.</td>
+      <td>Time constructing RowCollection from peek results, including converting the row counts the scan produced.</td>
       <td></td>
     </tr>
     <tr>
@@ -1089,17 +1124,17 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     </tr>
     <tr>
       <td><code>mz_index_peek_row_iteration_seconds_bucket</code></td>
-      <td>Time iterating rows and evaluating MFP.</td>
+      <td>Time iterating rows, seeking the cursor to the literal constraints, and evaluating MFP, summed over the slices the walk was cut into.</td>
       <td><code>le</code></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_row_iteration_seconds_count</code></td>
-      <td>Time iterating rows and evaluating MFP.</td>
+      <td>Time iterating rows, seeking the cursor to the literal constraints, and evaluating MFP, summed over the slices the walk was cut into.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_row_iteration_seconds_sum</code></td>
-      <td>Time iterating rows and evaluating MFP.</td>
+      <td>Time iterating rows, seeking the cursor to the literal constraints, and evaluating MFP, summed over the slices the walk was cut into.</td>
       <td></td>
     </tr>
     <tr>
@@ -1118,19 +1153,29 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_index_peek_stashed_total</code></td>
+      <td>The number of index peek walks that answered with a handle to the peek response stash, always a subset of the `offloaded` substrate of `mz_index_peek_walks_total`.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_index_peek_total_seconds_bucket</code></td>
-      <td>Total time processing index peeks, from process_peek entry to response. Excluding peeks that use the peek response stash.</td>
+      <td>Time one visit to an index peek spent on the timely worker. A peek whose walk was offloaded contributes only the inline slice that offloaded it, and its time away from the worker is `mz_index_peek_offload_seconds`.</td>
       <td><code>le</code></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_total_seconds_count</code></td>
-      <td>Total time processing index peeks, from process_peek entry to response. Excluding peeks that use the peek response stash.</td>
+      <td>Time one visit to an index peek spent on the timely worker. A peek whose walk was offloaded contributes only the inline slice that offloaded it, and its time away from the worker is `mz_index_peek_offload_seconds`.</td>
       <td></td>
     </tr>
     <tr>
       <td><code>mz_index_peek_total_seconds_sum</code></td>
-      <td>Total time processing index peeks, from process_peek entry to response. Excluding peeks that use the peek response stash.</td>
+      <td>Time one visit to an index peek spent on the timely worker. A peek whose walk was offloaded contributes only the inline slice that offloaded it, and its time away from the worker is `mz_index_peek_offload_seconds`.</td>
       <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_index_peek_walks_total</code></td>
+      <td>The number of index peek walks that reached an outcome, by the substrate they ended on: `inline` on the timely worker, `offloaded` away from it.</td>
+      <td><code>substrate</code></td>
     </tr>
     <tr>
       <td><code>mz_kafka_partition_offset_max</code></td>
@@ -3351,21 +3396,6 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_start_time_environmentd</code></td>
       <td>Time in milliseconds from environmentd start until the adapter is ready.</td>
       <td><code>build_type</code>, <code>version</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_stashed_peek_seconds_bucket</code></td>
-      <td>Time spent reading a peek result and stashing it in the peek result stash (aka. persist blob).</td>
-      <td><code>le</code>, <code>worker_id</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_stashed_peek_seconds_count</code></td>
-      <td>Time spent reading a peek result and stashing it in the peek result stash (aka. persist blob).</td>
-      <td><code>worker_id</code></td>
-    </tr>
-    <tr>
-      <td><code>mz_stashed_peek_seconds_sum</code></td>
-      <td>Time spent reading a peek result and stashing it in the peek result stash (aka. persist blob).</td>
-      <td><code>worker_id</code></td>
     </tr>
     <tr>
       <td><code>mz_statement_logging_actual_bytes</code></td>
