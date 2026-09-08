@@ -1,0 +1,5 @@
+fct_sales
+raw_customers
+raw_orders
+stg_customers
+stg_orders

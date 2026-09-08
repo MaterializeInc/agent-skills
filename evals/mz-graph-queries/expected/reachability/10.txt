@@ -1,0 +1,7 @@
+fct_sales	2
+raw_customers	0
+raw_orders	0
+rpt_churn	3
+rpt_daily	3
+stg_customers	1
+stg_orders	1

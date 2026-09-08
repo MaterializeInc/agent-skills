@@ -1,0 +1,11 @@
+
+
+
+      Lookup values: (2)
+    Project: #1, #2
+    →Index Lookup on materialize.verify_hierarchies.employee_closure (using materialize.verify_hierarchies.employee_closure_by_ancestor)
+  - materialize.verify_hierarchies.employee_closure_by_ancestor (lookup)
+  →Map/Filter/Project
+Explained Query (fast path):
+Target cluster: quickstart
+Used Indexes:

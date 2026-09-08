@@ -1,0 +1,4 @@
+fct_sales
+rpt_churn
+rpt_daily
+stg_customers
