@@ -12,6 +12,12 @@ npx skills add MaterializeInc/agent-skills
 
 Once installed, skills activate automatically when your prompt matches their use case.
 
+If you installed the skills before they were renamed to the `mz-` prefix, remove the old copies so each skill appears only once. Add `-g` if you installed them globally:
+
+```bash
+npx skills remove materialize-dbt materialize-debug-freshness materialize-terraform-provider materialize-terraform-self-managed mcp-developer-analysis
+```
+
 ### As a plugin
 
 Claude Code and Codex can also install the skills as one plugin, named `materialize`, which picks up new and updated skills when you update it. Plugin skills are namespaced, for example `materialize:mz-dbt`.
