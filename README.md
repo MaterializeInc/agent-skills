@@ -14,7 +14,7 @@ Once installed, skills activate automatically when your prompt matches their use
 
 ### As a plugin
 
-Claude Code and Codex can also install the skills as one plugin, named `materialize`, which picks up new and updated skills when you update it. Plugin skills are namespaced, for example `/materialize:mz-dbt`.
+Claude Code and Codex can also install the skills as one plugin, named `materialize`, which picks up new and updated skills when you update it. Plugin skills are namespaced, for example `materialize:mz-dbt`.
 
 Claude Code:
 
