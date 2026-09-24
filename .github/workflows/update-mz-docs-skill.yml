@@ -1,11 +1,11 @@
-# Regenerates the `materialize-docs` skill from upstream Materialize docs.
+# Regenerates the `mz-docs` skill from upstream Materialize docs.
 #
 # Generator: https://github.com/MaterializeInc/materialize/blob/main/bin/gen-claude-skill
-# Target:    https://github.com/MaterializeInc/agent-skills/tree/main/.agents/skills/materialize-docs
+# Target:    https://github.com/MaterializeInc/agent-skills/tree/main/.agents/skills/mz-docs
 #
 # The `check` job compares a content fingerprint of everything the generator
 # reads -- the upstream `doc/user` tree, `bin/gen-claude-skill` itself, and the
-# Hugo version we render with -- against `.github/materialize-docs.lock`, which
+# Hugo version we render with -- against `.github/mz-docs.lock`, which
 # records the state the committed skill was generated from. The `update` job
 # runs only when that fingerprint has moved, so dispatching against unchanged
 # upstream docs costs one API call instead of a full Hugo build. Pass the
@@ -18,7 +18,7 @@
 # gate is what makes that affordable: a run against unchanged upstream docs
 # finishes in the `check` job.
 #
-# Each run pushes a fresh `automated/update-materialize-docs-skill-<timestamp>`
+# Each run pushes a fresh `automated/update-mz-docs-skill-<timestamp>`
 # branch and opens its own PR, closing any earlier automated PR it supersedes.
 # The workflow never deletes or force-pushes a branch: the `global-branch-safety`
 # ruleset blocks both for `github-actions[bot]`.
@@ -31,10 +31,10 @@
 # The generator uses `hugo --cleanDestinationDir`, so it wipes the output
 # directory on each run. Hand-maintained files (the skill's top-level README
 # and references/README) are stashed before generation and restored after.
-# If new hand-maintained files are added under `.agents/skills/materialize-docs/`,
+# If new hand-maintained files are added under `.agents/skills/mz-docs/`,
 # update the "Stash" and "Restore" steps below.
 
-name: update-materialize-docs-skill
+name: update-mz-docs-skill
 
 on:
   schedule:
@@ -60,8 +60,8 @@ env:
   # Pinned to match the version used in MaterializeInc/materialize CI
   # (ci/builder/Dockerfile). Update together if upstream changes.
   HUGO_VERSION: '0.152.2'
-  LOCK_FILE: .github/materialize-docs.lock
-  SKILL_DIR: .agents/skills/materialize-docs
+  LOCK_FILE: .github/mz-docs.lock
+  SKILL_DIR: .agents/skills/mz-docs
 
 jobs:
   check:
@@ -209,7 +209,7 @@ jobs:
           # A fresh branch per run. The bot can neither delete nor force-push a
           # branch under the `global-branch-safety` ruleset, so reusing a fixed
           # branch name strands the workflow as soon as one is left behind.
-          BRANCH="automated/update-materialize-docs-skill-$(date -u +%Y%m%dT%H%M%SZ)"
+          BRANCH="automated/update-mz-docs-skill-$(date -u +%Y%m%dT%H%M%SZ)"
           git checkout -b "$BRANCH"
 
           echo "name=$BRANCH" >> "$GITHUB_OUTPUT"
@@ -279,7 +279,7 @@ jobs:
           set -euo pipefail
           cat > "$LOCK_FILE" <<EOF
           # Provenance of ${SKILL_DIR}. Written by the
-          # update-materialize-docs-skill workflow; do not edit by hand.
+          # update-mz-docs-skill workflow; do not edit by hand.
           mz_ref: ${MZ_REF}
           mz_commit: ${MZ_COMMIT}
           doc_user_tree: ${DOC_USER_TREE}
@@ -306,7 +306,7 @@ jobs:
         run: |
           set -euo pipefail
           git add "$SKILL_DIR" "$LOCK_FILE"
-          git commit -m "Update materialize-docs skill from materialize@${MZ_REF}"
+          git commit -m "Update mz-docs skill from materialize@${MZ_REF}"
           git push origin "$BRANCH"
 
       - name: Create PR
@@ -322,7 +322,7 @@ jobs:
 
           PR_URL=$(gh pr create \
             --head "$BRANCH" \
-            --title "Update materialize-docs skill from materialize@${MZ_REF}" \
+            --title "Update mz-docs skill from materialize@${MZ_REF}" \
             --body "$(cat <<EOF
           Regenerates \`${SKILL_DIR}/\` by running [\`bin/gen-claude-skill\`](https://github.com/MaterializeInc/materialize/blob/main/bin/gen-claude-skill) from MaterializeInc/materialize.
 
@@ -330,7 +330,7 @@ jobs:
 
           **\`doc/user\` tree:** \`${DOC_USER_TREE}\`
 
-          Triggered by the \`update-materialize-docs-skill\` workflow.
+          Triggered by the \`update-mz-docs-skill\` workflow.
           EOF
           )")
           NEW_PR="${PR_URL##*/}"
@@ -340,7 +340,7 @@ jobs:
           # Only one automated PR should be open at a time; an older one is
           # always a subset of this run's regeneration.
           OPEN=$(gh pr list --state open --json number,headRefName \
-            --jq '.[] | select(.headRefName | startswith("automated/update-materialize-docs-skill-")) | .number')
+            --jq '.[] | select(.headRefName | startswith("automated/update-mz-docs-skill-")) | .number')
           for n in $OPEN; do
             if [ "$n" != "$NEW_PR" ]; then
               gh pr close "$n" --comment "Superseded by #${NEW_PR}."
