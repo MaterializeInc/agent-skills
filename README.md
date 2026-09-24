@@ -12,7 +12,7 @@ npx skills add MaterializeInc/agent-skills
 
 Once installed, skills activate automatically when your prompt matches their use case.
 
-If you installed the skills before they were renamed to the `mz-` prefix, remove the old copies so each skill appears only once. Add `-g` if you installed them globally:
+Most skills now use the `mz-` prefix, and `mcp-developer-analysis` is now `mz-health-check`. If you installed the skills before the rename, remove the old copies so each skill appears only once. Run this in each project where you installed them, or add `-g` if you installed them globally:
 
 ```bash
 npx skills remove materialize-dbt materialize-debug-freshness materialize-terraform-provider materialize-terraform-self-managed mcp-developer-analysis
