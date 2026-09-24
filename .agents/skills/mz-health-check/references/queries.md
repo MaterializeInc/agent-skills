@@ -684,3 +684,43 @@ LEFT JOIN mz_catalog.mz_cluster_replicas r ON r.id = st.replica_id
 WHERE sc.name IS NULL OR sc.name NOT IN ('mz_catalog', 'mz_internal', 'pg_catalog', 'information_schema', 'mz_introspection')
 ORDER BY o.name, st.replica_id
 ```
+
+## Health: Paused Clusters Holding Back Compaction
+
+### Materialized Views on Clusters with No Replicas
+A materialized view on a cluster with no replicas stops advancing, and its
+inputs cannot compact past the point where it stopped, so their storage keeps
+growing until the cluster gets a replica again or the view is dropped. Indexes
+on such a cluster release their inputs, and `SCHEDULE = ON REFRESH` clusters
+have no replicas between refreshes by design, so neither is listed. Sinks on
+a cluster with no replicas likely hold back their input the same way, but
+this query does not cover them.
+
+The query counts replica rows rather than reading `replication_factor`, which
+is NULL for unmanaged clusters. `mz_compute_dependencies` names the inputs the
+dataflow reads, through any views. The last column is how far the input's
+compaction point trails its latest write, in seconds. It grows with the wall
+clock while the cluster stays empty, and returns to a second or two once the
+cluster has a replica again.
+
+```sql
+WITH paused AS (
+    SELECT c.id, c.name
+    FROM mz_catalog.mz_clusters c
+    LEFT JOIN mz_internal.mz_cluster_schedules s ON s.cluster_id = c.id
+    WHERE c.id LIKE 'u%'
+      AND NOT EXISTS (SELECT 1 FROM mz_catalog.mz_cluster_replicas r WHERE r.cluster_id = c.id)
+      AND coalesce(s.type, 'manual') <> 'on-refresh'
+)
+SELECT
+    p.name AS cluster_name,
+    mv.name AS materialized_view,
+    i.name AS held_back_input,
+    round((f.write_frontier::text::numeric - f.read_frontier::text::numeric) / 1000) AS input_compaction_lag_s
+FROM paused p
+JOIN mz_catalog.mz_materialized_views mv ON mv.cluster_id = p.id
+JOIN mz_internal.mz_compute_dependencies d ON d.object_id = mv.id
+JOIN mz_catalog.mz_objects i ON i.id = d.dependency_id
+JOIN mz_internal.mz_frontiers f ON f.object_id = i.id
+ORDER BY input_compaction_lag_s DESC
+```
