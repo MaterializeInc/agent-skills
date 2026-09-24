@@ -1,4 +1,4 @@
-# materialize-docs
+# mz-docs
 
 Documentation retrieval and synthesis for Materialize.
 

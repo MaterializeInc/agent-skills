@@ -17,7 +17,7 @@
       "license": "Apache-2.0",
       "repository": "https://github.com/MaterializeInc/agent-skills",
       "skills": [
-        "./.agents/skills/materialize-docs",
+        "./.agents/skills/mz-docs",
         "./.agents/skills/mz-health-check",
         "./skills/mz-dbt",
         "./skills/mz-debug-freshness",
