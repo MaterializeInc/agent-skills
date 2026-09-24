@@ -29,6 +29,7 @@ from the `Cluster Topology` query there plus the credit columns of
 ### Cluster Utilization
 ### Worker Skew
 ### Source and Sink Health
+### Paused Clusters Holding Back Compaction
 
 ## Cost Analysis (if requested)
 
