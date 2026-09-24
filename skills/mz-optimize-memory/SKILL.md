@@ -21,7 +21,7 @@ in the user's own deployment tooling, and a right-sized replica at the
 end. Freed memory is not saved money until the replica is resized down.
 
 For freshness problems (an object lagging behind wall-clock time) use
-the materialize-debug-freshness skill instead. Memory work and freshness
+the mz-debug-freshness skill instead. Memory work and freshness
 work share instruments but have different workflows.
 
 ## Ground rules
@@ -112,7 +112,7 @@ in the session's database and with `unknown schema` when it does not.
 If no MCP server is configured, or its `query` tool is absent (older
 Materialize, or disabled by the operator; `query` needs v26.30 and its
 `cluster_replica` argument v26.33), suggest setting one up (the
-mcp-developer-analysis skill covers client configuration), or ask the user for
+mz-health-check skill covers client configuration), or ask the user for
 a SQL connection string instead. Whenever you ask for a connection string, warn
 the user that it should be for a role scoped to what the current phase needs
 (read-only for diagnosis; see "Making changes", below, for the experiment
@@ -985,7 +985,7 @@ Who executes what, and where:
   source of truth.
 - Deployment of accepted changes: ask where the source of truth for object
   definitions lives (mz-deploy, dbt, custom scripts, or the catalog itself) and
-  express the changes there. The materialize-dbt and mz-deploy skills cover
+  express the changes there. The mz-dbt and mz-deploy skills cover
   those tools. Full-rebuild deployment tools recreate all objects together,
   which dissolves most of the pinning hazards below; what survives everywhere
   is index-before-MV ordering within the deploy. After an incremental deploy
