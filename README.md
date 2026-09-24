@@ -288,6 +288,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-09-24: Add a check for materialized views on clusters with no replicas to mz-health-check
 - 2026-09-24: Add the materialize plugin, bundling all skills
 - 2026-09-24: Rename skills to the `mz-` prefix, and `mcp-developer-analysis` to `mz-health-check`
 - 2026-08-27: Add mz-optimize-memory skill and its eval harness
