@@ -12,6 +12,28 @@ npx skills add MaterializeInc/agent-skills
 
 Once installed, skills activate automatically when your prompt matches their use case.
 
+### As a plugin
+
+Claude Code and Codex can also install the skills as one plugin, named `materialize`, which picks up new and updated skills when you update it. Plugin skills are namespaced, for example `/materialize:mz-dbt`.
+
+Claude Code:
+
+```
+/plugin marketplace add MaterializeInc/agent-skills
+/plugin install materialize@materialize
+```
+
+Auto-update is off by default for this marketplace. To turn it on, run `/plugin`, select **Marketplaces**, choose `materialize`, and select **Enable auto-update**. To update by hand, run `/plugin marketplace update materialize`.
+
+Codex:
+
+```bash
+codex plugin marketplace add MaterializeInc/agent-skills
+codex plugin add materialize@materialize
+```
+
+To update, run `codex plugin marketplace upgrade materialize`.
+
 ## Available Skills
 
 <details>
@@ -260,6 +282,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-09-24: Add the materialize plugin, bundling all skills
 - 2026-09-24: Rename skills to the `mz-` prefix, and `mcp-developer-analysis` to `mz-health-check`
 - 2026-08-27: Add mz-optimize-memory skill and its eval harness
 - 2026-08-24: Add mz-ontology-design skill

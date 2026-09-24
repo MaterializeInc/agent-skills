@@ -161,6 +161,7 @@ plugins/
 
 | Plugin | Description |
 |--------|-------------|
+| `materialize` | Bundles every skill in `skills/`, so users can install and update them as one plugin |
 | `mz-sql-lsp` | Registers the `mz-deploy` language server for `.sql` files (go-to-definition, hover, symbols) |
 
 ### Conventions
@@ -169,10 +170,12 @@ plugins/
 - Plugin sources in `marketplace.json` use the explicit `./plugins/{name}` form. The documented `metadata.pluginRoot` shorthand fails validation.
 - Set an explicit semver `version` in `plugin.json` and bump it on every user-visible change. Without a bump, Claude Code keeps the cached copy. `claude plugin validate --strict` also fails on a missing version.
 - Add each new plugin to the `validate-plugins` workflow, this table, and the root `README.md`.
+- The `materialize` plugin is the exception to the rules above. Its source is the repo root (`./`), its marketplace entry is its whole definition (`strict: false`), and it has no `version`, so every commit to `main` is an update. The skills change weekly with the docs sync, and a version that has to be bumped by hand would leave users on old copies.
+- Add each new skill to the `materialize` plugin's `skills` list, by its real directory rather than the `skills/` symlink. Codex drops symlinked skills when it installs a plugin. The `validate-plugins` workflow fails when the list and `skills/` differ.
 
 ### Validating
 
-CI runs these on every push touching `plugins/` or the marketplace manifest. Run them locally before pushing:
+CI runs these on every push touching `plugins/`, the skills, or the marketplace manifest. Run them locally before pushing:
 
 ```bash
 claude plugin validate . --strict                      # marketplace manifest
