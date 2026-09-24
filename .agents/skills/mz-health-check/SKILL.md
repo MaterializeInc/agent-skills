@@ -1,6 +1,6 @@
 ---
 name: mz-health-check
-description: 'Analyze a Materialize environment via the MCP Developer endpoint, and/or configure an MCP client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to connect to the materialize-developer server. For analysis: check environment health, investigate performance, troubleshoot stale materialized views, diagnose memory pressure, audit resource utilization, run EXPLAIN ANALYZE on user objects, get optimization recommendations. For client connection: configure/connect/set-up an MCP client to materialize-developer (Emulator, Cloud, or self-managed), control which user/role is used, switch between identities. Trigger even if user just says "check my environment", "why is my MV stale", "why is my cluster slow", "what can I optimize", "explain analyze my materialized view", "how do I connect Claude Code to materialize-developer", or "configure Cursor for the Materialize MCP".'
+description: 'Analyze a Materialize environment via the MCP Developer endpoint, and/or configure an MCP client (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to connect to the materialize-developer server. For analysis: check environment health, investigate performance, troubleshoot stale materialized views, diagnose memory pressure, find paused clusters holding back compaction, audit resource utilization, run EXPLAIN ANALYZE on user objects, get optimization recommendations. For client connection: configure/connect/set-up an MCP client to materialize-developer (Emulator, Cloud, or self-managed), control which user/role is used, switch between identities. Trigger even if user just says "check my environment", "why is my MV stale", "why is my cluster slow", "what can I optimize", "explain analyze my materialized view", "how do I connect Claude Code to materialize-developer", or "configure Cursor for the Materialize MCP".'
 ---
 
 # Materialize Developer Analysis
@@ -218,6 +218,19 @@ Query `mz_internal.mz_hydration_statuses` to check whether all dataflows are
 hydrated. Non-hydrated objects after initial startup may indicate resource
 pressure or configuration issues. LEFT JOIN the replica columns: `replica_id`
 is NULL with no replica to hydrate on, and an inner join hides those objects.
+
+### Paused Clusters Holding Back Compaction
+A materialized view on a user cluster with no replicas holds back compaction
+of every input it reads, so their storage keeps growing, and Materialize
+raises no notice about it. Check for it in every health review and put any
+hit in the executive summary. Run the Materialized Views on Clusters with No
+Replicas query in `references/queries.md`. To fix it, give the cluster a
+replica, which releases the inputs right away, or drop the view if nobody
+needs it. A managed cluster takes `ALTER CLUSTER <name> SET (REPLICATION
+FACTOR = 1)`, an unmanaged one `CREATE CLUSTER REPLICA <name>.<replica> (SIZE
+= '<size>')`. Indexes on a
+cluster with no replicas and `SCHEDULE = ON REFRESH` clusters don't hold back
+their inputs.
 
 ### Memory and Resource Consumption
 - `mz_internal.mz_cluster_replica_utilization` for memory/CPU percentage per replica process
@@ -477,9 +490,12 @@ waiting; a paused source keeps a stale row, so read `status` first.
 Run these checks in order:
 1. `mz_internal.mz_cluster_replica_statuses` — all replicas of user clusters
    ready, and no recent `oom-killed` in `mz_cluster_replica_status_history`?
-2. `mz_internal.mz_source_statuses` — all sources running?
-3. `mz_internal.mz_sink_statuses` — all sinks running?
-4. `mz_internal.mz_cluster_replica_utilization` — resource pressure?
+2. Paused clusters — any materialized view on a user cluster with no replicas?
+   It holds back compaction of its inputs (Paused Clusters Holding Back
+   Compaction).
+3. `mz_internal.mz_source_statuses` — all sources running?
+4. `mz_internal.mz_sink_statuses` — all sinks running?
+5. `mz_internal.mz_cluster_replica_utilization` — resource pressure?
 
 ### "What can I optimize to save costs?"
 
