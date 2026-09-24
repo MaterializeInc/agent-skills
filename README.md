@@ -43,7 +43,7 @@ To update, run `codex plugin marketplace upgrade materialize`.
 ## Available Skills
 
 <details>
-<summary><strong>materialize-docs</strong></summary>
+<summary><strong>mz-docs</strong></summary>
 
 Materialize documentation for SQL syntax, data ingestion, concepts, and best practices.
 
@@ -251,7 +251,7 @@ What's the syntax for CREATE SINK?
 Skills can also be explicitly invoked in user prompts:
 
 ```
-❯ /materialize-docs what sources are supported?
+❯ /mz-docs what sources are supported?
 ```
 
 ## Compatibility
@@ -288,6 +288,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-09-24: Rename materialize-docs to mz-docs
 - 2026-09-24: Add a check for materialized views on clusters with no replicas to mz-health-check
 - 2026-09-24: Add the materialize plugin, bundling all skills
 - 2026-09-24: Rename skills to the `mz-` prefix, and `mcp-developer-analysis` to `mz-health-check`
