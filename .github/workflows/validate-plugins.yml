@@ -16,11 +16,15 @@ on:
     paths:
       - '.claude-plugin/**'
       - 'plugins/**'
+      - 'skills/**'
+      - '.agents/skills/**'
       - '.github/workflows/validate-plugins.yml'
   pull_request:
     paths:
       - '.claude-plugin/**'
       - 'plugins/**'
+      - 'skills/**'
+      - '.agents/skills/**'
       - '.github/workflows/validate-plugins.yml'
   workflow_dispatch:
 
@@ -46,3 +50,29 @@ jobs:
 
       - name: Validate ${{ matrix.target }}
         run: claude plugin validate "${{ matrix.target }}" --strict
+
+  # The materialize plugin lists its skills by their real directories, since
+  # the symlinks in skills/ are dropped when Codex installs the plugin. A
+  # skill added to skills/ but not to that list is missing for plugin users.
+  materialize-plugin-skills:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check the materialize plugin lists every skill
+        shell: python
+        run: |
+          import json, os, sys
+          plugins = json.load(open(".claude-plugin/marketplace.json"))["plugins"]
+          entry = next(p for p in plugins if p["name"] == "materialize")
+          listed = {os.path.realpath(p) for p in entry["skills"]}
+          present = {os.path.realpath(os.path.join("skills", d)) for d in os.listdir("skills")}
+          for path in sorted(present - listed):
+              print(f"::error::{os.path.relpath(path)} is missing from the materialize plugin's skills list")
+          for path in sorted(listed - present):
+              print(f"::error::{os.path.relpath(path)} is listed but has no entry in skills/")
+          sys.exit(1 if listed != present else 0)
