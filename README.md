@@ -18,6 +18,28 @@ Most skills now use the `mz-` prefix, and `mcp-developer-analysis` is now `mz-he
 npx skills remove materialize-dbt materialize-debug-freshness materialize-terraform-provider materialize-terraform-self-managed mcp-developer-analysis
 ```
 
+### As a plugin
+
+Claude Code and Codex can install all skills as one plugin, named `materialize`, instead of using `npx skills`. Use one method or the other, or each skill loads twice. Plugin skills are namespaced, for example `materialize:mz-dbt`.
+
+Claude Code:
+
+```
+/plugin marketplace add MaterializeInc/agent-skills
+/plugin install materialize@materialize
+```
+
+Auto-update is off by default for this marketplace. To turn it on, run `/plugin`, select **Marketplaces**, choose `materialize`, and select **Enable auto-update**. Claude Code then checks for updates in the background and asks you to run `/reload-plugins` when there is one. To update by hand, run `/plugin marketplace update materialize`, then `/plugin update materialize@materialize`, then `/reload-plugins`.
+
+Codex:
+
+```bash
+codex plugin marketplace add MaterializeInc/agent-skills
+codex plugin add materialize@materialize
+```
+
+To update, run `codex plugin marketplace upgrade materialize`.
+
 ## Available Skills
 
 <details>
@@ -267,6 +289,7 @@ See [LICENSE](LICENSE).
 ## Changelog
 
 - 2026-09-24: Add a check for materialized views on clusters with no replicas to mz-health-check
+- 2026-09-24: Add the materialize plugin, bundling all skills
 - 2026-09-24: Rename skills to the `mz-` prefix, and `mcp-developer-analysis` to `mz-health-check`
 - 2026-08-27: Add mz-optimize-memory skill and its eval harness
 - 2026-08-24: Add mz-ontology-design skill
