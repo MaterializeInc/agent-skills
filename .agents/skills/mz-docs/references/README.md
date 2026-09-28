@@ -1,4 +1,4 @@
-# References (materialize-docs)
+# References (mz-docs)
 
 Add curated documentation excerpts, internal runbooks, or release notes here.
 
