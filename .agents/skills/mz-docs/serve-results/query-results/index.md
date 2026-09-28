@@ -27,7 +27,7 @@ transform with scalar functions, and re-order data that is maintained by an
 index.
 
 Queries that can't simply read out from an index will create an ephemeral dataflow to compute
-the results. These dataflows are bound to the active [cluster](/concepts/clusters/),
+the results. These dataflows are bound to the active [cluster](/fundamentals/concepts/clusters/),
  which you can change using:
 
 ```mzsql
@@ -40,7 +40,7 @@ results to you.
 For more information, see [`SELECT`](/sql/select/) reference page.  See
 also the following client library guides:
 
-<ul style="column-count: 2"><li><a href="/integrations/client-libraries/golang/#query" >Go</a></li></li><li><a href="/integrations/client-libraries/java-jdbc/#query" >Java</a></li></li><li><a href="/integrations/client-libraries/node-js/#query" >Node.js</a></li></li><li><a href="/integrations/client-libraries/php/#query" >PHP</a></li></li><li><a href="/integrations/client-libraries/python/#query" >Python</a></li></li><li><a href="/integrations/client-libraries/ruby/#query" >Ruby</a></li></li><li><a href="/integrations/client-libraries/rust/#query" >Rust</a></li></li></ul>
+<ul style="column-count: 2"><li><a href="/serve-results/client-libraries/golang/#query" >Go</a></li></li><li><a href="/serve-results/client-libraries/java-jdbc/#query" >Java</a></li></li><li><a href="/serve-results/client-libraries/node-js/#query" >Node.js</a></li></li><li><a href="/serve-results/client-libraries/php/#query" >PHP</a></li></li><li><a href="/serve-results/client-libraries/python/#query" >Python</a></li></li><li><a href="/serve-results/client-libraries/ruby/#query" >Ruby</a></li></li><li><a href="/serve-results/client-libraries/rust/#query" >Rust</a></li></li></ul>
 
 ## SUBSCRIBE
 
@@ -69,5 +69,5 @@ You can use `SUBSCRIBE` to:
 For more information, see [`SUBSCRIBE`](/sql/subscribe/) reference page.  See
 also the following client library guides:
 
-<ul style="column-count: 2"><li><a href="/integrations/client-libraries/golang/#stream" >Go</a></li></li><li><a href="/integrations/client-libraries/java-jdbc/#stream" >Java</a></li></li><li><a href="/integrations/client-libraries/node-js/#stream" >Node.js</a></li></li><li><a href="/integrations/client-libraries/php/#stream" >PHP</a></li></li><li><a href="/integrations/client-libraries/python/#stream" >Python</a></li></li><li><a href="/integrations/client-libraries/ruby/#stream" >Ruby</a></li></li><li><a href="/integrations/client-libraries/rust/#stream" >Rust</a></li></li></ul>
+<ul style="column-count: 2"><li><a href="/serve-results/client-libraries/golang/#stream" >Go</a></li></li><li><a href="/serve-results/client-libraries/java-jdbc/#stream" >Java</a></li></li><li><a href="/serve-results/client-libraries/node-js/#stream" >Node.js</a></li></li><li><a href="/serve-results/client-libraries/php/#stream" >PHP</a></li></li><li><a href="/serve-results/client-libraries/python/#stream" >Python</a></li></li><li><a href="/serve-results/client-libraries/ruby/#stream" >Ruby</a></li></li><li><a href="/serve-results/client-libraries/rust/#stream" >Rust</a></li></li></ul>
 

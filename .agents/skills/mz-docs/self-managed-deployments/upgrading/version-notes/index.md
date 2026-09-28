@@ -12,7 +12,7 @@ database** can configure Materialize to run its internal consensus queries using
 
 > **Note:** The transaction isolation levels discussed in this section refer to those of the
 > PostgreSQL metadata database, not Materialize's [client transaction isolation
-> levels](/reference/isolation-level/).
+> levels](/serve-results/isolation-level/).
 
 The consensus queries are designed to be linearizable under `READ COMMITTED`.
 `READ COMMITTED` also improves metadata write throughput by avoiding the

@@ -123,7 +123,7 @@ Select the option that works best for you.
 
 **Allow Materialize IPs:**
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, find the static egress IP addresses for the
    Materialize region you are running in:
 
@@ -157,7 +157,7 @@ to serve as your SSH bastion host.
 
 1. Configure the SSH bastion host to allow traffic from Materialize.
 
-    1. In the [SQL Shell](/console/), or your preferred
+    1. In the [SQL Shell](/developer-tools/console/), or your preferred
        SQL client connected to Materialize, get the static egress IP addresses for
        the Materialize region you are running in:
 
@@ -200,7 +200,7 @@ to serve as your SSH bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-In Materialize, a [cluster](/concepts/clusters/) is an isolated
+In Materialize, a [cluster](/fundamentals/concepts/clusters/) is an isolated
 environment, similar to a virtual warehouse in Snowflake. When you create a
 cluster, you choose the size of its compute resource allocation based on the
 work you need the cluster to do, whether ingesting data from a source,
@@ -210,7 +210,7 @@ combination.
 In this case, you'll create a dedicated cluster for ingesting source data from
 your SQL Server database.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
    command to create the new cluster:
 
@@ -234,7 +234,7 @@ connection**, so the SQL Server connection must specify `SSL MODE 'required'`.
 
 **Allow Materialize IPs:**
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE SECRET`](/sql/create-secret/)
    command to securely store the password for the SQL Server role you'll use to
    replicate data into Materialize:
@@ -262,7 +262,7 @@ connection**, so the SQL Server connection must specify `SSL MODE 'required'`.
 
 **Use an SSH tunnel:**
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CONNECTION`](/sql/create-connection/#ssh-tunnel)
    command to create an SSH tunnel connection:
 
@@ -407,7 +407,7 @@ new data arrives, and serving results efficiently.
   or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
   [`CREATE SINK`](/sql/create-sink/).
 
-- Check out the [tools and integrations](/integrations/) supported by
+- Check out the [tools and integrations](/developer-tools/integrations/) supported by
   Materialize.
 
 ## Considerations
@@ -435,7 +435,7 @@ use either the `TEXT COLUMNS` or the `EXCLUDE COLUMNS` option:
 | `image`          | `EXCLUDE COLUMNS`                                           |
 | `varbinary(max)` | `EXCLUDE COLUMNS`                                           |
 
-### Timestamp Rounding
+### Timestamp rounding
 
 The `time`, `datetime2`, and `datetimeoffset` types in SQL Server have a default
 scale of 7 decimal places, or in other words a accuracy of 100 nanoseconds. But
@@ -480,7 +480,7 @@ most recent `create_date`.
 
 If two capture instances for a table share the same timestamp (unlikely given the millisecond resolution), Materialize selects the `capture_instance` with the lexicographically larger name.
 
-### Modifying an existing source
+### Adding a table to an existing source
 
 When you add a new subsource to an existing source ([`ALTER SOURCE ... ADD
 SUBSOURCE ...`](/sql/alter-source/)), Materialize starts the snapshotting
@@ -565,6 +565,20 @@ Materialize ingests from one of them.
 Removing the capture instance that Materialize is using puts the affected table
 into an error state. Removing a capture instance that Materialize is not using does not affect
 ingestion.
+
+### Disabling CDC on a table
+
+Running `sys.sp_cdc_disable_table` removes the capture instance Materialize is
+ingesting from, which puts the affected table into an error state. The other
+tables in the source keep replicating. You can recover without re-creating the
+whole source by dropping just the affected table in Materialize:
+
+```mzsql
+DROP TABLE table_1;
+```
+
+Then re-create it, optionally after re-enabling CDC on the upstream table with
+`sys.sp_cdc_enable_table`.
 
 ### Table-level operations
 

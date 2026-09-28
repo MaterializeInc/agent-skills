@@ -14,8 +14,8 @@ You can ingest data into Materialize from various external systems:
 ## Sources and clusters
 
 Materialize ingests data from external systems using
-[sources](/concepts/sources/). For the sources, you need to associate a
-[cluster](/concepts/clusters/) to provide the compute resources needed to ingest
+[sources](/fundamentals/concepts/sources/). For the sources, you need to associate a
+[cluster](/fundamentals/concepts/clusters/) to provide the compute resources needed to ingest
 data.
 
 > **Tip:** If possible, dedicate a cluster just for sources.
@@ -114,7 +114,7 @@ overloaded?](/ingest-data/troubleshooting/#is-the-upstream-database-overloaded)
 
 While snapshotting is taking place, you can monitor the progress of the
 operation in the **overview page** for the source in the [Materialize
-Console](/console/data/#sample-source-overview). Alternatively, you can manually
+Console](/developer-tools/console/data/#sample-source-overview). Alternatively, you can manually
 keep track of using information from the system catalog. See [Monitoring the
 snapshotting
 progress](/ingest-data/monitoring-data-ingestion/#monitoring-the-snapshotting-progress)
@@ -183,8 +183,8 @@ Although Materialize is continually ingesting changes from the upstream system,
 depending on the volume of the upstream changes, Materialize may lag behind the
 upstream system. If the lag is significant, queries may block until Materialize
 has caught up sufficiently with the upstream system when using the default
-[isolation level](/reference/isolation-level/) of [strict
-serializability](/reference/isolation-level/#strict-serializable).
+[isolation level](/serve-results/isolation-level/) of [strict
+serializability](/serve-results/isolation-level/#strict-serializable).
 
 In the Materialize Console, you can see a source's data freshness from the
 **Data Explorer** screen. Alternatively, you can run a query to monitor the lag.
@@ -199,7 +199,7 @@ read from the upstream system.
 When a cluster is restarted (such as after resizing), certain objects on that
 cluster  (such as Kafka upsert sources, indexes, materialized views, and sinks)
 undergo hydration. For the full list of events that trigger hydration and the
-affected objects, see [Hydration](/concepts/hydration/).
+affected objects, see [Hydration](/fundamentals/concepts/hydration/).
 
 > **Tip:** If possible, use a dedicated cluster just for sources. That is, avoid
 > using the same cluster for sources and other objects, such as sinks, etc.
@@ -389,7 +389,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -422,7 +422,7 @@ validation.
 With the source set up in Materialize and the API destination configured in
 Amazon EventBridge, you can now query the incoming data:
 
-1. [In the Materialize console](/console/), navigate to
+1. [In the Materialize console](/developer-tools/console/), navigate to
    the **SQL Shell**.
 
 1. Use SQL queries to inspect and analyze the incoming data:
@@ -1256,7 +1256,7 @@ refer to the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stab
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
+In Materialize, a [cluster](/fundamentals/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
@@ -1266,7 +1266,7 @@ combination.
 In this step, you'll create a dedicated cluster for ingesting source data from
 topics in your Kafka (or Kafka-API compatible) broker.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
    command to create the new cluster:
 
@@ -1295,7 +1295,7 @@ authentication and networking configurations, so refer to the
 [`CREATE CONNECTION`](/sql/create-connection/#kafka) documentation for further
 guidance.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE SECRET`](/sql/create-secret/)
    command to securely store the credentials to connect to your Kafka broker
    and, optionally, schema registry:
@@ -1378,9 +1378,9 @@ storage layer atomically (i.e., at the same ingestion timestamp), you
 will **not able to query the source until snapshotting is complete**.
 
 In this step, you'll monitor the progress of the initial snapshot using the
-observability features in the [Materialize Console](/console/).
+observability features in the [Materialize Console](/developer-tools/console/).
 
-1. If not already logged in, [log in to the Materialize Console](/console/).
+1. If not already logged in, [log in to the Materialize Console](/developer-tools/console/).
 
 1. Navigate to **Monitoring** > **Sources** and click through to the source you
    created in the previous step. In the source overview page, you will see a
@@ -1396,7 +1396,7 @@ observability features in the [Materialize Console](/console/).
 
 ### 5. Create a view
 
-A [view](/concepts/views/) saves a query under a name to provide a shorthand for
+A [view](/fundamentals/concepts/views/) saves a query under a name to provide a shorthand for
 referencing the query. During view creation, the underlying query is not
 executed.
 
@@ -1410,9 +1410,9 @@ CREATE VIEW cnt_table1 AS
 
 ### 6. Create an index on the view
 
-In Materialize, [indexes](/concepts/indexes) on views compute and, as new data
+In Materialize, [indexes](/fundamentals/concepts/indexes) on views compute and, as new data
 arrives, incrementally update view results in memory within a
-[cluster](/concepts/clusters/) instead of recomputing the results from scratch.
+[cluster](/fundamentals/concepts/clusters/) instead of recomputing the results from scratch.
 
 Create an index on `cnt_table1` view. Then, as new change events stream in
 through Kafka (as the result of `INSERT`, `UPDATE` and `DELETE` operations in
@@ -1425,7 +1425,7 @@ CREATE INDEX idx_cnt_table1_field1 ON cnt_table1(field1);
 ```
 
 For best practices on when to index a view, see
-[Indexes](/concepts/indexes/) and [Views](/concepts/views/).
+[Indexes](/fundamentals/concepts/indexes/) and [Views](/fundamentals/concepts/views/).
 
 ## Next steps
 
@@ -1443,7 +1443,7 @@ new data arrives, and serving results efficiently.
   or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
   [`CREATE SINK`](/sql/create-sink/).
 
-- Check out the [tools and integrations](/integrations/) supported by
+- Check out the [tools and integrations](/developer-tools/integrations/) supported by
   Materialize.
 
 ---
@@ -1637,7 +1637,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -1709,7 +1709,7 @@ Materialize.
 With the source set up in Materialize and the webhook workflow configured in
 HubSpot, you can now query the incoming data:
 
-1. [In the Materialize console](/console/), navigate to
+1. [In the Materialize console](/developer-tools/console/), navigate to
    the **SQL Shell**.
 
 1. Use SQL queries to inspect and analyze the incoming data:
@@ -1757,6 +1757,152 @@ computing real-time results that stay up-to-date as new data arrives, and
 serving results efficiently. For more details, check out the
 [HubSpot documentation](https://knowledge.hubspot.com/workflows/how-do-i-use-webhooks-with-hubspot-workflows) and the
 [webhook source reference documentation](/sql/create-source/webhook/).
+
+---
+
+## Ingestion performance
+
+This page provides an overview of ingestion performance from internal benchmarks, so you can assess Materialize against a specific workload, size a [cluster](/fundamentals/concepts/clusters/), and estimate cost. The results show that Materialize sustains [fresh data](/fundamentals/concepts/reaction-time/#freshness) with high throughput and predictable load on upstream systems. For the full test methodology and results, see the [ingestion performance litepaper](https://materialize.com/ingestion-performance-litepaper/).
+
+> **Note:** These are indicative numbers from a controlled test bench. For numbers that reflect your workload, we advise testing against your own data and sources.
+
+## Benchmarks
+
+We run five benchmarks spanning the lifecycle of a typical Materialize installation, from bringing a new [source](/fundamentals/concepts/sources/) online, to running in steady state, to scaling up load and the number of clusters. We run each benchmark across PostgreSQL, MySQL, SQL Server, and Kafka, using Materialize's default isolation level of [strict serializability](/serve-results/isolation-level/).
+
+### Snapshot time
+
+- **Test:** How long the initial [snapshot](/ingest-data/#snapshotting) of a newly connected source takes to complete.
+- **Method:** We create a source and snapshot 1 to 4 tables (topics for Kafka), each holding 100 million records (about 10 GB), using a 400cc Materialize cluster.
+- **Results:** Snapshotting four tables takes about 5 to 26 minutes depending on the source. Snapshot time depends on cluster size and the upstream system, with [Kafka upsert sources](/ingest-data/#upsert-sources) being more resource intensive.
+
+**Chart:**
+
+![Snapshot time by table or topic count](/images/performance-snapshot.png)
+
+**Data:**
+
+Snapshot time (minutes) by table count (topics for Kafka).
+
+| Source | 1 | 4 |
+|---|---|---|
+| PostgreSQL | 2.0 | 5.1 |
+| MySQL | 5.6 | 10.6 |
+| SQL Server | 7.1 | 26.1 |
+| Kafka | 4.2 | 51.2 |
+
+### Snapshot load
+
+- **Test:** The load the snapshot places on the upstream system while it runs.
+- **Method:** We create a source and snapshot 1 to 4 tables (topics for Kafka), each holding 100 million records (about 10 GB), recording the upstream system's peak CPU, egress, and memory, using a 400cc Materialize cluster.
+- **Results:** When snapshotting four tables, peak CPU stays between about 7% and 21% depending on the source, and the load is mostly CPU and egress.
+
+**Chart:**
+
+![Peak upstream CPU during snapshot](/images/performance-snapshot-load.png)
+
+**Data:**
+
+Peak upstream load at four tables (topics for Kafka).
+
+| Source | Peak CPU | Egress |
+|---|---|---|
+| PostgreSQL | 21.3% | 204 MB/s |
+| MySQL | 14.5% | 83 MB/s |
+| SQL Server | 7.3% | 30 MB/s |
+| Kafka | 21.1% (broker) | 73 MB/s (combined) |
+
+### Sustained throughput
+
+- **Test:** How much data Materialize can ingest from a single source while keeping it fresh.
+- **Method:** We use a k6 load generator with 1 to 16 parallel writers, each writing as fast as the source accepts, using a 400cc Materialize cluster.
+- **Results:** Throughput reaches 43,000 to 117,000 rows a second across all sources (messages for Kafka), with p99 freshness around 1 to 2.5 seconds apart from SQL Server, which lags as its poll-based CDC falls behind.
+
+**Chart:**
+
+![Sustained throughput and p99 freshness by source](/images/performance-throughput.png)
+
+**Data:**
+
+Throughput and p99 freshness at four parallel writers.
+
+| Source | Throughput | p99 freshness |
+|---|---|---|
+| PostgreSQL | ~117,000 rows/s | 2.5 s |
+| MySQL | ~43,000 rows/s | 1.2 s |
+| SQL Server | ~96,000 rows/s | 308 s |
+| Kafka | ~68,000 msgs/s | 1 s |
+
+### Vertical scaling
+
+- **Test:** How many tables a single Materialize cluster keeps fresh at once.
+- **Method:** We use a k6 load generator with 16 writers, each writing as fast as the source accepts, increasing the number of tables from 1 to 100, using a 400cc Materialize cluster.
+- **Results:** Freshness holds around 1 to 2 seconds from 1 to 100 tables for most sources, apart from SQL Server, which lags as its poll-based CDC falls behind.
+
+**Chart:**
+
+![Vertical scaling freshness by table count](/images/performance-vertical.png)
+
+**Data:**
+
+p99 freshness by table count (topics for Kafka).
+
+| Tables | PostgreSQL | MySQL | SQL Server | Kafka |
+|---|---|---|---|---|
+| 1 | 1.1 s | 1.1 s | 423 s | 1 s |
+| 10 | 1.5 s | 1.6 s | 429 s | 1 s |
+| 20 | 2.3 s | 2.0 s | 424 s | 1 s |
+| 50 | 1.0 s | 1.3 s | 424 s | 1 s |
+| 100 | 1.1 s | 1.1 s | 431 s | 1 s |
+
+### Horizontal scaling
+
+- **Test:** How freshness holds as more Materialize clusters read from the same upstream system.
+- **Method:** We use a k6 load generator with a single writer writing as fast as the source accepts, increasing the number of 800cc Materialize clusters reading it from 1 to 32.
+- **Results:** Freshness holds steady out to 32 clusters for most sources, apart from Kafka, which rises to 5 seconds at the largest fan-out.
+
+**Chart:**
+
+![Horizontal scaling freshness by cluster count](/images/performance-horizontal.png)
+
+**Data:**
+
+p99 freshness by cluster count, at 10 tables per cluster (topics for Kafka).
+
+| Clusters | PostgreSQL | MySQL | SQL Server | Kafka |
+|---|---|---|---|---|
+| 1 | 1.4 s | 1.0 s | 6.4 s | 1 s |
+| 4 | 1.4 s | 1.0 s | 6.4 s | 1 s |
+| 8 | 1.3 s | 1.0 s | 6.3 s | 1 s |
+| 16 | 1.4 s | 1.0 s | 6.2 s | 3 s |
+| 32 | 1.3 s | 1.0 s | 6.3 s | 5 s |
+
+## Methodology
+
+We use different test methods for the snapshot and continuous ingestion benchmarks. The snapshot benchmarks run against a fixed dataset already in the upstream system, which Materialize ingests until the snapshot completes. The throughput and scaling benchmarks use a [k6](https://k6.io) load generator to write into the upstream system as Materialize ingests, with each configuration running for ten minutes.
+
+We measure freshness differently for databases and Kafka, due to differences in how each operates:
+
+- **Databases**: we inject marker rows through the same source as the workload, timing how long each takes from being written to appearing in Materialize.
+- **Kafka**: we use Materialize's reported wallclock lag on the workload table, measured in whole seconds.
+
+We run these benchmarks on every release. The figures here are from Materialize v26.20.2 (EKS), with each source on a managed AWS service:
+
+| System | Instance |
+|---|---|
+| k6 load generator | c7g.4xlarge |
+| PostgreSQL 18 | db.r6g.2xlarge |
+| MySQL 8.4 | db.r6g.2xlarge |
+| SQL Server 2022 | db.r6i.4xlarge |
+| Kafka (Amazon MSK 3.6) | kafka.m5.large (snapshot and throughput benchmarks), kafka.m5.4xlarge (scaling benchmarks); 3 brokers |
+
+## See also
+
+- [Ingestion performance litepaper](https://materialize.com/ingestion-performance-litepaper/)
+- [Reaction time](/fundamentals/concepts/reaction-time/)
+- [Isolation level](/serve-results/isolation-level/)
+- [Cluster sizes](/self-managed-deployments/appendix/appendix-cluster-sizes/)
+- [Ingest data](/ingest-data/)
 
 ---
 
@@ -2167,6 +2313,10 @@ INNER JOIN mz_objects AS o ON (s.id = o.id)
 WHERE NOT s.snapshot_committed;
 ```
 
+Materialize commits the snapshot only once all of it has been read, so a
+source's committed statistics do not move while it snapshots. See [Understand
+the lifecycle of a source](/ingest-data/lifecycle-of-a-source/#snapshotting).
+
 It's also important to monitor CPU and memory utilization for the cluster
 hosting the source during snapshotting. If there are signs of resource
 exhaustion, you may need to [resize the cluster](/sql/alter-cluster/#alter-cluster-size).
@@ -2222,7 +2372,7 @@ In the Materialize Console, you can go to the source overview page to view the
 data ingestion progress (e.g., rows_received, bytes_received, ingestion rate).
 
 Alternatively, you can query the
-[`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+[`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
 table and look for ingestion statistics that advance over time:
 
 ```mzsql
@@ -2470,7 +2620,7 @@ patterns in Materialize:
 ## Change Data Capture (CDC)
 
 Materialize supports PostgreSQL as a real-time data source. The
-[PostgreSQL source](/sql/create-source/postgres//) uses PostgreSQL's
+[PostgreSQL source](/sql/create-source/postgres/) uses PostgreSQL's
 [replication protocol](/sql/create-source/postgres/#change-data-capture)
 to **continually ingest changes** resulting from CRUD operations in the upstream
 database. The native support for PostgreSQL Change Data Capture (CDC) in
@@ -2494,14 +2644,14 @@ Materialize gives you the following benefits:
 When a source is created, Materialize parallelizes the initial snapshot
 across the cluster's workers and, on PostgreSQL 14 and later, splits each
 table's read across workers. See [Snapshot
-parallelism](/concepts/snapshotting/#parallelism).
+parallelism](/fundamentals/concepts/snapshotting/#parallelism).
 
-## Supported versions and services
+### Supported versions and services
 
 The PostgreSQL source requires **PostgreSQL 11+** and is compatible with most
 common PostgreSQL hosted services.
 
-## Integration guides
+### Integration guides
 
 To help you get started, the following integration guides are available:
 
@@ -2513,126 +2663,164 @@ To help you get started, the following integration guides are available:
 - [Neon](/ingest-data/postgres/neon/)
 - [Self-hosted PostgreSQL](/ingest-data/postgres/self-hosted/)
 
-## Considerations
+## Supported data types
 
-<h3 id="publication-membership">Publication membership</h3>
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
-remove tables from publications. Because of this, Materialize relies on
-periodic checks to determine if a table has been removed from a publication,
-at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
-it before Materialize notices that the table was removed. In this case,
-Materialize can no longer provide any consistency guarantees about the data
-we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
-<p>To mitigate this issue, if you need to drop and re-add a table to a
-publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
-<h3 id="supported-types">Supported types</h3>
+### Supported types
+
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
 <ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
-<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
-possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
-treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
-features. For example:</p>
-<ul>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-enum.html" ><code>enum</code></a>: When decoded as <code>text</code>, the implicit ordering of the original
-PostgreSQL <code>enum</code> type is not preserved; instead, Materialize will sort values
-as <code>text</code>.</p>
-</li>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-money.html" ><code>money</code></a>: When decoded as <code>text</code>, resulting <code>text</code> value cannot be cast
-back to <code>numeric</code>, since PostgreSQL adds typical currency formatting to the
-output.</p>
-</li>
-</ul>
-<h3 id="inherited-tables">Inherited tables</h3>
-<p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
-PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
-also present in the inherited table. However, both PostgreSQL&rsquo;s logical
-replication and <code>COPY</code> only present data written to the tables themselves,
-i.e. the inheriting data is <em>not</em> treated as part of the inherited table.</p>
-<p>PostgreSQL sources use logical replication and <code>COPY</code> to ingest table data,
-so inheriting tables&rsquo; data will only be ingested as part of the inheriting
-table, i.e. in Materialize, the data will not be returned when serving
-<code>SELECT</code>s from the inherited table.</p>
-<ul>
-<li>
-<p>If using legacy syntax <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a>:</p>
-<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
-creating a materialized view that unions data from the inherited and
-inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
-the table, data from the inheriting tables will not be available in the
-view. You will need to add the inheriting tables via <code>ADD SUBSOURCE</code> and
-create a new view (materialized or non-) that unions the new table.</p>
-</li>
-<li>
-<p>If using new <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> syntax:</p>
-<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
-creating a materialized view that unions data from the inherited and
-inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
-the table, data from the inheriting tables will not be available in the
-view. You will need to add the inheriting tables via <code>CREATE TABLE .. FROM SOURCE</code> and create a new view (materialized or non-) that unions the new
-table.</p>
-</li>
-</ul>
-<h3 id="partitioned-tables">Partitioned tables</h3>
-<p>When you add a <a href="https://www.postgresql.org/docs/current/ddl-partitioning.html" >declaratively partitioned
-table</a> to a
-publication, PostgreSQL expands it to the table&rsquo;s leaf partitions; the parent
-table is not itself replicated. Materialize ingests one table per partition,
-which you can reassemble into the parent table using <code>UNION ALL</code>.</p>
-<p>Materialize does <strong>not</strong> support ingesting from a publication created with
-<a href="https://www.postgresql.org/docs/current/sql-createpublication.html" ><code>publish_via_partition_root = true</code></a>,
-and doing so can produce incorrect results.</p>
-<p>See <a href="/ingest-data/postgres/partitioned-tables/" >Ingest from partitioned
-tables</a> for the supported
-approaches, including how to add and remove partitions over time.</p>
-<h3 id="replication-slots">Replication slots</h3>
-<p>Each source ingests the raw replication stream data for all tables in the
-specified publication using <strong>a single</strong> replication slot. To manage
-replication slots:</p>
-<ul>
-<li>
-<p>For PostgreSQL 13+, set a reasonable value
-for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-to limit the amount of storage used by replication slots.</p>
-</li>
-<li>
-<p>If you stop using Materialize, or if either the Materialize instance or
+
+Replicating tables that contain **unsupported [data types](/sql/types/)** is
+possible via the `TEXT COLUMNS` option. The specified columns will be
+treated as `text`; i.e., will not have the expected PostgreSQL type
+features. For example:
+
+* [`enum`]: When decoded as `text`, the implicit ordering of the original
+  PostgreSQL `enum` type is not preserved; instead, Materialize will sort values
+  as `text`.
+
+* [`money`]: When decoded as `text`, resulting `text` value cannot be cast
+back to `numeric`, since PostgreSQL adds typical currency formatting to the
+output.
+
+[`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
+[`money`]: https://www.postgresql.org/docs/current/datatype-money.html
+
+## How ingestion from PostgreSQL works
+
+### Replication slots
+
+Each source ingests the raw replication stream data for all tables in the
+specified publication using **a single** replication slot. To manage
+replication slots:
+
+- For PostgreSQL 13+, set a reasonable value
+for [`max_slot_wal_keep_size`](https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE)
+to limit the amount of storage used by replication slots.
+
+- If you stop using Materialize, or if either the Materialize instance or
 the PostgreSQL instance crash, delete any replication slots. You can query
-the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-replication slot created for each source.</p>
-</li>
-<li>
-<p>If you delete all objects that depend on a source without also dropping
+the `mz_internal.mz_postgres_sources` table to look up the name of the
+replication slot created for each source.
+
+- If you delete all objects that depend on a source without also dropping
 the source, the upstream replication slot remains and will continue to
 accumulate data so that the source can resume in the future. To avoid
-unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-</li>
-</ul>
-<h3 id="modifying-an-existing-source">Modifying an existing source</h3>
-<p>When you add a new subsource to an existing source (<a href="/sql/alter-source/" ><code>ALTER SOURCE ... ADD SUBSOURCE ...</code></a>), Materialize starts the snapshotting
+unbounded disk space usage, make sure to use [`DROP
+SOURCE`](/sql/drop-source/) or manually delete the replication slot.
+
+### Snapshotting
+
+The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+[`CTID`](https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID).
+Materialize uses
+[PostgreSQL statistics to estimate](https://www.postgresql.org/docs/current/row-estimation-examples.html)
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.
+
+To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL `ANALYZE` command.
+
+### Publication membership
+
+PostgreSQL's logical replication API does not provide a signal when users
+remove tables from publications. Because of this, Materialize relies on
+periodic checks to determine if a table has been removed from a publication,
+at which time it generates an irrevocable error, preventing any values from
+being read from the table.
+
+However, it is possible to remove a table from a publication and then re-add
+it before Materialize notices that the table was removed. In this case,
+Materialize can no longer provide any consistency guarantees about the data
+we present from the table and, unfortunately, is wholly unaware that this
+occurred.
+
+To mitigate this issue, if you need to drop and re-add a table to a
+publication, ensure that you remove the table/subsource from the source
+_before_ re-adding it using the [`DROP SOURCE`](/sql/drop-source/) command.
+
+### Inherited tables
+
+When using [PostgreSQL table inheritance](https://www.postgresql.org/docs/current/tutorial-inheritance.html),
+PostgreSQL serves data from `SELECT`s as if the inheriting tables' data is
+also present in the inherited table. However, both PostgreSQL's logical
+replication and `COPY` only present data written to the tables themselves,
+i.e. the inheriting data is _not_ treated as part of the inherited table.
+
+PostgreSQL sources use logical replication and `COPY` to ingest table data,
+so inheriting tables' data will only be ingested as part of the inheriting
+table, i.e. in Materialize, the data will not be returned when serving
+`SELECT`s from the inherited table.
+
+- If using legacy syntax [`CREATE SOURCE ... FOR
+  ...`](/sql/create-source/postgres/):
+
+  You can mimic PostgreSQL's `SELECT` behavior with inherited tables by
+  creating a materialized view that unions data from the inherited and
+  inheriting tables (using `UNION ALL`). However, if new tables inherit from
+  the table, data from the inheriting tables will not be available in the
+  view. You will need to add the inheriting tables via `ADD SUBSOURCE` and
+  create a new view (materialized or non-) that unions the new table.
+
+- If using new [`CREATE TABLE FROM SOURCE`](/sql/create-table/) syntax:
+
+  You can mimic PostgreSQL's `SELECT` behavior with inherited tables by
+  creating a materialized view that unions data from the inherited and
+  inheriting tables (using `UNION ALL`). However, if new tables inherit from
+  the table, data from the inheriting tables will not be available in the
+  view. You will need to add the inheriting tables via `CREATE TABLE .. FROM
+  SOURCE` and create a new view (materialized or non-) that unions the new
+  table.
+
+### Partitioned tables
+
+When you add a [declaratively partitioned
+table](https://www.postgresql.org/docs/current/ddl-partitioning.html) to a
+publication, PostgreSQL expands it to the table's leaf partitions; the parent
+table is not itself replicated. Materialize ingests one table per partition,
+which you can reassemble into the parent table using `UNION ALL`.
+
+Materialize does **not** support ingesting from a publication created with
+[`publish_via_partition_root =
+true`](https://www.postgresql.org/docs/current/sql-createpublication.html),
+and doing so can produce incorrect results.
+
+See [Ingest from partitioned
+tables](/ingest-data/postgres/partitioned-tables/) for the supported
+approaches, including how to add and remove partitions over time.
+
+### Modifying an existing source
+
+When you add a new subsource to an existing source ([`ALTER SOURCE ... ADD
+SUBSOURCE ...`](/sql/alter-source/)), Materialize starts the snapshotting
 process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
-once the process finishes, resize the cluster for steady-state.</p>
-<h3 id="snapshotting">Snapshotting</h3>
-<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
-workers using ranges of
-<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
-Materialize uses
-<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
-the amount of data and number of rows to read. Missing or stale statistics can result in uneven
-work distribution, reducing snapshot performance. They can also cause incorrect snapshot
-progress reporting in the Console.</p>
-<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
-date by running PostgreSQL <code>ANALYZE</code> command.</p>
+once the process finishes, resize the cluster for steady-state.
 
-## Handling upstream operations
+## Supported schema and table changes
+
+The following table summarizes how Materialize handles changes to an upstream
+table it is ingesting. See the details below the table for the remediation for
+each syntax.
+
+| Change | Effect |
+| --- | --- |
+| Foreign key, `CHECK`, or `EXCLUSION` constraint changes | No impact: Materialize ignores these changes. |
+| Dropping a column that is not ingested | No impact. |
+| Adding a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint | No impact. |
+| [Adding a column](#adding-a-column) | Handled automatically. Materialize keeps ingesting the existing columns. To pick up the new column, create a new table (current syntax) or re-add the subsource (legacy syntax). |
+| [Dropping an ingested column](#dropping-a-column) | Table enters an error state. Re-create the table. |
+| [Renaming an ingested column](#renaming-a-column) | Table enters an error state. Re-create the table. |
+| [Changing an ingested column's data type](#changing-a-columns-data-type) | Table enters an error state, unless the column is ingested as `text` via `TEXT COLUMNS`. Re-create the table. |
+| [Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint](#changing-constraints) that existed when the table was created | Table enters an error state. Re-create the table. |
+| [Dropping, renaming, or moving a table](#table-level-operations) | Table enters an error state. Re-create the table. |
+| [Removing a table from the publication](#table-level-operations) | Table enters an error state. Re-create the table. |
+| [Setting a replica identity other than `FULL`](#table-level-operations) | Table enters an error state. Re-create the table. |
+| [Truncating a table](#table-level-operations) | Table enters an error state. Use an unqualified `DELETE FROM` instead. |
 
 This section describes how changes to upstream tables that Materialize ingests
 affect the corresponding Materialize tables.
@@ -2685,6 +2873,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -2704,10 +2897,235 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
+
+## Supported database operations
+
+The following table summarizes how Materialize handles operational events on
+the upstream PostgreSQL database. See the details below the table for the error
+text and any required configuration.
+
+| Operation | Resolution |
+| --- | --- |
+| Restarting or patching PostgreSQL (including OS-level restarts) | Supported automatically. |
+| Restarting Materialize | Supported automatically. |
+| Transient network interruptions between Materialize and PostgreSQL | Supported automatically. |
+| Resizing the source cluster or changing its replication factor | Supported automatically. |
+| The upstream database running out of disk space | Supported automatically, once space is freed. |
+| [High-availability failover](#high-availability-failovers) | Requires re-creating the source. On self-managed Materialize, a configuration change can avoid this. |
+| [Point-in-time restore](#point-in-time-restore) | Requires re-creating the source. |
+| [Restoring from a volume or disk snapshot](#restoring-from-a-volume-or-disk-snapshot) | Not detected. Requires re-creating the source even though it keeps running. |
+| [Promoting a physical replica](#promotion-of-a-physical-replica) | Requires re-creating the source. |
+| [Replication slot invalidated](#replication-slot-invalidated) by WAL retention | Requires re-creating the source. |
+| [Replication slot dropped or rewound](#replication-slot-dropped-or-rewound) | Requires re-creating the source. |
+| [Dropping the publication](#dropping-the-publication) | Requires re-creating the source. |
+| [Major version upgrades](#major-version-upgrades) | Requires re-creating the source. |
+
+### Operations that do not require re-creating the source
+
+Materialize tracks a [log sequence number
+(LSN)](https://www.postgresql.org/docs/current/wal-internals.html) as it
+consumes the upstream write-ahead log (WAL), and the source's replication slot
+retains the WAL that Materialize has not yet consumed. Because the slot outlives
+the connection, routine operational events do not lose data: after a transient
+interruption the source stalls, then resumes from its committed LSN and catches
+up automatically. **No action is required** for the following operations:
+
+- Restarting or patching PostgreSQL (including OS-level restarts).
+- Restarting Materialize. The source resumes from its committed LSN and does
+  **not** re-snapshot already-ingested data.
+- Transient network interruptions between Materialize and PostgreSQL. These
+  surface as [`connection closed`](/ingest-data/postgres/connection-closed/).
+- Resizing the cluster that hosts the source, or changing its replication
+  factor. Briefly, the source may report [`replication slot ... is
+  active`](/ingest-data/postgres/replication-slot-active/) while the upstream
+  releases the slot from the previous connection.
+- The upstream database running out of disk space, once space is freed.
+
+> **Note:** Recovery after an interruption depends on the WAL that the replication slot is
+> holding still being available upstream. An interruption long enough for the slot
+> to be invalidated, or for the slot to be dropped, is not recoverable. See
+> [Replication slot invalidated](#replication-slot-invalidated) and [Replication
+> slot dropped or rewound](#replication-slot-dropped-or-rewound).
+
+> **Warning:** While a source is disconnected, the upstream WAL accumulates behind its
+> replication slot and cannot be reclaimed. A long outage, an undersized source
+> cluster, or a source cluster stuck in a restart loop can therefore consume
+> significant upstream disk. Monitor `restart_lsn` in
+> [`pg_replication_slots`](https://www.postgresql.org/docs/current/view-pg-replication-slots.html)
+> during planned maintenance.
+
+### Operations that require re-creating the source
+
+A smaller set of events breaks LSN continuity or destroys the replication slot.
+When this happens, Materialize cannot guarantee a correct, gap-free view of your
+data. Most of these put the **entire source** into an error or permanently
+stalled state. One, [restoring from a volume or disk
+snapshot](#restoring-from-a-volume-or-disk-snapshot), cannot be detected at all,
+so the source keeps running on diverged data. Every event in this section
+requires **re-creating** the source. Upstream changes to an individual table's
+schema are handled separately, and do not error the entire source.
+
+In each case below, the remediation is to drop and re-create the source:
+
+```mzsql
+DROP SOURCE mz_source CASCADE;
+
+CREATE SOURCE mz_source
+  FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source');
+
+-- Re-create the tables you were ingesting.
+CREATE TABLE table_1 FROM SOURCE mz_source (REFERENCE public.table_1);
+```
+
+If you are using the legacy `CREATE SOURCE ... FOR TABLES` syntax, re-create the
+source with the same `FOR TABLES` list instead of adding tables separately.
+
+Because a re-created source snapshots from the current state of the upstream
+database, any changes it missed while it was in an error state are reflected in
+the snapshot rather than replayed as individual updates.
+
+> **Warning:** `CASCADE` drops every object that depends on the source, including its tables,
+> views, materialized views, indexes, and sinks. Capture their definitions before
+> you run it, and re-create them once the new source has finished snapshotting.
+
+#### Point-in-time restore
+
+Restoring the source database from a backup, including restoring to a different
+server for disaster recovery, increments the PostgreSQL timeline and is detected
+as a discontinuity. The source fails with an error of the form:
+
+```
+unsupported action: database restored from point-in-time backup. Expected
+timeline ID 8 but got 9
+```
+
+The same error covers other events that change the timeline, such as a managed
+failover between replicas. To see the timeline a source is pinned to, query
+[`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources):
+
+```mzsql
+SELECT s.name, p.replication_slot, p.timeline_id
+FROM mz_internal.mz_postgres_sources p
+JOIN mz_catalog.mz_sources s ON s.id = p.id;
+```
+
+If your upstream fails over between replicas as part of routine maintenance, see
+[High-availability failovers](#high-availability-failovers).
+
+#### Restoring from a volume or disk snapshot
+
+Restoring the upstream data directory from a crash-consistent volume or disk
+snapshot rolls the database back, but preserves the timeline ID and the
+replication slot. Materialize cannot detect this kind of restore. The source
+keeps running without an error, but its contents diverge from upstream. This can
+surface later as incorrect results, or as negative-accumulation errors in
+queries such as `Non-positive multiplicity`.
+
+> **Warning:** After any restore of this kind, drop and re-create the source even if it reports
+> as `running`. Do not wait for the source to enter an error state, because it
+> will not.
+
+#### Promotion of a physical replica
+
+When a source reads from a physical standby (read replica) rather than the
+primary, promoting that standby to a primary fails the source with:
+
+```
+unsupported action: upstream physical replica status changed (e.g. a physical
+replica was promoted to a primary). Expected pg_is_in_recovery()=true but got
+false
+```
+
+Materialize detects the promotion while the replication stream is live, without
+waiting for a restart. Re-create the source against the promoted node.
+
+#### Replication slot invalidated
+
+PostgreSQL invalidates a replication slot once the WAL it holds exceeds
+[`max_slot_wal_keep_size`](https://www.postgresql.org/docs/current/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE).
+This protects the upstream from running out of disk, at the cost of ending
+replication. The source fails with:
+
+```
+replication slot has been invalidated because it exceeded the maximum reserved
+size
+```
+
+To avoid this, size the source cluster so that it keeps up with the upstream
+write rate, and set `max_slot_wal_keep_size` high enough to cover your longest
+expected outage. Some hosted PostgreSQL services set this value for you and do
+not allow it to be raised.
+
+#### Replication slot dropped or rewound
+
+If the slot Materialize is using is dropped upstream, or the upstream is rebuilt
+from a base backup (which does not carry replication slots), a new slot starts
+at the current LSN, past the point the source needs to resume from. The source
+stalls with:
+
+```
+slot overcompacted. Requested LSN ... but only LSNs >= ... are available
+```
+
+For diagnosis steps, see [Slot
+overcompacted](/ingest-data/postgres/slot-overcompacted/). PostgreSQL refuses to
+drop a slot that is in use, so this generally happens only while the source is
+paused or disconnected.
+
+Not every rewind is caught this way. A rewind that leaves the slot able to serve
+the LSN the source asks for, such as [restoring from a volume or disk
+snapshot](#restoring-from-a-volume-or-disk-snapshot), raises no error at all.
+
+#### Dropping the publication
+
+Running `DROP PUBLICATION` upstream stalls the source, and all of its tables,
+with:
+
+```
+publication "mz_source" does not exist
+```
+
+Re-create the publication upstream, then re-create the source.
+
+#### Major version upgrades
+
+A PostgreSQL major version upgrade rewrites the on-disk format and does not
+preserve the replication slot, so there is no in-place recovery. To upgrade without a gap in your downstream views, run a second source
+against the upgraded instance in parallel and cut over once it has hydrated. See
+[Upgrade the major version of your PostgreSQL
+source](/ingest-data/postgres/major-version-upgrade/).
+
+### High-availability failovers
+
+Some managed PostgreSQL services increment the timeline during routine
+high-availability operations, such as maintenance, a machine-tier change, or an
+automatic failover between replicas. Materialize cannot distinguish these from a
+genuine restore, so by default they fail the source with the [`Expected timeline
+ID`](#point-in-time-restore) error.
+
+On self-managed Materialize, where the upstream service guarantees that a
+failover is a contiguous fork of the WAL with no data loss, you can disable
+timeline validation with the
+[`pg_source_validate_timeline`](/sql/alter-system-set/) system parameter:
+
+```mzsql
+ALTER SYSTEM SET pg_source_validate_timeline = false;
+```
+
+This parameter is not available on Materialize Cloud. There, a
+high-availability failover that changes the timeline requires re-creating the
+source.
+
+> **Warning:** Disabling this check is a trade-off. With it off, Materialize also does **not**
+> detect a genuine [point-in-time restore](#point-in-time-restore) or any other
+> discontinuous timeline change, and silently ingesting across one can corrupt the
+> contents of the source. Only disable it when your provider documents that its
+> failovers preserve WAL continuity for logical replication subscribers, and
+> re-create the source manually after any operation that does not.
 
 ---
 
@@ -2823,7 +3241,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -2869,7 +3287,7 @@ On the **Connection Settings** page:
 With the source set up in Materialize and the webhook destination configured in
 Rudderstack, you can now query the incoming data:
 
-1. [In the Materialize console](/console/), navigate to
+1. [In the Materialize console](/developer-tools/console/), navigate to
    the **SQL Shell**.
 
 1. Use SQL queries to inspect and analyze the incoming data:
@@ -2996,7 +3414,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -3064,7 +3482,7 @@ mapping:
 With the source set up in Materialize and the webhook destination configured in
 Segment, you can now query the incoming data:
 
-1. [In the Materialize console](/console/), navigate to
+1. [In the Materialize console](/developer-tools/console/), navigate to
    the **SQL Shell**.
 
 1. Use SQL queries to inspect and analyze the incoming data:
@@ -3260,7 +3678,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -3303,7 +3721,7 @@ On the **Materialize Settings** page:
 With the source set up in Materialize and the webhook destination configured in
 SnowcatCloud, you can now query the incoming data:
 
-1. [In the Materialize console](/console/), navigate to
+1. [In the Materialize console](/developer-tools/console/), navigate to
    the **SQL Shell**.
 
 1. Use SQL queries to inspect and analyze the incoming data:
@@ -3482,7 +3900,7 @@ serving results efficiently. For more details, check out the
 
 ## SQL Server
 
-## Change Data Capture (CDC)
+## Ingest from SQL Server via change data capture
 
 Materialize supports SQL Server as a real-time data source. The [SQL Server source](/sql/create-source/sql-server/)
 uses SQL Server's change data capture feature to **continually ingest changes**
@@ -3503,17 +3921,17 @@ SQL Server Change Data Capture (CDC) in Materialize gives you the following bene
     a read-replica to build views on top of your SQL Server data that are
     efficiently maintained and always up-to-date.
 
-## Supported versions
+### Supported versions
 
 Materialize supports replicating data from SQL Server 2016 or higher with Change
 Data Capture (CDC) support.
 
-## Integration Guides
+### Integration guides
 
 - [Azure SQL Database](/ingest-data/sql-server/azure-db/)
 - [Self-hosted SQL Server](/ingest-data/sql-server/self-hosted/)
 
-## Considerations
+## Supported data types
 
 ### Supported types
 
@@ -3538,7 +3956,7 @@ use either the `TEXT COLUMNS` or the `EXCLUDE COLUMNS` option:
 | `image`          | `EXCLUDE COLUMNS`                                           |
 | `varbinary(max)` | `EXCLUDE COLUMNS`                                           |
 
-### Timestamp Rounding
+### Timestamp rounding
 
 The `time`, `datetime2`, and `datetimeoffset` types in SQL Server have a default
 scale of 7 decimal places, or in other words a accuracy of 100 nanoseconds. But
@@ -3560,6 +3978,8 @@ SELECT * FROM my_timestamps;
 '2000-12-31 23:59:59.999999'
 '2001-01-01 00:00:00'
 ```
+
+## How ingestion from SQL Server works
 
 ### Snapshot latency for inactive databases
 
@@ -3583,7 +4003,7 @@ most recent `create_date`.
 
 If two capture instances for a table share the same timestamp (unlikely given the millisecond resolution), Materialize selects the `capture_instance` with the lexicographically larger name.
 
-### Modifying an existing source
+### Adding a table to an existing source
 
 When you add a new subsource to an existing source ([`ALTER SOURCE ... ADD
 SUBSOURCE ...`](/sql/alter-source/)), Materialize starts the snapshotting
@@ -3592,7 +4012,23 @@ the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.
 
-## Handling upstream operations
+## Supported schema and table changes
+
+The following table summarizes how Materialize handles changes to an upstream
+table it is ingesting. See the details below the table for recovery commands.
+
+| Change | Effect |
+| --- | --- |
+| Foreign key or `CHECK` constraint changes | No impact: Materialize ignores these changes. |
+| Dropping an excluded column | No impact. |
+| [Adding a column](#adding-a-column) | Handled automatically. Materialize keeps ingesting the existing columns; incorporate the new column with a new table (current syntax) or by re-adding the subsource (legacy syntax). |
+| [Dropping an ingested column](#dropping-a-column) | Table enters an error state. Re-create the table. |
+| [Renaming an ingested column](#renaming-a-column) | Table enters an error state. Re-create the table. |
+| Any [`ALTER COLUMN`](#changing-a-columns-data-type) (type, collation, sparseness, masking, nullability) | Table enters an error state. Re-create the table. |
+| Dropping a `UNIQUE` constraint | Table enters an error state. Re-create the table. |
+| [Disabling CDC on a table](#disabling-cdc-on-a-table) (`sys.sp_cdc_disable_table`) | Table enters an error state. Drop and re-create just that table; the rest of the source keeps replicating. |
+| [Removing the in-use capture instance](#removing-a-capture-instance) | Table enters an error state. Re-create the table. |
+| [Dropping or renaming a table, or moving it to another schema](#table-level-operations) | Table enters an error state. Re-create the table. |
 
 This section describes how changes to upstream tables that Materialize ingests
 affect the corresponding Materialize tables.
@@ -3669,6 +4105,20 @@ Removing the capture instance that Materialize is using puts the affected table
 into an error state. Removing a capture instance that Materialize is not using does not affect
 ingestion.
 
+### Disabling CDC on a table
+
+Running `sys.sp_cdc_disable_table` removes the capture instance Materialize is
+ingesting from, which puts the affected table into an error state. The other
+tables in the source keep replicating. You can recover without re-creating the
+whole source by dropping just the affected table in Materialize:
+
+```mzsql
+DROP TABLE table_1;
+```
+
+Then re-create it, optionally after re-enabling CDC on the upstream table with
+`sys.sp_cdc_enable_table`.
+
 ### Table-level operations
 
 The following upstream operations put the affected table into an error state.
@@ -3677,6 +4127,156 @@ table in Materialize to resume:
 
 - Dropping a table (`DROP TABLE`).
 - Renaming a table or moving it to a different schema.
+
+## Supported database operations
+
+The following table summarizes how Materialize handles operational events on
+the upstream SQL Server database. See the details below the table for the
+error text and any required configuration.
+
+| Operation | Resolution |
+| --- | --- |
+| Restarting or patching SQL Server (including OS-level restarts) | Supported automatically. |
+| Restarting Materialize | Supported automatically. |
+| Transient network interruptions between Materialize and SQL Server | Supported automatically. |
+| Taking the database `OFFLINE` and back `ONLINE` | Supported automatically. |
+| Toggling `SINGLE_USER`/`MULTI_USER` or `READ_ONLY`/`READ_WRITE` | Supported automatically. |
+| Data-file, filegroup, or index maintenance that rewrites data in place | Supported automatically. |
+| [Availability group failover](#always-on-failovers) | Supported automatically, with a configuration change. |
+| [Point-in-time restore](#point-in-time-restore) | Requires re-creating the source. |
+| [CDC disabled at the database level](#cdc-disabled-at-the-database-level) | Requires re-creating the source. |
+| [Change-table retention](#change-table-retention) exceeded during an outage | Requires re-creating the source. |
+
+### Operations that do not require re-creating the source
+For operations that are supported automatically, Materialize is able to resume
+replication from a [log sequence number
+(LSN)](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-log-architecture-and-management-guide)
+that it tracks as it consumes the upstream change data capture (CDC) change
+tables. Because LSNs live in the SQL Server transaction log, they survive
+routine operational events: after a transient interruption the source stalls,
+then resumes from its last committed LSN and catches up automatically. **No
+action is required** for the operations in the first section below.
+
+The source recovers on its own. It will briefly reports a `stalled` status while the
+condition persists, then returns to `running` and catch up for all of the
+following scenarios:
+
+- Restarting or patching SQL Server (including OS-level restarts).
+- Restarting Materialize. The source resumes from its tracked LSN and does
+  **not** re-snapshot already-ingested data.
+- Transient network interruptions between Materialize and SQL Server.
+- Taking the database `OFFLINE` and back `ONLINE`.
+- Toggling the database between `SINGLE_USER`/`MULTI_USER` or
+  `READ_ONLY`/`READ_WRITE` (for example, during patching).
+- Data-file, filegroup, or index maintenance that rewrites data in place.
+- [Availability group failover](#always-on-failovers), with the
+  configuration change described below.
+
+> **Note:** Recovery after an interruption depends on the required LSNs still being present
+> in the SQL Server CDC change tables. If the interruption lasts longer than the
+> CDC **retention period** (3 days by default) and SQL Server's cleanup job
+> removes change-table rows past the source's resume point, the source can no
+> longer recover on its own. See [Change-table retention](#change-table-retention).
+
+> **Warning:** If a maintenance script places the database into `SINGLE_USER` mode, note that an
+> active Materialize source's reconnection attempts can occupy the single available
+> connection and cause `ALTER DATABASE ... SET MULTI_USER` to fail with error 5064.
+> Terminate the Materialize session (or use `SET MULTI_USER WITH ROLLBACK
+> IMMEDIATE` after terminating it) before returning the database to multi-user
+> mode.
+
+### Operations that require re-creating the source
+A smaller set of events breaks LSN or CDC-change-table continuity. When this
+happens, Materialize cannot guarantee a correct, gap-free view of your data, so
+it puts the **entire source** into an error state that requires **re-creating**
+the source. Re-creating triggers a fresh [snapshot](/ingest-data/#snapshotting)
+and rehydration of dependent objects. Upstream changes to an individual table's
+schema are handled separately, and do not error the entire source.
+
+The following events put the **entire source** into an error state. In each
+case, the remediation is to drop and re-create the source:
+
+```mzsql
+DROP SOURCE mz_source CASCADE;
+
+CREATE SOURCE mz_source
+  FROM SQL SERVER CONNECTION sql_server_connection;
+
+-- Re-create the tables you were ingesting.
+CREATE TABLE table_1 FROM SOURCE mz_source (REFERENCE dbo.table_1);
+```
+
+#### Point-in-time restore
+
+Restoring the source database from a backup — including restoring to a different
+server for disaster recovery — is detected as a discontinuity. The source fails
+with an error of the form:
+
+```
+source must be dropped and recreated due to failure: Restore history id changed
+from None to Some(<n>)
+```
+
+Materialize detects the restore by reading `msdb.dbo.restorehistory`. (This check
+does not apply to Azure SQL Database, which does not expose `msdb`.)
+
+#### CDC disabled at the database level
+
+Running `sys.sp_cdc_disable_db` drops all change tables. The source stalls with:
+
+```
+invalid SQL Server system setting 'database CDC'. Expected 'true'. Got 'Some(false)'.
+```
+
+Re-enable CDC on the database and on each table (`sys.sp_cdc_enable_db`,
+`sys.sp_cdc_enable_table`), then re-create the source.
+
+#### Change-table retention
+
+SQL Server's CDC cleanup job removes change-table rows older than the retention
+period (3 days by default). If Materialize is disconnected long enough that
+cleanup removes rows past the source's resume LSN, the source stalls with:
+
+```
+the requested LSN '...' is less than the minimum '...' for `dbo_<table>`
+```
+
+To avoid this during a planned outage, keep the outage shorter than the retention
+period, or increase retention beforehand with
+[`sys.sp_cdc_change_job`](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sys-sp-cdc-change-job-transact-sql)
+(`@job_type = 'cleanup'`, `@retention`).
+
+### Always-On failovers
+
+Materialize supports SQL Server configured with Always On availability groups,
+including failover between replicas, with one configuration change.
+
+By default, an availability group failover is misdetected as a point-in-time
+restore and fails the source with the `Restore history id changed` error
+described above. This is a false positive: the LSN stream is continuous across an
+availability group failover, but seeding a secondary replica writes rows to
+`msdb.dbo.restorehistory`, which the restore-detection check reads as a restore.
+
+To allow the source to survive failover, disable restore-history validation with
+the [`sql_server_source_validate_restore_history`](/sql/alter-system-set/) system
+parameter:
+
+```mzsql
+ALTER SYSTEM SET sql_server_source_validate_restore_history = false;
+```
+
+> **Warning:** Disabling this check is a trade-off: with it off, Materialize will also **not**
+> detect a genuine [point-in-time restore](#point-in-time-restore) of the source
+> database. Only disable it when the source connects to a database that fails over
+> between availability group replicas.
+
+With the check disabled, the source no longer fails on failover. Because `msdb`
+is per-instance, the CDC capture and cleanup jobs do not move with the
+availability group database — after a failover, confirm that CDC is healthy on
+the new primary (the capture and cleanup jobs exist, SQL Server Agent is running,
+and the change tables are advancing) so that replication continues. Adding the
+jobs on a replica that lacks them is done with
+[`sys.sp_cdc_add_job`](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sys-sp-cdc-add-job-transact-sql).
 
 ---
 
@@ -3707,7 +4307,7 @@ Before you begin, make sure you have access to a bastion host. You will need:
 1. Configure the SSH bastion host. The bastion host needs a **public key** to
 connect to the Materialize tunnel you created in the previous step. Materialize
 stores public keys for SSH tunnels in the system catalog. Query
-[`mz_ssh_tunnel_connections`](/reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
+[`mz_ssh_tunnel_connections`](/sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
 to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```mzsql
@@ -3837,7 +4437,7 @@ Before you begin, make sure you have access to a bastion host. You will need:
 1. Configure the SSH bastion host. The bastion host needs a **public key** to
 connect to the Materialize tunnel you created in the previous step. Materialize
 stores public keys for SSH tunnels in the system catalog. Query
-[`mz_ssh_tunnel_connections`](/reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
+[`mz_ssh_tunnel_connections`](/sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
 to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```mzsql
@@ -4021,7 +4621,7 @@ Region          | CIDR
 ## Fetching static egress IPs addresses
 
 You can fetch the static egress CIDR blocks associated with your region by
-querying the [`mz_egress_ips`](/reference/system-catalog/mz_catalog/#mz_egress_ips)
+querying the [`mz_egress_ips`](/sql/system-catalog/mz_catalog/#mz_egress_ips)
 system catalog table.
 
 ```mzsql
@@ -4036,7 +4636,7 @@ SELECT * FROM mz_egress_ips;
 ```
 
 As an alternative, you can also submit an HTTP request to Materialize's
-[SQL API](/integrations/http-api/) querying the [`mz_egress_ips`](/reference/system-catalog/mz_catalog/#mz_egress_ips)
+[SQL API](/serve-results/http-api/) querying the [`mz_egress_ips`](/sql/system-catalog/mz_catalog/#mz_egress_ips)
 system catalog table. In the request, specify the username, app password, and
 host for your Materialize region:
 
@@ -4130,7 +4730,7 @@ cluster. Next, you'll configure Materialize to consume this data.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CONNECTION`](/sql/create-connection/)
    command to create connection objects with access and authentication details
    to your Kafka cluster and schema registry:
@@ -4278,7 +4878,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 ```
 
 If you missed the notice, you can find the URLs for all webhook sources in the
-[`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
+[`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
 system table.
 
 ### Access and authentication
@@ -4306,7 +4906,7 @@ Stripe signing scheme, check out the [Stripe documentation](https://stripe.com/d
 
 ## Step 5. Validate incoming data
 
-1. [In the Materialize console](/console/), navigate to
+1. [In the Materialize console](/developer-tools/console/), navigate to
    the **SQL Shell**.
 
 1. Use SQL queries to inspect and analyze the incoming data:
@@ -4373,7 +4973,7 @@ ingestion](/ingest-data/monitoring-data-ingestion/)
 
 If you're looking for troubleshooting guidance for slow or unresponsive queries,
 check out the [`Transform data`
-troubleshooting](/transform-data/troubleshooting) guide instead.
+troubleshooting](/serve-results/troubleshooting) guide instead.
 
 > **Tip:** For help getting started with your own data, you can schedule a [free guided
 > trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
@@ -4385,7 +4985,7 @@ to https://console.materialize.com/, clicking the **Sources** tab in the
 navigation bar, and clicking the affected source.
 
 Alternatively, you can get this information from the system catalog by querying
-the [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+the [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
 table:
 
 ```mzsql
@@ -4426,7 +5026,7 @@ We've observed the following approximate snapshot rates from PostgreSQL:
 | 800 cc | ~200 MB/s |
 
 To determine whether your source has completed ingesting the initial snapshot,
-you can query the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+you can query the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
 system catalog table:
 
 ```mzsql
@@ -4482,7 +5082,7 @@ snapshotting](/ingest-data/#use-a-larger-cluster-for-upsert-source-snapshotting)
 ## Is the upstream database overloaded?
 
 Snapshotting can put significant load on the upstream database (see [Impact
-on upstream system](/concepts/snapshotting/#impact-on-upstream-system)).
+on upstream system](/fundamentals/concepts/snapshotting/#impact-on-upstream-system)).
 
 Check the upstream database when a snapshot progresses more slowly than
 expected, when applications sharing the database slow down while
@@ -4501,7 +5101,7 @@ databases. Look for:
 Also watch disk usage on the upstream database during a long-running
 snapshot: CDC database sources must retain their change log until Materialize
 consumes it (see [Impact on upstream
-system](/concepts/snapshotting/#impact-on-upstream-system)).
+system](/fundamentals/concepts/snapshotting/#impact-on-upstream-system)).
 
 If the database is overloaded, you can upsize the source database or cancel
 the snapshot by dropping the source, and retry:
@@ -4534,6 +5134,347 @@ the cluster for steady-state.
 
 ---
 
+## Understand the lifecycle of a source
+
+A source and the tables created from it move through a sequence of states
+before they continuously serve up-to-date data. Knowing which state an object
+is in tells you whether it is making progress or is stuck.
+
+This page covers sources created with the [`CREATE SOURCE`](/sql/create-source/)
+and [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/) syntax. All source
+types report through the same
+[`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
+view and move through the same states, so the queries below apply whether you
+ingest from Kafka, PostgreSQL, MySQL, SQL Server, or a load generator.
+
+The source and each of its tables report their own status. The source tracks
+the connection to the upstream system, while each table tracks the ingestion of
+one upstream relation.
+
+## States
+
+| State      | Meaning                                                                      |
+|------------|------------------------------------------------------------------------------|
+| `created`  | The object exists but is not ingesting yet.                                   |
+| `starting` | The object is connecting to the upstream system and initializing.             |
+| `running`  | The object is ingesting: first the initial snapshot, then upstream changes.   |
+| `paused`   | No cluster replica is running the object. It makes no progress until one is.  |
+| `stalled`  | The object hit an error. The `error` column reports the cause.                |
+| `dropped`  | The object was dropped. Terminal.                                             |
+
+`stalled` covers both errors that Materialize retries on its own and errors that
+do not clear until you act. See [Stalled](#stalled).
+
+The examples below use a PostgreSQL source and a Kafka source on a dedicated
+cluster. Substitute your own object names.
+
+```mzsql
+CREATE CLUSTER ingest_demo SIZE '25cc';
+
+CREATE SOURCE pg_src IN CLUSTER ingest_demo
+  FROM POSTGRES CONNECTION pg_conn (PUBLICATION 'mz_orders');
+
+CREATE SOURCE kafka_src IN CLUSTER ingest_demo
+  FROM KAFKA CONNECTION kafka_conn (TOPIC 'clicks');
+```
+
+## Created
+
+A source that has no tables yet reports `created`. At this point Materialize
+has recorded the source and its upstream connection, but it is not ingesting
+anything and consumes no cluster resources:
+
+```mzsql
+SELECT name, type, status
+FROM mz_internal.mz_source_statuses
+ORDER BY name;
+```
+
+```nofmt
+   name    |   type   | status
+-----------+----------+---------
+ kafka_src | kafka    | created
+ pg_src    | postgres | created
+(2 rows)
+```
+
+A source stays in `created` for as long as it has no tables. Ingestion begins
+only when you attach a table with `CREATE TABLE ... FROM SOURCE`:
+
+```mzsql
+CREATE TABLE orders FROM SOURCE pg_src (REFERENCE orders);
+CREATE TABLE clicks FROM SOURCE kafka_src (REFERENCE clicks) FORMAT JSON;
+```
+
+## Starting and running
+
+Once a table is attached, the source and the table connect to the upstream
+system (`starting`), then begin ingesting (`running`):
+
+```mzsql
+SELECT o.name, s.status, s.error
+FROM mz_internal.mz_source_statuses s
+JOIN mz_objects o ON o.id = s.id
+ORDER BY o.name;
+```
+
+```nofmt
+   name    | status  | error
+-----------+---------+-------
+ clicks    | running |
+ kafka_src | running |
+ orders    | running |
+ pg_src    | running |
+(4 rows)
+```
+
+`starting` is usually brief. If an object stays in `starting` for more than a
+few minutes, see [Troubleshooting: Why isn't my source ingesting
+data?](/ingest-data/troubleshooting/#why-isnt-my-source-ingesting-data).
+
+## Snapshotting
+
+`running` covers both the initial [snapshot](/fundamentals/concepts/snapshotting/)
+and steady-state ingestion, so the status alone does not tell you whether the
+initial snapshot is still in progress. Use
+[`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
+instead:
+
+```mzsql
+SELECT o.name, s.snapshot_records_known, s.snapshot_records_staged,
+       s.snapshot_committed
+FROM mz_internal.mz_source_statistics s
+JOIN mz_objects o ON o.id = s.id
+WHERE o.name IN ('orders', 'clicks')
+ORDER BY o.name;
+```
+
+```nofmt
+  name  | snapshot_records_known | snapshot_records_staged | snapshot_committed
+--------+------------------------+-------------------------+--------------------
+ clicks | 200                    | 200                     | t
+ orders | 501                    | 501                     | t
+(2 rows)
+```
+
+While the snapshot is in progress, `snapshot_records_staged` climbs toward
+`snapshot_records_known` and `snapshot_committed` is `f`. A table cannot serve
+queries until its snapshot completes: queries against it block until then.
+
+Nothing is committed until the whole snapshot has been read, because
+Materialize ingests it at a single timestamp. So `offset_committed` does not
+advance for the duration, and on upsert sources even `updates_staged` sits at
+`0`, because the source buffers the snapshot while it builds its in-memory
+index. In those statistics a snapshot that is progressing normally is
+indistinguishable from a stuck one, so read progress from
+`snapshot_records_staged`, `messages_received`, and `bytes_received`.
+
+> **Note:** These statistics are collected periodically, so for a window after an object
+> starts running they can read `NULL` and `f` even though the data is already
+> ingested and queryable. They also reset when a replica restarts. Track how they
+> evolve rather than reading them at a single moment.
+
+[`mz_hydration_statuses`](/sql/system-catalog/mz_internal/#mz_hydration_statuses)
+answers the same question one level up, per source and replica rather than per
+table:
+
+```mzsql
+SELECT o.name, h.hydrated
+FROM mz_internal.mz_hydration_statuses h
+JOIN mz_objects o ON o.id = h.object_id
+WHERE o.name IN ('pg_src', 'kafka_src')
+ORDER BY o.name;
+```
+
+```nofmt
+   name    | hydrated
+-----------+----------
+ kafka_src | t
+ pg_src    | t
+(2 rows)
+```
+
+`hydrated` is `false` while any table attached to the source is still
+snapshotting, whatever the source type, which makes it a cheap source-level
+check. It is not specific to the initial snapshot: a replica restart resets it
+too, after which it tracks the source rebuilding its in-memory state.
+
+Snapshot duration and upstream impact vary by source type. CDC sources
+(PostgreSQL, MySQL, SQL Server) require the upstream system to retain its
+change log until the snapshot completes, so a long snapshot increases upstream
+disk usage. Kafka sources have no equivalent retention requirement. See
+[Snapshotting](/fundamentals/concepts/snapshotting/) and [Monitoring the
+snapshotting
+progress](/ingest-data/monitoring-data-ingestion/#monitoring-the-snapshotting-progress).
+
+## Steady state
+
+Once the snapshot is committed, the object continually ingests upstream changes
+and `status` stays `running`. To confirm it is keeping up, compare the offset
+Materialize has committed against the offset it knows about upstream:
+
+```mzsql
+SELECT o.name, s.offset_known, s.offset_committed,
+       s.offset_known - s.offset_committed AS offset_delta
+FROM mz_internal.mz_source_statistics s
+JOIN mz_objects o ON o.id = s.id
+WHERE o.name IN ('orders', 'clicks')
+ORDER BY o.name;
+```
+
+```nofmt
+  name  | offset_known | offset_committed | offset_delta
+--------+--------------+------------------+--------------
+ clicks | 200          | 200              | 0
+ orders | 22526904     | 22526904         | 0
+(2 rows)
+```
+
+You want `offset_delta` close to `0`. The unit depends on the source type: for
+Kafka sources an offset is a Kafka offset, while for PostgreSQL sources it is a
+log sequence number (LSN), which is why the two rows above differ by orders of
+magnitude. Compare each object against itself over time rather than against
+other objects. See [Monitoring data
+lag](/ingest-data/monitoring-data-ingestion/#monitoring-data-lag).
+
+> **Note:** A cluster replica restart or resize triggers
+> [hydration](/fundamentals/concepts/hydration/). For Kafka upsert sources, this
+> rebuilds the table's internal upsert index from storage; for other source
+> types, hydration is negligible or not applicable.
+
+## Paused
+
+An object whose cluster has no replicas reports `paused` and makes no progress.
+The `details` column reports why:
+
+```mzsql
+SELECT o.name, s.status, s.details
+FROM mz_internal.mz_source_statuses s
+JOIN mz_objects o ON o.id = s.id
+ORDER BY o.name;
+```
+
+```nofmt
+   name    | status |                             details
+-----------+--------+-----------------------------------------------------------------
+ clicks    | paused | {"hints":["There is currently no replica running this source"]}
+ kafka_src | paused | {"hints":["There is currently no replica running this source"]}
+ orders    | paused | {"hints":["There is currently no replica running this source"]}
+ pg_src    | paused | {"hints":["There is currently no replica running this source"]}
+(4 rows)
+```
+
+A cluster that had a replica and lost it reports a different hint, `The replica
+running this source has been dropped`. Either way, ingestion resumes when the
+cluster has a replica again, so [increase the replication
+factor](/sql/alter-cluster/#replication-factor-1) of the cluster hosting the
+source.
+
+## Stalled
+
+An object that hits an error reports `stalled`, with the cause in `error`:
+
+```mzsql
+SELECT o.name, s.status, s.error
+FROM mz_internal.mz_source_statuses s
+JOIN mz_objects o ON o.id = s.id
+ORDER BY o.name;
+```
+
+In the output below, the publication backing the PostgreSQL source was dropped
+upstream. Both `pg_src` and its table `orders` stall, because neither can make
+progress without it, while the unrelated Kafka source keeps running:
+
+```nofmt
+   name    | status  |                      error
+-----------+---------+--------------------------------------------------
+ clicks    | running |
+ kafka_src | running |
+ orders    | stalled | postgres: publication "mz_orders" does not exist
+ pg_src    | stalled | postgres: publication "mz_orders" does not exist
+(4 rows)
+```
+
+Sources stall independently of one another, so a stall is scoped to the source
+that hit the error and the tables that depend on it.
+
+The `details` column carries the same error tagged with the subsystem that
+reported it, which tells you which part of the pipeline failed:
+
+```nofmt
+{"namespaced":{"postgres":"publication \"mz_orders\" does not exist"}}
+```
+
+### Which stalls clear on their own
+
+Errors unrelated to the ingested data, such as a connection failure, an
+authentication failure, or an upstream restart, are retried. Materialize
+restarts the ingestion dataflow when it needs to, and the object moves back
+through `starting` to `running` once the upstream problem clears. Repeated
+`stalled` and `starting` transitions in
+[`mz_source_status_history`](#reviewing-the-full-history) are the signature of
+an error being retried.
+
+Other errors are definite: the upstream system changed in a way that invalidates
+what Materialize has already ingested. Dropping the publication a PostgreSQL
+source replicates from, dropping or truncating an upstream table, invalidating a
+replication slot, and an incompatible upstream schema change all land here.
+Materialize records a definite error durably against the affected table, so
+reads of that table return it and restarting the dataflow does not clear it.
+Recovery means fixing the upstream cause and recreating the affected tables, as
+in [Absorbing upstream schema
+changes](/ingest-data/patterns/upstream-schema-changes/#recover-from-an-unplanned-change).
+The stall above is one of these, so `orders` cannot be repaired in place.
+
+For causes and fixes, see [Troubleshooting data
+ingestion](/ingest-data/troubleshooting/) for any source type, and the
+CDC-specific guides for [PostgreSQL](/ingest-data/postgres/troubleshooting/)
+and [MySQL](/ingest-data/mysql/troubleshooting/), which cover replication slot,
+WAL, and GTID errors unique to those connectors.
+
+## Dropped
+
+Dropping an object is terminal. Once dropped, it no longer appears in
+`mz_source_statuses`, but its final `dropped` status remains in
+[`mz_source_status_history`](/sql/system-catalog/mz_internal/#mz_source_status_history).
+
+## Reviewing the full history
+
+`mz_source_statuses` reports only the current state. To see every transition an
+object has gone through, which is the fastest way to understand how it reached
+its current state, query the history:
+
+```mzsql
+SELECT o.name, h.occurred_at, h.status
+FROM mz_internal.mz_source_status_history h
+JOIN mz_objects o ON o.id = h.source_id
+WHERE o.name IN ('orders', 'clicks')
+ORDER BY h.occurred_at;
+```
+
+```nofmt
+  name  |        occurred_at         |  status
+--------+----------------------------+----------
+ orders | 2026-09-11 15:04:24.384+00 | starting
+ orders | 2026-09-11 15:04:24.385+00 | running
+ clicks | 2026-09-11 15:04:24.515+00 | starting
+ clicks | 2026-09-11 15:04:24.56+00  | running
+(4 rows)
+```
+
+`created` is not a recorded transition, so it never appears in the history.
+Here both tables moved from `starting` to `running` within milliseconds, since
+each had only a few hundred rows to snapshot.
+
+## Related pages
+
+- [Sources](/fundamentals/concepts/sources/)
+- [Snapshotting](/fundamentals/concepts/snapshotting/)
+- [Monitoring data ingestion](/ingest-data/monitoring-data-ingestion/)
+- [Troubleshooting data ingestion](/ingest-data/troubleshooting/)
+
+---
+
 ## Webhooks quickstart
 
 Webhook sources let your applications push webhook events into Materialize. This
@@ -4548,7 +5489,7 @@ you to learn and prototype with no external dependencies.
 All you need is a Materialize account. If you already have one —
 great! If not, [sign up for a free trial account](https://materialize.com/register/?utm_campaign=General&utm_source=documentation) first.
 
-When you're ready, head over to the [Materialize console](/console/),
+When you're ready, head over to the [Materialize console](/developer-tools/console/),
 and pop open the SQL Shell.
 
 ## Step 1. Create a secret

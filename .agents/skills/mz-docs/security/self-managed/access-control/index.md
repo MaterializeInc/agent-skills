@@ -129,8 +129,8 @@ privileges were set.
 
 In addition, all roles have:
 - `USAGE` on all built-in types and [all system catalog
-schemas](/reference/system-catalog/).
-- `SELECT` on [system catalog objects](/reference/system-catalog/).
+schemas](/sql/system-catalog/).
+- `SELECT` on [system catalog objects](/sql/system-catalog/).
 - All [applicable privileges](/security/appendix/appendix-privileges/) for
   an object they create; for example, the creator of a schema gets `CREATE` and
   `USAGE`; the creator of a table gets `SELECT`, `INSERT`, `UPDATE`, and
@@ -1628,5 +1628,5 @@ The results show that `lemon@example.com` now only has access through
 ## See also
 
 - [Access control best practices](/security/self-managed/access-control/#best-practices)
-- [Manage privileges with Terraform](/manage/terraform/manage-rbac/)
+- [Manage privileges with Terraform](/developer-tools/terraform/manage-rbac/)
 

@@ -16,7 +16,7 @@ More granular permissions for the service account can then be configured using
 
 ## Materialize Console
 
-1. [Log in to the Materialize Console](/console/).
+1. [Log in to the Materialize Console](/developer-tools/console/).
 
 1. In the side navigation bar, click **+ Create New** > **App Password**.
 
@@ -121,7 +121,7 @@ specified service account **User** is created, and the service account creation 
     ```
 
 For general guidance on using the Materialize Terraform provider to manage
-resources in your region, see the [reference documentation](/manage/terraform/).
+resources in your region, see the [reference documentation](/developer-tools/terraform/).
 
 ## Next steps
 

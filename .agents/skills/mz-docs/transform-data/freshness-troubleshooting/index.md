@@ -1,6 +1,6 @@
 # Freshness troubleshooting
 How to diagnose and resolve freshness problems in Materialize.
-[Freshness](/concepts/reaction-time/#freshness) measures the time from when a
+[Freshness](/fundamentals/concepts/reaction-time/#freshness) measures the time from when a
 change occurs in an upstream system to when it becomes visible in the results of
 a query. This guide can help diagnose why freshness is degraded for an object as
 well as measure freshness across your deployment.
@@ -206,6 +206,11 @@ ORDER BY u.cpu_percent DESC;
 - If the returned `memory_percent` is high, Materialize may force data to disk,
   which can slow down processing.
 
+Note that `cpu_percent` averages over the replica's workers, so a cluster whose
+work is concentrated on one worker can degrade while reporting unremarkable CPU.
+To attribute CPU to a cause, see [Cluster CPU
+troubleshooting](/clusters/troubleshoot-clusters/cpu-troubleshooting/).
+
 To resolve, scale the cluster up to a larger size ([`ALTER CLUSTER ... SET (SIZE
 = '<new size>')`](/sql/alter-cluster/)), and/or move enough objects to another
 cluster to reduce load on the current cluster. If the pressure is caused by an
@@ -282,7 +287,7 @@ credential expiration, or a deliberately paused source.
 ### Check source status
 
 To check if a source or its associated subsource/table is unhealthy, query
-[`mz_internal.mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses):
+[`mz_internal.mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses):
 
 ```mzsql
 SELECT s.id, o.name, s.type, s.status, s.error, s.details
@@ -305,7 +310,7 @@ downstream objects. If the `status` for a source shows:
 
 A spike in lag refers to a sudden increase in lag. Materialize retains wallclock
 lag history for at least 30 days in
-[`mz_internal.mz_wallclock_global_lag_history`](/reference/system-catalog/mz_internal/#mz_wallclock_global_lag_history),
+[`mz_internal.mz_wallclock_global_lag_history`](/sql/system-catalog/mz_internal/#mz_wallclock_global_lag_history),
 binned by minute. You can use this data to find past spikes and determine their
 cause.
 
@@ -400,7 +405,7 @@ transient freshness degradation.
 When a decrease in freshness affects a single cluster but is not explained by
 [CPU or memory pressure](#check-the-cpu-or-memory-pressure), check whether DDL
 operations occurred during the spike window.
-[`mz_catalog.mz_audit_events`](/reference/system-catalog/mz_catalog/#mz_audit_events)
+[`mz_catalog.mz_audit_events`](/sql/system-catalog/mz_catalog/#mz_audit_events)
 records all `CREATE`, `DROP`, and `ALTER` operations (substitute `<spike_start>`
 and `<spike_end>` with your spike window):
 

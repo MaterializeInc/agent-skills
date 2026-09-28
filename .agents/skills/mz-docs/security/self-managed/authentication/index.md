@@ -26,7 +26,7 @@ SASL authentication requires users to log in with a password.
 
 When SASL authentication is enabled:
 - **PostgreSQL connections** (e.g., `psql`, client libraries, [connection
-  poolers](/integrations/connection-pooling/)) use SCRAM-SHA-256 authentication.
+  poolers](/serve-results/connection-pooling/)) use SCRAM-SHA-256 authentication.
 - **HTTP/Web Console connections** use standard password authentication.
 
 This hybrid approach provides maximum security for SQL connections while
@@ -73,7 +73,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.40.0
+  environmentdImageRef: materialize/environmentd:v26.43.0
   backendSecretName: materialize-backend
   authenticatorKind: Sasl
   requestRollout: 00000000-0000-0000-0000-000000000003 # Enabling auth on an existing instance requires a rollout
@@ -106,7 +106,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.40.0
+  environmentdImageRef: materialize/environmentd:v26.43.0
   backendSecretName: materialize-backend
   authenticatorKind: Sasl
 ```
@@ -159,7 +159,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.40.0
+  environmentdImageRef: materialize/environmentd:v26.43.0
   backendSecretName: materialize-backend
   authenticatorKind: Password
   requestRollout: 00000000-0000-0000-0000-000000000003 # Enabling auth on an existing instance requires a rollout
@@ -192,7 +192,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.40.0
+  environmentdImageRef: materialize/environmentd:v26.43.0
   backendSecretName: materialize-backend
   authenticatorKind: Password
 ```

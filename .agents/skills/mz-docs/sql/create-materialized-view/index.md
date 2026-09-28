@@ -3,7 +3,7 @@
 Use `CREATE MATERIALIZED VIEW` to:
 
 - Create a materialized view that maintains [fresh
-  results](/concepts/reaction-time) by persisting them in durable storage and
+  results](/fundamentals/concepts/reaction-time) by persisting them in durable storage and
   incrementally updating them as new data arrives.
 
 - Create a replacement for an existing materialized view that can be applied in
@@ -13,15 +13,15 @@ Use `CREATE MATERIALIZED VIEW` to:
 Materialized views are particularly useful when you need **cross-cluster
 access** to results or want to sink data to external systems like
 [Kafka](/sql/create-sink). When you create a materialized view, a
-[cluster](/concepts/clusters/), responsible for maintaining the view, is
+[cluster](/fundamentals/concepts/clusters/), responsible for maintaining the view, is
 associated with it, but the results can be **queried from any cluster**. This
 allows you to separate the compute resources used for view maintenance from
 those used for serving queries.
 
 If you do not need durability or cross-cluster sharing, and you are primarily
 interested in fast query performance within a single cluster, you may prefer to
-[create a view and index it](/concepts/views/#views). In Materialize, [indexes
-on views](/concepts/indexes/) also maintain results incrementally, but store
+[create a view and index it](/fundamentals/concepts/views/#views). In Materialize, [indexes
+on views](/fundamentals/concepts/indexes/) also maintain results incrementally, but store
 them in memory, scoped to the cluster where the index was created. This approach
 offers lower latency for direct querying within that cluster.
 
@@ -44,7 +44,7 @@ AS <select_stmt>;
 | `<view_name>` | A name for the materialized view.  |
 | `(<col_ident>, ...)` | Rename the `SELECT` statement's columns to the list of identifiers. Both must be the same length. Note that this is required for statements that return multiple columns with the same identifier.  |
 | `IN CLUSTER <cluster_name>` | The cluster to maintain this materialized view. If not specified, defaults to the active cluster.  |
-| `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `ASSERT NOT NULL` *col_ident* \| `text` \| The column identifier for which to create a [non-null assertion](#non-null-assertions). To specify multiple columns, use the option multiple times. \| \| `PARTITION BY` *columns* \| `(ident [, ident]*)` \| The key by which Materialize should internally partition this durable collection. See the [partitioning guide](/transform-data/patterns/partition-by/) for restrictions on valid values and other details. \| \| `RETAIN HISTORY FOR` *retention_period* \| `interval` \| ***Private preview.*** Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
+| `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `ASSERT NOT NULL` *col_ident* \| `text` \| The column identifier for which to create a [non-null assertion](#non-null-assertions). To specify multiple columns, use the option multiple times. \| \| `PARTITION BY` *columns* \| `(ident [, ident]*)` \| The key by which Materialize should internally partition this durable collection. See the [partitioning guide](/transform-data/patterns/partition-by/) for restrictions on valid values and other details. \| \| `RETAIN HISTORY FOR` *retention_period* \| `interval` \| ***Private preview.*** Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) whose results you want to maintain incrementally updated.  |
 
 **CREATE REPLACEMENT MATERIALIZED VIEW:**
@@ -79,8 +79,8 @@ views](#creating-replacement-materialized-views).
 
 ### Usage pattern
 
-In Materialize, both [indexes](/concepts/indexes) on views and [materialized
-views](/concepts/views/#materialized-views) incrementally update the view
+In Materialize, both [indexes](/fundamentals/concepts/indexes) on views and [materialized
+views](/fundamentals/concepts/views/#materialized-views) incrementally update the view
 results when Materialize ingests new data. Whereas materialized views persist
 the view results in durable storage and can be accessed across clusters, indexes
 on views compute and store view results in memory within a **single** cluster.
@@ -91,8 +91,8 @@ Some general guidelines for usage patterns include:
 |--------------------------------------------------------------------------------|--------------------|
 | View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture. | View with an [index](/sql/create-index) |
 | View used as a building block for stacked views; i.e., views not used to serve results. | View |
-| View results are accessed across [clusters](/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
-| Use with a [sink](/serve-results/sink/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
+| View results are accessed across [clusters](/fundamentals/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
+| Use with a [sink](/export-data/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
 | Use with [temporal filters](/transform-data/patterns/temporal-filters/) | Materialized view  |
 
 ### Indexing materialized views

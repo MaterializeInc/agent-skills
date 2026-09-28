@@ -1,6 +1,6 @@
 # CREATE CLUSTER
 `CREATE CLUSTER` creates a new cluster.
-`CREATE CLUSTER` creates a new [cluster](/concepts/clusters/).
+`CREATE CLUSTER` creates a new [cluster](/fundamentals/concepts/clusters/).
 
 ## Syntax
 
@@ -101,7 +101,7 @@ The resource allocations are proportional to the number in the size name. For
 example, a cluster of size `600cc` has 2x as much CPU, memory, and disk as a
 cluster of size `300cc`, and 1.5x as much CPU, memory, and disk as a cluster of
 size `400cc`. To determine the specific resource allocations for a size,
-query the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes) table.
+query the [`mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes) table.
 
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
 > time. You should not rely on them for any kind of capacity planning.
@@ -201,10 +201,10 @@ on cluster resizing.
 
 When you create an index, materialized view, or Kafka upsert source, or when a
 cluster restarts, the cluster must
-[hydrate](/concepts/hydration/) the affected
+[hydrate](/fundamentals/concepts/hydration/) the affected
 objects before they can serve results. Hydration reads the input data
 and rebuilds in-memory state, and its speed scales with the cluster
-[size](#available-sizes).
+[size](/sql/create-cluster/#available-sizes).
 
 The `AUTO SCALING STRATEGY (ON HYDRATION)` option lets a cluster **automatically
 provision an extra burst replica at the configured `HYDRATION SIZE` while it has
@@ -213,7 +213,7 @@ cluster up before hydration and back down afterward. The steady-size replicas
 continue hydrating in parallel, and once one of them catches up with the burst,
 the burst replica lingers for the `LINGER DURATION` and is then removed. The
 burst replica is an ordinary cluster replica, billed only for the time it is
-provisioned. See [Usage & billing](/administration/billing/) for details.
+provisioned. See [Usage & billing](/materialize-cloud/billing/) for details.
 
 `AUTO SCALING STRATEGY (ON HYDRATION)` is particularly useful for [blue/green
 deployments](/manage/blue-green/), where a new cluster must hydrate before the
@@ -238,7 +238,7 @@ You can specify the following options:
 
 Option | Description
 -------|------------
-`HYDRATION SIZE` | The [size](#available-sizes) of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration.
+`HYDRATION SIZE` | The [size](/sql/create-cluster/#available-sizes) of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration.
 `LINGER DURATION` | Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`.
 
 Provisioning the burst replica requires enough compute capacity to run it. In
@@ -254,7 +254,7 @@ To remove the autoscaling strategy from a cluster, use `ALTER CLUSTER ... RESET
 ()`.
 
 You can inspect the configured strategy and any in-flight burst in the
-[`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
+[`mz_internal.mz_cluster_auto_scaling_strategies`](/sql/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
 catalog view.
 
 ### Dictionary compression
@@ -263,7 +263,7 @@ catalog view.
 
 Starting in v26.38, dictionary compression is available for managed clusters.
 Dictionary compression reduces the memory that
-[arrangements](/get-started/arrangements/#arrangements) use when a column holds
+[arrangements](/fundamentals/concepts/arrangements/#arrangements) use when a column holds
 the same values repeatedly. Instead of storing a repeated column value each time
 it appears, Materialize stores that value once and has each row reference it. This can reduce steady state memory requirements after hydration has completed.
 
@@ -408,4 +408,4 @@ The privileges required to execute this statement are:
 [`DROP CLUSTER`]: /sql/drop-cluster/
 [`SELECT`]: /sql/select
 [`SUBSCRIBE`]: /sql/subscribe
-[`mz_cluster_replica_sizes`]: /reference/system-catalog/mz_catalog#mz_cluster_replica_sizes
+[`mz_cluster_replica_sizes`]: /sql/system-catalog/mz_catalog#mz_cluster_replica_sizes

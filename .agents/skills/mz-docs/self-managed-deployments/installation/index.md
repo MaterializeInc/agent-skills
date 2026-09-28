@@ -182,18 +182,18 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    the Materialize repo:
 
    ```shell
-   mz_version=v26.40.0
+   mz_version=v26.43.0
 
    curl -o sample-values.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/operator/values.yaml
    curl -o sample-postgres.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/postgres.yaml
-   curl -o sample-minio.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/minio.yaml
+   curl -o sample-minio.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/heads/main/misc/helm-charts/testing/minio.yaml
    curl -o sample-materialize.yaml https://raw.githubusercontent.com/MaterializeInc/materialize/refs/tags/$mz_version/misc/helm-charts/testing/materialize.yaml
    ```
 
    - `sample-values.yaml`: Used to configure the Materialize Operator.
    - `sample-postgres.yaml`: Used to configure PostgreSQL as the metadata
      database.
-   - `sample-minio.yaml`: Used to configure minIO as the blob storage.
+   - `sample-minio.yaml`: Used to configure MinIO as the blob storage.
    - `sample-materialize.yaml`: Used to configure Materialize instance.
 
    These configuration files are for local evaluation/testing purposes only and
@@ -257,7 +257,7 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
       ```shell {hl_lines="5"}
       helm install my-materialize-operator materialize/materialize-operator \
           --namespace=materialize --create-namespace \
-          --version v26.40.0 \
+          --version v26.43.0 \
           --set observability.podMetrics.enabled=true \
           --set operator.args.installV1CRD=true \
           -f sample-values.yaml
@@ -277,13 +277,17 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 
       ```none
       NAME                                           READY   STATUS    RESTARTS   AGE
-      pod/my-materialize-operator-6c4c7d6fc9-hbzvr   1/1     Running   0          16s
+      pod/my-materialize-operator-6c9d55567f-ldmd7   1/1     Running   0          4s
+      pod/my-materialize-operator-6c9d55567f-svwks   1/1     Running   0          4s
+
+      NAME                              TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+      service/my-materialize-operator   ClusterIP   10.96.231.91   <none>        8001/TCP   4s
 
       NAME                                      READY   UP-TO-DATE   AVAILABLE   AGE
-      deployment.apps/my-materialize-operator   1/1     1            1           16s
+      deployment.apps/my-materialize-operator   2/2     2            2           4s
 
-      NAME                                                 DESIRED   CURRENT         READY   AGE
-      replicaset.apps/my-materialize-operator-6c4c7d6fc9   1         1               1       16s
+      NAME                                                 DESIRED   CURRENT   READY   AGE
+      replicaset.apps/my-materialize-operator-6c9d55567f   2         2         2       4s
       ```
 
       If you run into an error during deployment, refer to the
@@ -310,27 +314,34 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
        kubectl get all -n materialize
        ```
 
-       Wait for the components to be ready and in the `Running` state:
+       Wait for the components to be ready. The `minio-setup` job creates the
+       buckets and then shows `Completed`:
 
        ```none
-       NAME                                           READY   STATUS     RESTARTS   AGE
-       pod/minio-777db75dd4-zcl89                     1/1     Running    0          84s
-       pod/my-materialize-operator-6c4c7d6fc9-hbzvr   1/1     Running    0          107s
-       pod/postgres-55fbcd88bf-b4kdv                  1/1     Running    0          86s
+       NAME                                           READY   STATUS      RESTARTS   AGE
+       pod/minio-bfdd6b7c-5n6sw                       1/1     Running     0          20s
+       pod/minio-setup-cmfk8                          0/1     Completed   0          20s
+       pod/my-materialize-operator-6c9d55567f-g59v2   1/1     Running     0          28s
+       pod/my-materialize-operator-6c9d55567f-nx9s6   1/1     Running     0          28s
+       pod/postgres-979c9b755-ddb4m                   1/1     Running     0          20s
 
-       NAME               TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
-       service/minio      ClusterIP   10.96.51.9     <none>        9000/TCP   84s
-       service/postgres   ClusterIP   10.96.19.166   <none>        5432/TCP   86s
+       NAME                              TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+       service/minio                     ClusterIP   10.96.27.17     <none>        9000/TCP   20s
+       service/my-materialize-operator   ClusterIP   10.96.175.204   <none>        8001/TCP   28s
+       service/postgres                  ClusterIP   10.96.5.180     <none>        5432/TCP   20s
 
-       NAME                                      READY   UP-TO-DATE    AVAILABLE   AGE
-       deployment.apps/minio                     1/1     1             1           84s
-       deployment.apps/my-materialize-operator   1/1     1             1           107s
-       deployment.apps/postgres                  1/1     1             1           86s
+       NAME                                      READY   UP-TO-DATE   AVAILABLE   AGE
+       deployment.apps/minio                     1/1     1            1           20s
+       deployment.apps/my-materialize-operator   2/2     2            2           28s
+       deployment.apps/postgres                  1/1     1            1           20s
 
-       NAME                                                 DESIRED    CURRENT         READY   AGE
-       replicaset.apps/minio-777db75dd4                     1          1               1       84s
-       replicaset.apps/my-materialize-operator-6c4c7d6fc9   1          1               1       107s
-       replicaset.apps/postgres-55fbcd88bf                  1          1               1       86s
+       NAME                                                 DESIRED   CURRENT   READY   AGE
+       replicaset.apps/minio-bfdd6b7c                       1         1         1       20s
+       replicaset.apps/my-materialize-operator-6c9d55567f   2         2         2       28s
+       replicaset.apps/postgres-979c9b755                   1         1         1       20s
+
+       NAME                    STATUS     COMPLETIONS   DURATION   AGE
+       job.batch/minio-setup   Complete   1/1           20s        20s
        ```
 
 1. Install the metrics service to the `kube-system` namespace.
@@ -416,34 +427,35 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
 
        ```none
        NAME                                             READY   STATUS    RESTARTS   AGE
-       pod/mz32bsnzerqo-balancerd-756b65959c-6q9db      1/1     Running   0                 12s
-       pod/mz32bsnzerqo-cluster-s2-replica-s1-gen-1-0   1/1     Running   0                 14s
-       pod/mz32bsnzerqo-cluster-u1-replica-u1-gen-1-0   1/1     Running   0                 14s
-       pod/mz32bsnzerqo-console-6b7c975fb9-jkm8l        1/1     Running   0          5s
-       pod/mz32bsnzerqo-console-6b7c975fb9-z8g8f        1/1     Running   0          5s
-       pod/mz32bsnzerqo-environmentd-1-0                1/1     Running   0                 19s
+       pod/mzeemp0ion69-balancerd-7c74d9775-2qrp9       1/1     Running   0          17s
+       pod/mzeemp0ion69-balancerd-7c74d9775-z4n4z       1/1     Running   0          17s
+       pod/mzeemp0ion69-cluster-s2-replica-s1-gen-1-0   1/1     Running   0          17s
+       pod/mzeemp0ion69-cluster-u1-replica-u1-gen-1-0   1/1     Running   0          17s
+       pod/mzeemp0ion69-console-85748c74cd-tfpkd        1/1     Running   0          5s
+       pod/mzeemp0ion69-console-85748c74cd-wzssw        1/1     Running   0          5s
+       pod/mzeemp0ion69-environmentd-1-0                1/1     Running   0          25s
 
-       NAME                                               TYPE        CLUSTER-IP          EXTERNAL-IP   PORT(S)                                        AGE
-       service/mz32bsnzerqo-balancerd                     ClusterIP   None                <none>        6876/TCP,6875/TCP                              12s
-       service/mz32bsnzerqo-cluster-s2-replica-s1-gen-1   ClusterIP   None                <none>        2100/TCP,2103/TCP,2101/TCP,2102/TCP,6878/TCP   14s
-       service/mz32bsnzerqo-cluster-u1-replica-u1-gen-1   ClusterIP   None                <none>        2100/TCP,2103/TCP,2101/TCP,2102/TCP,6878/TCP   14s
-       service/mz32bsnzerqo-console                       ClusterIP   None                <none>        8080/TCP                                       5s
-       service/mz32bsnzerqo-environmentd                  ClusterIP   None                <none>        6875/TCP,6876/TCP,6877/TCP,6878/TCP            12s
-       service/mz32bsnzerqo-environmentd-1                ClusterIP   None                <none>        6875/TCP,6876/TCP,6877/TCP,6878/TCP            19s
-       service/mz32bsnzerqo-persist-pubsub-1              ClusterIP   None                <none>        6879/TCP                                       19s
+       NAME                                               TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)                                        AGE
+       service/mzeemp0ion69-balancerd                     ClusterIP   None           <none>        6876/TCP,6875/TCP                              17s
+       service/mzeemp0ion69-cluster-s2-replica-s1-gen-1   ClusterIP   None           <none>        2100/TCP,2103/TCP,2101/TCP,2102/TCP,6878/TCP   17s
+       service/mzeemp0ion69-cluster-u1-replica-u1-gen-1   ClusterIP   None           <none>        2100/TCP,2103/TCP,2101/TCP,2102/TCP,6878/TCP   17s
+       service/mzeemp0ion69-console                       ClusterIP   None           <none>        8080/TCP                                       5s
+       service/mzeemp0ion69-environmentd                  ClusterIP   None           <none>        6875/TCP,6876/TCP,6877/TCP,6878/TCP            17s
+       service/mzeemp0ion69-environmentd-1                ClusterIP   10.96.207.11   <none>        6875/TCP,6876/TCP,6877/TCP,6878/TCP            25s
+       service/mzeemp0ion69-persist-pubsub-1              ClusterIP   None           <none>        6879/TCP                                       25s
 
        NAME                                     READY   UP-TO-DATE   AVAILABLE   AGE
-       deployment.apps/mz32bsnzerqo-balancerd   1/1     1            1           12s
-       deployment.apps/mz32bsnzerqo-console     2/2     2            2           5s
+       deployment.apps/mzeemp0ion69-balancerd   2/2     2            2           17s
+       deployment.apps/mzeemp0ion69-console     2/2     2            2           5s
 
-       NAME                                                DESIRED   CURRENT   READY          AGE
-       replicaset.apps/mz32bsnzerqo-balancerd-756b65959c   1         1         1              12s
-       replicaset.apps/mz32bsnzerqo-console-6b7c975fb9     2         2         2              5s
+       NAME                                               DESIRED   CURRENT   READY   AGE
+       replicaset.apps/mzeemp0ion69-balancerd-7c74d9775   2         2         2       17s
+       replicaset.apps/mzeemp0ion69-console-85748c74cd    2         2         2       5s
 
        NAME                                                        READY   AGE
-       statefulset.apps/mz32bsnzerqo-cluster-s2-replica-s1-gen-1   1/1     14s
-       statefulset.apps/mz32bsnzerqo-cluster-u1-replica-u1-gen-1   1/1     14s
-       statefulset.apps/mz32bsnzerqo-environmentd-1                1/1     19s
+       statefulset.apps/mzeemp0ion69-cluster-s2-replica-s1-gen-1   1/1     17s
+       statefulset.apps/mzeemp0ion69-cluster-u1-replica-u1-gen-1   1/1     17s
+       statefulset.apps/mzeemp0ion69-environmentd-1                1/1     25s
        ```
 
        If you run into an error during deployment, refer to the
@@ -631,8 +643,8 @@ and load balancer were added in v10.1.0, and are both billable. Starting with
 v11.0.0, `enable_observability` defaults to `true`, so set it to `false` if you
 do not want the stack. For what the stack stores and where else it can send
 it, see [How logs and metrics are
-stored](/manage/monitor/self-managed/storage/). For reaching Grafana, see
-[Grafana](/manage/monitor/self-managed/grafana/).
+stored](/observability/self-managed/storage/). For reaching Grafana, see
+[Grafana](/observability/self-managed/grafana/).
 
 ## Prerequisites
 
@@ -735,7 +747,7 @@ An active AWS account with appropriate permissions to create:
    > **Note:** With `enable_observability` on, the modules also create a `db.t4g.micro`
 >    RDS instance for Grafana's own state and an internal NLB to reach Grafana
 >    on. Both are billable. See
->    [Grafana](/manage/monitor/self-managed/grafana/).
+>    [Grafana](/observability/self-managed/grafana/).
 
    <p><strong>Additional variables</strong>:</p>
    <ul>
@@ -751,7 +763,7 @@ An active AWS account with appropriate permissions to create:
    <li><code>enable_observability</code>: Flag that determines whether to deploy the
    monitoring stack (Grafana, metrics, and logs) alongside Materialize.
    Defaults to <code>false</code> in the <code>simple</code> example. See
-   <a href="/manage/monitor/self-managed/grafana/" >Grafana</a>.</li>
+   <a href="/observability/self-managed/grafana/" >Grafana</a>.</li>
    </ul>
    > **Note:** Refer to your organization's security practices to set these values accordingly.
 
@@ -1068,8 +1080,8 @@ and load balancer were added in v10.1.0, and are both billable. Starting with
 v11.0.0, `enable_observability` defaults to `true`, so set it to `false` if you
 do not want the stack. For what the stack stores and where else it can send
 it, see [How logs and metrics are
-stored](/manage/monitor/self-managed/storage/). For reaching Grafana, see
-[Grafana](/manage/monitor/self-managed/grafana/).
+stored](/observability/self-managed/storage/). For reaching Grafana, see
+[Grafana](/observability/self-managed/grafana/).
 
 ## Prerequisites
 
@@ -1192,7 +1204,7 @@ An active Azure subscription with appropriate permissions to create:
    > **Note:** With `enable_observability` on, the modules also create a
 >    `B_Standard_B1ms` PostgreSQL Flexible Server for Grafana's own state and an
 >    internal load balancer to reach Grafana on. Both are billable. See
->    [Grafana](/manage/monitor/self-managed/grafana/).
+>    [Grafana](/observability/self-managed/grafana/).
 
    <p><strong>Additional variables</strong>:</p>
    <ul>
@@ -1208,7 +1220,7 @@ An active Azure subscription with appropriate permissions to create:
    <li><code>enable_observability</code>: Flag that determines whether to deploy the
    monitoring stack (Grafana, metrics, and logs) alongside Materialize.
    Defaults to <code>false</code> in the <code>simple</code> example. See
-   <a href="/manage/monitor/self-managed/grafana/" >Grafana</a>.</li>
+   <a href="/observability/self-managed/grafana/" >Grafana</a>.</li>
    </ul>
    > **Note:** Refer to your organization's security practices to set these values accordingly.
 
@@ -1520,8 +1532,8 @@ and load balancer were added in v10.1.0, and are both billable. Starting with
 v11.0.0, `enable_observability` defaults to `true`, so set it to `false` if you
 do not want the stack. For what the stack stores and where else it can send
 it, see [How logs and metrics are
-stored](/manage/monitor/self-managed/storage/). For reaching Grafana, see
-[Grafana](/manage/monitor/self-managed/grafana/).
+stored](/observability/self-managed/storage/). For reaching Grafana, see
+[Grafana](/observability/self-managed/grafana/).
 
 ## Prerequisites
 
@@ -1658,7 +1670,7 @@ A Google account with permission to:
 >    Cloud SQL instance for Grafana's own state and an internal load balancer to
 >    reach Grafana on.
 >    Both are billable. See
->    [Grafana](/manage/monitor/self-managed/grafana/).
+>    [Grafana](/observability/self-managed/grafana/).
 
    <p><strong>Additional variables</strong>:</p>
    <ul>
@@ -1674,7 +1686,7 @@ A Google account with permission to:
    <li><code>enable_observability</code>: Flag that determines whether to deploy the
    monitoring stack (Grafana, metrics, and logs) alongside Materialize.
    Defaults to <code>false</code> in the <code>simple</code> example. See
-   <a href="/manage/monitor/self-managed/grafana/" >Grafana</a>.</li>
+   <a href="/observability/self-managed/grafana/" >Grafana</a>.</li>
    </ul>
    > **Note:** Refer to your organization's security practices to set these values accordingly.
 
@@ -1888,4 +1900,64 @@ When prompted to proceed, type `yes` to confirm the deletion.
 
 - [Troubleshooting](/self-managed-deployments/troubleshooting/)
 - [Security](/security/self-managed/)
+
+---
+
+## Install Self-Managed Materialize
+
+<p>You can install Self-Managed Materialize on a Kubernetes cluster running
+locally or on a cloud provider. Self-Managed Materialize requires:</p>
+<ul>
+<li>A Kubernetes (v1.31+) cluster.</li>
+<li>PostgreSQL as a metadata database.</li>
+<li>Blob storage.</li>
+<li>A license key.</li>
+</ul>
+<h2 id="license-key">License key</h2>
+<p>Starting in v26.0, Materialize requires a license key.</p>
+
+| License key type | Deployment type | Action |
+| --- | --- | --- |
+| Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
+| Community | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
+| Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
+| Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
+
+<h2 id="installation-guides">Installation guides</h2>
+<p>The following installation guides are available to help you get started:</p>
+
+### Install using Helm Commands
+
+|  Guide         | Description  |
+| ------------- | -------|
+| [Install locally on Kind](/self-managed-deployments/installation/install-on-local-kind/) | Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.
+
+<h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
+> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
+> changes in future versions.
+> We recommend updating your module source tags when updating Materialize versions,
+> taking care to follow any instructions in the release notes.
+
+<table>
+  <thead>
+      <tr>
+          <th>Guide</th>
+          <th>Description</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><a href="/self-managed-deployments/installation/install-on-aws/" >Install on AWS</a></td>
+          <td>Uses Terraform module to deploy Materialize to AWS Elastic Kubernetes Service (EKS).</td>
+      </tr>
+      <tr>
+          <td><a href="/self-managed-deployments/installation/install-on-azure/" >Install on Azure</a></td>
+          <td>Uses Terraform module to deploy Materialize to Azure Kubernetes Service (AKS).</td>
+      </tr>
+      <tr>
+          <td><a href="/self-managed-deployments/installation/install-on-gcp/" >Install on GCP</a></td>
+          <td>Uses Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
+      </tr>
+  </tbody>
+</table>
 

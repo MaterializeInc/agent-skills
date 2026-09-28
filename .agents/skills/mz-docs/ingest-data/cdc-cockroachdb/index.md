@@ -74,7 +74,7 @@ refer to the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stab
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
+In Materialize, a [cluster](/fundamentals/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
@@ -84,7 +84,7 @@ combination.
 In this step, you'll create a dedicated cluster for ingesting source data from
 topics in your Kafka (or Kafka-API compatible) broker.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
    command to create the new cluster:
 
@@ -113,7 +113,7 @@ authentication and networking configurations, so refer to the
 [`CREATE CONNECTION`](/sql/create-connection/#kafka) documentation for further
 guidance.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE SECRET`](/sql/create-secret/)
    command to securely store the credentials to connect to your Kafka broker
    and, optionally, schema registry:
@@ -196,9 +196,9 @@ storage layer atomically (i.e., at the same ingestion timestamp), you
 will **not able to query the source until snapshotting is complete**.
 
 In this step, you'll monitor the progress of the initial snapshot using the
-observability features in the [Materialize Console](/console/).
+observability features in the [Materialize Console](/developer-tools/console/).
 
-1. If not already logged in, [log in to the Materialize Console](/console/).
+1. If not already logged in, [log in to the Materialize Console](/developer-tools/console/).
 
 1. Navigate to **Monitoring** > **Sources** and click through to the source you
    created in the previous step. In the source overview page, you will see a
@@ -214,7 +214,7 @@ observability features in the [Materialize Console](/console/).
 
 ### 5. Create a view
 
-A [view](/concepts/views/) saves a query under a name to provide a shorthand for
+A [view](/fundamentals/concepts/views/) saves a query under a name to provide a shorthand for
 referencing the query. During view creation, the underlying query is not
 executed.
 
@@ -228,9 +228,9 @@ CREATE VIEW cnt_table1 AS
 
 ### 6. Create an index on the view
 
-In Materialize, [indexes](/concepts/indexes) on views compute and, as new data
+In Materialize, [indexes](/fundamentals/concepts/indexes) on views compute and, as new data
 arrives, incrementally update view results in memory within a
-[cluster](/concepts/clusters/) instead of recomputing the results from scratch.
+[cluster](/fundamentals/concepts/clusters/) instead of recomputing the results from scratch.
 
 Create an index on `cnt_table1` view. Then, as new change events stream in
 through Kafka (as the result of `INSERT`, `UPDATE` and `DELETE` operations in
@@ -243,7 +243,7 @@ CREATE INDEX idx_cnt_table1_field1 ON cnt_table1(field1);
 ```
 
 For best practices on when to index a view, see
-[Indexes](/concepts/indexes/) and [Views](/concepts/views/).
+[Indexes](/fundamentals/concepts/indexes/) and [Views](/fundamentals/concepts/views/).
 
 ## Next steps
 
@@ -261,5 +261,5 @@ new data arrives, and serving results efficiently.
   or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
   [`CREATE SINK`](/sql/create-sink/).
 
-- Check out the [tools and integrations](/integrations/) supported by
+- Check out the [tools and integrations](/developer-tools/integrations/) supported by
   Materialize.

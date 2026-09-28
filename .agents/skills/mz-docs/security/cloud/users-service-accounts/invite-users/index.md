@@ -10,7 +10,7 @@ How to invite new users to a Materialize organization.
 As an **Organization administrator**, you can invite new users via the
 Materialize Console.
 
-1. [Log in to the Materialize Console](/console/).
+1. [Log in to the Materialize Console](/developer-tools/console/).
 
 1. Navigate to **Account** > **Account Settings** > **Users**.
 

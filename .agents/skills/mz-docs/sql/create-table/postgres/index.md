@@ -20,6 +20,8 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 [WITH (
     TEXT COLUMNS (<column_name> [, ...])
   | EXCLUDE COLUMNS (<column_name> [, ...])
+  | EXCLUDE CONSTRAINTS ('<constraint_name>' [, ...])
+  | EXCLUDE ALL CONSTRAINTS
   | PARTITION BY (<column_name> [, ...])
   [, ...]
 )]
@@ -33,7 +35,7 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 | `<table_name>` |  The name of the table to create. Names for tables must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
 | `<source_name>` |  The name of the [source](/sql/create-source/) associated with the reference object from which to create the table.  |
 | **(REFERENCE <upstream_table>)** |  The name of the upstream table from which to create the table. You can create multiple tables from the same upstream table.  To find the upstream tables available in your [source](/sql/create-source/), you can use the following query, substituting your source name for `<source_name>`:  <br>  ```mzsql SELECT refs.* FROM mz_internal.mz_source_references refs, mz_sources s WHERE s.name = '<source_name>' -- substitute with your source name AND refs.source_id = s.id; ```  This list is recorded when the source is created. To update the list with tables added to the upstream since source creation, run [`ALTER SOURCE <source_name> REFRESH REFERENCES`](/sql/alter-source/#refreshing-available-upstream-references).  The statement returns an error if the source's publication is empty.  |
-| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
+| **WITH (<with_option>[,...])** | The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TEXT COLUMNS (<column_name> [, ...])` \|*Optional.* If specified, decode data as `text` for the listed column(s),such as for unsupported data types. See also [supported types](#supported-data-types). \| \| `EXCLUDE COLUMNS (<column_name> [, ...])`\| *Optional.* If specified,exclude the listed column(s) from the table, such as for unsupported data types. See also [supported types](#supported-data-types).\| \| `EXCLUDE CONSTRAINTS ('<constraint_name>' [, ...])` \| ***Public preview.** This option is under active development and may have stability or performance issues.* *Optional.* If specified, do not record the listed upstream `PRIMARY KEY` or `UNIQUE` constraint(s) as keys of the table, so that dropping them upstream does not put the table into an error state. Constraint names are string literals matched exactly, including case. `NOT NULL` constraints cannot be excluded by name, use `EXCLUDE ALL CONSTRAINTS` instead. See [Handle upstream constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop). \| \| `EXCLUDE ALL CONSTRAINTS` \| ***Public preview.** This option is under active development and may have stability or performance issues.* *Optional.* If specified, record no upstream constraints: the table has no keys and every column is nullable, so dropping any `PRIMARY KEY`, `UNIQUE`, or `NOT NULL` constraint upstream does not put the table into an error state. Cannot be combined with `EXCLUDE CONSTRAINTS`. \| \| `PARTITION BY (<column_name> [, ...])` \| {{< include-md file="content/headless/partition-by-option-description.md" >}} \|  |
 
 ## Details
 
@@ -87,8 +89,8 @@ output.
 The use of `CREATE SOURCE` (new syntax) with `CREATE TABLE FROM SOURCE` allows
 for the handling of the upstream DDL changes, specifically adding or dropping
 columns in the upstream tables, without downtime. For details, see [PostgreSQL:
-Handling upstream schema changes with zero
-downtime](/ingest-data/postgres/source-versioning/).
+Handle upstream schema
+changes](/ingest-data/postgres/source-versioning/).
 
 See also [Handling upstream operations](#handling-upstream-operations) for
 additional upstream operation considerations.
@@ -167,6 +169,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -186,7 +193,7 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.

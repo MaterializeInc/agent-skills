@@ -1406,4 +1406,4 @@ The results show that `lemon@example.com` now only has access through
 
 - [Access control best practices](/security/cloud/access-control/#best-practices)
 - [Manage privileges with
-  Terraform](/manage/terraform/manage-rbac/)
+  Terraform](/developer-tools/terraform/manage-rbac/)

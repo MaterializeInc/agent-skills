@@ -389,7 +389,7 @@ ALTER CLUSTER <cluster1> SWAP WITH <cluster2>;
 ### Resizing
 
 > **Tip:** For help sizing your clusters, navigate to **Materialize Console >**
-> [**Monitoring**](/console/monitoring/)>**Environment Overview**. This page
+> [**Monitoring**](/developer-tools/console/monitoring/)>**Environment Overview**. This page
 > displays cluster resource utilization and sizing advice.
 
 #### Available sizes
@@ -465,7 +465,7 @@ See also:
 #### Resource allocation
 
 To determine the specific resource allocation for a given cluster size, query
-the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes)
+the [`mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes)
 system catalog table.
 
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
@@ -486,22 +486,23 @@ immediately.
 During a graceful resize, Materialize:
 1. Provisions new replicas at the target size, alongside the current replicas.
 2. Waits for the new replicas to
-   [hydrate](/concepts/hydration/).
+   [hydrate](/fundamentals/concepts/hydration/) and for their compute collections
+   to catch up to the outgoing replicas within the configured lag allowance.
 3. Retires the old replicas.
 
 Throughout, the cluster keeps serving queries, first from the old replicas,
 then from both sets as the new replicas come up, so the resize incurs no
 downtime.
 
-If the new replicas do not hydrate within the reconfiguration timeout (24 hours
-by default), Materialize rolls back the resize and the cluster keeps its current
-size. To customize the timeout behavior, use the `WAIT UNTIL READY` or `WAIT FOR` options.
+If the new replicas do not become ready within the reconfiguration
+timeout (24 hours by default), Materialize rolls back the resize and the cluster
+keeps its current size. To customize the timeout behavior, use the `WAIT UNTIL READY` or `WAIT FOR` options.
 The resize still proceeds in the background.
 
 - `WAIT UNTIL READY (TIMEOUT = ..., ON TIMEOUT = ...)` sets the timeout for the
   resize. On timeout, `ON TIMEOUT` selects whether to `COMMIT` (retire the old
-  replicas and proceed with the not-yet-hydrated new ones, which can cause
-  downtime) or `ROLLBACK` (keep the current size). Default: `ROLLBACK`.
+  replicas and proceed with the new ones even if they are not ready) or
+  `ROLLBACK` (keep the current size). Default: `ROLLBACK`.
 
   ```mzsql
   ALTER CLUSTER c1
@@ -510,9 +511,9 @@ The resize still proceeds in the background.
 
 - `WAIT FOR '<duration>'` is equivalent to `WAIT UNTIL READY (TIMEOUT =
   '<duration>', ON TIMEOUT = 'ROLLBACK')`. Materialize cuts over once the target
-  replicas hydrate. When Materialize processes an expired timeout, it
-  rolls back the resize and keeps the current size if the target replicas are
-  still unhydrated.
+  replicas are ready. When Materialize processes an expired timeout,
+  it rolls back the resize and keeps the current size if the target replicas
+  are not ready.
 
 See [Monitoring a resize](#monitoring-a-resize) to track progress and
 [cancel](#monitoring-a-resize) an in-flight resize.
@@ -524,18 +525,18 @@ You can monitor a resize through the following:
   summarizes any in-flight reconfiguration or hydration burst, and is `NULL`
   when the cluster is steady.
 
-- [`mz_internal.mz_cluster_reconfigurations`](/reference/system-catalog/mz_internal/#mz_cluster_reconfigurations),
+- [`mz_internal.mz_cluster_reconfigurations`](/sql/system-catalog/mz_internal/#mz_cluster_reconfigurations),
   which shows the target shape, deadline, timeout action, and lifecycle status
   of the latest reconfiguration.
 
-- [`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies),
+- [`mz_internal.mz_cluster_auto_scaling_strategies`](/sql/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies),
   which shows any in-flight hydration burst.
 
-- [`mz_internal.mz_hydration_statuses`](/reference/system-catalog/mz_internal/#mz_hydration_statuses),
+- [`mz_internal.mz_hydration_statuses`](/sql/system-catalog/mz_internal/#mz_hydration_statuses),
   which shows per-object hydration status.
 
 - The audit log
-  ([`mz_catalog.mz_audit_events`](/reference/system-catalog/mz_catalog/#mz_audit_events)),
+  ([`mz_catalog.mz_audit_events`](/sql/system-catalog/mz_catalog/#mz_audit_events)),
   which records each reconfiguration transition.
 
 ##### Cancel a resize
@@ -548,8 +549,8 @@ configuration.
 You can use the `WAIT UNTIL READY` option to perform a zero-downtime resizing,
 which incurs **no downtime**. Instead of restarting the cluster, this approach
 spins up an additional cluster replica under the covers with the desired new
-size, waits for the replica to be hydrated, and then replaces the original
-replica.
+size, waits for the replica to be hydrated, and then replaces the
+original replica.
 
 ```sql
 ALTER CLUSTER c1
@@ -582,10 +583,10 @@ autoscaling](#configure-autoscaling) for the `ALTER CLUSTER` form.
 
 When you create an index, materialized view, or Kafka upsert source, or when a
 cluster restarts, the cluster must
-[hydrate](/concepts/hydration/) the affected
+[hydrate](/fundamentals/concepts/hydration/) the affected
 objects before they can serve results. Hydration reads the input data
 and rebuilds in-memory state, and its speed scales with the cluster
-[size](#available-sizes).
+[size](/sql/create-cluster/#available-sizes).
 
 The `AUTO SCALING STRATEGY (ON HYDRATION)` option lets a cluster **automatically
 provision an extra burst replica at the configured `HYDRATION SIZE` while it has
@@ -594,7 +595,7 @@ cluster up before hydration and back down afterward. The steady-size replicas
 continue hydrating in parallel, and once one of them catches up with the burst,
 the burst replica lingers for the `LINGER DURATION` and is then removed. The
 burst replica is an ordinary cluster replica, billed only for the time it is
-provisioned. See [Usage & billing](/administration/billing/) for details.
+provisioned. See [Usage & billing](/materialize-cloud/billing/) for details.
 
 `AUTO SCALING STRATEGY (ON HYDRATION)` is particularly useful for [blue/green
 deployments](/manage/blue-green/), where a new cluster must hydrate before the
@@ -619,7 +620,7 @@ You can specify the following options:
 
 Option | Description
 -------|------------
-`HYDRATION SIZE` | The [size](#available-sizes) of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration.
+`HYDRATION SIZE` | The [size](/sql/create-cluster/#available-sizes) of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration.
 `LINGER DURATION` | Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`.
 
 Provisioning the burst replica requires enough compute capacity to run it. In
@@ -635,7 +636,7 @@ To remove the autoscaling strategy from a cluster, use `ALTER CLUSTER ... RESET
 ()`.
 
 You can inspect the configured strategy and any in-flight burst in the
-[`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
+[`mz_internal.mz_cluster_auto_scaling_strategies`](/sql/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
 catalog view.
 
 ### Dictionary compression
@@ -644,7 +645,7 @@ catalog view.
 
 Starting in v26.38, dictionary compression is available for managed clusters.
 Dictionary compression reduces the memory that
-[arrangements](/get-started/arrangements/#arrangements) use when a column holds
+[arrangements](/fundamentals/concepts/arrangements/#arrangements) use when a column holds
 the same values repeatedly. Instead of storing a repeated column value each time
 it appears, Materialize stores that value once and has each row reference it. This can reduce steady state memory requirements after hydration has completed.
 
@@ -683,7 +684,7 @@ The `REPLICATION FACTOR` option determines the number of replicas provisioned
 for the cluster. Each replica of the cluster provisions a new pool of compute
 resources to perform exactly the same computations on exactly the same data.
 Each replica incurs cost, calculated as `cluster size * replication factor` per
-second. See [Usage & billing](/administration/billing/) for more details.
+second. See [Usage & billing](/materialize-cloud/billing/) for more details.
 
 #### Replication factor and fault tolerance
 
@@ -694,7 +695,7 @@ available, the cluster can continue to maintain dataflows and serve queries.
 
 > **Note:** - Each replica incurs cost, calculated as `cluster size *
 >   replication factor` per second. See [Usage &
->   billing](/administration/billing/) for more details.
+>   billing](/materialize-cloud/billing/) for more details.
 > - Increasing the replication factor does **not** increase the cluster's work
 >   capacity. Replicas are exact copies of one another: each replica must do
 >   exactly the same work (i.e., maintain the same dataflows and process the same
@@ -792,7 +793,7 @@ ALTER CLUSTER c1 RESET (AUTO SCALING STRATEGY);
 ```
 
 To inspect the configured strategy and any in-flight burst, query
-[`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies).
+[`mz_internal.mz_cluster_auto_scaling_strategies`](/sql/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies).
 The `strategy` column holds the configured policy, and the `state` column holds
 the in-flight burst details, or `NULL` when no burst is running:
 
@@ -1063,7 +1064,7 @@ The privileges required to execute this statement are:
 -   [`SHOW CONNECTIONS`](/sql/show-connections)
 
 [SSH tunnel connection]: /sql/create-connection/#ssh-tunnel
-[`mz_ssh_tunnel_connections`]: /reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections
+[`mz_ssh_tunnel_connections`]: /sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections
 
 ---
 
@@ -1271,8 +1272,8 @@ The privileges required to execute this statement are:
 
 ## Useful views
 
-- [`mz_internal.mz_show_default_privileges`](/reference/system-catalog/mz_internal/#mz_show_default_privileges)
-- [`mz_internal.mz_show_my_default_privileges`](/reference/system-catalog/mz_internal/#mz_show_my_default_privileges)
+- [`mz_internal.mz_show_default_privileges`](/sql/system-catalog/mz_internal/#mz_show_default_privileges)
+- [`mz_internal.mz_show_my_default_privileges`](/sql/system-catalog/mz_internal/#mz_show_my_default_privileges)
 
 ## Related pages
 
@@ -1380,7 +1381,7 @@ ALTER MATERIALIZED VIEW <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
 | Syntax element | Description |
 | --- | --- |
 | `<name>` | The name of the materialized view you want to alter.  |
-| `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
+| `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
 
 To reset the retention history to the default for a materialized view:
 
@@ -1660,8 +1661,8 @@ ALTER ROLE <role_name>
 | Syntax element | Description |
 | --- | --- |
 | `INHERIT` | *Optional.* If specified, grants the role the ability to inherit privileges of other roles. *Default.*  |
-| `SET <name> TO <value\|DEFAULT>` | *Optional.* If specified, sets the configuration parameter for the role to the `<value>` or if the value specified is `DEFAULT`, the system's default (equivalent to `ALTER ROLE ... RESET <name>`).  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
-| `RESET <name>` | *Optional.* If specified, resets the configuration parameter for the role to the system's default.  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
+| `SET <name> TO <value\|DEFAULT>` | *Optional.* If specified, sets the configuration parameter for the role to the `<value>` or if the value specified is `DEFAULT`, the system's default (equivalent to `ALTER ROLE ... RESET <name>`).  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/sql/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
+| `RESET <name>` | *Optional.* If specified, resets the configuration parameter for the role to the system's default.  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/sql/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
 
 **Note:**
 - Materialize Cloud does not support the `NOINHERIT` option for `ALTER
@@ -1700,8 +1701,8 @@ ALTER ROLE <role_name>
 | `SUPERUSER` | *Optional.* If specified, grants the role superuser privileges.  |
 | `NOSUPERUSER` | *Optional.* If specified, prevents the role from having superuser privileges. This is the default behavior if `SUPERUSER` is not specified.  |
 | `PASSWORD` | ***Public Preview***  *Optional.* This feature may have minor stability issues. If specified, allows you to set a password for the role.  |
-| `SET <name> TO <value\|DEFAULT>` | *Optional.* If specified, sets the configuration parameter for the role to the `<value>` or if the value specified is `DEFAULT`, the system's default (equivalent to `ALTER ROLE ... RESET <name>`).  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
-| `RESET <name>` | *Optional.* If specified, resets the configuration parameter for the role to the system's default.  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/reference/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
+| `SET <name> TO <value\|DEFAULT>` | *Optional.* If specified, sets the configuration parameter for the role to the `<value>` or if the value specified is `DEFAULT`, the system's default (equivalent to `ALTER ROLE ... RESET <name>`).  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/sql/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
+| `RESET <name>` | *Optional.* If specified, resets the configuration parameter for the role to the system's default.  To view the configuration parameter defaults for a role, see [`mz_role_parameters`](/sql/system-catalog/mz_catalog#mz_role_parameters).  {{< note >}}  - Altering the configuration parameter for a role only affects **new sessions**. - Role configuration parameters are **not inherited**.  {{< /note >}}  |
 
 **Note:**
 - Self-Managed Materialize does not support the `NOINHERIT` option for
@@ -2033,7 +2034,7 @@ The privileges required to execute this statement are:
 
 Use `ALTER SINK` to:
 - Change the relation you want to sink from. This is useful in the context of
-[blue/green deployments](/manage/dbt/blue-green-deployments/).
+[blue/green deployments](/developer-tools/dbt/blue-green-deployments/).
 - Change the commit interval of an [Iceberg sink](/sql/create-sink/iceberg/).
 - Rename a sink.
 - Change owner of a sink.
@@ -2126,8 +2127,8 @@ subsequent execution of the sink will result in errors and will not be able to
 make progress.
 
 To monitor the status of a sink after an `ALTER SINK` command, navigate to the
-respective object page in the [Materialize console](/console/),
-or query the [`mz_internal.mz_sink_statuses`](/reference/system-catalog/mz_internal/#mz_sink_statuses)
+respective object page in the [Materialize console](/developer-tools/console/),
+or query the [`mz_internal.mz_sink_statuses`](/sql/system-catalog/mz_internal/#mz_sink_statuses)
 system catalog view.
 
 #### Cutover timestamp
@@ -2216,7 +2217,7 @@ for guidance on choosing a value.
 
 ### Catalog objects
 
-A sink cannot be created directly on a [catalog object](/reference/system-catalog/).
+A sink cannot be created directly on a [catalog object](/sql/system-catalog/).
 As a workaround, you can create a materialized view on a catalog object and
 create a sink on the materialized view.
 
@@ -2339,7 +2340,7 @@ At first, the `switch.value` is `false`, so the `transition` materialized view c
    ```
 
 1. Wait for the sink's upper frontier
-([`mz_frontiers`](/reference/system-catalog/mz_internal/#mz_frontiers)) to advance
+([`mz_frontiers`](/sql/system-catalog/mz_internal/#mz_frontiers)) to advance
 beyond the time of the switch update. Once advanced, alter sink to use
 `matview_new`:
 
@@ -2463,7 +2464,7 @@ ALTER SOURCE [IF EXISTS] <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
 | Syntax element | Description |
 | --- | --- |
 | `<name>` | The name of the source you want to alter.  |
-| `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
+| `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
 
 To reset the retention history to the default for a source:
 
@@ -2661,7 +2662,7 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/serve-results/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
 
 , `bounded staleness <duration>` (for example, `bounded staleness 5s`)
 
@@ -2712,8 +2713,8 @@ Name                                        | Default value             |  Descr
 `min_timestamp_interval`                    | `1s`                      | The lower bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval smaller than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
 `mz_version`                                | Version-dependent         | Shows the Materialize server version.                                                                                                                                  | No
 `network_policy`                            | `default`                 | The default network policy for the region. | Yes
-`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/reference/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
-`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/reference/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
+`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/serve-results/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
+`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/serve-results/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
 `server_version_num`                        | Version-dependent         | The PostgreSQL compatible server version as an integer.                                                                                                                | No
 `server_version`                            | Version-dependent         | The PostgreSQL compatible server version.                                                                                                                              | No
 `sql_safe_updates`                          | `false`                   | Boolean flag indicating whether to prohibit SQL statements that may be overly destructive.                                                                             | Yes
@@ -2762,7 +2763,7 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/serve-results/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
 
 , `bounded staleness <duration>` (for example, `bounded staleness 5s`)
 
@@ -2813,8 +2814,8 @@ Name                                        | Default value             |  Descr
 `min_timestamp_interval`                    | `1s`                      | The lower bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval smaller than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
 `mz_version`                                | Version-dependent         | Shows the Materialize server version.                                                                                                                                  | No
 `network_policy`                            | `default`                 | The default network policy for the region. | Yes
-`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/reference/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
-`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/reference/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
+`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/serve-results/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
+`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/serve-results/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
 `server_version_num`                        | Version-dependent         | The PostgreSQL compatible server version as an integer.                                                                                                                | No
 `server_version`                            | Version-dependent         | The PostgreSQL compatible server version.                                                                                                                              | No
 `sql_safe_updates`                          | `false`                   | Boolean flag indicating whether to prohibit SQL statements that may be overly destructive.                                                                             | Yes
@@ -2890,7 +2891,7 @@ ALTER TABLE <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
 | Syntax element | Description |
 | --- | --- |
 | `<name>` | The name of the table you want to alter.  |
-| `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
+| `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
 
 To reset the retention history to the default for a user-populated table:
 
@@ -3052,7 +3053,7 @@ You can specify the following optional settings for `BEGIN`:
 
 Option | Description
 -------|----------
-`ISOLATION LEVEL <level>` | *Optional*. If specified, sets the transaction [isolation level](/reference/isolation-level).
+`ISOLATION LEVEL <level>` | *Optional*. If specified, sets the transaction [isolation level](/serve-results/isolation-level).
 `READ ONLY` | <a name="begin-option-read-only"></a> *Optional*. If specified, restricts the transaction to [**read-only** statements](#read-only-transactions). If unspecified, Materialize restricts the transaction to [**read-only** statements](#read-only-transactions), [**write-only** statements](#write-only-transactions), or [**DDL-only** statements](#ddl-only-transactions) based on the first statement in the transaction.
 
 ## Details
@@ -3282,7 +3283,7 @@ COMMENT ON <object_type> <name> IS <comment | NULL>;
 comment associated with it, so successive calls of `COMMENT ON` to a single object will overwrite
 the previous comment.
 
-To read the comment on an object you need to query the [mz_internal.mz_comments](/reference/system-catalog/mz_internal/#mz_comments)
+To read the comment on an object you need to query the [mz_internal.mz_comments](/sql/system-catalog/mz_internal/#mz_comments)
 catalog table.
 
 ## Privileges
@@ -3857,7 +3858,7 @@ writer settings:
 
 ## CREATE CLUSTER
 
-`CREATE CLUSTER` creates a new [cluster](/concepts/clusters/).
+`CREATE CLUSTER` creates a new [cluster](/fundamentals/concepts/clusters/).
 
 ## Syntax
 
@@ -3958,7 +3959,7 @@ The resource allocations are proportional to the number in the size name. For
 example, a cluster of size `600cc` has 2x as much CPU, memory, and disk as a
 cluster of size `300cc`, and 1.5x as much CPU, memory, and disk as a cluster of
 size `400cc`. To determine the specific resource allocations for a size,
-query the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes) table.
+query the [`mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes) table.
 
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
 > time. You should not rely on them for any kind of capacity planning.
@@ -4058,10 +4059,10 @@ on cluster resizing.
 
 When you create an index, materialized view, or Kafka upsert source, or when a
 cluster restarts, the cluster must
-[hydrate](/concepts/hydration/) the affected
+[hydrate](/fundamentals/concepts/hydration/) the affected
 objects before they can serve results. Hydration reads the input data
 and rebuilds in-memory state, and its speed scales with the cluster
-[size](#available-sizes).
+[size](/sql/create-cluster/#available-sizes).
 
 The `AUTO SCALING STRATEGY (ON HYDRATION)` option lets a cluster **automatically
 provision an extra burst replica at the configured `HYDRATION SIZE` while it has
@@ -4070,7 +4071,7 @@ cluster up before hydration and back down afterward. The steady-size replicas
 continue hydrating in parallel, and once one of them catches up with the burst,
 the burst replica lingers for the `LINGER DURATION` and is then removed. The
 burst replica is an ordinary cluster replica, billed only for the time it is
-provisioned. See [Usage & billing](/administration/billing/) for details.
+provisioned. See [Usage & billing](/materialize-cloud/billing/) for details.
 
 `AUTO SCALING STRATEGY (ON HYDRATION)` is particularly useful for [blue/green
 deployments](/manage/blue-green/), where a new cluster must hydrate before the
@@ -4095,7 +4096,7 @@ You can specify the following options:
 
 Option | Description
 -------|------------
-`HYDRATION SIZE` | The [size](#available-sizes) of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration.
+`HYDRATION SIZE` | The [size](/sql/create-cluster/#available-sizes) of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration.
 `LINGER DURATION` | Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`.
 
 Provisioning the burst replica requires enough compute capacity to run it. In
@@ -4111,7 +4112,7 @@ To remove the autoscaling strategy from a cluster, use `ALTER CLUSTER ... RESET
 ()`.
 
 You can inspect the configured strategy and any in-flight burst in the
-[`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
+[`mz_internal.mz_cluster_auto_scaling_strategies`](/sql/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
 catalog view.
 
 ### Dictionary compression
@@ -4120,7 +4121,7 @@ catalog view.
 
 Starting in v26.38, dictionary compression is available for managed clusters.
 Dictionary compression reduces the memory that
-[arrangements](/get-started/arrangements/#arrangements) use when a column holds
+[arrangements](/fundamentals/concepts/arrangements/#arrangements) use when a column holds
 the same values repeatedly. Instead of storing a repeated column value each time
 it appears, Materialize stores that value once and has each row reference it. This can reduce steady state memory requirements after hydration has completed.
 
@@ -4265,7 +4266,7 @@ The privileges required to execute this statement are:
 [`DROP CLUSTER`]: /sql/drop-cluster/
 [`SELECT`]: /sql/select
 [`SUBSCRIBE`]: /sql/subscribe
-[`mz_cluster_replica_sizes`]: /reference/system-catalog/mz_catalog#mz_cluster_replica_sizes
+[`mz_cluster_replica_sizes`]: /sql/system-catalog/mz_catalog#mz_cluster_replica_sizes
 
 ---
 
@@ -4325,7 +4326,7 @@ The resource allocations are proportional to the number in the size name. For
 example, a cluster of size `600cc` has 2x as much CPU, memory, and disk as a
 cluster of size `300cc`, and 1.5x as much CPU, memory, and disk as a cluster of
 size `400cc`. To determine the specific resource allocations for a size,
-query the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes) table.
+query the [`mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes) table.
 
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
 > time. You should not rely on them for any kind of capacity planning.
@@ -4506,7 +4507,7 @@ connection:
 
 You can retrieve the external ID for the connection, as well as an example trust
 policy, by querying the
-[`mz_internal.mz_aws_connections`](/reference/system-catalog/mz_internal/#mz_aws_connections)
+[`mz_internal.mz_aws_connections`](/sql/system-catalog/mz_internal/#mz_aws_connections)
 table:
 
 ```mzsql
@@ -5565,7 +5566,7 @@ Materialize supports the following catalog type and destination combinations:
 | `'s3tablesrest'` | [AWS S3 Tables](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables.html) | [AWS connection](#aws) |
 | `'rest'` | [Google Cloud BigLake](https://docs.cloud.google.com/lakehouse/docs/lakehouse-iceberg-rest-catalog) <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
  | [GCP connection](#gcp) |
-| `'rest'` | Any [Iceberg REST catalog](https://iceberg.apache.org/spec/), including [Databricks Unity Catalog](/serve-results/sink/iceberg-databricks/) | OAuth2 credentials in a secret |
+| `'rest'` | Any [Iceberg REST catalog](https://iceberg.apache.org/spec/), including [Databricks Unity Catalog](/export-data/iceberg-databricks/) | OAuth2 credentials in a secret |
 
 #### Syntax {#iceberg-catalog-syntax}
 
@@ -5595,7 +5596,8 @@ CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
     CATALOG TYPE = 'rest',
     URL = '<catalog_url>',
     WAREHOUSE = '<warehouse>',
-    GCP CONNECTION = <gcp_connection>
+    GCP CONNECTION = <gcp_connection>,
+    ACCESS DELEGATION = 'vended-credentials'
 );
 
 ```
@@ -5606,6 +5608,7 @@ CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
 | `URL` | *Value:* `text`. Required.  GCP BigLake Iceberg catalog URL: `https://biglake.googleapis.com/iceberg/v1/restcatalog`  |
 | `WAREHOUSE` | *Value:* `text`. Required.  GCS bucket URI: `gs://<bucket>`  |
 | `GCP CONNECTION` | *Value:* object name. Required.  The name of a [GCP connection](#gcp) to use for authentication.  |
+| `ACCESS DELEGATION` | *Value:* `'vended-credentials'`. Optional.  Requests temporary, table-scoped storage credentials from the catalog. Requires [credential vending enabled on the catalog](https://docs.cloud.google.com/lakehouse/docs/enable-credential-vending). Omit it to reach the warehouse bucket with the GCP connection's service account instead.  See [Storage access delegation](/sql/create-connection/#iceberg-catalog-access-delegation).  |
 
 **Iceberg REST catalog:**
 
@@ -5656,7 +5659,7 @@ CREATE CONNECTION iceberg_catalog_connection TO ICEBERG CATALOG (
 
 **GCP BigLake:**
 
-The following example creates a [GCP connection](/sql/create-connection/#gcp) and an [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) for Google Cloud BigLake:
+The following example creates a [GCP connection](/sql/create-connection/#gcp) and an [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) for Google Cloud BigLake. The service account reaches both the catalog and the warehouse bucket, so no credential vending is involved:
 ```mzsql
 -- Using the base64-encoded service account key (e.g. base64 < sa_key.json)
 CREATE SECRET gcp_service_account_key
@@ -5713,7 +5716,7 @@ The `ACCESS DELEGATION` option asks the catalog to vend credentials:
 | --- | --- |
 | **Value** | `'vended-credentials'`. This is the only accepted value. |
 | **Default** | Unset, meaning Materialize does not request delegation. |
-| **Valid with** | `CATALOG TYPE = 'rest'` using `CREDENTIAL`. Not supported for `CATALOG TYPE = 's3tablesrest'`, which authenticates to storage through an [AWS connection](#aws), or for REST catalogs using `GCP CONNECTION`. |
+| **Valid with** | `CATALOG TYPE = 'rest'`, using either `CREDENTIAL` or `GCP CONNECTION`. Not supported for `CATALOG TYPE = 's3tablesrest'`, which authenticates to storage through an [AWS connection](#aws). |
 
 Exactly one source of storage credentials is used, determined by how the
 connection is configured. There is no fallback between them:
@@ -5722,7 +5725,8 @@ connection is configured. There is no fallback between them:
 | --- | --- |
 | `CATALOG TYPE = 'rest'` with `CREDENTIAL` and `ACCESS DELEGATION` | Only the table-scoped credentials the catalog vends, refreshed as they expire. Any storage credentials the catalog returns in its configuration are ignored. |
 | `CATALOG TYPE = 'rest'` with `CREDENTIAL` and no `ACCESS DELEGATION` | Only the storage credentials the catalog returns in its configuration. |
-| `CATALOG TYPE = 'rest'` with `GCP CONNECTION` | Only the GCP connection's service account. |
+| `CATALOG TYPE = 'rest'` with `GCP CONNECTION` and `ACCESS DELEGATION` | Only the table-scoped credentials the catalog vends, refreshed as they expire. The GCP connection's service account then authenticates the catalog alone. |
+| `CATALOG TYPE = 'rest'` with `GCP CONNECTION` and no `ACCESS DELEGATION` | Only the GCP connection's service account. |
 | `CATALOG TYPE = 's3tablesrest'` | Only the AWS connection's credentials, for both the catalog and its storage. |
 
 Delegation is opt-in rather than always requested, because a catalog that gates
@@ -5731,12 +5735,12 @@ rather than falling back. Requesting it unconditionally would break connections
 that work today.
 
 Some catalogs, including [Databricks Unity
-Catalog](/serve-results/sink/iceberg-databricks/), vend
+Catalog](/export-data/iceberg-databricks/), vend
 credentials as the only
 way to reach their storage, so `ACCESS DELEGATION` is required there rather than
 optional.
 
-For more information about using Iceberg sinks, see the [Iceberg sink documentation](/serve-results/sink/iceberg/).
+For more information about using Iceberg sinks, see the [Iceberg sink documentation](/export-data/iceberg/).
 
 ## Network security connections
 
@@ -5777,7 +5781,7 @@ arn:aws:iam::664411391173:role/mz_<REGION-ID>_<CONNECTION-ID>
 After creating the connection, you must configure the AWS PrivateLink service
 to accept connections from the AWS principal Materialize will connect as. The
 principals for AWS PrivateLink connections in your region are stored in
-the [`mz_aws_privatelink_connections`](/reference/system-catalog/mz_catalog/#mz_aws_privatelink_connections)
+the [`mz_aws_privatelink_connections`](/sql/system-catalog/mz_catalog/#mz_aws_privatelink_connections)
 system table.
 
 ```mzsql
@@ -5942,9 +5946,9 @@ The privileges required to execute this statement are:
 [`ALTER CONNECTION`]: /sql/alter-connection
 [`CREATE SOURCE`]: /sql/create-source
 [`CREATE SINK`]: /sql/create-sink
-[`mz_aws_privatelink_connections`]: /reference/system-catalog/mz_catalog/#mz_aws_privatelink_connections
-[`mz_connections`]: /reference/system-catalog/mz_catalog/#mz_connections
-[`mz_ssh_tunnel_connections`]: /reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections
+[`mz_aws_privatelink_connections`]: /sql/system-catalog/mz_catalog/#mz_aws_privatelink_connections
+[`mz_connections`]: /sql/system-catalog/mz_catalog/#mz_connections
+[`mz_ssh_tunnel_connections`]: /sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections
 [Ed25519 algorithm]: https://ed25519.cr.yp.to
 [latacora-crypto]: https://latacora.micro.blog/2018/04/03/cryptographic-right-answers.html
 [trust policy]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_terms-and-concepts.html#term_trust-policy
@@ -6002,9 +6006,9 @@ The privileges required to execute this statement are:
 
 ## CREATE INDEX
 
-`CREATE INDEX` creates an in-memory [index](/concepts/indexes/) on a source, view, or materialized view.
+`CREATE INDEX` creates an in-memory [index](/fundamentals/concepts/indexes/) on a source, view, or materialized view.
 
-In Materialize, indexes store query results in memory within a specific [cluster](/concepts/clusters/), and keep these results **incrementally updated** as new data arrives. This ensures that indexed data remains [fresh](/concepts/reaction-time), reflecting the latest changes with minimal latency.
+In Materialize, indexes store query results in memory within a specific [cluster](/fundamentals/concepts/clusters/), and keep these results **incrementally updated** as new data arrives. This ensures that indexed data remains [fresh](/fundamentals/concepts/reaction-time), reflecting the latest changes with minimal latency.
 
 The primary use case for indexes is to accelerate direct queries issued via [`SELECT`](/sql/select/) statements.
 By maintaining fresh, up-to-date results in memory, indexes can significantly [optimize query performance](/transform-data/optimization/), reducing both response time and compute load—especially for resource-intensive operations such as joins, aggregations, and repeated subqueries.
@@ -6032,7 +6036,7 @@ ON <obj_name> [USING <method>] (<col_expr>, ...)
 | `<obj_name>` | The name of the source, view, or materialized view on which you want to create an index.  |
 | `USING <method>` | The name of the index method to use. The only supported method is [`arrangement`](/overview/arrangements).  |
 | `(<col_expr>, ...)` | The expressions to use as the key for the index.  |
-| `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
+| `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
 **CREATE DEFAULT INDEX:**
 
@@ -6052,7 +6056,7 @@ ON <obj_name> [USING <method>]
 | `IN CLUSTER <cluster_name>` | The [cluster](/sql/create-cluster) to maintain this index. If not specified, defaults to the active cluster.  |
 | `<obj_name>` | The name of the source, view, or materialized view on which you want to create an index.  |
 | `USING <method>` | The name of the index method to use. The only supported method is [`arrangement`](/overview/arrangements).  |
-| `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
+| `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
 ## Details
 
@@ -6130,8 +6134,8 @@ Before creating an index, consider the following:
 
 #### Indexes on views vs. materialized views
 
-In Materialize, both [indexes](/concepts/indexes) on views and [materialized
-views](/concepts/views/#materialized-views) incrementally update the view
+In Materialize, both [indexes](/fundamentals/concepts/indexes) on views and [materialized
+views](/fundamentals/concepts/views/#materialized-views) incrementally update the view
 results when Materialize ingests new data. Whereas materialized views persist
 the view results in durable storage and can be accessed across clusters, indexes
 on views compute and store view results in memory within a **single** cluster.
@@ -6142,8 +6146,8 @@ Some general guidelines for usage patterns include:
 |--------------------------------------------------------------------------------|--------------------|
 | View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture. | View with an [index](/sql/create-index) |
 | View used as a building block for stacked views; i.e., views not used to serve results. | View |
-| View results are accessed across [clusters](/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
-| Use with a [sink](/serve-results/sink/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
+| View results are accessed across [clusters](/fundamentals/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
+| Use with a [sink](/export-data/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
 | Use with [temporal filters](/transform-data/patterns/temporal-filters/) | Materialized view  |
 
 #### Indexes and query optimizations
@@ -6251,7 +6255,7 @@ The privileges required to execute this statement are:
 Use `CREATE MATERIALIZED VIEW` to:
 
 - Create a materialized view that maintains [fresh
-  results](/concepts/reaction-time) by persisting them in durable storage and
+  results](/fundamentals/concepts/reaction-time) by persisting them in durable storage and
   incrementally updating them as new data arrives.
 
 - Create a replacement for an existing materialized view that can be applied in
@@ -6261,15 +6265,15 @@ Use `CREATE MATERIALIZED VIEW` to:
 Materialized views are particularly useful when you need **cross-cluster
 access** to results or want to sink data to external systems like
 [Kafka](/sql/create-sink). When you create a materialized view, a
-[cluster](/concepts/clusters/), responsible for maintaining the view, is
+[cluster](/fundamentals/concepts/clusters/), responsible for maintaining the view, is
 associated with it, but the results can be **queried from any cluster**. This
 allows you to separate the compute resources used for view maintenance from
 those used for serving queries.
 
 If you do not need durability or cross-cluster sharing, and you are primarily
 interested in fast query performance within a single cluster, you may prefer to
-[create a view and index it](/concepts/views/#views). In Materialize, [indexes
-on views](/concepts/indexes/) also maintain results incrementally, but store
+[create a view and index it](/fundamentals/concepts/views/#views). In Materialize, [indexes
+on views](/fundamentals/concepts/indexes/) also maintain results incrementally, but store
 them in memory, scoped to the cluster where the index was created. This approach
 offers lower latency for direct querying within that cluster.
 
@@ -6292,7 +6296,7 @@ AS <select_stmt>;
 | `<view_name>` | A name for the materialized view.  |
 | `(<col_ident>, ...)` | Rename the `SELECT` statement's columns to the list of identifiers. Both must be the same length. Note that this is required for statements that return multiple columns with the same identifier.  |
 | `IN CLUSTER <cluster_name>` | The cluster to maintain this materialized view. If not specified, defaults to the active cluster.  |
-| `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `ASSERT NOT NULL` *col_ident* \| `text` \| The column identifier for which to create a [non-null assertion](#non-null-assertions). To specify multiple columns, use the option multiple times. \| \| `PARTITION BY` *columns* \| `(ident [, ident]*)` \| The key by which Materialize should internally partition this durable collection. See the [partitioning guide](/transform-data/patterns/partition-by/) for restrictions on valid values and other details. \| \| `RETAIN HISTORY FOR` *retention_period* \| `interval` \| ***Private preview.*** Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
+| `WITH (<with_options>)` | The following `<with_options>` are supported:  \| Field \| Value \| Description \| \|-------\|-------\|-------------\| \| `ASSERT NOT NULL` *col_ident* \| `text` \| The column identifier for which to create a [non-null assertion](#non-null-assertions). To specify multiple columns, use the option multiple times. \| \| `PARTITION BY` *columns* \| `(ident [, ident]*)` \| The key by which Materialize should internally partition this durable collection. See the [partitioning guide](/transform-data/patterns/partition-by/) for restrictions on valid values and other details. \| \| `RETAIN HISTORY FOR` *retention_period* \| `interval` \| ***Private preview.*** Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 | `<select_stmt>` | The [`SELECT` statement](/sql/select) whose results you want to maintain incrementally updated.  |
 
 **CREATE REPLACEMENT MATERIALIZED VIEW:**
@@ -6327,8 +6331,8 @@ views](#creating-replacement-materialized-views).
 
 ### Usage pattern
 
-In Materialize, both [indexes](/concepts/indexes) on views and [materialized
-views](/concepts/views/#materialized-views) incrementally update the view
+In Materialize, both [indexes](/fundamentals/concepts/indexes) on views and [materialized
+views](/fundamentals/concepts/views/#materialized-views) incrementally update the view
 results when Materialize ingests new data. Whereas materialized views persist
 the view results in durable storage and can be accessed across clusters, indexes
 on views compute and store view results in memory within a **single** cluster.
@@ -6339,8 +6343,8 @@ Some general guidelines for usage patterns include:
 |--------------------------------------------------------------------------------|--------------------|
 | View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture. | View with an [index](/sql/create-index) |
 | View used as a building block for stacked views; i.e., views not used to serve results. | View |
-| View results are accessed across [clusters](/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
-| Use with a [sink](/serve-results/sink/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
+| View results are accessed across [clusters](/fundamentals/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
+| Use with a [sink](/export-data/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
 | Use with [temporal filters](/transform-data/patterns/temporal-filters/) | Materialized view  |
 
 ### Indexing materialized views
@@ -6828,7 +6832,7 @@ The privileges required to execute this statement are:
 
 ## CREATE SINK
 
-A [sink](/concepts/sinks/) describes an external system you
+A [sink](/fundamentals/concepts/sinks/) describes an external system you
 want Materialize to write data to, and provides details about how to encode
 that data. You can define a sink over a materialized view, source, or table.
 
@@ -7050,7 +7054,7 @@ The privileges required to execute this statement are:
 
 ## Related pages
 
-- [Sinks](/concepts/sinks/)
+- [Sinks](/fundamentals/concepts/sinks/)
 - [`SHOW SINKS`](/sql/show-sinks/)
 - [`SHOW COLUMNS`](/sql/show-columns/)
 - [`SHOW CREATE SINK`](/sql/show-create-sink/)
@@ -7455,7 +7459,7 @@ The following guides step you through setting up sources:
 ### Separate cluster(s) for sources
 
 In production, if possible, use a dedicated cluster for
-[sources](/concepts/sources/); i.e., avoid putting sources on the same cluster
+[sources](/fundamentals/concepts/sources/); i.e., avoid putting sources on the same cluster
 that hosts compute objects, sinks, and/or serves queries.
 
 In addition, for upsert sources:
@@ -7494,7 +7498,7 @@ some burst capacity.
 
 ## Related pages
 
-- [Sources](/concepts/sources/)
+- [Sources](/fundamentals/concepts/sources/)
 - [`SHOW SOURCES`](/sql/show-sources/)
 - [`SHOW COLUMNS`](/sql/show-columns/)
 - [`SHOW CREATE SOURCE`](/sql/show-create-source/)
@@ -7555,6 +7559,8 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 [WITH (
     TEXT COLUMNS (<column_name> [, ...])
   | EXCLUDE COLUMNS (<column_name> [, ...])
+  | EXCLUDE CONSTRAINTS ('<constraint_name>' [, ...])
+  | EXCLUDE ALL CONSTRAINTS
   | PARTITION BY (<column_name> [, ...])
   [, ...]
 )]
@@ -7936,7 +7942,7 @@ The privileges required to execute this statement are:
 
 Use `CREATE VIEW` to define a view, which simply provides an alias for the
 embedded `SELECT` statement. The results of a view can be incrementally
-maintained **in memory** within a [cluster](/concepts/clusters/) by creating an
+maintained **in memory** within a [cluster](/fundamentals/concepts/clusters/) by creating an
 [index](../create-index). This allows you to serve queries without the overhead
 of materializing the view.
 
@@ -8465,7 +8471,7 @@ To execute the `DROP INDEX` statement, you need:
 ### Remove an index
 
 > **Tip:** In the **Materialize Console**, you can view existing indexes in the [**Database
-> object explorer**](/console/data/). Alternatively, you can use the
+> object explorer**](/developer-tools/console/data/). Alternatively, you can use the
 > [`SHOW INDEXES`](/sql/show-indexes) command.
 
 Using the  `DROP INDEX` commands, the following example drops an index named `q01_geo_idx`.
@@ -8656,7 +8662,7 @@ DROP ROLE [IF EXISTS] <role_name>;
 Syntax element | Description
 ---------------|------------
 **IF EXISTS** | Optional. If specified, do not return an error if the specified role does not exist.
-`<role_name>` | The role you want to drop. For available roles, see [`mz_roles`](/reference/system-catalog/mz_catalog#mz_roles).
+`<role_name>` | The role you want to drop. For available roles, see [`mz_roles`](/sql/system-catalog/mz_catalog#mz_roles).
 
 ## Details
 
@@ -9185,7 +9191,7 @@ DROP USER [IF EXISTS] <role_name>;
 Syntax element | Description
 ---------------|------------
 **IF EXISTS** | Optional. If specified, do not return an error if the specified role does not exist.
-`<role_name>` | The role you want to drop. For available roles, see [`mz_roles`](/reference/system-catalog/mz_catalog#mz_roles).
+`<role_name>` | The role you want to drop. For available roles, see [`mz_roles`](/sql/system-catalog/mz_catalog#mz_roles).
 
 ## Privileges
 
@@ -9313,11 +9319,11 @@ substitutes literal rows for the view's dependencies, runs the view against
 that fixed input, and compares the result to a set of expected rows. Tests are
 written inline in the same `.sql` file as the view they exercise.
 
-> **Warning:** `EXECUTE UNIT TEST` is executed only by [`mz-deploy`](/manage/mz-deploy/), not by
+> **Warning:** `EXECUTE UNIT TEST` is executed only by [`mz-deploy`](/developer-tools/mz-deploy/), not by
 > Materialize itself. The Materialize SQL layer parses the statement but rejects
 > it during planning, so running it through a SQL client such as `psql` returns an
 > `EXECUTE UNIT TEST statement not yet supported` error. Use
-> [`mz-deploy test`](/manage/mz-deploy/local-development/#write-and-run-unit-tests)
+> [`mz-deploy test`](/developer-tools/mz-deploy/local-development/#write-and-run-unit-tests)
 > to discover and run these tests.
 
 ## Syntax
@@ -9356,7 +9362,7 @@ difference is empty.
 Every object the target view depends on must have a `MOCK` clause; an unmocked
 dependency is a validation error. A mock's column names and types must match the
 real object's schema, and the target view's output columns must match the
-`EXPECTED` column list. Run [`mz-deploy lock`](/manage/mz-deploy/local-development/#lock-types)
+`EXPECTED` column list. Run [`mz-deploy lock`](/developer-tools/mz-deploy/local-development/#lock-types)
 to refresh the schema information used for this validation when an external
 dependency changes.
 
@@ -9415,7 +9421,7 @@ EXPECTED(id bigint, ts timestamptz) AS (
 
 ## Related pages
 
-- [Local development with mz-deploy](/manage/mz-deploy/local-development/#write-and-run-unit-tests)
+- [Local development with mz-deploy](/developer-tools/mz-deploy/local-development/#write-and-run-unit-tests)
 - [`CREATE VIEW`](/sql/create-view/)
 - [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view/)
 - [`VALUES`](/sql/values/)
@@ -9478,7 +9484,7 @@ The privileges required to execute this statement are:
 The attribution examples in this
 section reference the `wins_by_item` index (and the underlying `winning_bids`
 view) from the [quickstart
-guide](/get-started/quickstart/#step-2-create-the-source):
+guide](/get-started/#step-2-create-the-source):
 
 ```sql
 CREATE SOURCE auction_house
@@ -9585,7 +9591,7 @@ worker's ratio compared to the average.
 For the below example, assume there are 2 workers in the cluster.
 
 > **Tip:** To determine how many workers a given cluster size has, you can query
-> [`mz_catalog.mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes).
+> [`mz_catalog.mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes).
 
 You can explain `MEMORY` and/or `CPU` with the `WITH SKEW` option. For example,
 the following runs `EXPLAIN ANALYZE MEMORY WITH SKEW`:
@@ -9741,15 +9747,15 @@ Under the hood:
 
 - For returning Memory/CPU information, `EXPLAIN ANALYZE` runs SQL queries that
 correlate [`mz_introspection` performance
-information](https://materialize.com/docs/reference/system-catalog/mz_introspection/)
+information](https://materialize.com/docs/sql/system-catalog/mz_introspection/)
 with the LIR operators in
-[`mz_introspection.mz_lir_mapping`](../../reference/system-catalog/mz_introspection/#mz_lir_mapping).
+[`mz_introspection.mz_lir_mapping`](/sql/system-catalog/mz_introspection/#mz_lir_mapping).
 Its `lir_id` is the node ID that `EXPLAIN PHYSICAL PLAN WITH (node identifiers)`
 prints, so a row of that SQL can be matched to a plan operator by ID rather
 than by its text.
 
 - For TopK hints, `EXPLAIN ANALYZE` uses
-[`mz_introspection.mz_expected_group_size_advice`](/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice)
+[`mz_introspection.mz_expected_group_size_advice`](/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice)
 introspection source to offer hints on sizing `TopK` operators.
 
 You can append `AS SQL` to any `EXPLAIN ANALYZE` statement to see the SQL that
@@ -10038,7 +10044,7 @@ Plan Stage | Description
 **DECORRELATED PLAN** | Display the decorrelated but not-yet-optimized plan.
 **LOCALLY OPTIMIZED** | Display the locally optimized plan (before view inlining and access path selection). This is the final stage for regular `CREATE VIEW` optimization.
 **OPTIMIZED PLAN** | Display the optimized plan.
-**PHYSICAL PLAN** |  Display the physical plan; this corresponds to the operators shown in [`mz_introspection.mz_lir_mapping`](../../reference/system-catalog/mz_introspection/#mz_lir_mapping). _(Default)_
+**PHYSICAL PLAN** |  Display the physical plan; this corresponds to the operators shown in [`mz_introspection.mz_lir_mapping`](/sql/system-catalog/mz_introspection/#mz_lir_mapping). _(Default)_
 
 ### Output modifiers
 
@@ -10051,7 +10057,7 @@ Modifier | Description
 **cardinality** | Annotate each subplan with a symbolic estimate of its cardinality.
 **join implementations** | Render details about the [implementation strategy of optimized MIR `Join` nodes](#explain-with-join-implementations).
 **keys** | Annotates each subplan with a parenthesized list of unique keys. Each unique key is presented as a bracketed list of column identifiers. A list of column identifiers is reported as a unique key when for each setting of those columns to values there is at most one record in the collection. For example, `([0], [1,2])` is a list of two unique keys: column zero is a unique key, and columns 1 and 2 also form a unique key. Materialize only reports the most succinct form of keys, so for example while `[0]` and `[0, 1]` might both be unique keys, the latter is implied by the former and omitted. `()` indicates that the collection does not have any unique keys, while `([])` indicates that the empty projection is a unique key, meaning that the collection consists of 0 or 1 rows.
-**node identifiers** | Annotate each subplan in a `PHYSICAL PLAN` with its node ID, which is the `lir_id` of the operator's row in [`mz_introspection.mz_lir_mapping`](../../reference/system-catalog/mz_introspection/#mz_lir_mapping). Per-operator introspection, such as the SQL behind [`EXPLAIN ANALYZE`](/sql/explain-analyze/), can be matched to the plan by that ID instead of by operator text, which the two render differently.
+**node identifiers** | Annotate each subplan in a `PHYSICAL PLAN` with its node ID, which is the `lir_id` of the operator's row in [`mz_introspection.mz_lir_mapping`](/sql/system-catalog/mz_introspection/#mz_lir_mapping). Per-operator introspection, such as the SQL behind [`EXPLAIN ANALYZE`](/sql/explain-analyze/), can be matched to the plan by that ID instead of by operator text, which the two render differently.
 **redacted** | Anonymize literals in the output.
 **timing** | Annotate the output with the optimization time.
 **types** | Annotate each subplan with its inferred type, as a _representation type_. These types, written with a `r_` prefix, reflect how the types in your SQL query are actually represented inside Materialize---don't be alarmed if you wrote `VARCHAR` or `CHAR` but see `r_string`.
@@ -10108,7 +10114,7 @@ In this stage, the planner performs various optimizing rewrites:
 In this stage, the planner:
 
 - Decides on the exact execution details of each operator, and maps plan operators to differential dataflow operators.
-- Makes the final choices about creating or reusing [arrangements](/get-started/arrangements/#arrangements).
+- Makes the final choices about creating or reusing [arrangements](/fundamentals/concepts/arrangements/#arrangements).
 
 #### From physical plan to dataflow
 
@@ -10239,7 +10245,7 @@ Below the plan, a "Used indexes" section indicates which indexes will be used by
 
 Materialize offers several output formats for `EXPLAIN` and debugging.
 LIR plans as rendered in
-[`mz_introspection.mz_lir_mapping`](../../reference/system-catalog/mz_introspection/#mz_lir_mapping)
+[`mz_introspection.mz_lir_mapping`](/sql/system-catalog/mz_introspection/#mz_lir_mapping)
 are deliberately succinct, while the plans in other formats give more
 detail.
 
@@ -10257,16 +10263,16 @@ The following table lists the operators that are available in the LIR plan.
 - For those operators that expand the data size (either rows or columns), **Can increase data size** is marked with **Yes**.| Operator | Description | Example |
 | --- | --- | --- |
 | **Constant** | Always produces the same collection of rows.  **Can increase data size:** No **Uses memory:** No | <code>→Constant (2 rows)</code> |
-| **Stream, Arranged, Index Lookup, Read** | <p>Produces rows from either an existing relation (source/view/materialized view/table) or from a previous CTE in the same plan. A <code>Fused with Child Map/Filter/Project</code> line above this operator means that <code>Map/Filter/Project</code> runs inside it.</p> <p>There are four types of <code>Get</code>.</p> <ol> <li> <p><code>Stream</code> indicates that the results are not <a href="/get-started/arrangements/#arrangements" >arranged</a> in memory and will be streamed directly.</p> </li> <li> <p><code>Arranged</code> indicates that the results are <a href="/get-started/arrangements/#arrangements" >arranged</a> in memory.</p> </li> <li> <p><code>Index Lookup</code> indicates the results will be <em>looked up</em> in an existing <a href="/get-started/arrangements/#arrangements" >arrangement</a>.</p> </li> <li> <p><code>Read</code> indicates that the results are unarranged, and will be processed as they arrive.</p> </li> </ol>   **Can increase data size:** No **Uses memory:** No | <code>Arranged materialize.public.t</code> |
+| **Stream, Arranged, Index Lookup, Read** | <p>Produces rows from either an existing relation (source/view/materialized view/table) or from a previous CTE in the same plan. A <code>Fused with Child Map/Filter/Project</code> line above this operator means that <code>Map/Filter/Project</code> runs inside it.</p> <p>There are four types of <code>Get</code>.</p> <ol> <li> <p><code>Stream</code> indicates that the results are not <a href="/fundamentals/concepts/arrangements/#arrangements" >arranged</a> in memory and will be streamed directly.</p> </li> <li> <p><code>Arranged</code> indicates that the results are <a href="/fundamentals/concepts/arrangements/#arrangements" >arranged</a> in memory.</p> </li> <li> <p><code>Index Lookup</code> indicates the results will be <em>looked up</em> in an existing <a href="/fundamentals/concepts/arrangements/#arrangements" >arrangement</a>.</p> </li> <li> <p><code>Read</code> indicates that the results are unarranged, and will be processed as they arrive.</p> </li> </ol>   **Can increase data size:** No **Uses memory:** No | <code>Arranged materialize.public.t</code> |
 | **Map/Filter/Project** | <p>Computes new columns (maps), filters columns, and projects away columns. Works row-by-row. Maps and filters will be printed, but projects will not.</p> <p>A <code>Map/Filter/Project</code> fused into a neighboring operator is printed as <code>Fused with Child Map/Filter/Project</code> above that operator, or as <code>Fused with Parent Map/Filter/Project</code> below an <code>Arrange</code>, and runs inside that operator rather than on its own.</p> <p>A temporal filter, one whose predicate uses <a href="/sql/functions/now_and_mz_now/" ><code>mz_now()</code></a>, also schedules a retraction of each row for the moment it stops satisfying the predicate. Until then, the operator downstream holds that pending retraction in memory, one per live row.</p>   **Can increase data size:** Each row may have more data, from the <code>Map</code>. Each row may also have less data, from the <code>Project</code>. There may be fewer rows, from the <code>Filter</code>. **Uses memory:** No | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="k">Map</span><span class="o">/</span><span class="k">Filter</span><span class="o">/</span><span class="n">Project</span> </span></span><span class="line"><span class="cl">  <span class="k">Filter</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">}</span> <span class="o">&lt;</span> <span class="mf">7</span><span class="p">)</span> </span></span><span class="line"><span class="cl">  <span class="k">Map</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">}</span> <span class="o">+</span> <span class="o">#</span><span class="mf">1</span><span class="p">{</span><span class="n">b</span><span class="p">})</span> </span></span></code></pre></div> |
 | **Table Function** | <p>Appends the result of some (one-to-many) <a href="/sql/functions/#table-functions" >table function</a> to each row in the input.</p> <p>A <code>Fused with Child Table Function unnest_list</code> line above a <code>Non-incremental GroupAggregate</code> means the <code>unnest_list</code> call runs inside that aggregation, which is part of how window functions are compiled to dataflows.</p> <p>A <code>Fused with Child Map/Filter/Project</code> line above this operator means that <code>Map/Filter/Project</code> runs inside it.</p>   **Can increase data size:** Depends on the <a href="/sql/functions/#table-functions" >table function</a> used. **Uses memory:** No | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="k">Table</span> <span class="k">Function</span> <span class="n">generate_series</span><span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">},</span> <span class="o">#</span><span class="mf">1</span><span class="p">{</span><span class="n">b</span><span class="p">},</span> <span class="mf">1</span><span class="p">)</span> </span></span><span class="line"><span class="cl">  <span class="k">Input</span> <span class="k">key</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">})</span> </span></span></code></pre></div> |
 | **Differential Join, Delta Join** | <p>Both join operators indicate the join ordering selected.</p> <p>Returns combinations of rows from each input whenever some equality predicates are <code>true</code>.</p> <p>Joins will indicate the join order of their children, starting from 0. For example, <code>Differential Join %1 » %0</code> will join its second child into its first.</p> <p>The <a href="/transform-data/optimization/#join" >two joins differ in performance characteristics</a>.</p> <p><code>Differential Cross Join</code> and <code>Delta Cross Join</code> mark a join with a stage that has no equality keys. <code>One-Shot Delta Join</code> marks the single-path plan of a one-shot <code>SELECT</code>; an index or materialized view over the same query uses the multi-path <code>Delta Join</code>.</p>   **Can increase data size:** Depends on the join order and facts about the joined collections. **Uses memory:** ✅ Uses memory for 3-way or more differential joins. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Differential</span> <span class="k">Join</span> <span class="o">%</span><span class="mf">1</span> <span class="err">»</span> <span class="o">%</span><span class="mf">0</span> </span></span><span class="line"><span class="cl">  <span class="k">Join</span> <span class="n">stage</span> <span class="o">%</span><span class="mf">0</span><span class="p">:</span> <span class="n">Lookup</span> <span class="k">key</span> <span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">}</span> <span class="k">in</span> <span class="o">%</span><span class="mf">0</span> </span></span></code></pre></div> |
-| **GroupAggregate** | <p>Groups the input rows by some scalar expressions, reduces each group using some aggregate functions, and produces rows containing the group key and aggregate outputs.</p> <p>There are four types of <code>GroupAggregate</code>, ordered by increasing complexity:</p> <ol> <li> <p><code>Distinct GroupAggregate</code> corresponds to the SQL <code>DISTINCT</code> operator.</p> </li> <li> <p><code>Accumulable GroupAggregate</code> (e.g., <code>SUM</code>, <code>COUNT</code>) corresponds to several easy to implement aggregations that can be executed efficiently.</p> </li> <li> <p>Hierarchical aggregations (e.g., <code>MIN</code>, <code>MAX</code>) require a tower of arrangements. They are printed as <code>Bucketed Hierarchical GroupAggregate</code>, or as the more efficient <code>Monotonic GroupAggregate</code> when the input never retracts data. Bucketed ones may benefit from a hint; <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" >see <code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>Consolidating</code> prefix means the operator consolidates its input first, which uses memory while the input is being consolidated, largely at hydration time.</p> </li> <li> <p><code>Non-incremental GroupAggregate</code> (e.g., window functions, <code>list_agg</code>) corresponds to a single non-incremental aggregation. These are the most computationally intensive reductions.</p> </li> </ol> <p>A query that mixes aggregations of different types is planned as one <code>GroupAggregate</code> per type, joined together on the group key.</p> <p>A <code>Temporally-Bucketed</code> prefix means the input carries future-dated updates from a temporal filter.</p> <p>A <code>Fused with Child Map/Filter/Project</code> line above this operator means that <code>Map/Filter/Project</code> runs inside it.</p>   **Can increase data size:** No **Uses memory:** ✅ <code>Distinct</code> and <code>Accumulable</code> aggregates use a moderate amount of memory (proportional to twice the output size). <code>MIN</code> and <code>MAX</code> aggregates can use significantly more memory. This can be improved by including group size hints in the query, see <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A hint shrinks the tower of intermediate arrangements (the <code>buckets</code> list of a <code>Bucketed Hierarchical GroupAggregate</code>); the input rows stay arranged either way, so a hint cannot bring a <code>MIN</code> or <code>MAX</code> below the size of its input. <code>Non-incremental</code> aggregates use memory proportional to the input + output size. A mix of aggregation types uses the memory of each <code>GroupAggregate</code> plus the arrangements of the join that combines them. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Accumulable</span> <span class="n">GroupAggregate</span> </span></span><span class="line"><span class="cl">  <span class="n">Simple</span> <span class="n">aggregates</span><span class="p">:</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> </span></span><span class="line"><span class="cl">  <span class="n">Post</span><span class="o">-</span><span class="n">process</span> <span class="k">Map</span><span class="o">/</span><span class="k">Filter</span><span class="o">/</span><span class="n">Project</span> </span></span><span class="line"><span class="cl">    <span class="k">Filter</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span> <span class="o">&gt;</span> <span class="mf">1</span><span class="p">)</span> </span></span></code></pre></div> |
-| **TopK** | <p>Groups the input rows, sorts them according to some ordering, and returns at most <code>K</code> rows at some offset from the top of the list, where <code>K</code> is some (possibly computed) limit.</p> <p>There are three types of <code>TopK</code>. Two are special cased for monotonic inputs (i.e., inputs which never retract data).</p> <ol> <li><code>Monotonic Top1</code>.</li> <li><code>Monotonic TopK</code>, which may give an expression indicating the limit.</li> <li><code>Non-monotonic TopK</code>, a generic <code>TopK</code> plan.</li> </ol> <p>Each version of the <code>TopK</code> operator may include grouping, ordering, and limit directives. A <code>Consolidating</code> prefix means the operator consolidates its input first, and a <code>Temporally-Bucketed</code> prefix means the input carries future-dated updates from a temporal filter.</p>   **Can increase data size:** No **Uses memory:** ✅ <code>Monotonic Top1</code> and <code>Monotonic TopK</code> use a moderate amount of memory. <code>Non-monotonic TopK</code> uses significantly more memory as the operator can significantly overestimate the group sizes. Consult <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>LIMIT INPUT GROUP SIZE</code> hint is not displayed in this plan; the optimized plan shows it as <code>exp_group_size</code>. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Consolidating</span> <span class="n">Monotonic</span> <span class="n">TopK</span> </span></span><span class="line"><span class="cl">  <span class="k">Order</span> <span class="k">By</span> <span class="o">#</span><span class="mf">1</span> <span class="k">asc</span> <span class="n">nulls_last</span><span class="p">,</span> <span class="o">#</span><span class="mf">0</span> <span class="k">desc</span> <span class="n">nulls_first</span> </span></span><span class="line"><span class="cl">  <span class="k">Limit</span> <span class="mf">5</span> </span></span></code></pre></div> |
+| **GroupAggregate** | <p>Groups the input rows by some scalar expressions, reduces each group using some aggregate functions, and produces rows containing the group key and aggregate outputs.</p> <p>There are four types of <code>GroupAggregate</code>, ordered by increasing complexity:</p> <ol> <li> <p><code>Distinct GroupAggregate</code> corresponds to the SQL <code>DISTINCT</code> operator.</p> </li> <li> <p><code>Accumulable GroupAggregate</code> (e.g., <code>SUM</code>, <code>COUNT</code>) corresponds to several easy to implement aggregations that can be executed efficiently.</p> </li> <li> <p>Hierarchical aggregations (e.g., <code>MIN</code>, <code>MAX</code>) require a tower of arrangements. They are printed as <code>Bucketed Hierarchical GroupAggregate</code>, or as the more efficient <code>Monotonic GroupAggregate</code> when the input never retracts data. Bucketed ones may benefit from a hint; <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" >see <code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>Consolidating</code> prefix means the operator consolidates its input first, which uses memory while the input is being consolidated, largely at hydration time.</p> </li> <li> <p><code>Non-incremental GroupAggregate</code> (e.g., window functions, <code>list_agg</code>) corresponds to a single non-incremental aggregation. These are the most computationally intensive reductions.</p> </li> </ol> <p>A query that mixes aggregations of different types is planned as one <code>GroupAggregate</code> per type, joined together on the group key.</p> <p>A <code>Temporally-Bucketed</code> prefix means the input carries future-dated updates from a temporal filter.</p> <p>A <code>Fused with Child Map/Filter/Project</code> line above this operator means that <code>Map/Filter/Project</code> runs inside it.</p>   **Can increase data size:** No **Uses memory:** ✅ <code>Distinct</code> and <code>Accumulable</code> aggregates use a moderate amount of memory (proportional to twice the output size). <code>MIN</code> and <code>MAX</code> aggregates can use significantly more memory. This can be improved by including group size hints in the query, see <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A hint shrinks the tower of intermediate arrangements (the <code>buckets</code> list of a <code>Bucketed Hierarchical GroupAggregate</code>); the input rows stay arranged either way, so a hint cannot bring a <code>MIN</code> or <code>MAX</code> below the size of its input. <code>Non-incremental</code> aggregates use memory proportional to the input + output size. A mix of aggregation types uses the memory of each <code>GroupAggregate</code> plus the arrangements of the join that combines them. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Accumulable</span> <span class="n">GroupAggregate</span> </span></span><span class="line"><span class="cl">  <span class="n">Simple</span> <span class="n">aggregates</span><span class="p">:</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> </span></span><span class="line"><span class="cl">  <span class="n">Post</span><span class="o">-</span><span class="n">process</span> <span class="k">Map</span><span class="o">/</span><span class="k">Filter</span><span class="o">/</span><span class="n">Project</span> </span></span><span class="line"><span class="cl">    <span class="k">Filter</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span> <span class="o">&gt;</span> <span class="mf">1</span><span class="p">)</span> </span></span></code></pre></div> |
+| **TopK** | <p>Groups the input rows, sorts them according to some ordering, and returns at most <code>K</code> rows at some offset from the top of the list, where <code>K</code> is some (possibly computed) limit.</p> <p>There are three types of <code>TopK</code>. Two are special cased for monotonic inputs (i.e., inputs which never retract data).</p> <ol> <li><code>Monotonic Top1</code>.</li> <li><code>Monotonic TopK</code>, which may give an expression indicating the limit.</li> <li><code>Non-monotonic TopK</code>, a generic <code>TopK</code> plan.</li> </ol> <p>Each version of the <code>TopK</code> operator may include grouping, ordering, and limit directives. A <code>Consolidating</code> prefix means the operator consolidates its input first, and a <code>Temporally-Bucketed</code> prefix means the input carries future-dated updates from a temporal filter.</p>   **Can increase data size:** No **Uses memory:** ✅ <code>Monotonic Top1</code> and <code>Monotonic TopK</code> use a moderate amount of memory. <code>Non-monotonic TopK</code> uses significantly more memory as the operator can significantly overestimate the group sizes. Consult <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>LIMIT INPUT GROUP SIZE</code> hint is not displayed in this plan; the optimized plan shows it as <code>exp_group_size</code>. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Consolidating</span> <span class="n">Monotonic</span> <span class="n">TopK</span> </span></span><span class="line"><span class="cl">  <span class="k">Order</span> <span class="k">By</span> <span class="o">#</span><span class="mf">1</span> <span class="k">asc</span> <span class="n">nulls_last</span><span class="p">,</span> <span class="o">#</span><span class="mf">0</span> <span class="k">desc</span> <span class="n">nulls_first</span> </span></span><span class="line"><span class="cl">  <span class="k">Limit</span> <span class="mf">5</span> </span></span></code></pre></div> |
 | **Negate Diffs** | Negates the row counts of the input. This is usually used in combination with union to remove rows from the other union input.  **Can increase data size:** No **Uses memory:** No | <code>→Negate Diffs</code> |
 | **Threshold Diffs** | Removes any rows with negative counts.  **Can increase data size:** No **Uses memory:** ✅ Arranges both its input and its output by the whole row, so it uses memory proportional to the input size plus the output size. | <code>→Threshold Diffs</code> |
 | **Union** | Combines its inputs into a unified output, emitting one row for each row on any input. (Corresponds to <code>UNION ALL</code> rather than <code>UNION</code>/<code>UNION DISTINCT</code>.)  **Can increase data size:** No **Uses memory:** ✅ A <code>Consolidating Union</code> will make moderate use of memory, particularly at hydration time. A <code>Union</code> that is not <code>Consolidating</code> will not consume memory. | <code>→Consolidating Union</code> |
-| **Arrange** | Indicates a point that will become an <a href="/get-started/arrangements/#arrangements" >arrangement</a> in the dataflow engine, i.e., it will consume memory to cache results.  **Can increase data size:** No **Uses memory:** ✅ Uses memory proportional to the input size. Note that in the LIR / physical plan, <code>Arrange</code>/<code>ArrangeBy</code> almost always means that an arrangement will actually be created. (This is in contrast to the &ldquo;optimized&rdquo; plan, where an <code>ArrangeBy</code> being present in the plan often does not mean that an arrangement will actually be created.) | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Arrange</span> </span></span><span class="line"><span class="cl">    <span class="k">Keys</span><span class="p">:</span> <span class="mf">1</span> <span class="k">arrangement</span> <span class="n">available</span><span class="p">,</span> <span class="n">plus</span> <span class="k">raw</span> <span class="n">stream</span> </span></span><span class="line"><span class="cl">      <span class="k">Arrangement</span> <span class="mf">0</span><span class="p">:</span> <span class="o">#</span><span class="mf">0</span> </span></span></code></pre></div> |
+| **Arrange** | Indicates a point that will become an <a href="/fundamentals/concepts/arrangements/#arrangements" >arrangement</a> in the dataflow engine, i.e., it will consume memory to cache results.  **Can increase data size:** No **Uses memory:** ✅ Uses memory proportional to the input size. Note that in the LIR / physical plan, <code>Arrange</code>/<code>ArrangeBy</code> almost always means that an arrangement will actually be created. (This is in contrast to the &ldquo;optimized&rdquo; plan, where an <code>ArrangeBy</code> being present in the plan often does not mean that an arrangement will actually be created.) | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Arrange</span> </span></span><span class="line"><span class="cl">    <span class="k">Keys</span><span class="p">:</span> <span class="mf">1</span> <span class="k">arrangement</span> <span class="n">available</span><span class="p">,</span> <span class="n">plus</span> <span class="k">raw</span> <span class="n">stream</span> </span></span><span class="line"><span class="cl">      <span class="k">Arrangement</span> <span class="mf">0</span><span class="p">:</span> <span class="o">#</span><span class="mf">0</span> </span></span></code></pre></div> |
 | **Unarranged Raw Stream** | Indicates a point where data will be streamed (even if it is somehow already arranged).  **Can increase data size:** No **Uses memory:** No | <code>→Unarranged Raw Stream</code> |
 | **With ... Return ...** | Introduces CTEs, i.e., makes it possible for sub-plans to be consumed multiple times by downstream operators.  **Can increase data size:** No **Uses memory:** No | <a href="/sql/explain-plan/#reading-plans" >See Reading plans</a> |
 **Notes:**
@@ -10285,15 +10291,15 @@ The following table lists the operators that are available in the optimized plan
 | **Map** | Appends the results of some scalar expressions to each row in the input.  **Can increase data size:** Each row has more data (i.e., longer rows but same number of rows). **Uses memory:** No | <code>Map (((#1 * 10000000dec) / #2) * 1000dec)</code> |
 | **FlatMap** | Appends the result of some (one-to-many) <a href="/sql/functions/#table-functions" >table function</a> to each row in the input.  **Can increase data size:** Depends on the <a href="/sql/functions/#table-functions" >table function</a> used. **Uses memory:** No | <code>FlatMap jsonb_foreach(#3)</code> |
 | **Filter** | <p>Removes rows of the input for which some scalar predicates return <code>false</code>.</p> <p>A temporal filter, one whose predicate uses <a href="/sql/functions/now_and_mz_now/" ><code>mz_now()</code></a>, also schedules a retraction of each row for the moment it stops satisfying the predicate. Until then, the operator downstream of the filter holds that pending retraction in memory, one per live row.</p>   **Can increase data size:** No **Uses memory:** No | <code>Filter (#20 &lt; #21)</code> |
-| **Join** | Returns combinations of rows from each input whenever some equality predicates are <code>true</code>.  **Can increase data size:** Depends on the join order and facts about the joined collections. **Uses memory:** ✅ The <code>Join</code> operator itself uses memory only for <code>type=differential</code> with more than 2 inputs. However, <code>Join</code> operators need <a href="/get-started/arrangements/#arrangements" >arrangements</a> on their inputs (shown by the <code>ArrangeBy</code> operator). These arrangements use memory proportional to the input sizes. If an input has an <a href="/transform-data/optimization/#join" >appropriate index</a>, then the arrangement of the index will be reused. | <code>Join on=(#1 = #2) type=delta</code> |
+| **Join** | Returns combinations of rows from each input whenever some equality predicates are <code>true</code>.  **Can increase data size:** Depends on the join order and facts about the joined collections. **Uses memory:** ✅ The <code>Join</code> operator itself uses memory only for <code>type=differential</code> with more than 2 inputs. However, <code>Join</code> operators need <a href="/fundamentals/concepts/arrangements/#arrangements" >arrangements</a> on their inputs (shown by the <code>ArrangeBy</code> operator). These arrangements use memory proportional to the input sizes. If an input has an <a href="/transform-data/optimization/#join" >appropriate index</a>, then the arrangement of the index will be reused. | <code>Join on=(#1 = #2) type=delta</code> |
 | **CrossJoin** | An alias for a <code>Join</code> with an empty predicate (emits all combinations). Note that not all cross joins are marked as <code>CrossJoin</code>: In a join with more than 2 inputs, it can happen that there is a cross join between some of the inputs. You can recognize this case by <code>ArrangeBy</code> operators having empty keys, i.e., <code>ArrangeBy keys=[[]]</code>.  **Can increase data size:** Cartesian product of the inputs (\|N\| x \|M\|). **Uses memory:** ✅ Uses memory for 3-way or more differential joins. | <code>CrossJoin type=differential</code> |
-| **Reduce** | Groups the input rows by some scalar expressions, reduces each group using some aggregate functions, and produces rows containing the group key and aggregate outputs.  **Can increase data size:** No **Uses memory:** ✅ <code>SUM</code>, <code>COUNT</code>, and most other aggregations use a moderate amount of memory (proportional either to twice the output size or to input size + output size). <code>MIN</code> and <code>MAX</code> aggregates can use significantly more memory. This can be improved by including group size hints in the query, see <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A hint shrinks the tower of intermediate arrangements, and shows in the optimized plan as <code>exp_group_size</code> and in the physical plan as the <code>buckets</code> list. The input rows stay arranged either way, so a hint cannot bring a <code>MIN</code> or <code>MAX</code> below the size of its input. | <code>Reduce group_by=[#0] aggregates=[max((#0 * #1))]</code> |
+| **Reduce** | Groups the input rows by some scalar expressions, reduces each group using some aggregate functions, and produces rows containing the group key and aggregate outputs.  **Can increase data size:** No **Uses memory:** ✅ <code>SUM</code>, <code>COUNT</code>, and most other aggregations use a moderate amount of memory (proportional either to twice the output size or to input size + output size). <code>MIN</code> and <code>MAX</code> aggregates can use significantly more memory. This can be improved by including group size hints in the query, see <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A hint shrinks the tower of intermediate arrangements, and shows in the optimized plan as <code>exp_group_size</code> and in the physical plan as the <code>buckets</code> list. The input rows stay arranged either way, so a hint cannot bring a <code>MIN</code> or <code>MAX</code> below the size of its input. | <code>Reduce group_by=[#0] aggregates=[max((#0 * #1))]</code> |
 | **Distinct** | Alias for a <code>Reduce</code> with an empty aggregate list.  **Can increase data size:** No **Uses memory:** ✅ Uses memory proportional to twice the output size. | <code>Distinct</code> |
-| **TopK** | Groups the input rows by some scalar expressions, sorts each group by the ordering expressions, removes the top <code>offset</code> rows in each group, and returns the next <code>limit</code> rows.  **Can increase data size:** No **Uses memory:** ✅ Can use significant amount as the operator can significantly overestimate the group sizes. Consult <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>LIMIT INPUT GROUP SIZE</code> hint shows in the optimized plan as <code>exp_group_size</code>; the physical plan does not display it. | <code>TopK order_by=[#1 asc nulls_last, #0 desc nulls_first] limit=5</code> |
+| **TopK** | Groups the input rows by some scalar expressions, sorts each group by the ordering expressions, removes the top <code>offset</code> rows in each group, and returns the next <code>limit</code> rows.  **Can increase data size:** No **Uses memory:** ✅ Can use significant amount as the operator can significantly overestimate the group sizes. Consult <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>LIMIT INPUT GROUP SIZE</code> hint shows in the optimized plan as <code>exp_group_size</code>; the physical plan does not display it. | <code>TopK order_by=[#1 asc nulls_last, #0 desc nulls_first] limit=5</code> |
 | **Negate** | Negates the row counts of the input. This is usually used in combination with union to remove rows from the other union input.  **Can increase data size:** No **Uses memory:** No | <code>Negate</code> |
 | **Threshold** | Removes any rows with negative counts.  **Can increase data size:** No **Uses memory:** ✅ Arranges both its input and its output by the whole row, so it uses memory proportional to the input size plus the output size. | <code>Threshold</code> |
 | **Union** | Sums the counts of each row of all inputs. (Corresponds to <code>UNION ALL</code> rather than <code>UNION</code>/<code>UNION DISTINCT</code>.)  **Can increase data size:** No **Uses memory:** ✅ A plain <code>Union</code> uses no memory of its own. A <code>Union</code> whose output must be consolidated holds updates while consolidating them, which shows as a memory spike largely at hydration time. | <code>Union</code> |
-| **ArrangeBy** | Indicates a point that will become an <a href="/get-started/arrangements/#arrangements" >arrangement</a> in the dataflow engine (each <code>keys</code> element will be a different arrangement). Note that if an appropriate index already exists on the input or the output of the previous operator is already arranged with a key that is also requested here, then this operator will just pass on that existing arrangement instead of creating a new one.  **Can increase data size:** No **Uses memory:** ✅ Depends. If arrangements need to be created, they use memory proportional to the input size. | <code>ArrangeBy keys=[[#0]]</code> |
+| **ArrangeBy** | Indicates a point that will become an <a href="/fundamentals/concepts/arrangements/#arrangements" >arrangement</a> in the dataflow engine (each <code>keys</code> element will be a different arrangement). Note that if an appropriate index already exists on the input or the output of the previous operator is already arranged with a key that is also requested here, then this operator will just pass on that existing arrangement instead of creating a new one.  **Can increase data size:** No **Uses memory:** ✅ Depends. If arrangements need to be created, they use memory proportional to the input size. | <code>ArrangeBy keys=[[#0]]</code> |
 | **With ... Return ...** | Introduces CTEs, i.e., makes it possible for sub-plans to be consumed multiple times by downstream operators.  **Can increase data size:** No **Uses memory:** No | <a href="/sql/explain-plan/#reading-plans" >See Reading plans</a> |
 **Notes:**
 - **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
@@ -10312,9 +10318,9 @@ The following table lists the operators that are available in the raw plan.
 | **CallTable** | Appends the result of some (one-to-many) <a href="/sql/functions/#table-functions" >table function</a> to each row in the input.  **Can increase data size:** Depends on the <a href="/sql/functions/#table-functions" >table function</a> used. **Uses memory:** No | <code>CallTable generate_series(1, 7, 1)</code> |
 | **Filter** | <p>Removes rows of the input for which some scalar predicates return <code>false</code>.</p> <p>A temporal filter, one whose predicate uses <a href="/sql/functions/now_and_mz_now/" ><code>mz_now()</code></a>, also schedules a retraction of each row for the moment it stops satisfying the predicate. Until then, the operator downstream of the filter holds that pending retraction in memory, one per live row.</p>   **Can increase data size:** No **Uses memory:** No | <code>Filter (#20 &lt; #21)</code> |
 | **~Join** | Performs one of <code>INNER</code> / <code>LEFT</code> / <code>RIGHT</code> / <code>FULL OUTER</code> / <code>CROSS</code> join on the two inputs, using the given predicate.  **Can increase data size:** For <code>CrossJoin</code>s, Cartesian product of the inputs (\|N\| x \|M\|). Note that, in many cases, a join that shows up as a cross join in the RAW PLAN will actually be turned into an inner join in the OPTIMIZED PLAN, by making use of an equality WHERE condition. For other join types, depends on the join order and facts about the joined collections. **Uses memory:** ✅ Uses memory proportional to the input sizes, unless <a href="/transform-data/optimization/#join" >the inputs have appropriate indexes</a>. Certain joins with more than 2 inputs use additional memory, see details in the optimized plan. | <code>InnerJoin (#0 = #2)</code> |
-| **Reduce** | Groups the input rows by some scalar expressions, reduces each group using some aggregate functions, and produces rows containing the group key and aggregate outputs.  In the case where the group key is empty and the input is empty, returns a single row with the aggregate functions applied to the empty input collection.  **Can increase data size:** No **Uses memory:** ✅ <code>SUM</code>, <code>COUNT</code>, and most other aggregations use a moderate amount of memory (proportional either to twice the output size or to input size + output size). <code>MIN</code> and <code>MAX</code> aggregates can use significantly more memory. This can be improved by including group size hints in the query, see <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A hint shrinks the tower of intermediate arrangements, and shows in the optimized plan as <code>exp_group_size</code> and in the physical plan as the <code>buckets</code> list. The input rows stay arranged either way, so a hint cannot bring a <code>MIN</code> or <code>MAX</code> below the size of its input. | <code>Reduce group_by=[#0] aggregates=[max((#0 * #1))]</code> |
+| **Reduce** | Groups the input rows by some scalar expressions, reduces each group using some aggregate functions, and produces rows containing the group key and aggregate outputs.  In the case where the group key is empty and the input is empty, returns a single row with the aggregate functions applied to the empty input collection.  **Can increase data size:** No **Uses memory:** ✅ <code>SUM</code>, <code>COUNT</code>, and most other aggregations use a moderate amount of memory (proportional either to twice the output size or to input size + output size). <code>MIN</code> and <code>MAX</code> aggregates can use significantly more memory. This can be improved by including group size hints in the query, see <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A hint shrinks the tower of intermediate arrangements, and shows in the optimized plan as <code>exp_group_size</code> and in the physical plan as the <code>buckets</code> list. The input rows stay arranged either way, so a hint cannot bring a <code>MIN</code> or <code>MAX</code> below the size of its input. | <code>Reduce group_by=[#0] aggregates=[max((#0 * #1))]</code> |
 | **Distinct** | Removes duplicate copies of input rows.  **Can increase data size:** No **Uses memory:** ✅ Uses memory proportional to twice the output size. | <code>Distinct</code> |
-| **TopK** | Groups the input rows by some scalar expressions, sorts each group by the ordering expressions, removes the top <code>offset</code> rows in each group, and returns the next <code>limit</code> rows.  **Can increase data size:** No **Uses memory:** ✅ Can use significant amount as the operator can significantly overestimate the group sizes. Consult <a href="/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>LIMIT INPUT GROUP SIZE</code> hint shows in the optimized plan as <code>exp_group_size</code>; the physical plan does not display it. | <code>TopK order_by=[#1 asc nulls_last, #0 desc nulls_first] limit=5</code> |
+| **TopK** | Groups the input rows by some scalar expressions, sorts each group by the ordering expressions, removes the top <code>offset</code> rows in each group, and returns the next <code>limit</code> rows.  **Can increase data size:** No **Uses memory:** ✅ Can use significant amount as the operator can significantly overestimate the group sizes. Consult <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>LIMIT INPUT GROUP SIZE</code> hint shows in the optimized plan as <code>exp_group_size</code>; the physical plan does not display it. | <code>TopK order_by=[#1 asc nulls_last, #0 desc nulls_first] limit=5</code> |
 | **Negate** | Negates the row counts of the input. This is usually used in combination with union to remove rows from the other union input.  **Can increase data size:** No **Uses memory:** No | <code>Negate</code> |
 | **Threshold** | Removes any rows with negative counts.  **Can increase data size:** No **Uses memory:** ✅ Arranges both its input and its output by the whole row, so it uses memory proportional to the input size plus the output size. | <code>Threshold</code> |
 | **Union** | Sums the counts of each row of all inputs. (Corresponds to <code>UNION ALL</code> rather than <code>UNION</code>/<code>UNION DISTINCT</code>.)  **Can increase data size:** No **Uses memory:** ✅ A plain <code>Union</code> uses no memory of its own. A <code>Union</code> whose output must be consolidated holds updates while consolidating them, which shows as a memory spike largely at hydration time. | <code>Union</code> |
@@ -10507,6 +10513,108 @@ The privileges required to execute this statement are:
 
 - `USAGE` privileges on the schemas that all relations in the explainee are
   contained in.
+
+---
+
+## Explain plan operators
+
+Materialize offers several output formats for [`EXPLAIN
+PLAN`](/sql/explain-plan/) and debugging. LIR plans as rendered in
+[`mz_introspection.mz_lir_mapping`](/sql/system-catalog/mz_introspection/#mz_lir_mapping)
+are deliberately succinct, while the plans in other formats give more detail.
+
+The decorrelated and optimized plans from `EXPLAIN DECORRELATED PLAN
+FOR ...`, `EXPLAIN LOCALLY OPTIMIZED PLAN FOR ...`, and `EXPLAIN
+OPTIMIZED PLAN FOR ...` are in a mid-level representation that is
+closer to LIR than SQL. The raw plans from `EXPLAIN RAW PLAN FOR ...`
+are closer to SQL (and therefore less indicative of how the query will
+actually run).
+
+**In fully optimized physical (LIR) plans (Default):**
+The following table lists the operators that are available in the LIR plan.
+
+- For those operators that require memory to maintain intermediate state, **Uses memory** is marked with **Yes**.
+- For those operators that expand the data size (either rows or columns), **Can increase data size** is marked with **Yes**.| Operator | Description | Example |
+| --- | --- | --- |
+| **Constant** | Always produces the same collection of rows.  **Can increase data size:** No **Uses memory:** No | <code>→Constant (2 rows)</code> |
+| **Stream, Arranged, Index Lookup, Read** | <p>Produces rows from either an existing relation (source/view/materialized view/table) or from a previous CTE in the same plan. A <code>Fused with Child Map/Filter/Project</code> line above this operator means that <code>Map/Filter/Project</code> runs inside it.</p> <p>There are four types of <code>Get</code>.</p> <ol> <li> <p><code>Stream</code> indicates that the results are not <a href="/fundamentals/concepts/arrangements/#arrangements" >arranged</a> in memory and will be streamed directly.</p> </li> <li> <p><code>Arranged</code> indicates that the results are <a href="/fundamentals/concepts/arrangements/#arrangements" >arranged</a> in memory.</p> </li> <li> <p><code>Index Lookup</code> indicates the results will be <em>looked up</em> in an existing <a href="/fundamentals/concepts/arrangements/#arrangements" >arrangement</a>.</p> </li> <li> <p><code>Read</code> indicates that the results are unarranged, and will be processed as they arrive.</p> </li> </ol>   **Can increase data size:** No **Uses memory:** No | <code>Arranged materialize.public.t</code> |
+| **Map/Filter/Project** | <p>Computes new columns (maps), filters columns, and projects away columns. Works row-by-row. Maps and filters will be printed, but projects will not.</p> <p>A <code>Map/Filter/Project</code> fused into a neighboring operator is printed as <code>Fused with Child Map/Filter/Project</code> above that operator, or as <code>Fused with Parent Map/Filter/Project</code> below an <code>Arrange</code>, and runs inside that operator rather than on its own.</p> <p>A temporal filter, one whose predicate uses <a href="/sql/functions/now_and_mz_now/" ><code>mz_now()</code></a>, also schedules a retraction of each row for the moment it stops satisfying the predicate. Until then, the operator downstream holds that pending retraction in memory, one per live row.</p>   **Can increase data size:** Each row may have more data, from the <code>Map</code>. Each row may also have less data, from the <code>Project</code>. There may be fewer rows, from the <code>Filter</code>. **Uses memory:** No | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="k">Map</span><span class="o">/</span><span class="k">Filter</span><span class="o">/</span><span class="n">Project</span> </span></span><span class="line"><span class="cl">  <span class="k">Filter</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">}</span> <span class="o">&lt;</span> <span class="mf">7</span><span class="p">)</span> </span></span><span class="line"><span class="cl">  <span class="k">Map</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">}</span> <span class="o">+</span> <span class="o">#</span><span class="mf">1</span><span class="p">{</span><span class="n">b</span><span class="p">})</span> </span></span></code></pre></div> |
+| **Table Function** | <p>Appends the result of some (one-to-many) <a href="/sql/functions/#table-functions" >table function</a> to each row in the input.</p> <p>A <code>Fused with Child Table Function unnest_list</code> line above a <code>Non-incremental GroupAggregate</code> means the <code>unnest_list</code> call runs inside that aggregation, which is part of how window functions are compiled to dataflows.</p> <p>A <code>Fused with Child Map/Filter/Project</code> line above this operator means that <code>Map/Filter/Project</code> runs inside it.</p>   **Can increase data size:** Depends on the <a href="/sql/functions/#table-functions" >table function</a> used. **Uses memory:** No | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="k">Table</span> <span class="k">Function</span> <span class="n">generate_series</span><span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">},</span> <span class="o">#</span><span class="mf">1</span><span class="p">{</span><span class="n">b</span><span class="p">},</span> <span class="mf">1</span><span class="p">)</span> </span></span><span class="line"><span class="cl">  <span class="k">Input</span> <span class="k">key</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">})</span> </span></span></code></pre></div> |
+| **Differential Join, Delta Join** | <p>Both join operators indicate the join ordering selected.</p> <p>Returns combinations of rows from each input whenever some equality predicates are <code>true</code>.</p> <p>Joins will indicate the join order of their children, starting from 0. For example, <code>Differential Join %1 » %0</code> will join its second child into its first.</p> <p>The <a href="/transform-data/optimization/#join" >two joins differ in performance characteristics</a>.</p> <p><code>Differential Cross Join</code> and <code>Delta Cross Join</code> mark a join with a stage that has no equality keys. <code>One-Shot Delta Join</code> marks the single-path plan of a one-shot <code>SELECT</code>; an index or materialized view over the same query uses the multi-path <code>Delta Join</code>.</p>   **Can increase data size:** Depends on the join order and facts about the joined collections. **Uses memory:** ✅ Uses memory for 3-way or more differential joins. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Differential</span> <span class="k">Join</span> <span class="o">%</span><span class="mf">1</span> <span class="err">»</span> <span class="o">%</span><span class="mf">0</span> </span></span><span class="line"><span class="cl">  <span class="k">Join</span> <span class="n">stage</span> <span class="o">%</span><span class="mf">0</span><span class="p">:</span> <span class="n">Lookup</span> <span class="k">key</span> <span class="o">#</span><span class="mf">0</span><span class="p">{</span><span class="n">a</span><span class="p">}</span> <span class="k">in</span> <span class="o">%</span><span class="mf">0</span> </span></span></code></pre></div> |
+| **GroupAggregate** | <p>Groups the input rows by some scalar expressions, reduces each group using some aggregate functions, and produces rows containing the group key and aggregate outputs.</p> <p>There are four types of <code>GroupAggregate</code>, ordered by increasing complexity:</p> <ol> <li> <p><code>Distinct GroupAggregate</code> corresponds to the SQL <code>DISTINCT</code> operator.</p> </li> <li> <p><code>Accumulable GroupAggregate</code> (e.g., <code>SUM</code>, <code>COUNT</code>) corresponds to several easy to implement aggregations that can be executed efficiently.</p> </li> <li> <p>Hierarchical aggregations (e.g., <code>MIN</code>, <code>MAX</code>) require a tower of arrangements. They are printed as <code>Bucketed Hierarchical GroupAggregate</code>, or as the more efficient <code>Monotonic GroupAggregate</code> when the input never retracts data. Bucketed ones may benefit from a hint; <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" >see <code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>Consolidating</code> prefix means the operator consolidates its input first, which uses memory while the input is being consolidated, largely at hydration time.</p> </li> <li> <p><code>Non-incremental GroupAggregate</code> (e.g., window functions, <code>list_agg</code>) corresponds to a single non-incremental aggregation. These are the most computationally intensive reductions.</p> </li> </ol> <p>A query that mixes aggregations of different types is planned as one <code>GroupAggregate</code> per type, joined together on the group key.</p> <p>A <code>Temporally-Bucketed</code> prefix means the input carries future-dated updates from a temporal filter.</p> <p>A <code>Fused with Child Map/Filter/Project</code> line above this operator means that <code>Map/Filter/Project</code> runs inside it.</p>   **Can increase data size:** No **Uses memory:** ✅ <code>Distinct</code> and <code>Accumulable</code> aggregates use a moderate amount of memory (proportional to twice the output size). <code>MIN</code> and <code>MAX</code> aggregates can use significantly more memory. This can be improved by including group size hints in the query, see <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A hint shrinks the tower of intermediate arrangements (the <code>buckets</code> list of a <code>Bucketed Hierarchical GroupAggregate</code>); the input rows stay arranged either way, so a hint cannot bring a <code>MIN</code> or <code>MAX</code> below the size of its input. <code>Non-incremental</code> aggregates use memory proportional to the input + output size. A mix of aggregation types uses the memory of each <code>GroupAggregate</code> plus the arrangements of the join that combines them. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Accumulable</span> <span class="n">GroupAggregate</span> </span></span><span class="line"><span class="cl">  <span class="n">Simple</span> <span class="n">aggregates</span><span class="p">:</span> <span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span> </span></span><span class="line"><span class="cl">  <span class="n">Post</span><span class="o">-</span><span class="n">process</span> <span class="k">Map</span><span class="o">/</span><span class="k">Filter</span><span class="o">/</span><span class="n">Project</span> </span></span><span class="line"><span class="cl">    <span class="k">Filter</span><span class="p">:</span> <span class="p">(</span><span class="o">#</span><span class="mf">0</span> <span class="o">&gt;</span> <span class="mf">1</span><span class="p">)</span> </span></span></code></pre></div> |
+| **TopK** | <p>Groups the input rows, sorts them according to some ordering, and returns at most <code>K</code> rows at some offset from the top of the list, where <code>K</code> is some (possibly computed) limit.</p> <p>There are three types of <code>TopK</code>. Two are special cased for monotonic inputs (i.e., inputs which never retract data).</p> <ol> <li><code>Monotonic Top1</code>.</li> <li><code>Monotonic TopK</code>, which may give an expression indicating the limit.</li> <li><code>Non-monotonic TopK</code>, a generic <code>TopK</code> plan.</li> </ol> <p>Each version of the <code>TopK</code> operator may include grouping, ordering, and limit directives. A <code>Consolidating</code> prefix means the operator consolidates its input first, and a <code>Temporally-Bucketed</code> prefix means the input carries future-dated updates from a temporal filter.</p>   **Can increase data size:** No **Uses memory:** ✅ <code>Monotonic Top1</code> and <code>Monotonic TopK</code> use a moderate amount of memory. <code>Non-monotonic TopK</code> uses significantly more memory as the operator can significantly overestimate the group sizes. Consult <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>LIMIT INPUT GROUP SIZE</code> hint is not displayed in this plan; the optimized plan shows it as <code>exp_group_size</code>. | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Consolidating</span> <span class="n">Monotonic</span> <span class="n">TopK</span> </span></span><span class="line"><span class="cl">  <span class="k">Order</span> <span class="k">By</span> <span class="o">#</span><span class="mf">1</span> <span class="k">asc</span> <span class="n">nulls_last</span><span class="p">,</span> <span class="o">#</span><span class="mf">0</span> <span class="k">desc</span> <span class="n">nulls_first</span> </span></span><span class="line"><span class="cl">  <span class="k">Limit</span> <span class="mf">5</span> </span></span></code></pre></div> |
+| **Negate Diffs** | Negates the row counts of the input. This is usually used in combination with union to remove rows from the other union input.  **Can increase data size:** No **Uses memory:** No | <code>→Negate Diffs</code> |
+| **Threshold Diffs** | Removes any rows with negative counts.  **Can increase data size:** No **Uses memory:** ✅ Arranges both its input and its output by the whole row, so it uses memory proportional to the input size plus the output size. | <code>→Threshold Diffs</code> |
+| **Union** | Combines its inputs into a unified output, emitting one row for each row on any input. (Corresponds to <code>UNION ALL</code> rather than <code>UNION</code>/<code>UNION DISTINCT</code>.)  **Can increase data size:** No **Uses memory:** ✅ A <code>Consolidating Union</code> will make moderate use of memory, particularly at hydration time. A <code>Union</code> that is not <code>Consolidating</code> will not consume memory. | <code>→Consolidating Union</code> |
+| **Arrange** | Indicates a point that will become an <a href="/fundamentals/concepts/arrangements/#arrangements" >arrangement</a> in the dataflow engine, i.e., it will consume memory to cache results.  **Can increase data size:** No **Uses memory:** ✅ Uses memory proportional to the input size. Note that in the LIR / physical plan, <code>Arrange</code>/<code>ArrangeBy</code> almost always means that an arrangement will actually be created. (This is in contrast to the &ldquo;optimized&rdquo; plan, where an <code>ArrangeBy</code> being present in the plan often does not mean that an arrangement will actually be created.) | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="err">→</span><span class="n">Arrange</span> </span></span><span class="line"><span class="cl">    <span class="k">Keys</span><span class="p">:</span> <span class="mf">1</span> <span class="k">arrangement</span> <span class="n">available</span><span class="p">,</span> <span class="n">plus</span> <span class="k">raw</span> <span class="n">stream</span> </span></span><span class="line"><span class="cl">      <span class="k">Arrangement</span> <span class="mf">0</span><span class="p">:</span> <span class="o">#</span><span class="mf">0</span> </span></span></code></pre></div> |
+| **Unarranged Raw Stream** | Indicates a point where data will be streamed (even if it is somehow already arranged).  **Can increase data size:** No **Uses memory:** No | <code>→Unarranged Raw Stream</code> |
+| **With ... Return ...** | Introduces CTEs, i.e., makes it possible for sub-plans to be consumed multiple times by downstream operators.  **Can increase data size:** No **Uses memory:** No | <a href="/sql/explain-plan/#reading-plans" >See Reading plans</a> |
+**Notes:**
+- **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
+- **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
+
+**In decorrelated and optimized plans:**
+The following table lists the operators that are available in the optimized plan.
+
+- For those operators that require memory to maintain intermediate state, **Uses memory** is marked with **Yes**.
+- For those operators that expand the data size (either rows or columns), **Can increase data size** is marked with **Yes**.| Operator | Description | Example |
+| --- | --- | --- |
+| **Constant** | Always produces the same collection of rows.  **Can increase data size:** No **Uses memory:** No | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="n">Constant</span> </span></span><span class="line"><span class="cl"><span class="o">-</span> <span class="p">((</span><span class="mf">1</span><span class="p">,</span> <span class="mf">2</span><span class="p">)</span> <span class="n">x</span> <span class="mf">2</span><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="o">-</span> <span class="p">(</span><span class="mf">3</span><span class="p">,</span> <span class="mf">4</span><span class="p">)</span> </span></span></code></pre></div> |
+| **Get** | Produces rows from either an existing relation (source/view/materialized view/table) or from a previous CTE in the same plan.  **Can increase data size:** No **Uses memory:** No | <code>Get materialize.public.ordered</code> |
+| **Project** | Produces a subset of the <a href="/sql/explain-plan/#explain-plan-columns" >columns</a> in the input rows. See also <a href="/sql/explain-plan/#explain-plan-columns" >column numbering</a>.  **Can increase data size:** No **Uses memory:** No | <code>Project (#2, #3)</code> |
+| **Map** | Appends the results of some scalar expressions to each row in the input.  **Can increase data size:** Each row has more data (i.e., longer rows but same number of rows). **Uses memory:** No | <code>Map (((#1 * 10000000dec) / #2) * 1000dec)</code> |
+| **FlatMap** | Appends the result of some (one-to-many) <a href="/sql/functions/#table-functions" >table function</a> to each row in the input.  **Can increase data size:** Depends on the <a href="/sql/functions/#table-functions" >table function</a> used. **Uses memory:** No | <code>FlatMap jsonb_foreach(#3)</code> |
+| **Filter** | <p>Removes rows of the input for which some scalar predicates return <code>false</code>.</p> <p>A temporal filter, one whose predicate uses <a href="/sql/functions/now_and_mz_now/" ><code>mz_now()</code></a>, also schedules a retraction of each row for the moment it stops satisfying the predicate. Until then, the operator downstream of the filter holds that pending retraction in memory, one per live row.</p>   **Can increase data size:** No **Uses memory:** No | <code>Filter (#20 &lt; #21)</code> |
+| **Join** | Returns combinations of rows from each input whenever some equality predicates are <code>true</code>.  **Can increase data size:** Depends on the join order and facts about the joined collections. **Uses memory:** ✅ The <code>Join</code> operator itself uses memory only for <code>type=differential</code> with more than 2 inputs. However, <code>Join</code> operators need <a href="/fundamentals/concepts/arrangements/#arrangements" >arrangements</a> on their inputs (shown by the <code>ArrangeBy</code> operator). These arrangements use memory proportional to the input sizes. If an input has an <a href="/transform-data/optimization/#join" >appropriate index</a>, then the arrangement of the index will be reused. | <code>Join on=(#1 = #2) type=delta</code> |
+| **CrossJoin** | An alias for a <code>Join</code> with an empty predicate (emits all combinations). Note that not all cross joins are marked as <code>CrossJoin</code>: In a join with more than 2 inputs, it can happen that there is a cross join between some of the inputs. You can recognize this case by <code>ArrangeBy</code> operators having empty keys, i.e., <code>ArrangeBy keys=[[]]</code>.  **Can increase data size:** Cartesian product of the inputs (\|N\| x \|M\|). **Uses memory:** ✅ Uses memory for 3-way or more differential joins. | <code>CrossJoin type=differential</code> |
+| **Reduce** | Groups the input rows by some scalar expressions, reduces each group using some aggregate functions, and produces rows containing the group key and aggregate outputs.  **Can increase data size:** No **Uses memory:** ✅ <code>SUM</code>, <code>COUNT</code>, and most other aggregations use a moderate amount of memory (proportional either to twice the output size or to input size + output size). <code>MIN</code> and <code>MAX</code> aggregates can use significantly more memory. This can be improved by including group size hints in the query, see <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A hint shrinks the tower of intermediate arrangements, and shows in the optimized plan as <code>exp_group_size</code> and in the physical plan as the <code>buckets</code> list. The input rows stay arranged either way, so a hint cannot bring a <code>MIN</code> or <code>MAX</code> below the size of its input. | <code>Reduce group_by=[#0] aggregates=[max((#0 * #1))]</code> |
+| **Distinct** | Alias for a <code>Reduce</code> with an empty aggregate list.  **Can increase data size:** No **Uses memory:** ✅ Uses memory proportional to twice the output size. | <code>Distinct</code> |
+| **TopK** | Groups the input rows by some scalar expressions, sorts each group by the ordering expressions, removes the top <code>offset</code> rows in each group, and returns the next <code>limit</code> rows.  **Can increase data size:** No **Uses memory:** ✅ Can use significant amount as the operator can significantly overestimate the group sizes. Consult <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>LIMIT INPUT GROUP SIZE</code> hint shows in the optimized plan as <code>exp_group_size</code>; the physical plan does not display it. | <code>TopK order_by=[#1 asc nulls_last, #0 desc nulls_first] limit=5</code> |
+| **Negate** | Negates the row counts of the input. This is usually used in combination with union to remove rows from the other union input.  **Can increase data size:** No **Uses memory:** No | <code>Negate</code> |
+| **Threshold** | Removes any rows with negative counts.  **Can increase data size:** No **Uses memory:** ✅ Arranges both its input and its output by the whole row, so it uses memory proportional to the input size plus the output size. | <code>Threshold</code> |
+| **Union** | Sums the counts of each row of all inputs. (Corresponds to <code>UNION ALL</code> rather than <code>UNION</code>/<code>UNION DISTINCT</code>.)  **Can increase data size:** No **Uses memory:** ✅ A plain <code>Union</code> uses no memory of its own. A <code>Union</code> whose output must be consolidated holds updates while consolidating them, which shows as a memory spike largely at hydration time. | <code>Union</code> |
+| **ArrangeBy** | Indicates a point that will become an <a href="/fundamentals/concepts/arrangements/#arrangements" >arrangement</a> in the dataflow engine (each <code>keys</code> element will be a different arrangement). Note that if an appropriate index already exists on the input or the output of the previous operator is already arranged with a key that is also requested here, then this operator will just pass on that existing arrangement instead of creating a new one.  **Can increase data size:** No **Uses memory:** ✅ Depends. If arrangements need to be created, they use memory proportional to the input size. | <code>ArrangeBy keys=[[#0]]</code> |
+| **With ... Return ...** | Introduces CTEs, i.e., makes it possible for sub-plans to be consumed multiple times by downstream operators.  **Can increase data size:** No **Uses memory:** No | <a href="/sql/explain-plan/#reading-plans" >See Reading plans</a> |
+**Notes:**
+- **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
+- **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
+
+**In raw plans:**
+The following table lists the operators that are available in the raw plan.
+
+- For those operators that require memory to maintain intermediate state, **Uses memory** is marked with **Yes**.
+- For those operators that expand the data size (either rows or columns), **Can increase data size** is marked with **Yes**.| Operator | Description | Example |
+| --- | --- | --- |
+| **Constant** | Always produces the same collection of rows.  **Can increase data size:** No **Uses memory:** No | <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-mzsql" data-lang="mzsql"><span class="line"><span class="cl"><span class="n">Constant</span> </span></span><span class="line"><span class="cl"><span class="o">-</span> <span class="p">((</span><span class="mf">1</span><span class="p">,</span> <span class="mf">2</span><span class="p">)</span> <span class="n">x</span> <span class="mf">2</span><span class="p">)</span> </span></span><span class="line"><span class="cl"><span class="o">-</span> <span class="p">(</span><span class="mf">3</span><span class="p">,</span> <span class="mf">4</span><span class="p">)</span> </span></span></code></pre></div> |
+| **Get** | Produces rows from either an existing relation (source/view/materialized view/table) or from a previous CTE in the same plan.  **Can increase data size:** No **Uses memory:** No | <code>Get materialize.public.ordered</code> |
+| **Project** | Produces a subset of the <a href="/sql/explain-plan/#explain-plan-columns" >columns</a> in the input rows. See also <a href="/sql/explain-plan/#explain-plan-columns" >column numbering</a>.  **Can increase data size:** No **Uses memory:** No | <code>Project (#2, #3)</code> |
+| **Map** | Appends the results of some scalar expressions to each row in the input.  **Can increase data size:** Each row has more data (i.e., longer rows but same number of rows). **Uses memory:** No | <code>Map (((#1 * 10000000dec) / #2) * 1000dec)</code> |
+| **CallTable** | Appends the result of some (one-to-many) <a href="/sql/functions/#table-functions" >table function</a> to each row in the input.  **Can increase data size:** Depends on the <a href="/sql/functions/#table-functions" >table function</a> used. **Uses memory:** No | <code>CallTable generate_series(1, 7, 1)</code> |
+| **Filter** | <p>Removes rows of the input for which some scalar predicates return <code>false</code>.</p> <p>A temporal filter, one whose predicate uses <a href="/sql/functions/now_and_mz_now/" ><code>mz_now()</code></a>, also schedules a retraction of each row for the moment it stops satisfying the predicate. Until then, the operator downstream of the filter holds that pending retraction in memory, one per live row.</p>   **Can increase data size:** No **Uses memory:** No | <code>Filter (#20 &lt; #21)</code> |
+| **~Join** | Performs one of <code>INNER</code> / <code>LEFT</code> / <code>RIGHT</code> / <code>FULL OUTER</code> / <code>CROSS</code> join on the two inputs, using the given predicate.  **Can increase data size:** For <code>CrossJoin</code>s, Cartesian product of the inputs (\|N\| x \|M\|). Note that, in many cases, a join that shows up as a cross join in the RAW PLAN will actually be turned into an inner join in the OPTIMIZED PLAN, by making use of an equality WHERE condition. For other join types, depends on the join order and facts about the joined collections. **Uses memory:** ✅ Uses memory proportional to the input sizes, unless <a href="/transform-data/optimization/#join" >the inputs have appropriate indexes</a>. Certain joins with more than 2 inputs use additional memory, see details in the optimized plan. | <code>InnerJoin (#0 = #2)</code> |
+| **Reduce** | Groups the input rows by some scalar expressions, reduces each group using some aggregate functions, and produces rows containing the group key and aggregate outputs.  In the case where the group key is empty and the input is empty, returns a single row with the aggregate functions applied to the empty input collection.  **Can increase data size:** No **Uses memory:** ✅ <code>SUM</code>, <code>COUNT</code>, and most other aggregations use a moderate amount of memory (proportional either to twice the output size or to input size + output size). <code>MIN</code> and <code>MAX</code> aggregates can use significantly more memory. This can be improved by including group size hints in the query, see <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A hint shrinks the tower of intermediate arrangements, and shows in the optimized plan as <code>exp_group_size</code> and in the physical plan as the <code>buckets</code> list. The input rows stay arranged either way, so a hint cannot bring a <code>MIN</code> or <code>MAX</code> below the size of its input. | <code>Reduce group_by=[#0] aggregates=[max((#0 * #1))]</code> |
+| **Distinct** | Removes duplicate copies of input rows.  **Can increase data size:** No **Uses memory:** ✅ Uses memory proportional to twice the output size. | <code>Distinct</code> |
+| **TopK** | Groups the input rows by some scalar expressions, sorts each group by the ordering expressions, removes the top <code>offset</code> rows in each group, and returns the next <code>limit</code> rows.  **Can increase data size:** No **Uses memory:** ✅ Can use significant amount as the operator can significantly overestimate the group sizes. Consult <a href="/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice" ><code>mz_introspection.mz_expected_group_size_advice</code></a>. A <code>LIMIT INPUT GROUP SIZE</code> hint shows in the optimized plan as <code>exp_group_size</code>; the physical plan does not display it. | <code>TopK order_by=[#1 asc nulls_last, #0 desc nulls_first] limit=5</code> |
+| **Negate** | Negates the row counts of the input. This is usually used in combination with union to remove rows from the other union input.  **Can increase data size:** No **Uses memory:** No | <code>Negate</code> |
+| **Threshold** | Removes any rows with negative counts.  **Can increase data size:** No **Uses memory:** ✅ Arranges both its input and its output by the whole row, so it uses memory proportional to the input size plus the output size. | <code>Threshold</code> |
+| **Union** | Sums the counts of each row of all inputs. (Corresponds to <code>UNION ALL</code> rather than <code>UNION</code>/<code>UNION DISTINCT</code>.)  **Can increase data size:** No **Uses memory:** ✅ A plain <code>Union</code> uses no memory of its own. A <code>Union</code> whose output must be consolidated holds updates while consolidating them, which shows as a memory spike largely at hydration time. | <code>Union</code> |
+| **With ... Return ...** | Introduces CTEs, i.e., makes it possible for sub-plans to be consumed multiple times by downstream operators.  **Can increase data size:** No **Uses memory:** No | <a href="/sql/explain-plan/#reading-plans" >See Reading plans</a> |
+**Notes:**
+- **Can increase data size:** Specifies whether the operator can increase the data size (can be the number of rows or the number of columns).
+- **Uses memory:** Specifies whether the operator use memory to maintain state for its inputs.
+
+Operators are sometimes marked as `Fused ...`. This indicates that the operator is fused with its input, i.e., the operator below it. That is, if you see a `Fused X` operator above a `Y` operator:
+
+```
+→Fused X
+  →Y
+```
+
+Then the `X` and `Y` operators will be combined into a single, more efficient operator.
+
+See also:
+
+- [`EXPLAIN PLAn`](/sql/explain-plan/)
 
 ---
 
@@ -11088,18 +11196,18 @@ GRANT CREATEDB ON SYSTEM TO source_owners;
 
 ## Useful views
 
-- [`mz_internal.mz_show_system_privileges`](/reference/system-catalog/mz_internal/#mz_show_system_privileges)
-- [`mz_internal.mz_show_my_system_privileges`](/reference/system-catalog/mz_internal/#mz_show_my_system_privileges)
-- [`mz_internal.mz_show_cluster_privileges`](/reference/system-catalog/mz_internal/#mz_show_cluster_privileges)
-- [`mz_internal.mz_show_my_cluster_privileges`](/reference/system-catalog/mz_internal/#mz_show_my_cluster_privileges)
-- [`mz_internal.mz_show_database_privileges`](/reference/system-catalog/mz_internal/#mz_show_database_privileges)
-- [`mz_internal.mz_show_my_database_privileges`](/reference/system-catalog/mz_internal/#mz_show_my_database_privileges)
-- [`mz_internal.mz_show_schema_privileges`](/reference/system-catalog/mz_internal/#mz_show_schema_privileges)
-- [`mz_internal.mz_show_my_schema_privileges`](/reference/system-catalog/mz_internal/#mz_show_my_schema_privileges)
-- [`mz_internal.mz_show_object_privileges`](/reference/system-catalog/mz_internal/#mz_show_object_privileges)
-- [`mz_internal.mz_show_my_object_privileges`](/reference/system-catalog/mz_internal/#mz_show_my_object_privileges)
-- [`mz_internal.mz_show_all_privileges`](/reference/system-catalog/mz_internal/#mz_show_all_privileges)
-- [`mz_internal.mz_show_all_my_privileges`](/reference/system-catalog/mz_internal/#mz_show_all_my_privileges)
+- [`mz_internal.mz_show_system_privileges`](/sql/system-catalog/mz_internal/#mz_show_system_privileges)
+- [`mz_internal.mz_show_my_system_privileges`](/sql/system-catalog/mz_internal/#mz_show_my_system_privileges)
+- [`mz_internal.mz_show_cluster_privileges`](/sql/system-catalog/mz_internal/#mz_show_cluster_privileges)
+- [`mz_internal.mz_show_my_cluster_privileges`](/sql/system-catalog/mz_internal/#mz_show_my_cluster_privileges)
+- [`mz_internal.mz_show_database_privileges`](/sql/system-catalog/mz_internal/#mz_show_database_privileges)
+- [`mz_internal.mz_show_my_database_privileges`](/sql/system-catalog/mz_internal/#mz_show_my_database_privileges)
+- [`mz_internal.mz_show_schema_privileges`](/sql/system-catalog/mz_internal/#mz_show_schema_privileges)
+- [`mz_internal.mz_show_my_schema_privileges`](/sql/system-catalog/mz_internal/#mz_show_my_schema_privileges)
+- [`mz_internal.mz_show_object_privileges`](/sql/system-catalog/mz_internal/#mz_show_object_privileges)
+- [`mz_internal.mz_show_my_object_privileges`](/sql/system-catalog/mz_internal/#mz_show_my_object_privileges)
+- [`mz_internal.mz_show_all_privileges`](/sql/system-catalog/mz_internal/#mz_show_all_privileges)
+- [`mz_internal.mz_show_all_my_privileges`](/sql/system-catalog/mz_internal/#mz_show_all_my_privileges)
 
 ## Related pages
 
@@ -11151,8 +11259,8 @@ The privileges required to execute this statement are:
 
 ## Useful views
 
-- [`mz_internal.mz_show_role_members`](/reference/system-catalog/mz_internal/#mz_show_role_members)
-- [`mz_internal.mz_show_my_role_members`](/reference/system-catalog/mz_internal/#mz_show_my_role_members)
+- [`mz_internal.mz_show_role_members`](/sql/system-catalog/mz_internal/#mz_show_role_members)
+- [`mz_internal.mz_show_my_role_members`](/sql/system-catalog/mz_internal/#mz_show_my_role_members)
 
 ## Related pages
 
@@ -11285,7 +11393,7 @@ the syntax errors that result are not always obvious.
 The current keywords are listed below.
 
 | | | | |
-|--|--|--|--||`ABORT` |`ACCESS` |`ACCOUNT` |`ACTION`||`ADD` |`ADDED` |`ADDRESS` |`ADDRESSES`||`AFTER` |`AGGREGATE` |`AGGREGATION` |`ALIGNED`||`ALL` |`ALTER` |`ANALYSE` |`ANALYSIS`||`ANALYZE` |`AND` |`ANY` |`APPEND`||`APPLY` |`ARITY` |`ARN` |`ARRANGED`||`ARRANGEMENT` |`ARRAY` |`AS` |`ASC`||`ASSERT` |`ASSUME` |`AT` |`AUCTION`||`AUTHORITY` |`AUTO` |`AVAILABILITY` |`AVRO`||`AWS` |`BATCH` |`BEGIN` |`BETWEEN`||`BIGINT` |`BILLED` |`BODY` |`BOOLEAN`||`BOTH` |`BPCHAR` |`BROKEN` |`BROKER`||`BROKERS` |`BY` |`BYTES` |`CANCELLATION`||`CAPTURE` |`CARDINALITY` |`CASCADE` |`CASE`||`CAST` |`CATALOG` |`CERTIFICATE` |`CHAIN`||`CHAINS` |`CHAR` |`CHARACTER` |`CHARACTERISTICS`||`CHECK` |`CLASS` |`CLIENT` |`CLOCK`||`CLOSE` |`CLUSTER` |`CLUSTERS` |`COALESCE`||`COLLATE` |`COLUMN` |`COLUMNS` |`COMMENT`||`COMMIT` |`COMMITTED` |`COMPACTION` |`COMPATIBILITY`||`COMPRESSION` |`COMPUTE` |`COMPUTECTL` |`CONFIG`||`CONFLUENT` |`CONNECTION` |`CONNECTIONS` |`CONSTRAINT`||`COPY` |`CORRELATED` |`COUNT` |`COUNTER`||`CPU` |`CREATE` |`CREATECLUSTER` |`CREATEDB`||`CREATENETWORKPOLICY` |`CREATEROLE` |`CREATION` |`CREDENTIAL`||`CROSS` |`CSE` |`CSV` |`CTE`||`CURRENT` |`CURSOR` |`DATABASE` |`DATABASES`||`DATUMS` |`DAY` |`DAYS` |`DEALLOCATE`||`DEBEZIUM` |`DEBUG` |`DEBUGGING` |`DEC`||`DECIMAL` |`DECLARE` |`DECODING` |`DECORRELATED`||`DEFAULT` |`DEFAULTS` |`DELEGATION` |`DELETE`||`DELIMITED` |`DELIMITER` |`DELTA` |`DESC`||`DETAILS` |`DIRECTION` |`DISCARD` |`DISK`||`DISTINCT` |`DOC` |`DOT` |`DOUBLE`||`DROP` |`DURATION` |`EAGER` |`ELEMENT`||`ELSE` |`ENABLE` |`END` |`ENDPOINT`||`ENFORCED` |`ENVELOPE` |`EQUIVALENCES` |`ERROR`||`ERRORS` |`ESCAPE` |`ESTIMATE` |`EVERY`||`EXCEPT` |`EXCLUDE` |`EXECUTE` |`EXISTS`||`EXPECTED` |`EXPERIMENTAL` |`EXPLAIN` |`EXPOSE`||`EXPRESSIONS` |`EXTERNAL` |`EXTRACT` |`FACTOR`||`FALSE` |`FAST` |`FEATURES` |`FETCH`||`FIELDS` |`FILE` |`FILES` |`FILTER`||`FIRST` |`FIXED` |`FIXPOINT` |`FLOAT`||`FOLLOWING` |`FOR` |`FOREIGN` |`FORMAT`||`FORWARD` |`FROM` |`FULL` |`FULLNAME`||`FUNCTION` |`FUSION` |`GCP` |`GENERATOR`||`GLUE` |`GRANT` |`GREATEST` |`GROUP`||`GROUPS` |`HAVING` |`HEADER` |`HEADERS`||`HINTS` |`HISTORY` |`HOLD` |`HOST`||`HOUR` |`HOURS` |`HUMANIZED` |`HYDRATION`||`ICEBERG` |`ID` |`IDENTIFIERS` |`IDS`||`IF` |`IGNORE` |`ILIKE` |`IMPLEMENTATIONS`||`IMPORTED` |`IN` |`INCLUDE` |`INDEX`||`INDEXES` |`INFO` |`INHERIT` |`INLINE`||`INNER` |`INPUT` |`INSERT` |`INSIGHTS`||`INSPECT` |`INSTANCE` |`INT` |`INTEGER`||`INTERNAL` |`INTERSECT` |`INTERVAL` |`INTO`||`INTROSPECTION` |`IS` |`ISNULL` |`ISOLATION`||`JOIN` |`JOINS` |`JSON` |`KAFKA`||`KEY` |`KEYS` |`LAST` |`LATERAL`||`LATEST` |`LEADING` |`LEAST` |`LEFT`||`LEGACY` |`LETREC` |`LEVEL` |`LIKE`||`LIMIT` |`LINEAR` |`LINGER` |`LIST`||`LOAD` |`LOCAL` |`LOCALLY` |`LOG`||`LOGICAL` |`LOGIN` |`LOWERING` |`MANAGED`||`MANUAL` |`MAP` |`MARKETING` |`MATCHING`||`MATERIALIZE` |`MATERIALIZED` |`MAX` |`MECHANISMS`||`MEMBERSHIP` |`MEMORY` |`MESSAGE` |`METADATA`||`METRIC` |`MINUTE` |`MINUTES` |`MOCK`||`MODE` |`MONTH` |`MONTHS` |`MUTUALLY`||`MYSQL` |`NAME` |`NAMES` |`NAMESPACE`||`NATURAL` |`NEGATIVE` |`NETWORK` |`NEW`||`NEXT` |`NFC` |`NFD` |`NFKC`||`NFKD` |`NO` |`NOCREATECLUSTER` |`NOCREATEDB`||`NOCREATEROLE` |`NODE` |`NOINHERIT` |`NOLOGIN`||`NON` |`NONE` |`NORMALIZE` |`NOSUPERUSER`||`NOT` |`NOTICE` |`NOTICES` |`NULL`||`NULLIF` |`NULLS` |`OAUTH2` |`OBJECTS`||`OF` |`OFFSET` |`ON` |`ONLY`||`OPERATOR` |`OPTIMIZED` |`OPTIMIZER` |`OPTIONS`||`OR` |`ORDER` |`ORDINALITY` |`OUTER`||`OVER` |`OWNED` |`OWNER` |`PARTITION`||`PARTITIONS` |`PASSWORD` |`PATH` |`PATTERN`||`PHYSICAL` |`PLAN` |`PLANS` |`POLICIES`||`POLICY` |`PORT` |`POSITION` |`POSTGRES`||`PRECEDING` |`PRECISION` |`PREFIX` |`PREPARE`||`PRIMARY` |`PRIORITIZE` |`PRIVATELINK` |`PRIVILEGES`||`PROGRESS` |`PROJECTION` |`PROTOBUF` |`PROTOCOL`||`PUBLIC` |`PUBLICATION` |`PUSHDOWN` |`QUALIFY`||`QUERY` |`QUOTE` |`RAISE` |`RANGE`||`RATE` |`RAW` |`READ` |`READY`||`REAL` |`REASSIGN` |`RECURSION` |`RECURSIVE`||`REDACTED` |`REDUCE` |`REFERENCE` |`REFERENCES`||`REFRESH` |`REGEX` |`REGION` |`REGISTRY`||`RELATION` |`RENAME` |`REOPTIMIZE` |`REPEATABLE`||`REPLACE` |`REPLACEMENT` |`REPLAN` |`REPLICA`||`REPLICAS` |`REPLICATION` |`RESET` |`RESPECT`||`RESTRICT` |`RETAIN` |`RETURN` |`RETURNING`||`REVOKE` |`RIGHT` |`ROLE` |`ROLES`||`ROLLBACK` |`ROTATE` |`ROUNDS` |`ROW`||`ROWS` |`RULES` |`SASL` |`SCALE`||`SCALING` |`SCHEDULE` |`SCHEMA` |`SCHEMAS`||`SCOPE` |`SECOND` |`SECONDS` |`SECRET`||`SECRETS` |`SECURITY` |`SEED` |`SELECT`||`SEQUENCES` |`SERIALIZABLE` |`SERVER` |`SERVICE`||`SESSION` |`SET` |`SHARD` |`SHOW`||`SINK` |`SINKS` |`SIZE` |`SKEW`||`SMALLINT` |`SNAPSHOT` |`SOME` |`SOURCE`||`SOURCES` |`SQL` |`SSH` |`SSL`||`START` |`STDIN` |`STDOUT` |`STORAGE`||`STORAGECTL` |`STRATEGY` |`STRICT` |`STRING`||`STRONG` |`SUBSCRIBE` |`SUBSOURCE` |`SUBSOURCES`||`SUBSTRING` |`SUBTREE` |`SUPERUSER` |`SWAP`||`SYNTAX` |`SYSTEM` |`TABLE` |`TABLES`||`TAIL` |`TEMP` |`TEMPORARY` |`TEST`||`TEXT` |`THEN` |`TICK` |`TIES`||`TIME` |`TIMEOUT` |`TIMESTAMP` |`TIMESTAMPTZ`||`TIMING` |`TO` |`TOKEN` |`TOPIC`||`TPCH` |`TRACE` |`TRAILING` |`TRANSACTION`||`TRANSACTIONAL` |`TRANSFORM` |`TRIM` |`TRUE`||`TUNNEL` |`TYPE` |`TYPES` |`UNBOUNDED`||`UNCOMMITTED` |`UNION` |`UNIQUE` |`UNIT`||`UNKNOWN` |`UNNEST` |`UNTIL` |`UP`||`UPDATE` |`UPSERT` |`URL` |`USAGE`||`USER` |`USERNAME` |`USERS` |`USING`||`VALIDATE` |`VALUE` |`VALUES` |`VARCHAR`||`VARIADIC` |`VARYING` |`VERBOSE` |`VERSION`||`VIEW` |`VIEWS` |`WAIT` |`WAREHOUSE`||`WARNING` |`WEBHOOK` |`WHEN` |`WHERE`||`WHILE` |`WINDOW` |`WIRE` |`WITH`||`WITHIN` |`WITHOUT` |`WORK` |`WORKERS`||`WORKLOAD` |`WRITE` |`YEAR` |`YEARS`||`ZONE` |`ZONES` |&nbsp; |&nbsp;|
+|--|--|--|--||`ABORT` |`ACCESS` |`ACCOUNT` |`ACTION`||`ADD` |`ADDED` |`ADDRESS` |`ADDRESSES`||`AFTER` |`AGGREGATE` |`AGGREGATION` |`ALIGNED`||`ALL` |`ALTER` |`ANALYSE` |`ANALYSIS`||`ANALYZE` |`AND` |`ANY` |`APPEND`||`APPLY` |`ARITY` |`ARN` |`ARRANGED`||`ARRANGEMENT` |`ARRAY` |`AS` |`ASC`||`ASSERT` |`ASSUME` |`AT` |`AUCTION`||`AUTHORITY` |`AUTO` |`AVAILABILITY` |`AVRO`||`AWS` |`BATCH` |`BEGIN` |`BETWEEN`||`BIGINT` |`BILLED` |`BODY` |`BOOLEAN`||`BOTH` |`BPCHAR` |`BROKEN` |`BROKER`||`BROKERS` |`BY` |`BYTES` |`CANCELLATION`||`CAPTURE` |`CARDINALITY` |`CASCADE` |`CASE`||`CAST` |`CATALOG` |`CERTIFICATE` |`CHAIN`||`CHAINS` |`CHAR` |`CHARACTER` |`CHARACTERISTICS`||`CHECK` |`CLASS` |`CLIENT` |`CLOCK`||`CLOSE` |`CLUSTER` |`CLUSTERS` |`COALESCE`||`COLLATE` |`COLUMN` |`COLUMNS` |`COMMENT`||`COMMIT` |`COMMITTED` |`COMPACTION` |`COMPATIBILITY`||`COMPRESSION` |`COMPUTE` |`COMPUTECTL` |`CONFIG`||`CONFLUENT` |`CONNECTION` |`CONNECTIONS` |`CONSTRAINT`||`CONSTRAINTS` |`COPY` |`CORRELATED` |`COUNT`||`COUNTER` |`CPU` |`CREATE` |`CREATECLUSTER`||`CREATEDB` |`CREATENETWORKPOLICY` |`CREATEROLE` |`CREATION`||`CREDENTIAL` |`CROSS` |`CSE` |`CSV`||`CTE` |`CURRENT` |`CURSOR` |`DATABASE`||`DATABASES` |`DATUMS` |`DAY` |`DAYS`||`DEALLOCATE` |`DEBEZIUM` |`DEBUG` |`DEBUGGING`||`DEC` |`DECIMAL` |`DECLARE` |`DECODING`||`DECORRELATED` |`DEFAULT` |`DEFAULTS` |`DELEGATION`||`DELETE` |`DELIMITED` |`DELIMITER` |`DELTA`||`DESC` |`DETAILS` |`DIRECTION` |`DISCARD`||`DISK` |`DISTINCT` |`DOC` |`DOT`||`DOUBLE` |`DROP` |`DURATION` |`EAGER`||`ELEMENT` |`ELSE` |`ENABLE` |`END`||`ENDPOINT` |`ENFORCED` |`ENVELOPE` |`EQUIVALENCES`||`ERROR` |`ERRORS` |`ESCAPE` |`ESTIMATE`||`EVERY` |`EXCEPT` |`EXCLUDE` |`EXECUTE`||`EXISTS` |`EXPECTED` |`EXPERIMENTAL` |`EXPLAIN`||`EXPOSE` |`EXPRESSIONS` |`EXTERNAL` |`EXTRACT`||`FACTOR` |`FALSE` |`FAST` |`FEATURES`||`FETCH` |`FIELDS` |`FILE` |`FILES`||`FILTER` |`FIRST` |`FIXED` |`FIXPOINT`||`FLOAT` |`FOLLOWING` |`FOR` |`FOREIGN`||`FORMAT` |`FORWARD` |`FROM` |`FULL`||`FULLNAME` |`FUNCTION` |`FUSION` |`GCP`||`GENERATOR` |`GLUE` |`GRANT` |`GREATEST`||`GROUP` |`GROUPS` |`HAVING` |`HEADER`||`HEADERS` |`HINTS` |`HISTORY` |`HOLD`||`HOST` |`HOUR` |`HOURS` |`HUMANIZED`||`HYDRATION` |`ICEBERG` |`ID` |`IDENTIFIERS`||`IDS` |`IF` |`IGNORE` |`ILIKE`||`IMPLEMENTATIONS` |`IMPORTED` |`IN` |`INCLUDE`||`INDEX` |`INDEXES` |`INFO` |`INHERIT`||`INLINE` |`INNER` |`INPUT` |`INSERT`||`INSIGHTS` |`INSPECT` |`INSTANCE` |`INT`||`INTEGER` |`INTERNAL` |`INTERSECT` |`INTERVAL`||`INTO` |`INTROSPECTION` |`IS` |`ISNULL`||`ISOLATION` |`JOIN` |`JOINS` |`JSON`||`KAFKA` |`KEY` |`KEYS` |`LAST`||`LATERAL` |`LATEST` |`LEADING` |`LEAST`||`LEFT` |`LEGACY` |`LETREC` |`LEVEL`||`LIKE` |`LIMIT` |`LINEAR` |`LINGER`||`LIST` |`LOAD` |`LOCAL` |`LOCALLY`||`LOG` |`LOGICAL` |`LOGIN` |`LOWERING`||`MANAGED` |`MANUAL` |`MAP` |`MARKETING`||`MATCHING` |`MATERIALIZE` |`MATERIALIZED` |`MAX`||`MECHANISMS` |`MEMBERSHIP` |`MEMORY` |`MESSAGE`||`METADATA` |`METRIC` |`MINUTE` |`MINUTES`||`MOCK` |`MODE` |`MONTH` |`MONTHS`||`MUTUALLY` |`MYSQL` |`NAME` |`NAMES`||`NAMESPACE` |`NATURAL` |`NEGATIVE` |`NETWORK`||`NEW` |`NEXT` |`NFC` |`NFD`||`NFKC` |`NFKD` |`NO` |`NOCREATECLUSTER`||`NOCREATEDB` |`NOCREATEROLE` |`NODE` |`NOINHERIT`||`NOLOGIN` |`NON` |`NONE` |`NORMALIZE`||`NOSUPERUSER` |`NOT` |`NOTICE` |`NOTICES`||`NULL` |`NULLIF` |`NULLS` |`OAUTH2`||`OBJECTS` |`OF` |`OFFSET` |`ON`||`ONLY` |`OPERATOR` |`OPTIMIZED` |`OPTIMIZER`||`OPTIONS` |`OR` |`ORDER` |`ORDINALITY`||`OUTER` |`OVER` |`OWNED` |`OWNER`||`PARTITION` |`PARTITIONS` |`PASSWORD` |`PATH`||`PATTERN` |`PHYSICAL` |`PLAN` |`PLANS`||`POLICIES` |`POLICY` |`PORT` |`POSITION`||`POSTGRES` |`PRECEDING` |`PRECISION` |`PREFIX`||`PREPARE` |`PRIMARY` |`PRIORITIZE` |`PRIVATELINK`||`PRIVILEGES` |`PROGRESS` |`PROJECTION` |`PROTOBUF`||`PROTOCOL` |`PROVIDER` |`PUBLIC` |`PUBLICATION`||`PUSHDOWN` |`QUALIFY` |`QUERY` |`QUOTE`||`RAISE` |`RANGE` |`RATE` |`RAW`||`READ` |`READY` |`REAL` |`REASSIGN`||`RECURSION` |`RECURSIVE` |`REDACTED` |`REDUCE`||`REFERENCE` |`REFERENCES` |`REFRESH` |`REGEX`||`REGION` |`REGISTRY` |`RELATION` |`RENAME`||`REOPTIMIZE` |`REPEATABLE` |`REPLACE` |`REPLACEMENT`||`REPLAN` |`REPLICA` |`REPLICAS` |`REPLICATION`||`RESET` |`RESPECT` |`RESTRICT` |`RETAIN`||`RETURN` |`RETURNING` |`REVOKE` |`RIGHT`||`ROLE` |`ROLES` |`ROLLBACK` |`ROTATE`||`ROUNDS` |`ROW` |`ROWS` |`RULES`||`SASL` |`SCALE` |`SCALING` |`SCHEDULE`||`SCHEMA` |`SCHEMAS` |`SCOPE` |`SECOND`||`SECONDS` |`SECRET` |`SECRETS` |`SECURITY`||`SEED` |`SELECT` |`SEQUENCES` |`SERIALIZABLE`||`SERVER` |`SERVICE` |`SESSION` |`SET`||`SHARD` |`SHOW` |`SINK` |`SINKS`||`SIZE` |`SKEW` |`SMALLINT` |`SNAPSHOT`||`SOME` |`SOURCE` |`SOURCES` |`SQL`||`SSH` |`SSL` |`START` |`STDIN`||`STDOUT` |`STORAGE` |`STORAGECTL` |`STRATEGY`||`STRICT` |`STRING` |`STRONG` |`SUBSCRIBE`||`SUBSOURCE` |`SUBSOURCES` |`SUBSTRING` |`SUBTREE`||`SUPERUSER` |`SWAP` |`SYNTAX` |`SYSTEM`||`TABLE` |`TABLES` |`TAIL` |`TEMP`||`TEMPORARY` |`TEST` |`TEXT` |`THEN`||`TICK` |`TIES` |`TIME` |`TIMEOUT`||`TIMESTAMP` |`TIMESTAMPTZ` |`TIMING` |`TO`||`TOKEN` |`TOPIC` |`TPCH` |`TRACE`||`TRAILING` |`TRANSACTION` |`TRANSACTIONAL` |`TRANSFORM`||`TRIM` |`TRUE` |`TUNNEL` |`TYPE`||`TYPES` |`UNBOUNDED` |`UNCOMMITTED` |`UNION`||`UNIQUE` |`UNIT` |`UNKNOWN` |`UNNEST`||`UNTIL` |`UP` |`UPDATE` |`UPSERT`||`URL` |`USAGE` |`USER` |`USERNAME`||`USERS` |`USING` |`VALIDATE` |`VALUE`||`VALUES` |`VARCHAR` |`VARIADIC` |`VARYING`||`VERBOSE` |`VERSION` |`VIEW` |`VIEWS`||`WAIT` |`WAREHOUSE` |`WARNING` |`WEBHOOK`||`WHEN` |`WHERE` |`WHILE` |`WINDOW`||`WIRE` |`WITH` |`WITHIN` |`WITHOUT`||`WORK` |`WORKERS` |`WORKLOAD` |`WRITE`||`YEAR` |`YEARS` |`ZONE` |`ZONES`|
 
 ---
 
@@ -11515,7 +11623,7 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/serve-results/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
 
 , `bounded staleness <duration>` (for example, `bounded staleness 5s`)
 
@@ -11566,8 +11674,8 @@ Name                                        | Default value             |  Descr
 `min_timestamp_interval`                    | `1s`                      | The lower bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval smaller than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
 `mz_version`                                | Version-dependent         | Shows the Materialize server version.                                                                                                                                  | No
 `network_policy`                            | `default`                 | The default network policy for the region. | Yes
-`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/reference/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
-`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/reference/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
+`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/serve-results/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
+`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/serve-results/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
 `server_version_num`                        | Version-dependent         | The PostgreSQL compatible server version as an integer.                                                                                                                | No
 `server_version`                            | Version-dependent         | The PostgreSQL compatible server version.                                                                                                                              | No
 `sql_safe_updates`                          | `false`                   | Boolean flag indicating whether to prohibit SQL statements that may be overly destructive.                                                                             | Yes
@@ -11872,18 +11980,18 @@ REVOKE CREATEDB ON SYSTEM FROM joe;
 
 ## Useful views
 
-- [`mz_internal.mz_show_system_privileges`](/reference/system-catalog/mz_internal/#mz_show_system_privileges)
-- [`mz_internal.mz_show_my_system_privileges`](/reference/system-catalog/mz_internal/#mz_show_my_system_privileges)
-- [`mz_internal.mz_show_cluster_privileges`](/reference/system-catalog/mz_internal/#mz_show_cluster_privileges)
-- [`mz_internal.mz_show_my_cluster_privileges`](/reference/system-catalog/mz_internal/#mz_show_my_cluster_privileges)
-- [`mz_internal.mz_show_database_privileges`](/reference/system-catalog/mz_internal/#mz_show_database_privileges)
-- [`mz_internal.mz_show_my_database_privileges`](/reference/system-catalog/mz_internal/#mz_show_my_database_privileges)
-- [`mz_internal.mz_show_schema_privileges`](/reference/system-catalog/mz_internal/#mz_show_schema_privileges)
-- [`mz_internal.mz_show_my_schema_privileges`](/reference/system-catalog/mz_internal/#mz_show_my_schema_privileges)
-- [`mz_internal.mz_show_object_privileges`](/reference/system-catalog/mz_internal/#mz_show_object_privileges)
-- [`mz_internal.mz_show_my_object_privileges`](/reference/system-catalog/mz_internal/#mz_show_my_object_privileges)
-- [`mz_internal.mz_show_all_privileges`](/reference/system-catalog/mz_internal/#mz_show_all_privileges)
-- [`mz_internal.mz_show_all_my_privileges`](/reference/system-catalog/mz_internal/#mz_show_all_my_privileges)
+- [`mz_internal.mz_show_system_privileges`](/sql/system-catalog/mz_internal/#mz_show_system_privileges)
+- [`mz_internal.mz_show_my_system_privileges`](/sql/system-catalog/mz_internal/#mz_show_my_system_privileges)
+- [`mz_internal.mz_show_cluster_privileges`](/sql/system-catalog/mz_internal/#mz_show_cluster_privileges)
+- [`mz_internal.mz_show_my_cluster_privileges`](/sql/system-catalog/mz_internal/#mz_show_my_cluster_privileges)
+- [`mz_internal.mz_show_database_privileges`](/sql/system-catalog/mz_internal/#mz_show_database_privileges)
+- [`mz_internal.mz_show_my_database_privileges`](/sql/system-catalog/mz_internal/#mz_show_my_database_privileges)
+- [`mz_internal.mz_show_schema_privileges`](/sql/system-catalog/mz_internal/#mz_show_schema_privileges)
+- [`mz_internal.mz_show_my_schema_privileges`](/sql/system-catalog/mz_internal/#mz_show_my_schema_privileges)
+- [`mz_internal.mz_show_object_privileges`](/sql/system-catalog/mz_internal/#mz_show_object_privileges)
+- [`mz_internal.mz_show_my_object_privileges`](/sql/system-catalog/mz_internal/#mz_show_my_object_privileges)
+- [`mz_internal.mz_show_all_privileges`](/sql/system-catalog/mz_internal/#mz_show_all_privileges)
+- [`mz_internal.mz_show_all_my_privileges`](/sql/system-catalog/mz_internal/#mz_show_all_my_privileges)
 
 ## Related pages
 
@@ -11933,8 +12041,8 @@ The privileges required to execute this statement are:
 
 ## Useful views
 
-- [`mz_internal.mz_show_role_members`](/reference/system-catalog/mz_internal/#mz_show_role_members)
-- [`mz_internal.mz_show_my_role_members`](/reference/system-catalog/mz_internal/#mz_show_my_role_members)
+- [`mz_internal.mz_show_role_members`](/sql/system-catalog/mz_internal/#mz_show_role_members)
+- [`mz_internal.mz_show_my_role_members`](/sql/system-catalog/mz_internal/#mz_show_my_role_members)
 
 ## Related pages
 
@@ -12084,7 +12192,7 @@ Materialize also quickly returns results for queries that only filter, project, 
 and re-order data that is maintained by an index.
 
 Queries that can't simply read out from an index will create an ephemeral dataflow to compute
-the results. These dataflows are bound to the active [cluster](/concepts/clusters/),
+the results. These dataflows are bound to the active [cluster](/fundamentals/concepts/clusters/),
  which you can change using:
 
 ```mzsql
@@ -12137,7 +12245,7 @@ columns. If an unqualified name refers to both an input and output column,
 
 Because Materialize is wire-compatible with PostgreSQL, you can use any
 PostgreSQL connection pooler with Materialize. For example in using PgBouncer,
-see [Connection Pooling](/integrations/connection-pooling).
+see [Connection Pooling](/serve-results/connection-pooling).
 
 ## Examples
 
@@ -12276,7 +12384,7 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/serve-results/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
 
 , `bounded staleness <duration>` (for example, `bounded staleness 5s`)
 
@@ -12327,8 +12435,8 @@ Name                                        | Default value             |  Descr
 `min_timestamp_interval`                    | `1s`                      | The lower bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval smaller than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
 `mz_version`                                | Version-dependent         | Shows the Materialize server version.                                                                                                                                  | No
 `network_policy`                            | `default`                 | The default network policy for the region. | Yes
-`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/reference/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
-`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/reference/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
+`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/serve-results/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
+`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/serve-results/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
 `server_version_num`                        | Version-dependent         | The PostgreSQL compatible server version as an integer.                                                                                                                | No
 `server_version`                            | Version-dependent         | The PostgreSQL compatible server version.                                                                                                                              | No
 `sql_safe_updates`                          | `false`                   | Boolean flag indicating whether to prohibit SQL statements that may be overly destructive.                                                                             | Yes
@@ -12417,7 +12525,7 @@ Name                                        | Default value             |  Descr
 `cluster_replica`                           |                           | The target cluster replica for `SELECT` queries.                      | Yes
 `database`                                  | `materialize`             | The current database.                                                 | Yes
 `search_path`                               | `public`                  | The schema search order for names that are not schema-qualified.      | Yes
-`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/reference/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
+`transaction_isolation`                     | `strict serializable`     | The transaction isolation level. For more information, see [Isolation level](/serve-results/isolation-level/). <br/><br/> Accepts values: `serializable`, `strict serializable`
 
 , `bounded staleness <duration>` (for example, `bounded staleness 5s`)
 
@@ -12468,8 +12576,8 @@ Name                                        | Default value             |  Descr
 `min_timestamp_interval`                    | `1s`                      | The lower bound for the `TIMESTAMP INTERVAL` option of [`CREATE SOURCE`](/sql/create-source/) and [`ALTER SOURCE`](/sql/alter-source/). Statements that request a timestamp interval smaller than this value are rejected. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). | [Contact support]
 `mz_version`                                | Version-dependent         | Shows the Materialize server version.                                                                                                                                  | No
 `network_policy`                            | `default`                 | The default network policy for the region. | Yes
-`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/reference/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
-`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/reference/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
+`real_time_recency`                         | `false`                   | Boolean flag indicating whether [real-time recency](/serve-results/isolation-level/#real-time-recency) is enabled for the current session.                               | [Contact support]
+`real_time_recency_timeout`                 | `10s`                     | Sets the maximum allowed duration of `SELECT` statements that actively use [real-time recency](/serve-results/isolation-level/#real-time-recency). If this value is specified without units, it is taken as milliseconds (`ms`).                      | Yes
 `server_version_num`                        | Version-dependent         | The PostgreSQL compatible server version as an integer.                                                                                                                | No
 `server_version`                            | Version-dependent         | The PostgreSQL compatible server version.                                                                                                                              | No
 `sql_safe_updates`                          | `false`                   | Boolean flag indicating whether to prohibit SQL statements that may be overly destructive.                                                                             | Yes
@@ -12570,7 +12678,7 @@ SHOW CLUSTER REPLICAS WHERE cluster = 'quickstart';
 
 ## SHOW CLUSTERS
 
-`SHOW CLUSTERS` lists the [clusters](/concepts/clusters/) configured in Materialize.
+`SHOW CLUSTERS` lists the [clusters](/fundamentals/concepts/clusters/) configured in Materialize.
 
 ## Syntax
 
@@ -12632,7 +12740,7 @@ The following characteristics apply to the `mz_catalog_server` cluster:
   * You cannot create objects in this cluster.
   * You cannot drop this cluster.
   * You can run `SELECT` or `SUBSCRIBE` queries in this cluster as long
-    as you only reference objects in the [system catalog](/reference/system-catalog/).
+    as you only reference objects in the [system catalog](/sql/system-catalog/).
 
 ### `mz_probe` system cluster
 
@@ -13361,7 +13469,7 @@ Field | Meaning
 ------|--------
 **name** | The name of the index.
 **on** | The name of the table, source, or view the index belongs to.
-**cluster** | The name of the [cluster](/concepts/clusters/) containing the index.
+**cluster** | The name of the [cluster](/fundamentals/concepts/clusters/) containing the index.
 **key** | A text array describing the expressions in the index key.
 
 ## Examples
@@ -13479,7 +13587,7 @@ SHOW NETWORK POLICIES;
 ```
 
 To see details for each rule in a network policy, you can query the
-[`mz_internal.mz_network_policy_rules`](/reference/system-catalog/mz_internal/#mz_network_policy_rules)
+[`mz_internal.mz_network_policy_rules`](/sql/system-catalog/mz_internal/#mz_network_policy_rules)
 system catalog table.
 
 ```mzsql
@@ -15088,6 +15196,11 @@ Returns the server&rsquo;s version information as a human-readable string.
 
 Returns the server&rsquo;s version as an integer having the format <code>XXYYYZZ</code>, where <code>XX</code> is the major version, <code>YYY</code> is the minor version and <code>ZZ</code> is the patch version.
 
+**Note:** This function is [unmaterializable](#unmaterializable-functions).#### `mz_session_role_memberships() -> text[]`
+
+Returns the names of the roles the current role is a member of, directly
+or through other roles, including the current role itself.
+
 **Note:** This function is [unmaterializable](#unmaterializable-functions).#### `current_database() -> text`
 
 Returns the name of the current database.
@@ -15507,7 +15620,7 @@ with several additional columns that describe the nature of the update:
 ### `AS OF`
 
 When a [history rentention
-period](/transform-data/patterns/durable-subscriptions/#history-retention-period)
+period](/serve-results/durable-subscriptions/#history-retention-period)
 is configured for the object(s) powering the subscription, the `AS OF` clause
 allows specifying a timestamp at which the `SUBSCRIBE` command should begin
 returning results. If `AS OF` is specified, no rows whose timestamp is earlier
@@ -15517,7 +15630,7 @@ an error is thrown.
 
 To configure the history retention period for objects used in a subscription,
 see [Durable
-subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period).
+subscriptions](/serve-results/durable-subscriptions/#history-retention-period).
 If `AS OF` is unspecified, the system automatically chooses an `AS OF`
 timestamp.
 
@@ -15617,7 +15730,7 @@ timestamp `4` implies that there are no more updates for either timestamp
 
 Because Materialize is wire-compatible with PostgreSQL, you can use any
 PostgreSQL connection pooler with Materialize. For example in using PgBouncer,
-see [Connection Pooling](/integrations/connection-pooling).
+see [Connection Pooling](/serve-results/connection-pooling).
 
 ## Examples
 
@@ -15683,13 +15796,13 @@ COPY (SUBSCRIBE (SELECT * FROM bids)) TO STDOUT;
 
 | Additional guides |
 | ---------------------- |
-| [Go](/integrations/client-libraries/golang/#stream)|
-| [Java](/integrations/client-libraries/java-jdbc/#stream)|
-| [Node.js](/integrations/client-libraries/node-js/#stream)|
-| [PHP](/integrations/client-libraries/php/#stream)|
-| [Python](/integrations/client-libraries/python/#stream)|
-| [Ruby](/integrations/client-libraries/ruby/#stream)|
-| [Rust](/integrations/client-libraries/rust/#stream)|
+| [Go](/serve-results/client-libraries/golang/#stream)|
+| [Java](/serve-results/client-libraries/java-jdbc/#stream)|
+| [Node.js](/serve-results/client-libraries/node-js/#stream)|
+| [PHP](/serve-results/client-libraries/php/#stream)|
+| [Python](/serve-results/client-libraries/python/#stream)|
+| [Ruby](/serve-results/client-libraries/ruby/#stream)|
+| [Rust](/serve-results/client-libraries/rust/#stream)|
 
 ### Mapping rows to their updates
 
@@ -15930,13 +16043,13 @@ DROP SOURCE auction CASCADE;
 Because `SUBSCRIBE` requests happen over the network, these connections might
 get disrupted for both expected and unexpected reasons. You can adjust the
 [history retention
-period](/transform-data/patterns/durable-subscriptions/#history-retention-period)
+period](/serve-results/durable-subscriptions/#history-retention-period)
 for the objects a subscription depends on, and then use [`AS OF`](#as-of) to
 pick up where you left off on connection drops—this ensures that no data is lost
 in the subscription process, and avoids the need for re-snapshotting the data.
 
 For more information, see [durable
-subscriptions](/transform-data/patterns/durable-subscriptions/).
+subscriptions](/serve-results/durable-subscriptions/).
 
 ## Privileges
 
@@ -15949,6 +16062,46 @@ The privileges required to execute this statement are:
     granted the necessary privileges.
 - `USAGE` privileges on all types used in the query.
 - `USAGE` privileges on the active cluster.
+
+---
+
+## System catalog
+
+Materialize exposes a system catalog that contains metadata about the running
+Materialize instance.
+
+The system catalog consists of several schemas that are implicitly available in
+all databases. These schemas contain sources, tables, and views that expose
+different types of metadata.
+
+  * [`mz_catalog`](mz_catalog), which exposes metadata in Materialize's
+    native format.
+
+  * [`pg_catalog`](pg_catalog), which presents the data in `mz_catalog` in
+    the format used by PostgreSQL.
+
+  * [`information_schema`](information_schema), which presents the data in
+    `mz_catalog` in the format used by the SQL standard's information_schema.
+
+  * [`mz_internal`](mz_internal), which exposes internal metadata about
+    Materialize in an unstable format that is likely to change.
+
+  * [`mz_introspection`](mz_introspection), which contains replica
+    introspection relations.
+
+These schemas contain sources, tables, and views that expose metadata like:
+
+  * Descriptions of each database, schema, source, table, view, sink, and
+    index in the system.
+
+  * Descriptions of all running dataflows.
+
+  * Metrics about dataflow execution.
+
+Whenever possible, applications should prefer to query `mz_catalog` over
+`pg_catalog`. The mapping between Materialize concepts and PostgreSQL concepts
+is not one-to-one, and so the data in `pg_catalog` cannot accurately represent
+the particulars of Materialize.
 
 ---
 

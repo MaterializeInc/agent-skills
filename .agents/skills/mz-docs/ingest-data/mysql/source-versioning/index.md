@@ -1,4 +1,4 @@
-# Guide: Handle upstream schema changes with zero downtime
+# Handle upstream schema changes
 How to add a column, or drop a column, from your source MySQL database, without any downtime in Materialize
 > **Public Preview:** This feature is in public preview.
 

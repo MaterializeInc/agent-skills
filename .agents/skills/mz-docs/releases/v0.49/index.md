@@ -5,10 +5,10 @@
 
 * Change the type of the following system catalog replica ID columns from integer to string:
 
-    * [`mz_catalog.mz_cluster_replicas.id`](/reference/system-catalog/mz_catalog/#mz_cluster_replicas)
-    * [`mz_internal.mz_cluster_replica_statuses.replica_id`](/reference/system-catalog/mz_internal/#mz_cluster_replica_statuses)
+    * [`mz_catalog.mz_cluster_replicas.id`](/sql/system-catalog/mz_catalog/#mz_cluster_replicas)
+    * [`mz_internal.mz_cluster_replica_statuses.replica_id`](/sql/system-catalog/mz_internal/#mz_cluster_replica_statuses)
     * `mz_internal.mz_cluster_replica_heartbeats.replica_id`
-    * [`mz_internal.mz_cluster_replica_metrics.replica_id`](/reference/system-catalog/mz_internal/#mz_cluster_replica_metrics)
+    * [`mz_internal.mz_cluster_replica_metrics.replica_id`](/sql/system-catalog/mz_internal/#mz_cluster_replica_metrics)
     * `mz_internal.mz_cluster_replica_frontiers.replica_id`
 
     This is part of the work to introduce system replicas, which Materialize
@@ -30,7 +30,7 @@
 * Apply `PRIMARY KEY`, `UNIQUE`, and `NOT NULL` constraints to tables ingested
   from PostgreSQL sources.
 
-* Rename [replica introspection views](https://materialize.com/docs/reference/system-catalog/mz_introspection)
+* Rename [replica introspection views](https://materialize.com/docs/sql/system-catalog/mz_introspection)
   for consistency, and use the `_per_worker` name suffix for per-worker introspection views.
 
 * Automatically restart failed SSH tunnels to improve the reliability of

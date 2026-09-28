@@ -193,7 +193,7 @@ cluster, use the `IN CLUSTER` clause.
 
 ### D. Create a view on the source
 
-A [view](/concepts/views/) saves a query under a name to provide a shorthand for
+A [view](/fundamentals/concepts/views/) saves a query under a name to provide a shorthand for
 referencing the query. During view creation, the underlying query is not
 executed.
 
@@ -207,9 +207,9 @@ CREATE VIEW cnt_table1 AS
 
 ### E. Create an index on the view
 
-In Materialize, [indexes](/concepts/indexes) on views compute and, as new data
+In Materialize, [indexes](/fundamentals/concepts/indexes) on views compute and, as new data
 arrives, incrementally update view results in memory within a
-[cluster](/concepts/clusters/) instead of recomputing the results from scratch.
+[cluster](/fundamentals/concepts/clusters/) instead of recomputing the results from scratch.
 
 Create an index on `cnt_table1` view. Then, as new change events stream in
 through Kafka (as the result of `INSERT`, `UPDATE` and `DELETE` operations in
@@ -222,5 +222,5 @@ CREATE INDEX idx_cnt_table1_field1 ON cnt_table1(field1);
 ```
 
 For best practices on when to index a view, see
-[Indexes](/concepts/indexes/) and [Views](/concepts/views/).
+[Indexes](/fundamentals/concepts/indexes/) and [Views](/fundamentals/concepts/views/).
 

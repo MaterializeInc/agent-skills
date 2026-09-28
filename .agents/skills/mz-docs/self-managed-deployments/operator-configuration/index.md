@@ -89,6 +89,13 @@ To configure the Materialize operator, you can:
 </tr>
 
 <tr>
+<td><a href='#clusterdpriorityclassname'><code>clusterd.priorityClassName</code></a></td>
+<td>
+<code>nil</code>
+</td>
+</tr>
+
+<tr>
 <td><a href='#clusterdscratchfsnodeselector'><code>clusterd.scratchfsNodeSelector</code></a></td>
 <td>
 
@@ -183,6 +190,13 @@ To configure the Materialize operator, you can:
 <td><a href='#environmentdnodeselector'><code>environmentd.nodeSelector</code></a></td>
 <td>
 
+</td>
+</tr>
+
+<tr>
+<td><a href='#environmentdpriorityclassname'><code>environmentd.priorityClassName</code></a></td>
+<td>
+<code>&quot;&quot;</code>
 </td>
 </tr>
 
@@ -518,7 +532,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.39.0&quot;</code>
+<code>&quot;v26.43.0&quot;</code>
 </td>
 </tr>
 
@@ -747,6 +761,12 @@ Affinity to use for clusterd pods spawned by the operator
 
 Node selector to use for all clusterd pods spawned by the operator
 
+#### clusterd.priorityClassName
+
+**Default**: <code>nil</code>
+
+PriorityClass to use for clusterd pods spawned by the operator. The PriorityClass must already exist. Kubernetes rejects a pod that names one it cannot resolve, so a typo here stops these pods being created at all.
+
 #### clusterd.scratchfsNodeSelector
 
 **Default**: 
@@ -834,6 +854,12 @@ Default resources requested for environmentd&rsquo;s CPU and memory if not set i
 **Default**: 
 
 Node selector to use for environmentd pods spawned by the operator
+
+#### environmentd.priorityClassName
+
+**Default**: <code>&quot;&quot;</code>
+
+PriorityClass to use for environmentd pods spawned by the operator. The PriorityClass must already exist. Kubernetes rejects a pod that names one it cannot resolve, so a typo here stops these pods being created at all.
 
 #### environmentd.tolerations
 
@@ -1099,7 +1125,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.39.0&quot;</code>
+**Default**: <code>&quot;v26.43.0&quot;</code>
 
 The tag/version of the operator image to be used
 

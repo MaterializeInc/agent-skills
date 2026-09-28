@@ -4,7 +4,7 @@ Reduce arrangement memory for columns that hold a small set of repeated values.
 
 Starting in v26.38, dictionary compression is available for managed clusters.
 Dictionary compression reduces the memory that
-[arrangements](/get-started/arrangements/#arrangements) use when a column holds
+[arrangements](/fundamentals/concepts/arrangements/#arrangements) use when a column holds
 the same values repeatedly. Instead of storing a repeated column value each time
 it appears, Materialize stores that value once and has each row reference it. This can reduce steady state memory requirements after hydration has completed.
 
@@ -161,8 +161,8 @@ re-hydrates the cluster, wait until hydration has completed before you measure.
 - [`ALTER CLUSTER`](/sql/alter-cluster/)
 - [`SHOW CREATE CLUSTER`]
 
-[Arrangements]: /get-started/arrangements/
-[indexes]: /concepts/indexes/
+[Arrangements]: /fundamentals/concepts/arrangements/
+[indexes]: /fundamentals/concepts/indexes/
 [`SHOW CREATE CLUSTER`]: /sql/show-create-cluster/
-[`mz_introspection.mz_arrangement_sizes`]: /reference/system-catalog/mz_introspection/#mz_arrangement_sizes
-[`mz_introspection.mz_dataflow_arrangement_sizes`]: /reference/system-catalog/mz_introspection/#mz_dataflow_arrangement_sizes
+[`mz_introspection.mz_arrangement_sizes`]: /sql/system-catalog/mz_introspection/#mz_arrangement_sizes
+[`mz_introspection.mz_dataflow_arrangement_sizes`]: /sql/system-catalog/mz_introspection/#mz_dataflow_arrangement_sizes

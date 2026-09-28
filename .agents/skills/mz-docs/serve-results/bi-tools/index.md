@@ -122,11 +122,11 @@ You can set up your ODBC data source via the Windows Control Panel or via a
    `Create A New Data Source` called `PostgreSQL Unicode(x64)`. Select
    `PostgreSQL Unicode(x64)`.
 
-1. Specify the [connection details for Materialize](/console/connect/). You can
+1. Specify the [connection details for Materialize](/developer-tools/console/connect/). You can
    find the details from the Materialize console under `App Passwords -> Connect
    -> External Tools`. For `Password`, use your App Password (which is shown
    only once during the [service account
-   creation](/console/create-new/#create-new-app-password-cloud-only)).
+   creation](/developer-tools/console/create-new/#create-new-app-password-cloud-only)).
 
    ![Image of the Materialize Data Source configuration
 setup](/images/excel/excel-setup-config.png "Set up Materialize Data Source
@@ -463,7 +463,7 @@ When using Looker with Materialize, be aware of the following limitations:
       ```
 
    b. Via the Materialize Console:
-      - Go to [Materialize Console](/console/)
+      - Go to [Materialize Console](/developer-tools/console/)
       - Navigate to Query History
       - Filter by 'Running' queries
       - Click on the query you want to cancel

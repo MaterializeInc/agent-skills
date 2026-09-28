@@ -398,7 +398,7 @@ The following guides step you through setting up sources:
 ### Separate cluster(s) for sources
 
 In production, if possible, use a dedicated cluster for
-[sources](/concepts/sources/); i.e., avoid putting sources on the same cluster
+[sources](/fundamentals/concepts/sources/); i.e., avoid putting sources on the same cluster
 that hosts compute objects, sinks, and/or serves queries.
 
 In addition, for upsert sources:
@@ -437,7 +437,7 @@ some burst capacity.
 
 ## Related pages
 
-- [Sources](/concepts/sources/)
+- [Sources](/fundamentals/concepts/sources/)
 - [`SHOW SOURCES`](/sql/show-sources/)
 - [`SHOW COLUMNS`](/sql/show-columns/)
 - [`SHOW CREATE SOURCE`](/sql/show-create-source/)
@@ -499,7 +499,7 @@ FROM SOURCE <src_name> [ (REFERENCE <reference>) ];
 | **PARTITIONS** `<partitions>` | Optional. The number of partitions for the generator.  |
 | **BATCH SIZE** `<batch_size>` | Optional. The batch size for the generator.  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress subsource for the source. If this is not specified, the subsource will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 | `<table_name>` | The name of the table to create for a relation exposed by the source. Use [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/) to ingest a relation. You can create multiple tables from the same source relation.  |
 | **(REFERENCE `<reference>`)** | The relation of the load generator source to ingest into the table (e.g. `bids`, `customer`). Required for multi-output generators (`AUCTION`, `MARKETING`, `TPCH`). Optional for the single-output `KEY VALUE` generator.  |
 
@@ -1036,7 +1036,7 @@ FORMAT AVRO
 | **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| **KEY [AS \<name\>]** \| Include a column containing the Kafka message key. If the key is encoded using a format that includes schemas, the column will take its name from the schema. For unnamed formats (e.g. `TEXT`), the column will be named `key`. The column can be renamed with the optional **AS** *name* statement. \| **PARTITION [AS \<name\>]** \| Include a `partition` column containing the Kafka message partition. The column can be renamed with the optional **AS** *name* clause. \| **OFFSET [AS \<name\>]** \| Include an `offset` column containing the Kafka message offset. The column can be renamed with the optional **AS** *name* clause. \| **TIMESTAMP [AS \<name\>]** \| Include a `timestamp` column containing the Kafka message timestamp. The column can be renamed with the optional **AS** *name* clause. <br><br>Note that the timestamp of a Kafka message depends on how the topic and its producers are configured. See the [Confluent documentation](https://docs.confluent.io/3.0.0/streams/concepts.html?#time) for details. \| **HEADERS [AS \<name\>]** \| Include a `headers` column containing the Kafka message headers as a list of records of type `(key text, value bytea)`. The column can be renamed with the optional **AS** *name* clause. \| **HEADER \<key\> AS \<name\> [**BYTES**]** \| Include a *name* column containing the Kafka message header *key* parsed as a UTF-8 string. To expose the header value as `bytea`, use the `BYTES` option.  |
 | **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. \| \| `DEBEZIUM` \| Decode Kafka messages produced by [Debezium](https://debezium.io/). \| \| `UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]` \| Use the standard key-value convention to support inserts, updates, and deletes. Required to consume [log compacted topics](https://docs.confluent.io/platform/current/kafka/design.html#log-compaction). \|  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 #### Schema registries
 
@@ -1131,10 +1131,10 @@ FORMAT JSON
 | **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION [AS <name>]` \| Expose the Kafka partition as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `OFFSET [AS <name>]` \| Expose the Kafka offset as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `TIMESTAMP [AS <name>]` \| Expose the Kafka timestamp as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `HEADERS [AS <name>]` \| Expose all message headers as a column with type `record(key: text, value: bytea?) list`. See [Headers](#headers) for details. \| \| `HEADER '<key>' AS <name> [BYTES]` \| Expose a specific message header as a column. The `bytea` value is automatically parsed into a UTF-8 string unless `BYTES` is specified. See [Headers](#headers) for details. \|  |
 | **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. See [Append-only envelope](/sql/create-source/kafka/#append-only-envelope) for details. \|  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 If your JSON messages have a consistent shape, we recommend creating a parsing
-[view](/concepts/views) that maps the individual fields to
+[view](/fundamentals/concepts/views) that maps the individual fields to
 columns with the required data types:
 
 ```mzsql
@@ -1204,7 +1204,7 @@ FORMAT TEXT | BYTES
 | **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION [AS <name>]` \| Expose the Kafka partition as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `OFFSET [AS <name>]` \| Expose the Kafka offset as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `TIMESTAMP [AS <name>]` \| Expose the Kafka timestamp as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `HEADERS [AS <name>]` \| Expose all message headers as a column with type `record(key: text, value: bytea?) list`. See [Headers](#headers) for details. \| \| `HEADER '<key>' AS <name> [BYTES]` \| Expose a specific message header as a column. The `bytea` value is automatically parsed into a UTF-8 string unless `BYTES` is specified. See [Headers](#headers) for details. \|  |
 | **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. See [Append-only envelope](/sql/create-source/kafka/#append-only-envelope) for details. \|  |
 | `EXPOSE PROGRESS AS <progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
-| `WITH (<with_option> [, ...])` | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| `WITH (<with_option> [, ...])` | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 **Format CSV:**
 ### Format CSV
@@ -1250,7 +1250,7 @@ FORMAT CSV WITH <n> COLUMNS | WITH HEADER [ ( <col_name> [, ...] ) ]
 | **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION [AS <name>]` \| Expose the Kafka partition as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `OFFSET [AS <name>]` \| Expose the Kafka offset as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `TIMESTAMP [AS <name>]` \| Expose the Kafka timestamp as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `HEADERS [AS <name>]` \| Expose all message headers as a column with type `record(key: text, value: bytea?) list`. See [Headers](#headers) for details. \| \| `HEADER '<key>' AS <name> [BYTES]` \| Expose a specific message header as a column. The `bytea` value is automatically parsed into a UTF-8 string unless `BYTES` is specified. See [Headers](#headers) for details. \|  |
 | **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. CSV format only supports `NONE`:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. See [Append-only envelope](/sql/create-source/kafka/#append-only-envelope) for details. \|  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 **Format Protobuf:**
 ### Format Protobuf
@@ -1302,7 +1302,7 @@ FORMAT PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
 | **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| **KEY [AS \<name\>]** \| Include a column containing the Kafka message key. If the key is encoded using a format that includes schemas, the column will take its name from the schema. For unnamed formats (e.g. `TEXT`), the column will be named `key`. The column can be renamed with the optional **AS** *name* statement. \| \| **PARTITION [AS \<name\>]** \| Include a `partition` column containing the Kafka message partition. The column can be renamed with the optional **AS** *name* clause. \| \| **OFFSET [AS \<name\>]** \| Include an `offset` column containing the Kafka message offset. The column can be renamed with the optional **AS** *name* clause. \| \| **TIMESTAMP [AS \<name\>]** \| Include a `timestamp` column containing the Kafka message timestamp. The column can be renamed with the optional **AS** *name* clause. <br><br>Note that the timestamp of a Kafka message depends on how the topic and its producers are configured. See the [Confluent documentation](https://docs.confluent.io/3.0.0/streams/concepts.html?#time) for details. \| \| **HEADERS [AS \<name\>]** \| Include a `headers` column containing the Kafka message headers as a list of records of type `(key text, value bytea)`. The column can be renamed with the optional **AS** *name* clause. \| \| **HEADER \<key\> AS \<name\> [**BYTES**]** \| Include a *name* column containing the Kafka message header *key* parsed as a UTF-8 string. To expose the header value as `bytea`, use the `BYTES` option. \|  |
 | **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. \| \| `UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]` \| Use the standard key-value convention to support inserts, updates, and deletes. Required to consume [log compacted topics](https://docs.confluent.io/platform/current/kafka/design.html#log-compaction). \|  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 Unlike Avro, Protobuf does not serialize a schema with the message, so Materialize expects:
 
@@ -1397,7 +1397,7 @@ KEY FORMAT <key_format> VALUE FORMAT <value_format>
 | **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `KEY [AS <name>]` \| Expose the message key as a column. Composite keys are also supported. The `UPSERT` envelope always includes keys. The `DEBEZIUM` envelope is incompatible with this option. See [Exposing source metadata](#exposing-source-metadata) for details. \| \| `PARTITION [AS <name>]` \| Expose the Kafka partition as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `OFFSET [AS <name>]` \| Expose the Kafka offset as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `TIMESTAMP [AS <name>]` \| Expose the Kafka timestamp as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `HEADERS [AS <name>]` \| Expose all message headers as a column with type `record(key: text, value: bytea?) list`. The `DEBEZIUM` envelope is incompatible with this option. See [Headers](#headers) for details. \| \| `HEADER '<key>' AS <name> [BYTES]` \| Expose a specific message header as a column. The `bytea` value is automatically parsed into a UTF-8 string unless `BYTES` is specified. The `DEBEZIUM` envelope is incompatible with this option. See [Headers](#headers) for details. \|  |
 | **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. See [Append-only envelope](/sql/create-source/kafka/#append-only-envelope) for details. \| \| `DEBEZIUM` \| Decode Kafka messages produced by [Debezium](https://debezium.io/). \| \| `UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]` \| Use the standard key-value convention to support inserts, updates, and deletes. Required to consume [log compacted topics](https://docs.confluent.io/platform/current/kafka/design.html#log-compaction). \|  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 ## Envelopes
 
@@ -2156,7 +2156,7 @@ FROM KAFKA CONNECTION <connection_name> (
 | **START OFFSET** (`<partition_offset>` [, ...]) | Optional. Read partitions from the specified offset. You cannot update the offsets once a source has been created; you will need to recreate the source. Offset values must be zero or positive integers. See [Setting start offsets](#setting-start-offsets) for details.  |
 | **START TIMESTAMP** `<timestamp>` | Optional. Use the specified value to set `START OFFSET` based on the Kafka timestamp. Negative values will be interpreted as relative to the current system time in milliseconds (e.g. `-1000` means 1000 ms ago). See [Time-based offsets](#time-based-offsets) for details.  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 ## Details
 
@@ -2547,7 +2547,7 @@ FROM MYSQL CONNECTION <connection_name> [
 | **EXCLUDE COLUMNS** ( `<col1>` [, ...] ) | Optional. Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.  |
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables in all schemas upstream. The [`mysql` system schema](https://dev.mysql.com/doc/refman/8.3/en/system-schema.html) is ignored. \| \| `SCHEMAS ( <schema1> [, ...] )` \| Create subsources for specific schemas upstream. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables upstream. Requires fully-qualified table names (`<schema1>.<table1>`). \|  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 ### `CONNECTION` options
 
@@ -3176,7 +3176,7 @@ FROM MYSQL CONNECTION <connection_name>
 | --- | --- |
 | **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
 | `<source_name>` | The name of the source to create. Names for sources must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
-| **IN CLUSTER** `<cluster_name>` | *Optional.* The [cluster](/sql/create-cluster) to maintain this source. Otherwise, the source will be created in the active cluster.  {{< tip >}} If possible, use a cluster dedicated just for sources. See also [Operational guidelines](/manage/operational-guidelines/#sources). {{< /tip >}}  |
+| **IN CLUSTER** `<cluster_name>` | *Optional.* The [cluster](/sql/create-cluster) to maintain this source. Otherwise, the source will be created in the active cluster.  {{< tip >}} If possible, use a cluster dedicated just for sources. See also [Operational guidelines](/clusters/operational-guidelines/#sources). {{< /tip >}}  |
 | `<connection_name>` | The name of the MySQL connection to use for the source. For details on creating connections, see [`CREATE CONNECTION`](/sql/create-connection/#mysql).  A connection is **reusable** across multiple `CREATE SOURCE` statements.  To start ingesting data, create a [`CREATE TABLE FROM SOURCE`](/sql/create-table/) statement for each upstream table to replicate.  |
 | **WITH** (`<with_option>` [, ...]) | *Optional.* The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
@@ -3196,7 +3196,7 @@ SOURCE`](/sql/create-table/) allows for the handling of certain upstream schema
 changes, specifically adding or dropping columns in the upstream tables, without
 downtime.
 
-See [Guide: Handle upstream schema
+See [Handle upstream schema
 changes](/ingest-data/mysql/source-versioning/) for details.
 
 See also [Handling upstream operations](#handling-upstream-operations) for
@@ -3670,7 +3670,7 @@ FROM POSTGRES CONNECTION <connection_name> (
 | **EXCLUDE COLUMNS** ( `<col1>` [, ...] ) | Optional. Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.  |
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables in the publication. \| \| `SCHEMAS ( <schema1> [, ...] )` \| Create subsources for specific schemas in the publication. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables in the publication. \|  |
 | **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 ## Features
 
@@ -3930,6 +3930,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -3949,10 +3954,215 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
+
+## Source failure states and recovery
+
+### Operations that do not require re-creating the source
+
+Materialize tracks a [log sequence number
+(LSN)](https://www.postgresql.org/docs/current/wal-internals.html) as it
+consumes the upstream write-ahead log (WAL), and the source's replication slot
+retains the WAL that Materialize has not yet consumed. Because the slot outlives
+the connection, routine operational events do not lose data: after a transient
+interruption the source stalls, then resumes from its committed LSN and catches
+up automatically. **No action is required** for the following operations:
+
+- Restarting or patching PostgreSQL (including OS-level restarts).
+- Restarting Materialize. The source resumes from its committed LSN and does
+  **not** re-snapshot already-ingested data.
+- Transient network interruptions between Materialize and PostgreSQL. These
+  surface as [`connection closed`](/ingest-data/postgres/connection-closed/).
+- Resizing the cluster that hosts the source, or changing its replication
+  factor. Briefly, the source may report [`replication slot ... is
+  active`](/ingest-data/postgres/replication-slot-active/) while the upstream
+  releases the slot from the previous connection.
+- The upstream database running out of disk space, once space is freed.
+
+> **Note:** Recovery after an interruption depends on the WAL that the replication slot is
+> holding still being available upstream. An interruption long enough for the slot
+> to be invalidated, or for the slot to be dropped, is not recoverable. See
+> [Replication slot invalidated](#replication-slot-invalidated) and [Replication
+> slot dropped or rewound](#replication-slot-dropped-or-rewound).
+
+> **Warning:** While a source is disconnected, the upstream WAL accumulates behind its
+> replication slot and cannot be reclaimed. A long outage, an undersized source
+> cluster, or a source cluster stuck in a restart loop can therefore consume
+> significant upstream disk. Monitor `restart_lsn` in
+> [`pg_replication_slots`](https://www.postgresql.org/docs/current/view-pg-replication-slots.html)
+> during planned maintenance.
+
+### Operations that require re-creating the source
+
+A smaller set of events breaks LSN continuity or destroys the replication slot.
+When this happens, Materialize cannot guarantee a correct, gap-free view of your
+data. Most of these put the **entire source** into an error or permanently
+stalled state. One, [restoring from a volume or disk
+snapshot](#restoring-from-a-volume-or-disk-snapshot), cannot be detected at all,
+so the source keeps running on diverged data. Every event in this section
+requires **re-creating** the source. Upstream changes to an individual table's
+schema are handled separately, and do not error the entire source.
+
+In each case below, the remediation is to drop and re-create the source:
+
+```mzsql
+DROP SOURCE mz_source CASCADE;
+
+CREATE SOURCE mz_source
+  FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source');
+
+-- Re-create the tables you were ingesting.
+CREATE TABLE table_1 FROM SOURCE mz_source (REFERENCE public.table_1);
+```
+
+If you are using the legacy `CREATE SOURCE ... FOR TABLES` syntax, re-create the
+source with the same `FOR TABLES` list instead of adding tables separately.
+
+Because a re-created source snapshots from the current state of the upstream
+database, any changes it missed while it was in an error state are reflected in
+the snapshot rather than replayed as individual updates.
+
+> **Warning:** `CASCADE` drops every object that depends on the source, including its tables,
+> views, materialized views, indexes, and sinks. Capture their definitions before
+> you run it, and re-create them once the new source has finished snapshotting.
+
+#### Point-in-time restore
+
+Restoring the source database from a backup, including restoring to a different
+server for disaster recovery, increments the PostgreSQL timeline and is detected
+as a discontinuity. The source fails with an error of the form:
+
+```
+unsupported action: database restored from point-in-time backup. Expected
+timeline ID 8 but got 9
+```
+
+The same error covers other events that change the timeline, such as a managed
+failover between replicas. To see the timeline a source is pinned to, query
+[`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources):
+
+```mzsql
+SELECT s.name, p.replication_slot, p.timeline_id
+FROM mz_internal.mz_postgres_sources p
+JOIN mz_catalog.mz_sources s ON s.id = p.id;
+```
+
+If your upstream fails over between replicas as part of routine maintenance, see
+[High-availability failovers](#high-availability-failovers).
+
+#### Restoring from a volume or disk snapshot
+
+Restoring the upstream data directory from a crash-consistent volume or disk
+snapshot rolls the database back, but preserves the timeline ID and the
+replication slot. Materialize cannot detect this kind of restore. The source
+keeps running without an error, but its contents diverge from upstream. This can
+surface later as incorrect results, or as negative-accumulation errors in
+queries such as `Non-positive multiplicity`.
+
+> **Warning:** After any restore of this kind, drop and re-create the source even if it reports
+> as `running`. Do not wait for the source to enter an error state, because it
+> will not.
+
+#### Promotion of a physical replica
+
+When a source reads from a physical standby (read replica) rather than the
+primary, promoting that standby to a primary fails the source with:
+
+```
+unsupported action: upstream physical replica status changed (e.g. a physical
+replica was promoted to a primary). Expected pg_is_in_recovery()=true but got
+false
+```
+
+Materialize detects the promotion while the replication stream is live, without
+waiting for a restart. Re-create the source against the promoted node.
+
+#### Replication slot invalidated
+
+PostgreSQL invalidates a replication slot once the WAL it holds exceeds
+[`max_slot_wal_keep_size`](https://www.postgresql.org/docs/current/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE).
+This protects the upstream from running out of disk, at the cost of ending
+replication. The source fails with:
+
+```
+replication slot has been invalidated because it exceeded the maximum reserved
+size
+```
+
+To avoid this, size the source cluster so that it keeps up with the upstream
+write rate, and set `max_slot_wal_keep_size` high enough to cover your longest
+expected outage. Some hosted PostgreSQL services set this value for you and do
+not allow it to be raised.
+
+#### Replication slot dropped or rewound
+
+If the slot Materialize is using is dropped upstream, or the upstream is rebuilt
+from a base backup (which does not carry replication slots), a new slot starts
+at the current LSN, past the point the source needs to resume from. The source
+stalls with:
+
+```
+slot overcompacted. Requested LSN ... but only LSNs >= ... are available
+```
+
+For diagnosis steps, see [Slot
+overcompacted](/ingest-data/postgres/slot-overcompacted/). PostgreSQL refuses to
+drop a slot that is in use, so this generally happens only while the source is
+paused or disconnected.
+
+Not every rewind is caught this way. A rewind that leaves the slot able to serve
+the LSN the source asks for, such as [restoring from a volume or disk
+snapshot](#restoring-from-a-volume-or-disk-snapshot), raises no error at all.
+
+#### Dropping the publication
+
+Running `DROP PUBLICATION` upstream stalls the source, and all of its tables,
+with:
+
+```
+publication "mz_source" does not exist
+```
+
+Re-create the publication upstream, then re-create the source.
+
+#### Major version upgrades
+
+A PostgreSQL major version upgrade rewrites the on-disk format and does not
+preserve the replication slot, so there is no in-place recovery. To upgrade without a gap in your downstream views, run a second source
+against the upgraded instance in parallel and cut over once it has hydrated. See
+[Upgrade the major version of your PostgreSQL
+source](/ingest-data/postgres/major-version-upgrade/).
+
+### High-availability failovers
+
+Some managed PostgreSQL services increment the timeline during routine
+high-availability operations, such as maintenance, a machine-tier change, or an
+automatic failover between replicas. Materialize cannot distinguish these from a
+genuine restore, so by default they fail the source with the [`Expected timeline
+ID`](#point-in-time-restore) error.
+
+On self-managed Materialize, where the upstream service guarantees that a
+failover is a contiguous fork of the WAL with no data loss, you can disable
+timeline validation with the
+[`pg_source_validate_timeline`](/sql/alter-system-set/) system parameter:
+
+```mzsql
+ALTER SYSTEM SET pg_source_validate_timeline = false;
+```
+
+This parameter is not available on Materialize Cloud. There, a
+high-availability failover that changes the timeline requires re-creating the
+source.
+
+> **Warning:** Disabling this check is a trade-off. With it off, Materialize also does **not**
+> detect a genuine [point-in-time restore](#point-in-time-restore) or any other
+> discontinuous timeline change, and silently ingesting across one can corrupt the
+> contents of the source. Only disable it when your provider documents that its
+> failovers preserve WAL continuity for logical replication subscribers, and
+> re-create the source manually after any operation that does not.
 
 ## Examples
 
@@ -4178,7 +4388,7 @@ FROM POSTGRES CONNECTION <connection_name> (PUBLICATION '<publication_name>')
 | --- | --- |
 | **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
 | `<source_name>` |  The name of the source to create. Names for sources must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
-| **IN CLUSTER** `<cluster_name>` | *Optional.* The [cluster](/sql/create-cluster) to maintain this source. Otherwise, the source will be created in the active cluster.  {{< tip >}} If possible, use a cluster dedicated just for sources. See also [Operational guidelines](/manage/operational-guidelines/#sources). {{< /tip >}}  |
+| **IN CLUSTER** `<cluster_name>` | *Optional.* The [cluster](/sql/create-cluster) to maintain this source. Otherwise, the source will be created in the active cluster.  {{< tip >}} If possible, use a cluster dedicated just for sources. See also [Operational guidelines](/clusters/operational-guidelines/#sources). {{< /tip >}}  |
 | `<connection_name>` | The name of the PostgreSQL connection to use for the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#postgresql) documentation page.  A connection is **reusable** across multiple `CREATE SOURCE` statements.  |
 | `<publication_name>` | The name of the PostgreSQL publication to associate with the source. For details on creating a publication in your PostgreSQL database, see the [integration guides for your PostgreSQL](/ingest-data/postgres/#integration-guides).  |
 | **WITH** (`<with_option>` [, ...]) | *Optional.* The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
@@ -4209,7 +4419,7 @@ additional upstream operation considerations.
 
 With the new syntax, after a PostgreSQL source is created, you [`CREATE TABLE
 FROM SOURCE`](/sql/create-table/) to create a corresponding table in
-Matererialize and start ingesting data.
+Materialize and start ingesting data.
 
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
@@ -4341,6 +4551,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -4360,10 +4575,215 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
+
+## Source failure states and recovery
+
+### Operations that do not require re-creating the source
+
+Materialize tracks a [log sequence number
+(LSN)](https://www.postgresql.org/docs/current/wal-internals.html) as it
+consumes the upstream write-ahead log (WAL), and the source's replication slot
+retains the WAL that Materialize has not yet consumed. Because the slot outlives
+the connection, routine operational events do not lose data: after a transient
+interruption the source stalls, then resumes from its committed LSN and catches
+up automatically. **No action is required** for the following operations:
+
+- Restarting or patching PostgreSQL (including OS-level restarts).
+- Restarting Materialize. The source resumes from its committed LSN and does
+  **not** re-snapshot already-ingested data.
+- Transient network interruptions between Materialize and PostgreSQL. These
+  surface as [`connection closed`](/ingest-data/postgres/connection-closed/).
+- Resizing the cluster that hosts the source, or changing its replication
+  factor. Briefly, the source may report [`replication slot ... is
+  active`](/ingest-data/postgres/replication-slot-active/) while the upstream
+  releases the slot from the previous connection.
+- The upstream database running out of disk space, once space is freed.
+
+> **Note:** Recovery after an interruption depends on the WAL that the replication slot is
+> holding still being available upstream. An interruption long enough for the slot
+> to be invalidated, or for the slot to be dropped, is not recoverable. See
+> [Replication slot invalidated](#replication-slot-invalidated) and [Replication
+> slot dropped or rewound](#replication-slot-dropped-or-rewound).
+
+> **Warning:** While a source is disconnected, the upstream WAL accumulates behind its
+> replication slot and cannot be reclaimed. A long outage, an undersized source
+> cluster, or a source cluster stuck in a restart loop can therefore consume
+> significant upstream disk. Monitor `restart_lsn` in
+> [`pg_replication_slots`](https://www.postgresql.org/docs/current/view-pg-replication-slots.html)
+> during planned maintenance.
+
+### Operations that require re-creating the source
+
+A smaller set of events breaks LSN continuity or destroys the replication slot.
+When this happens, Materialize cannot guarantee a correct, gap-free view of your
+data. Most of these put the **entire source** into an error or permanently
+stalled state. One, [restoring from a volume or disk
+snapshot](#restoring-from-a-volume-or-disk-snapshot), cannot be detected at all,
+so the source keeps running on diverged data. Every event in this section
+requires **re-creating** the source. Upstream changes to an individual table's
+schema are handled separately, and do not error the entire source.
+
+In each case below, the remediation is to drop and re-create the source:
+
+```mzsql
+DROP SOURCE mz_source CASCADE;
+
+CREATE SOURCE mz_source
+  FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source');
+
+-- Re-create the tables you were ingesting.
+CREATE TABLE table_1 FROM SOURCE mz_source (REFERENCE public.table_1);
+```
+
+If you are using the legacy `CREATE SOURCE ... FOR TABLES` syntax, re-create the
+source with the same `FOR TABLES` list instead of adding tables separately.
+
+Because a re-created source snapshots from the current state of the upstream
+database, any changes it missed while it was in an error state are reflected in
+the snapshot rather than replayed as individual updates.
+
+> **Warning:** `CASCADE` drops every object that depends on the source, including its tables,
+> views, materialized views, indexes, and sinks. Capture their definitions before
+> you run it, and re-create them once the new source has finished snapshotting.
+
+#### Point-in-time restore
+
+Restoring the source database from a backup, including restoring to a different
+server for disaster recovery, increments the PostgreSQL timeline and is detected
+as a discontinuity. The source fails with an error of the form:
+
+```
+unsupported action: database restored from point-in-time backup. Expected
+timeline ID 8 but got 9
+```
+
+The same error covers other events that change the timeline, such as a managed
+failover between replicas. To see the timeline a source is pinned to, query
+[`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources):
+
+```mzsql
+SELECT s.name, p.replication_slot, p.timeline_id
+FROM mz_internal.mz_postgres_sources p
+JOIN mz_catalog.mz_sources s ON s.id = p.id;
+```
+
+If your upstream fails over between replicas as part of routine maintenance, see
+[High-availability failovers](#high-availability-failovers).
+
+#### Restoring from a volume or disk snapshot
+
+Restoring the upstream data directory from a crash-consistent volume or disk
+snapshot rolls the database back, but preserves the timeline ID and the
+replication slot. Materialize cannot detect this kind of restore. The source
+keeps running without an error, but its contents diverge from upstream. This can
+surface later as incorrect results, or as negative-accumulation errors in
+queries such as `Non-positive multiplicity`.
+
+> **Warning:** After any restore of this kind, drop and re-create the source even if it reports
+> as `running`. Do not wait for the source to enter an error state, because it
+> will not.
+
+#### Promotion of a physical replica
+
+When a source reads from a physical standby (read replica) rather than the
+primary, promoting that standby to a primary fails the source with:
+
+```
+unsupported action: upstream physical replica status changed (e.g. a physical
+replica was promoted to a primary). Expected pg_is_in_recovery()=true but got
+false
+```
+
+Materialize detects the promotion while the replication stream is live, without
+waiting for a restart. Re-create the source against the promoted node.
+
+#### Replication slot invalidated
+
+PostgreSQL invalidates a replication slot once the WAL it holds exceeds
+[`max_slot_wal_keep_size`](https://www.postgresql.org/docs/current/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE).
+This protects the upstream from running out of disk, at the cost of ending
+replication. The source fails with:
+
+```
+replication slot has been invalidated because it exceeded the maximum reserved
+size
+```
+
+To avoid this, size the source cluster so that it keeps up with the upstream
+write rate, and set `max_slot_wal_keep_size` high enough to cover your longest
+expected outage. Some hosted PostgreSQL services set this value for you and do
+not allow it to be raised.
+
+#### Replication slot dropped or rewound
+
+If the slot Materialize is using is dropped upstream, or the upstream is rebuilt
+from a base backup (which does not carry replication slots), a new slot starts
+at the current LSN, past the point the source needs to resume from. The source
+stalls with:
+
+```
+slot overcompacted. Requested LSN ... but only LSNs >= ... are available
+```
+
+For diagnosis steps, see [Slot
+overcompacted](/ingest-data/postgres/slot-overcompacted/). PostgreSQL refuses to
+drop a slot that is in use, so this generally happens only while the source is
+paused or disconnected.
+
+Not every rewind is caught this way. A rewind that leaves the slot able to serve
+the LSN the source asks for, such as [restoring from a volume or disk
+snapshot](#restoring-from-a-volume-or-disk-snapshot), raises no error at all.
+
+#### Dropping the publication
+
+Running `DROP PUBLICATION` upstream stalls the source, and all of its tables,
+with:
+
+```
+publication "mz_source" does not exist
+```
+
+Re-create the publication upstream, then re-create the source.
+
+#### Major version upgrades
+
+A PostgreSQL major version upgrade rewrites the on-disk format and does not
+preserve the replication slot, so there is no in-place recovery. To upgrade without a gap in your downstream views, run a second source
+against the upgraded instance in parallel and cut over once it has hydrated. See
+[Upgrade the major version of your PostgreSQL
+source](/ingest-data/postgres/major-version-upgrade/).
+
+### High-availability failovers
+
+Some managed PostgreSQL services increment the timeline during routine
+high-availability operations, such as maintenance, a machine-tier change, or an
+automatic failover between replicas. Materialize cannot distinguish these from a
+genuine restore, so by default they fail the source with the [`Expected timeline
+ID`](#point-in-time-restore) error.
+
+On self-managed Materialize, where the upstream service guarantees that a
+failover is a contiguous fork of the WAL with no data loss, you can disable
+timeline validation with the
+[`pg_source_validate_timeline`](/sql/alter-system-set/) system parameter:
+
+```mzsql
+ALTER SYSTEM SET pg_source_validate_timeline = false;
+```
+
+This parameter is not available on Materialize Cloud. There, a
+high-availability failover that changes the timeline requires re-creating the
+source.
+
+> **Warning:** Disabling this check is a trade-off. With it off, Materialize also does **not**
+> detect a genuine [point-in-time restore](#point-in-time-restore) or any other
+> discontinuous timeline change, and silently ingesting across one can corrupt the
+> contents of the source. Only disable it when your provider documents that its
+> failovers preserve WAL continuity for logical replication subscribers, and
+> re-create the source manually after any operation that does not.
 
 ## Examples
 
@@ -4510,7 +4930,7 @@ The use of the `CREATE SOURCE` with the new [`CREATE TABLE FROM
 SOURCE`](/sql/create-table/) allows for the handling of certain upstream DDL
 changes without downtime.
 
-See [Guide: Handle upstream schema changes with zero downtime](/ingest-data/sql-server/source-versioning/) for details.
+See [Handle upstream schema changes](/ingest-data/sql-server/source-versioning/) for details.
 
 See also [Handling upstream operations](#handling-upstream-operations) for
 additional upstream operation considerations.
@@ -4640,6 +5060,20 @@ Removing the capture instance that Materialize is using puts the affected table
 into an error state. Removing a capture instance that Materialize is not using does not affect
 ingestion.
 
+### Disabling CDC on a table
+
+Running `sys.sp_cdc_disable_table` removes the capture instance Materialize is
+ingesting from, which puts the affected table into an error state. The other
+tables in the source keep replicating. You can recover without re-creating the
+whole source by dropping just the affected table in Materialize:
+
+```mzsql
+DROP TABLE table_1;
+```
+
+Then re-create it, optionally after re-enabling CDC on the upstream table with
+`sys.sp_cdc_enable_table`.
+
 ### Table-level operations
 
 The following upstream operations put the affected table into an error state.
@@ -4648,6 +5082,139 @@ table in Materialize to resume:
 
 - Dropping a table (`DROP TABLE`).
 - Renaming a table or moving it to a different schema.
+
+## Source failure states and recovery
+
+### Operations that do not require re-creating the source
+For operations that are supported automatically, Materialize is able to resume
+replication from a [log sequence number
+(LSN)](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-log-architecture-and-management-guide)
+that it tracks as it consumes the upstream change data capture (CDC) change
+tables. Because LSNs live in the SQL Server transaction log, they survive
+routine operational events: after a transient interruption the source stalls,
+then resumes from its last committed LSN and catches up automatically. **No
+action is required** for the operations in the first section below.
+
+The source recovers on its own. It will briefly reports a `stalled` status while the
+condition persists, then returns to `running` and catch up for all of the
+following scenarios:
+
+- Restarting or patching SQL Server (including OS-level restarts).
+- Restarting Materialize. The source resumes from its tracked LSN and does
+  **not** re-snapshot already-ingested data.
+- Transient network interruptions between Materialize and SQL Server.
+- Taking the database `OFFLINE` and back `ONLINE`.
+- Toggling the database between `SINGLE_USER`/`MULTI_USER` or
+  `READ_ONLY`/`READ_WRITE` (for example, during patching).
+- Data-file, filegroup, or index maintenance that rewrites data in place.
+- [Availability group failover](#always-on-failovers), with the
+  configuration change described below.
+
+> **Note:** Recovery after an interruption depends on the required LSNs still being present
+> in the SQL Server CDC change tables. If the interruption lasts longer than the
+> CDC **retention period** (3 days by default) and SQL Server's cleanup job
+> removes change-table rows past the source's resume point, the source can no
+> longer recover on its own. See [Change-table retention](#change-table-retention).
+
+> **Warning:** If a maintenance script places the database into `SINGLE_USER` mode, note that an
+> active Materialize source's reconnection attempts can occupy the single available
+> connection and cause `ALTER DATABASE ... SET MULTI_USER` to fail with error 5064.
+> Terminate the Materialize session (or use `SET MULTI_USER WITH ROLLBACK
+> IMMEDIATE` after terminating it) before returning the database to multi-user
+> mode.
+
+### Operations that require re-creating the source
+A smaller set of events breaks LSN or CDC-change-table continuity. When this
+happens, Materialize cannot guarantee a correct, gap-free view of your data, so
+it puts the **entire source** into an error state that requires **re-creating**
+the source. Re-creating triggers a fresh [snapshot](/ingest-data/#snapshotting)
+and rehydration of dependent objects. Upstream changes to an individual table's
+schema are handled separately, and do not error the entire source.
+
+The following events put the **entire source** into an error state. In each
+case, the remediation is to drop and re-create the source:
+
+```mzsql
+DROP SOURCE mz_source CASCADE;
+
+CREATE SOURCE mz_source
+  FROM SQL SERVER CONNECTION sql_server_connection;
+
+-- Re-create the tables you were ingesting.
+CREATE TABLE table_1 FROM SOURCE mz_source (REFERENCE dbo.table_1);
+```
+
+#### Point-in-time restore
+
+Restoring the source database from a backup — including restoring to a different
+server for disaster recovery — is detected as a discontinuity. The source fails
+with an error of the form:
+
+```
+source must be dropped and recreated due to failure: Restore history id changed
+from None to Some(<n>)
+```
+
+Materialize detects the restore by reading `msdb.dbo.restorehistory`. (This check
+does not apply to Azure SQL Database, which does not expose `msdb`.)
+
+#### CDC disabled at the database level
+
+Running `sys.sp_cdc_disable_db` drops all change tables. The source stalls with:
+
+```
+invalid SQL Server system setting 'database CDC'. Expected 'true'. Got 'Some(false)'.
+```
+
+Re-enable CDC on the database and on each table (`sys.sp_cdc_enable_db`,
+`sys.sp_cdc_enable_table`), then re-create the source.
+
+#### Change-table retention
+
+SQL Server's CDC cleanup job removes change-table rows older than the retention
+period (3 days by default). If Materialize is disconnected long enough that
+cleanup removes rows past the source's resume LSN, the source stalls with:
+
+```
+the requested LSN '...' is less than the minimum '...' for `dbo_<table>`
+```
+
+To avoid this during a planned outage, keep the outage shorter than the retention
+period, or increase retention beforehand with
+[`sys.sp_cdc_change_job`](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sys-sp-cdc-change-job-transact-sql)
+(`@job_type = 'cleanup'`, `@retention`).
+
+### Always-On failovers
+
+Materialize supports SQL Server configured with Always On availability groups,
+including failover between replicas, with one configuration change.
+
+By default, an availability group failover is misdetected as a point-in-time
+restore and fails the source with the `Restore history id changed` error
+described above. This is a false positive: the LSN stream is continuous across an
+availability group failover, but seeding a secondary replica writes rows to
+`msdb.dbo.restorehistory`, which the restore-detection check reads as a restore.
+
+To allow the source to survive failover, disable restore-history validation with
+the [`sql_server_source_validate_restore_history`](/sql/alter-system-set/) system
+parameter:
+
+```mzsql
+ALTER SYSTEM SET sql_server_source_validate_restore_history = false;
+```
+
+> **Warning:** Disabling this check is a trade-off: with it off, Materialize will also **not**
+> detect a genuine [point-in-time restore](#point-in-time-restore) of the source
+> database. Only disable it when the source connects to a database that fails over
+> between availability group replicas.
+
+With the check disabled, the source no longer fails on failover. Because `msdb`
+is per-instance, the CDC capture and cleanup jobs do not move with the
+availability group database — after a failover, confirm that CDC is healthy on
+the new primary (the capture and cleanup jobs exist, SQL Server Agent is running,
+and the change tables are advancing) so that replication continues. Adding the
+jobs on a replica that lacks them is done with
+[`sys.sp_cdc_add_job`](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sys-sp-cdc-add-job-transact-sql).
 
 ## Example
 
@@ -4774,7 +5341,7 @@ FROM SQL SERVER CONNECTION <connection_name>
 | **EXCLUDE COLUMNS** ( `<col1>` [, ...] ) | Optional. Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.  |
 | **TEXT COLUMNS** ( `<col1>` [, ...] ) | Optional. If specified, decode data from the specified columns in the subsource(s) as `text` for the listed column(s), such as for unsupported data types.  |
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables with CDC enabled in all schemas upstream. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables upstream. Requires fully-qualified table names (`<schema1>.<table1>`). \|  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 ## Creating a source
 
@@ -4877,7 +5444,7 @@ use either the `TEXT COLUMNS` or the `EXCLUDE COLUMNS` option:
 | `image`          | `EXCLUDE COLUMNS`                                           |
 | `varbinary(max)` | `EXCLUDE COLUMNS`                                           |
 
-### Timestamp Rounding
+### Timestamp rounding
 
 The `time`, `datetime2`, and `datetimeoffset` types in SQL Server have a default
 scale of 7 decimal places, or in other words a accuracy of 100 nanoseconds. But
@@ -4922,7 +5489,7 @@ most recent `create_date`.
 
 If two capture instances for a table share the same timestamp (unlikely given the millisecond resolution), Materialize selects the `capture_instance` with the lexicographically larger name.
 
-### Modifying an existing source
+### Adding a table to an existing source
 
 When you add a new subsource to an existing source ([`ALTER SOURCE ... ADD
 SUBSOURCE ...`](/sql/alter-source/)), Materialize starts the snapshotting
@@ -5008,6 +5575,20 @@ Removing the capture instance that Materialize is using puts the affected table
 into an error state. Removing a capture instance that Materialize is not using does not affect
 ingestion.
 
+### Disabling CDC on a table
+
+Running `sys.sp_cdc_disable_table` removes the capture instance Materialize is
+ingesting from, which puts the affected table into an error state. The other
+tables in the source keep replicating. You can recover without re-creating the
+whole source by dropping just the affected table in Materialize:
+
+```mzsql
+DROP TABLE table_1;
+```
+
+Then re-create it, optionally after re-enabling CDC on the upstream table with
+`sys.sp_cdc_enable_table`.
+
 ### Table-level operations
 
 The following upstream operations put the affected table into an error state.
@@ -5016,6 +5597,139 @@ table in Materialize to resume:
 
 - Dropping a table (`DROP TABLE`).
 - Renaming a table or moving it to a different schema.
+
+## Source failure states and recovery
+
+### Operations that do not require re-creating the source
+For operations that are supported automatically, Materialize is able to resume
+replication from a [log sequence number
+(LSN)](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-log-architecture-and-management-guide)
+that it tracks as it consumes the upstream change data capture (CDC) change
+tables. Because LSNs live in the SQL Server transaction log, they survive
+routine operational events: after a transient interruption the source stalls,
+then resumes from its last committed LSN and catches up automatically. **No
+action is required** for the operations in the first section below.
+
+The source recovers on its own. It will briefly reports a `stalled` status while the
+condition persists, then returns to `running` and catch up for all of the
+following scenarios:
+
+- Restarting or patching SQL Server (including OS-level restarts).
+- Restarting Materialize. The source resumes from its tracked LSN and does
+  **not** re-snapshot already-ingested data.
+- Transient network interruptions between Materialize and SQL Server.
+- Taking the database `OFFLINE` and back `ONLINE`.
+- Toggling the database between `SINGLE_USER`/`MULTI_USER` or
+  `READ_ONLY`/`READ_WRITE` (for example, during patching).
+- Data-file, filegroup, or index maintenance that rewrites data in place.
+- [Availability group failover](#always-on-failovers), with the
+  configuration change described below.
+
+> **Note:** Recovery after an interruption depends on the required LSNs still being present
+> in the SQL Server CDC change tables. If the interruption lasts longer than the
+> CDC **retention period** (3 days by default) and SQL Server's cleanup job
+> removes change-table rows past the source's resume point, the source can no
+> longer recover on its own. See [Change-table retention](#change-table-retention).
+
+> **Warning:** If a maintenance script places the database into `SINGLE_USER` mode, note that an
+> active Materialize source's reconnection attempts can occupy the single available
+> connection and cause `ALTER DATABASE ... SET MULTI_USER` to fail with error 5064.
+> Terminate the Materialize session (or use `SET MULTI_USER WITH ROLLBACK
+> IMMEDIATE` after terminating it) before returning the database to multi-user
+> mode.
+
+### Operations that require re-creating the source
+A smaller set of events breaks LSN or CDC-change-table continuity. When this
+happens, Materialize cannot guarantee a correct, gap-free view of your data, so
+it puts the **entire source** into an error state that requires **re-creating**
+the source. Re-creating triggers a fresh [snapshot](/ingest-data/#snapshotting)
+and rehydration of dependent objects. Upstream changes to an individual table's
+schema are handled separately, and do not error the entire source.
+
+The following events put the **entire source** into an error state. In each
+case, the remediation is to drop and re-create the source:
+
+```mzsql
+DROP SOURCE mz_source CASCADE;
+
+CREATE SOURCE mz_source
+  FROM SQL SERVER CONNECTION sql_server_connection;
+
+-- Re-create the tables you were ingesting.
+CREATE TABLE table_1 FROM SOURCE mz_source (REFERENCE dbo.table_1);
+```
+
+#### Point-in-time restore
+
+Restoring the source database from a backup — including restoring to a different
+server for disaster recovery — is detected as a discontinuity. The source fails
+with an error of the form:
+
+```
+source must be dropped and recreated due to failure: Restore history id changed
+from None to Some(<n>)
+```
+
+Materialize detects the restore by reading `msdb.dbo.restorehistory`. (This check
+does not apply to Azure SQL Database, which does not expose `msdb`.)
+
+#### CDC disabled at the database level
+
+Running `sys.sp_cdc_disable_db` drops all change tables. The source stalls with:
+
+```
+invalid SQL Server system setting 'database CDC'. Expected 'true'. Got 'Some(false)'.
+```
+
+Re-enable CDC on the database and on each table (`sys.sp_cdc_enable_db`,
+`sys.sp_cdc_enable_table`), then re-create the source.
+
+#### Change-table retention
+
+SQL Server's CDC cleanup job removes change-table rows older than the retention
+period (3 days by default). If Materialize is disconnected long enough that
+cleanup removes rows past the source's resume LSN, the source stalls with:
+
+```
+the requested LSN '...' is less than the minimum '...' for `dbo_<table>`
+```
+
+To avoid this during a planned outage, keep the outage shorter than the retention
+period, or increase retention beforehand with
+[`sys.sp_cdc_change_job`](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sys-sp-cdc-change-job-transact-sql)
+(`@job_type = 'cleanup'`, `@retention`).
+
+### Always-On failovers
+
+Materialize supports SQL Server configured with Always On availability groups,
+including failover between replicas, with one configuration change.
+
+By default, an availability group failover is misdetected as a point-in-time
+restore and fails the source with the `Restore history id changed` error
+described above. This is a false positive: the LSN stream is continuous across an
+availability group failover, but seeding a secondary replica writes rows to
+`msdb.dbo.restorehistory`, which the restore-detection check reads as a restore.
+
+To allow the source to survive failover, disable restore-history validation with
+the [`sql_server_source_validate_restore_history`](/sql/alter-system-set/) system
+parameter:
+
+```mzsql
+ALTER SYSTEM SET sql_server_source_validate_restore_history = false;
+```
+
+> **Warning:** Disabling this check is a trade-off: with it off, Materialize will also **not**
+> detect a genuine [point-in-time restore](#point-in-time-restore) of the source
+> database. Only disable it when the source connects to a database that fails over
+> between availability group replicas.
+
+With the check disabled, the source no longer fails on failover. Because `msdb`
+is per-instance, the CDC capture and cleanup jobs do not move with the
+availability group database — after a failover, confirm that CDC is healthy on
+the new primary (the capture and cleanup jobs exist, SQL Server Agent is running,
+and the change tables are advancing) so that replication continues. Adding the
+jobs on a replica that lacks them is done with
+[`sys.sp_cdc_add_job`](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sys-sp-cdc-add-job-transact-sql).
 
 ## Examples
 
@@ -5197,7 +5911,7 @@ Column     | Type                        | Optional?                            
 ### Webhook URL
 
 After source creation, the unique URL that allows you to **POST** events to the
-source can be looked up in the [`mz_internal.mz_webhook_sources`](/reference/system-catalog/mz_internal/#mz_webhook_sources)
+source can be looked up in the [`mz_internal.mz_webhook_sources`](/sql/system-catalog/mz_internal/#mz_webhook_sources)
 system catalog table. The URL will have the following format:
 
 ```
@@ -5206,7 +5920,7 @@ https://<HOST>/api/webhook/<database>/<schema>/<src_name>
 
 A breakdown of each component is as follows:
 
-- `<HOST>`: The Materialize instance URL, which can be found on the [Materialize console](/console/).
+- `<HOST>`: The Materialize instance URL, which can be found on the [Materialize console](/developer-tools/console/).
 - `<database>`: The name of the database where the source is created (default is `materialize`).
 - `<schema>`: The schema name where the source gets created (default is `public`).
 - `<src_name>`: The name you provided for your source at the time of creation.

@@ -260,7 +260,7 @@ to connect:
 
 **Allow Materialize IPs:**
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, find the static egress IP addresses for the
    Materialize region you are running in:
 
@@ -394,7 +394,7 @@ network to allow traffic from the bastion host.
 
 1. Configure the SSH bastion host to allow traffic only from Materialize.
 
-    1. In the [SQL Shell](/console/), or your preferred
+    1. In the [SQL Shell](/developer-tools/console/), or your preferred
        SQL client connected to Materialize, get the static egress IP addresses for
        the Materialize region you are running in:
 
@@ -483,7 +483,7 @@ network to allow traffic from the bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-In Materialize, a [cluster](/concepts/clusters/) is an isolated
+In Materialize, a [cluster](/fundamentals/concepts/clusters/) is an isolated
 environment, similar to a virtual warehouse in Snowflake. When you create a
 cluster, you choose the size of its compute resource allocation based on the
 work you need the cluster to do, whether ingesting data from a source,
@@ -493,7 +493,7 @@ combination.
 In this case, you'll create a dedicated cluster for ingesting source data from
 your MySQL database.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
    command to create the new cluster:
 
@@ -516,7 +516,7 @@ your networking configuration.
 
 **Allow Materialize IPs:**
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE SECRET`](/sql/create-secret/)
    command to securely store the password for the `materialize` MySQL user
    you created [earlier](#2-create-a-user-for-replication):
@@ -546,7 +546,7 @@ your networking configuration.
     AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql) command for details.
 
 **Use AWS PrivateLink (Cloud-only):**
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE CONNECTION`](/sql/create-connection/#aws-privatelink)
 command to create an AWS PrivateLink connection:
 
@@ -660,7 +660,7 @@ details for Materialize to use:
     AWS IAM authentication is also available, see the [`CREATE CONNECTION`](/sql/create-connection/#mysql) command for details.
 
 **Use an SSH tunnel:**
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CONNECTION`](/sql/create-connection/#ssh-tunnel)
    command to create an SSH tunnel connection:
 
@@ -751,7 +751,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -779,7 +779,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -862,7 +862,7 @@ new data arrives, and serving results efficiently.
   or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
   [`CREATE SINK`](/sql/create-sink/).
 
-- Check out the [tools and integrations](/integrations/) supported by
+- Check out the [tools and integrations](/developer-tools/integrations/) supported by
   Materialize.
 
 ## Considerations

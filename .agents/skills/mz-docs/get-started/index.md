@@ -1,532 +1,6 @@
-# What is Materialize?
+# Getting started with Materialize
 
-Learn more about Materialize
-
-Materialize is the live data layer for apps and AI agents. To keep results
-up-to-date as new data arrives, Materialize incrementally updates results as it
-ingests data rather than recalculating results from scratch.
-
-## Materialize offerings
-
-Materialize is available as:
-
-| Offering | Description | Get Started 🚀  |
-|----------|-------------|-----------------|
-| **Materialize Cloud** | Materialize Cloud is a fully-managed service for Materialize. | Sign up for a [free trial account](https://materialize.com/register/?utm_campaign=General&utm_source=documentation) on Materialize Cloud and try out the [Quickstart](/get-started/quickstart/). |
-| **Materialize Self-Managed** | Deploy and operate Materialize in your Kubernetes environment. Whereas Materialize Cloud gives you a fully managed service, Materialize Self-Managed allows you to deploy Materialize in your own infrastructure.<br><br><p>Self-managed Materialize is available as a paid Enterprise Edition and a free
-Community Edition:</p>
-<table>
-  <thead>
-      <tr>
-          <th>Feature</th>
-          <th>Enterprise Edition</th>
-          <th>Community Edition</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><strong>Maximum Usage Limits (Memory)</strong></td>
-          <td>None</td>
-          <td>24 GiB</td>
-      </tr>
-      <tr>
-          <td><strong>Maximum Usage Limits (Disk)</strong></td>
-          <td>None</td>
-          <td>48 GiB</td>
-      </tr>
-      <tr>
-          <td><strong><a href="/support/" >Support</a></strong></td>
-          <td><a href="https://materialize.com/self-managed/enterprise-license/" >Per terms of your license</a></td>
-          <td><a href="/support/" >Community slack or support chat</a></td>
-      </tr>
-      <tr>
-          <td><strong>License</strong></td>
-          <td><a href="https://materialize.com/self-managed/enterprise-license/" >Enterprise License - Contact Us</a></td>
-          <td><a href="/license/" >BSL/Privacy Policy</a></td>
-      </tr>
-  </tbody>
-</table> | [Install self-managed](/get-started/install/) and try out the [Quickstart](/get-started/quickstart/). |
-| **Materialize Emulator** | Materialize Emulator is an all-in-one Docker image that provides the fastest way to get hands-on experience with Materialize for local development. | [Download and run Materialize Emulator](/get-started/install-materialize-emulator/) and try out the [Quickstart](/get-started/quickstart/). |
-
-## Key features
-
-Materialize combines the accessibility of SQL databases with a streaming engine
-that is horizontally scalable, highly available, and strongly consistent.
-
-### Incremental updates
-
-In traditional databases, materialized views help you avoid re-running heavy
-queries, typically by caching queries to serve results faster. But you have
-to make a compromise between the freshness of the results, the cost of
-refreshing the view, and the complexity of the SQL statements you can use.
-
-In Materialize, you don't have to make such compromises. Materialize supports
-incrementally updated view results that are **always fresh** (even when using
-complex SQL statements, like multi-way joins with aggregations) for *both*:
-
-- [Indexed views](/concepts/views/#indexes-on-views) and
-
-- [Materialized views](/concepts/views/#materialized-views).
-
-How?
-Its engine is built on [Timely](https://github.com/TimelyDataflow/timely-dataflow#timely-dataflow)
-and [Differential Dataflow](https://github.com/timelydataflow/differential-dataflow#differential-dataflow)
-— data processing frameworks backed by many years of research and optimized for
-this exact purpose.
-
-### Standard SQL support
-
-With Materialize, you use SQL to transform your fast-changing data into **live
-data products**: the business objects (e.g., a customer, an order, a store) that
-your applications, services, dashboards, and AI agents read.
-
-You can express complex transformations using **[any type of
-join](/sql/select/join/)** (including non-windowed joins and joins on arbitrary
-conditions), as well as SQL patterns
-enabled by streaming like [**Change Data Capture (CDC)**](/ingest-data/),
-[**temporal filters**](/sql/patterns/temporal-filters/), and
-[**subscriptions**](/sql/subscribe/).
-
-Materialize follows the SQL standard (SQL-92) implementation and aims for
-compatibility with the PostgreSQL dialect. It **does not** aim for
-compatibility with a specific version of PostgreSQL. This means that
-Materialize might support syntax from any released PostgreSQL version, but does
-not provide full coverage of the PostgreSQL dialect. The implementation and
-performance of specific features (like [window functions](/transform-data/idiomatic-materialize-sql/appendix/window-function-to-materialize))
-might also differ, because Materialize uses an entirely different database
-engine based on [Timely and Differential Dataflow](/get-started/#incremental-updates).
-
-If you need specific syntax or features that are not currently supported in
-Materialize, please submit a [feature request](/support/#share-your-feedback).
-
-### Real-time data ingestion
-
-Materialize supports ingesting data from various external systems:
-
-| Type | External system |
-|------|-----------------|
-| **Databases (CDC): native connectors** | [PostgreSQL](/ingest-data/postgres/) <br> [MySQL](/ingest-data/mysql/) <br> [SQL Server](/ingest-data/sql-server/) |
-| **Databases (CDC): via the Kafka connector** | [CockroachDB](/ingest-data/cdc-cockroachdb/) (using changefeeds) <br> [MongoDB](/ingest-data/mongodb/) (using Debezium) |
-| **Message brokers** | [Kafka](/ingest-data/kafka/) <br> [Redpanda](/sql/create-source/kafka) |
-| **Webhooks** | [Amazon EventBridge](/ingest-data/webhooks/amazon-eventbridge/) <br> [Segment](/ingest-data/webhooks/segment/) <br> [HubSpot](/ingest-data/webhooks/hubspot/) <br> [RudderStack](/ingest-data/webhooks/rudderstack/) <br> [SnowcatCloud](/ingest-data/webhooks/snowcatcloud/) <br> [Stripe](/ingest-data/webhooks/stripe/)|
-
-For more information, see [Ingest Data](/ingest-data/).
-
-### PostgreSQL wire-compatibility
-
-Every database needs a protocol to standardize communication with the outside
-world. Materialize uses the [PostgreSQL wire protocol](https://datastation.multiprocess.io/blog/2022-02-08-the-world-of-postgresql-wire-compatibility.html),
-which allows it to integrate out-of-the-box with many SQL clients and other
-tools in the data ecosystem that support PostgreSQL — like [dbt](/integrations/dbt/).
-
-### Strong consistency guarantees
-
-By default, Materialize provides the highest level of transaction isolation:
-**strict serializability**. This means that it presents as if it were a single
-process, despite spanning a large number of threads, processes, and machines.
-Strict serializability avoids common pitfalls like eventual consistency and dual
-writes, which affect the correctness of your results. You can [adjust the
-transaction isolation level](/overview/isolation-level/) depending on your
-consistency and performance requirements.
-
-## Learn more
-
-- [Key concepts](/concepts/)
-- [Get started with Materialize](/get-started/quickstart)
-
----
-
-## Arrangements
-
-The mechanisms that maintain materialized views for Materialize dataflows are
-called **arrangements**. Understanding arrangements better can help you make
-decisions that will reduce memory usage while maintaining performance.
-
-## Materialized views
-
-Before we talk about the arrangements that maintain materialized views, let's
-review what materialized views are, how they work in traditional databases, and
-how they work in Materialize.
-
-A view is simply a query saved under a name for convenience; the query is
-executed each time the view is referenced, without any savings in performance
-or speed. But some databases also support something more powerful: materialized
-views, which save the *results* of the query for quicker access.
-
-Traditional databases typically only have limited support for materialized views
-in two ways: first, the updates to the views generally occur at set intervals,
-so views are not updated in real time, and second, only a limited subset of SQL
-syntax is supported. In cases where a traditional database *does* support
-refreshes for each data update, it tends to be very slow. These limitations
-stem from limited support for incremental updates; most databases are not
-designed to maintain long-running incremental queries, but instead are
-optimized for queries that are executed once and then wound down. This means
-that when the data changes, the materialized view must be recomputed from
-scratch in all but a few simple cases.
-
-Our mission at Materialize is to manage materialized views better than this.
-Materialize supports incrementally updating a much broader set of views than is
-common in traditional databases (e.g. views over multi-way joins with complex
-aggregations), and can do incremental updates in the presence of arbitrary
-inserts, updates, and deletes in the input streams while maintaining
-correctness.
-
-## Dataflows
-
-Materialize can make incremental updates efficiently because it's built on an
-incremental data-parallel compute engine, [Differential Dataflow](https://timelydataflow.github.io/differential-dataflow/introduction.html),
-which in turn is built on a distributed processing framework called
-[Timely Dataflow](https://timelydataflow.github.io/timely-dataflow/).
-
-When you create a materialized view and issue a query, Materialize creates
-a **dataflow**. A dataflow consists of instructions on how to respond to data
-input and to changes to that data. Once executed, the dataflow computes the
-result of the SQL query, polls the source for updates, and then incrementally
-updates the query results when new data arrives.
-
-### Collections
-
-Materialize dataflows act on **collections** of data, [multisets](https://en.wikipedia.org/wiki/Multiset)
-that store each event in an update
-stream as a triple of `(data, time, diff)`.
-
-Term | Definition
------|-----------
-**data**  |  The record update.
-**time**  |  The logical timestamp of the update.
-**diff**  |  The change in the number of copies of the record (typically `-1` for deletion, `1` for addition).
-
-## Arrangements
-
-A collection provides a data stream of updates as they happen. To provide fast
-access to the changes to individual records, the collection can be represented
-in an alternate form, indexed on `data` to present the sequence of changes
-(`time, diff`) the collection has undergone. This indexed representation is
-called an **arrangement**.
-
-Materialize builds and maintains indexes on both the input and output
-collections as well as for many intermediate collections created when
-processing a query. Because queries can overlap, Materialize might need to
-build the exact same indexes for multiple queries. Instead of performing
-redundant work, Materialize builds the index once and maintains it in memory,
-sharing the required resources across all queries that use the indexed data.
-The index is then effectively a sunk cost, and the cost of each query is
-determined only by the new work it introduces.
-
-You can find a more detailed analysis of the arrangements built for different
-types of queries in our blog post on [Joins in Materialize](https://materialize.com/joins-in-materialize).
-
-### Arrangement size
-
-The size of an arrangement, or amount of memory it requires, is roughly
-proportional to its number of distinct `(data, time)` pairs, which can be small
-even if the number of records is large. As an illustration, consider a
-histogram of taxi rides grouped by the number of riders and the fare amount.
-The number of distinct `(rider, fare)` pairs will be much smaller than the
-number of total rides that take place.
-
-The amount of memory that the arrangement requires is then further reduced by
-background compaction of historical data.
-
-## Analyzing arrangements
-
-Materialize provides various tools that allow you to analyze arrangements,
-although they are post-hoc tools best used for debugging, rather than planning
-tools to be used before creating indexes or views. See [Diagnosing Using SQL](/ops/troubleshooting/)
-and [`EXPLAIN PLAN`](/sql/explain-plan/) for more details.
-
-## Reducing memory usage
-
-### Creating indexes manually
-
-When creating an arrangement for a join where the key is not clear, Materialize
-attempts to choose a key that will ensure that data is well distributed. If
-there is a primary key, that will be used; if there are source fields not
-required by the query, they are not included. Often Materialize can pull
-primary key info from a Confluent schema.
-
-If Materialize cannot detect a primary key, the default key is the full set of
-columns, in order to ensure good data distribution. Creating an unmaterialized
-view and then specifying a custom index makes the key smaller.
-
-For more information on when and how to create indexes, see
-[Optimization](../../ops/optimization/).
-For more in-depth details on joins, see [Joins in Materialize](https://materialize.com/joins-in-materialize/).
-
-### Type casting
-
-Currently, Materialize handles implicit casts inserted in join constraints in a very memory-intensive way.
-Until this issue
-is resolved, you can reduce memory usage by building an index on the view with
-the type changed for any queries that include implicit casts, for example,
-when you combine 32-bit and 64-bit numbers.
-
-## Related pages
-
-* [Optimization](../../ops/optimization/)
-* [Joins in Materialize](https://materialize.com/joins-in-materialize/)
-* [Diagnosing Using SQL](/ops/troubleshooting/)
-* [Deployment](/ops/optimization/)
-* [Differential Dataflow](https://timelydataflow.github.io/differential-dataflow/)
-
----
-
-## Download and run Materialize Emulator
-
-The Materialize Emulator is an all-in-one Docker image available on Docker Hub
-for testing and evaluation purposes. The Materialize Emulator is not
-representative of Materialize's performance and full feature set.
-
-> **Important:** The Materialize Emulator is <redb> not suitable for production workloads.</redb>.
-
-### Materialize Emulator
-
-Materialize Emulator is the easiest way to get started with Materialize, but is
-not suitable for full feature set evaluations or production workloads.
-
-| Materialize Emulator              | Details    |
-|-----------------------------------|------------|
-| **What is it**                    | A single Docker container version of Materialize. |
-| **Best For**                       | Prototyping and CI jobs. |
-| **Known Limitations**     | Not indicative of true Materialize performance. <br>Services are bundled in a single container. <br>No fault tolerance. <br>No data persistence. <br>No support for version upgrades. |
-| **Evaluation Experience**          | Download from Docker Hub. |
-| **Support**                        | [Materialize Community Slack channel](https://materialize.com/s/chat).|
-| **License/legal arrangement**      | [BSL/Materialize's privacy policy](#license-and-privacy-policy) |
-
-### Prerequisites
-
-- Docker. If [Docker](https://www.docker.com/) is not installed, refer to its
-[official documentation](https://docs.docker.com/get-docker/) to install.
-
-### Install and run the Materialize Emulator
-
-> **Note:** - Use of the Docker image is subject to Materialize's [BSL License](https://github.com/MaterializeInc/materialize/blob/main/LICENSE).
-> - By downloading the Docker image, you are agreeing to Materialize's [privacy policy](https://materialize.com/privacy-policy/).
-
-1. In a terminal, issue the following command to run a Docker container from the
-   Materialize Emulator image. The command downloads the image, if one has not
-   been already downloaded.
-
-   ```sh
-   docker run -d -p 127.0.0.1:6874:6874 -p 127.0.0.1:6875:6875 -p 127.0.0.1:6876:6876 -p 127.0.0.1:6877:6877 materialize/materialized:v26.39.0
-   ```
-
-   When running locally:
-
-   - The Docker container binds exclusively to localhost for security reasons.
-   - The [Materialize Console](/console/) is available on port `6874`.
-   - The SQL interface is available on port `6875`.
-   - Logs are available via `docker logs <container-id>`.
-   - A default user `materialize` is created.
-   - A default database `materialize` is created.
-
-1. <a name="materialize-emulator-connect-client"></a>
-
-   Open the Materialize Console in your browser at [http://localhost:6874](http://localhost:6874).
-
-   To streamline development and troubleshooting, we recommend [setting up
-   your coding agents](#setup-your-coding-agents).
-
-   You can also connect to the Materialize Emulator using your
-   preferred SQL client, using the following connection field values:
-
-   | Field    | Value         |
-   |----------|---------------|
-   | Server   | `localhost`   |
-   | Database | `materialize` |
-   | Port     | `6875`        |
-   | Username | `materialize` |
-
-   For example, if using [`psql`](/integrations/sql-clients/#psql):
-
-   ```sh
-   psql postgres://materialize@localhost:6875/materialize
-   ```
-
-1. Once connected, you can get started with the
-   [Quickstart](/get-started/quickstart).
-
-### Setup your coding agents
-
-To streamline development and troubleshooting, you can set up coding agents
-like [Claude Code](https://docs.anthropic.com/en/docs/claude-code),
-[Codex](https://openai.com/index/codex/), and [Cursor](https://www.cursor.com/)
-to work with your Materialize Emulator.
-
-#### Install the Materialize agent skills
-
-Materialize provides open-source [agent
-skills](/integrations/coding-agent-skills/) that give your coding agent access
-to Materialize documentation and reference material, so it can provide more
-accurate assistance when writing queries, setting up sources, creating
-materialized views, and more.
-
-1. If [Node.js](https://nodejs.org/) (v16 or later) is not installed, refer to
-   its [official documentation](https://nodejs.org/en/download) to install.
-
-1. In a terminal, issue the following command to install the Materialize agent
-   skills:
-
-   ```bash
-   npx skills add MaterializeInc/agent-skills
-   ```
-
-For more details on the available skills, see [Agent
-Skills](/integrations/coding-agent-skills/).
-
-#### Connect to the MCP server
-
-The Materialize Emulator includes a built-in `materialize-developer` [MCP
-server](/integrations/mcp-server/mcp-developer/) for troubleshooting and
-observability. The Emulator does not require authentication, so your MCP
-client only needs the MCP server URL
-`http://localhost:6876/api/mcp/developer`.
-
-1. Configure your MCP client with the Emulator's MCP server URL. For example,
-   if using [Claude Code](https://docs.anthropic.com/en/docs/claude-code):
-
-   ```sh
-   claude mcp add --transport http materialize-developer \
-     http://localhost:6876/api/mcp/developer
-   ```
-
-1. Restart your MCP client to pick up the new setting. Once connected, you can
-   ask questions like *Why is my materialized view stale?* or *How much memory
-   is my cluster using?*
-
-For more details, including instructions for other MCP clients, see [MCP Server
-for Developers](/integrations/mcp-server/mcp-developer/).
-
-### Next steps
-
-- To start ingesting your own data from an external system like Kafka, MySQL or
-  PostgreSQL, check the documentation for [sources](/sql/create-source/).
-
-- Join the [Materialize Community on Slack](https://materialize.com/s/chat).
-
-- To fully evaluate Materialize Cloud, sign up for a [free trial Materialize
-  Cloud
-  account](https://materialize.com/register/?utm_campaign=General&utm_source=documentation).
-  The full experience of Materialize is also available as a self-managed
-  offering. See [Self-managed Materialize](/self-managed-deployments/).
-
-### Technical Support
-
-For questions, discussions, or general technical support, join the [Materialize
-Community on Slack](https://materialize.com/s/chat).
-
-#### `mz-debug`
-
-Materialize provides a [`mz-debug`]command-line debug tool called  that helps collect diagnostic information from your emulator environment. This tool can gather:
-- Docker logs and resource information
-- Snapshots of system catalog tables from your Materialize instance
-
-To debug your emulator instance, you can use the following command:
-
-```console
-mz-debug emulator --docker-container-id <your-container-id>
-```
-
-This debug information can be particularly helpful when troubleshooting issues or when working with the Materialize support team.
-
-For more detailed information about the debug tool, see the [`mz-debug` documentation](/integrations/mz-debug/).
-
-### License and privacy policy
-
-- Use of the Docker image is subject to Materialize's [BSL
-  License](https://github.com/MaterializeInc/materialize/blob/main/LICENSE).
-
-- By downloading the Docker image, you are agreeing to Materialize's
-  [privacy policy](https://materialize.com/privacy-policy/).
-
-#### Materialize Self-Managed Community Edition or the Materialize Emulator Privacy FAQ
-
-When you use the Materialize Self-Managed Community Edition or the Materialize Emulator, we may collect the following information from the machine that runs the Materialize Self-Managed Community Edition or the Materialize Emulator software:
-
-- The IP address of the machine running Materialize.
-
-- If available, the cloud provider and region of the machine running
-  Materialize.
-
-- Usage data about your use of the product such as the types or quantity of
-  commands you run, the number of clusters or indexes you are running, and
-  similar feature usage information.
-
-The collection of this data is subject to the [Materialize Privacy Policy](https://materialize.com/privacy-policy/).
-
-Please note that if you visit our website or otherwise engage with us outside of
-downloading the Materialize Self-Managed Community Edition or the Materialize
-Emulator, we may collect additional information about you as further described
-in our [Privacy Policy](https://materialize.com/privacy-policy/).
-
-<style>
-red { color: #d33902 }
-redb { color: #d33902; font-weight: 500; }
-</style>
-
----
-
-## Install Self-Managed Materialize
-
-<p>You can install Self-Managed Materialize on a Kubernetes cluster running
-locally or on a cloud provider. Self-Managed Materialize requires:</p>
-<ul>
-<li>A Kubernetes (v1.31+) cluster.</li>
-<li>PostgreSQL as a metadata database.</li>
-<li>Blob storage.</li>
-<li>A license key.</li>
-</ul>
-<h2 id="license-key">License key</h2>
-<p>Starting in v26.0, Materialize requires a license key.</p>
-
-| License key type | Deployment type | Action |
-| --- | --- | --- |
-| Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
-| Community | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
-| Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
-| Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
-
-<h2 id="installation-guides">Installation guides</h2>
-<p>The following installation guides are available to help you get started:</p>
-
-### Install using Helm Commands
-
-|  Guide         | Description  |
-| ------------- | -------|
-| [Install locally on Kind](/self-managed-deployments/installation/install-on-local-kind/) | Uses standard Helm commands to deploy Materialize to a Kind cluster in Docker.
-
-<h3 id="install-using-terraform-modules">Install using Terraform Modules</h3>
-> **Note:** We recommend pinning your module sources to specific tags to avoid unexpected breaking
-> changes in future versions.
-> We recommend updating your module source tags when updating Materialize versions,
-> taking care to follow any instructions in the release notes.
-
-<table>
-  <thead>
-      <tr>
-          <th>Guide</th>
-          <th>Description</th>
-      </tr>
-  </thead>
-  <tbody>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/install-on-aws/" >Install on AWS</a></td>
-          <td>Uses Terraform module to deploy Materialize to AWS Elastic Kubernetes Service (EKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/install-on-azure/" >Install on Azure</a></td>
-          <td>Uses Terraform module to deploy Materialize to Azure Kubernetes Service (AKS).</td>
-      </tr>
-      <tr>
-          <td><a href="/self-managed-deployments/installation/install-on-gcp/" >Install on GCP</a></td>
-          <td>Uses Terraform module to deploy Materialize to Google Kubernetes Engine (GKE).</td>
-      </tr>
-  </tbody>
-</table>
-
----
-
-## Quickstart
+Learn the basics of Materialize.
 
 <style>
     red { color: #d33902; }
@@ -534,9 +8,9 @@ locally or on a cloud provider. Self-Managed Materialize requires:</p>
 </style>
 
 Materialize provides always-fresh results while also providing [strong
-consistency guarantees](/reference/isolation-level/). In Materialize, both
-[indexes](/concepts/indexes/ "Indexes represents query results stored in memory
-within a cluster") and [materialized views](/concepts/views/#materialized-views)
+consistency guarantees](/serve-results/isolation-level/). In Materialize, both
+[indexes](/fundamentals/concepts/indexes/ "Indexes represents query results stored in memory
+within a cluster") and [materialized views](/fundamentals/concepts/views/#materialized-views)
 **incrementally update** results when Materialize ingests new data; i.e., work
 is performed on writes. Because work is performed on writes, reads from these
 objects return the already up-to-date results.
@@ -545,11 +19,11 @@ In this quickstart, you will continuously ingest a sample auction data set to
 build an operational use case around finding auction winners and auction
 flippers. Specifically, you will:
 
-- Create and query various [views](/concepts/views/) on sample auction data. The
+- Create and query various [views](/fundamentals/concepts/views/) on sample auction data. The
   data is continually generated at 1 second intervals to mimic a data-intensive
   workload.
 
-- Create an [index](/concepts/indexes "Indexes represents query results stored
+- Create an [index](/fundamentals/concepts/indexes "Indexes represents query results stored
   in memory within a cluster") to compute and store view results in memory. As
   new auction data arrives, the index **incrementally updates** view
   results instead of recalculating the results from scratch, making fresh
@@ -569,7 +43,7 @@ trial](https://materialize.com/register/?utm_campaign=General&utm_source=documen
 Alternatively:
 
 - You can [download the Materialize
-Emulator](/get-started/install-materialize-emulator/). However, the Materialize
+Emulator](/developer-tools/install-materialize-emulator/). However, the Materialize
 Emulator does not provide the full experience of using Materialize.
 
 - You can run against your [Self-managed
@@ -578,7 +52,7 @@ Emulator does not provide the full experience of using Materialize.
 ## Step 0. Open the SQL Shell
 
 - If you have a Materialize account, navigate to the [Materialize
-  Console](/console/) and sign in. By default, you should
+  Console](/developer-tools/console/) and sign in. By default, you should
   be in the SQL Shell. If you're already signed in, you can access the SQL Shell in the left-hand menu.
 
 - If you are using the Materialize Emulator, open the Materialize Console in
@@ -592,7 +66,7 @@ Emulator does not provide the full experience of using Materialize.
 By default, you are using the `quickstart` cluster, working in the
 `materialize.public` [namespace](/sql/namespaces/), where:
 
-- A [cluster](/concepts/clusters/) is an isolated pool of compute resources
+- A [cluster](/fundamentals/concepts/clusters/) is an isolated pool of compute resources
   (CPU, memory, and scratch disk space) for running your workloads),
 
 - `materialize` is the database name, and
@@ -620,11 +94,11 @@ See also [Naming restrictions](/sql/identifiers/#naming-restrictions).
 
 ## Step 2. Create the source
 
-[Sources](/concepts/sources/) are external systems from which Materialize reads
+[Sources](/fundamentals/concepts/sources/) are external systems from which Materialize reads
 in data. This tutorial uses Materialize's [sample `Auction` load
 generator](/sql/create-source/load-generator/#auction) to create the source.
 
-1. Create the [source](/concepts/sources "External systems from which
+1. Create the [source](/fundamentals/concepts/sources "External systems from which
    Materialize reads data.") using the [`CREATE SOURCE`](/sql/create-source/)
    command.
 
@@ -751,7 +225,7 @@ generator](/sql/create-source/load-generator/#auction) to create the source.
 
 ## Step 3. Create a view to find winning bids
 
-A [view](/concepts/views/) is a saved name for the underlying `SELECT`
+A [view](/fundamentals/concepts/views/) is a saved name for the underlying `SELECT`
 statement, providing an alias/shorthand when referencing the query. The
 underlying query is not executed during the view creation; instead, the
 underlying query is executed when the view is referenced.
@@ -762,7 +236,7 @@ auction ended. As new auction and bid data appears, the query must be rerun to
 get up-to-date results.
 
 1. Using the [`CREATE VIEW`](/sql/create-view/) command, create a
-   [**view**](/concepts/views/ "Saved name/alias for a query") to find the
+   [**view**](/fundamentals/concepts/views/ "Saved name/alias for a query") to find the
    winning (highest) bids.
 
    ```mzsql
@@ -806,7 +280,7 @@ get up-to-date results.
    grows.
 
    In Materialize, to make the queries more performant even as data
-   continues to grow, you can create [**indexes**](/concepts/indexes/) on views.
+   continues to grow, you can create [**indexes**](/fundamentals/concepts/indexes/) on views.
    Indexes provide always fresh view results in memory within a cluster by
    performing incremental updates as new data arrives. Queries can then read
    from the in-memory, already up-to-date results instead of re-running the
@@ -817,7 +291,7 @@ get up-to-date results.
 ## Step 4. Create an index to provide up-to-date results
 
 Indexes in Materialize represents query results stored in memory within a
-cluster. In Materialize, you can create [indexes](/concepts/indexes/) on views
+cluster. In Materialize, you can create [indexes](/fundamentals/concepts/indexes/) on views
 to provide always fresh, up-to-date view results in memory within a cluster.
 Queries can then read from the in-memory, already up-to-date results instead of
 re-running the underlying statement.
@@ -889,13 +363,14 @@ creates:
            w2.amount AS sold_amount,
            w1.amount AS purchased_amount,
            w2.amount - w1.amount AS diff_amount,
-           datediff('days', w2.bid_time, w1.bid_time) AS timeframe_days
+           datediff('days', w1.bid_time, w2.bid_time) AS timeframe_days
      FROM  winning_bids AS w1
        JOIN winning_bids AS w2
          ON w1.buyer = w2.seller   -- Buyer and seller are the same
             AND w1.item = w2.item  -- Item is the same
      WHERE w2.amount > w1.amount   -- But sold at a higher price
-       AND datediff('days', w2.bid_time, w1.bid_time) < 8;
+       AND w2.bid_time > w1.bid_time -- And sold after it was bought
+       AND datediff('days', w1.bid_time, w2.bid_time) < 8;
     ```
 
     To view a sample row in `flip_activities`, run the following
@@ -928,6 +403,17 @@ creates:
 
     Rerun the previous query on `flip_activities`. The query should return
     faster.
+
+    The indexes make each query cheaper to compute, but they do not change how
+    much the view returns. The number of matching pairs still grows as
+    `winning_bids` grows, and the 8-day bound in the `WHERE` clause is what
+    keeps that growth linear rather than quadratic. Because `flip_activities`
+    is a plain view, this work happens only when you query it. If you later
+    create an index on `flip_activities` or turn it into a materialized view,
+    Materialize retains that state continuously as the load generator keeps
+    producing auctions. Keep the time bound in place, or add a [temporal
+    filter](/transform-data/patterns/temporal-filters/) to `winning_bids`, so
+    that the retained state stays bounded.
 
 1. Use [`CREATE TABLE`](/sql/create-table) to create a `known_flippers` table
    that you can manually populate with known flippers. That is, assume that
@@ -1099,7 +585,7 @@ To clean up the quickstart environment:
 
 ## Summary
 
-In Materialize, [indexes](/concepts/indexes/) represent query results stored in
+In Materialize, [indexes](/fundamentals/concepts/indexes/) represent query results stored in
 memory within a cluster. When you create an index on a view, the index
 incrementally updates the view results (instead of recalculating the results
 from scratch) as Materialize ingests new data. These up-to-date results are then
@@ -1119,8 +605,8 @@ Some general guidelines for usage patterns include:
 |--------------------------------------------------------------------------------|--------------------|
 | View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture. | View with an [index](/sql/create-index) |
 | View used as a building block for stacked views; i.e., views not used to serve results. | View |
-| View results are accessed across [clusters](/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
-| Use with a [sink](/serve-results/sink/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
+| View results are accessed across [clusters](/fundamentals/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
+| Use with a [sink](/export-data/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
 | Use with [temporal filters](/transform-data/patterns/temporal-filters/) | Materialized view  |
 
 The quickstart used an index since:
@@ -1136,18 +622,18 @@ The quickstart used an index since:
 
 Before creating an index (which represents query results stored in memory),
 consider its memory usage as well as its [compute cost
-implications](/administration/billing/#compute). For best practices when
-creating indexes, see [Index Best Practices](/concepts/indexes/#best-practices).
+implications](/materialize-cloud/billing/#compute). For best practices when
+creating indexes, see [Index Best Practices](/fundamentals/concepts/indexes/#best-practices).
 
 ### Additional information
 
-- [Clusters](/concepts/clusters)
-- [Indexes](/concepts/indexes)
-- [Sources](/concepts/sources)
-- [Views](/concepts/views/)
+- [Clusters](/fundamentals/concepts/clusters)
+- [Indexes](/fundamentals/concepts/indexes)
+- [Sources](/fundamentals/concepts/sources)
+- [Views](/fundamentals/concepts/views/)
 - [Idiomatic Materialize SQL
   chart](/transform-data/idiomatic-materialize-sql/appendix/idiomatic-sql-chart/)
-- [Usage & Billing](/administration/billing/#compute)
+- [Usage & Billing](/materialize-cloud/billing/#compute)
 - [`CREATE INDEX`](/sql/create-index/)
 - [`CREATE SCHEMA`](/sql/create-schema/)
 - [`CREATE SOURCE`](/sql/create-source/)
@@ -1166,24 +652,37 @@ creating indexes, see [Index Best Practices](/concepts/indexes/#best-practices).
 - To get started ingesting your own data from an external system like Kafka,
   MySQL or PostgreSQL, check the documentation for
   [sources](/sql/create-source/), and navigate to **Data** > **Sources** > **New
-  source** in the [Materialize Console](/console/) to create your first source.
+  source** in the [Materialize Console](/developer-tools/console/) to create your first source.
 
 - To have your coding agent (such as Claude Code, Codex, or Cursor) write more
   accurate Materialize SQL, install the [Materialize agent
-  skills](/integrations/coding-agent-skills/). The skills give your agent access
-  to Materialize documentation and reference material:
+  skills](/developer-tools/mcp-server/coding-agent-skills/). The skills give your agent access
+  to Materialize documentation and reference material.
 
+  **Claude Code:**
+  ```
+  /plugin marketplace add MaterializeInc/agent-skills
+  /plugin install materialize@materialize
+  ```
+
+  **Codex:**
+  ```bash
+  codex plugin marketplace add MaterializeInc/agent-skills
+  codex plugin add materialize@materialize
+  ```
+
+  **Other agents:**
   ```bash
   npx skills add MaterializeInc/agent-skills
   ```
 
 - To let your agent query your data and inspect your deployment, connect it to
-  Materialize's built-in [MCP servers](/integrations/mcp-server/):
+  Materialize's built-in [MCP servers](/developer-tools/mcp-server/):
 
-  - [MCP Server for agents](/integrations/mcp-server/mcp-agent/) to discover and
+  - [MCP Server for agents](/developer-tools/mcp-server/mcp-agent/) to discover and
     query your data products.
 
-  - [MCP Server for developers](/integrations/mcp-server/mcp-developer/) to
+  - [MCP Server for developers](/developer-tools/mcp-server/mcp-developer/) to
     troubleshoot and observe your deployment through the `mz_*` system catalog
     tables, and to run queries on your objects.
 

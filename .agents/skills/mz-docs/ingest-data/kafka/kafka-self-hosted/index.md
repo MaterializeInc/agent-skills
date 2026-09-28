@@ -267,7 +267,7 @@ Before you begin, make sure you have access to a bastion host. You will need:
 1. Configure the SSH bastion host. The bastion host needs a **public key** to
 connect to the Materialize tunnel you created in the previous step. Materialize
 stores public keys for SSH tunnels in the system catalog. Query
-[`mz_ssh_tunnel_connections`](/reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
+[`mz_ssh_tunnel_connections`](/sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
 to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```mzsql
@@ -384,7 +384,7 @@ connection you configured in the previous section:
 
 **Allow Materialize IPs:**
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, find the static egress IP addresses for the
    Materialize region you are running in:
 
@@ -449,7 +449,7 @@ Before you begin, make sure you have access to a bastion host. You will need:
 1. Configure the SSH bastion host. The bastion host needs a **public key** to
 connect to the Materialize tunnel you created in the previous step. Materialize
 stores public keys for SSH tunnels in the system catalog. Query
-[`mz_ssh_tunnel_connections`](/reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
+[`mz_ssh_tunnel_connections`](/sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
 to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```mzsql

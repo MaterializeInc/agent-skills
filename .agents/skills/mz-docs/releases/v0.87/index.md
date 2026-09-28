@@ -39,7 +39,7 @@
   );
   ```
 
-* Add `topic` to the [`mz_internal.mz_kafka_sources`](https://materialize.com/docs/reference/system-catalog/mz_catalog/#mz_kafka_sources)
+* Add `topic` to the [`mz_internal.mz_kafka_sources`](https://materialize.com/docs/sql/system-catalog/mz_catalog/#mz_kafka_sources)
   system catalog table. This column contains the name of the Kafka topic the
   source is reading from.
 

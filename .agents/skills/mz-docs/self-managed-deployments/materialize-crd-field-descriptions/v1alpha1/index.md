@@ -62,6 +62,19 @@ The backend secret must contain external_login_password_mz_system.</li>
 <p><strong>Default:</strong> <code>None</code></p></td>
 </tr>
 <tr>
+<td><code>balancerdConfigmapName</code></td>
+<td></td>
+<td>
+<em><strong>String</strong></em>
+
+<p>The name of an externally managed ConfigMap in this namespace containing
+balancerd dynamic configuration as a JSON object in <code>config.json</code>.
+Changes to its contents are applied at runtime. Changing this reference
+restarts balancerd pods but does not trigger an environmentd rollout.</p>
+
+</td>
+</tr>
+<tr>
 <td><code>balancerdExternalCertificateSpec</code></td>
 <td></td>
 <td>

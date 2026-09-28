@@ -93,8 +93,8 @@ privileges were set.
 
 In addition, all roles have:
 - `USAGE` on all built-in types and [all system catalog
-schemas](/reference/system-catalog/).
-- `SELECT` on [system catalog objects](/reference/system-catalog/).
+schemas](/sql/system-catalog/).
+- `SELECT` on [system catalog objects](/sql/system-catalog/).
 - All [applicable privileges](/security/appendix/appendix-privileges/) for
   an object they create; for example, the creator of a schema gets `CREATE` and
   `USAGE`; the creator of a table gets `SELECT`, `INSERT`, `UPDATE`, and
@@ -168,6 +168,10 @@ By default, Materialize is available on the public internet without any
 network-layer access control. As an **administrator** of a Materialize
 organization, you can configure network policies to restrict access to a
 Materialize region using IP-based rules.
+
+Network policies are enforced at the database layer and apply to both SQL
+(pgwire) and HTTP connections. Because the Materialize Console connects over
+HTTP, network policies restrict Console access in addition to SQL access.
 
 ## Create a network policy
 
@@ -270,8 +274,8 @@ users](./invite-users/).
 > applications and services to Materialize.
 
 As an **Organization admin**, you can create a new service account via
-the [Materialize Console](/console/) or via
-[Terraform](/manage/terraform/).
+the [Materialize Console](/developer-tools/console/) or via
+[Terraform](/developer-tools/terraform/).
 
 > **Note:** - The new account creation is not finished until the first time you connect with
 > the account.
@@ -307,6 +311,6 @@ provider groups to database roles](./sync-idp-groups/).
 ## See also
 
 - [Role-based access control](/security/cloud/access-control/)
-- [Manage with dbt](/manage/dbt/)
-- [Manage with Terraform](/manage/terraform/)
+- [Manage with dbt](/developer-tools/dbt/)
+- [Manage with Terraform](/developer-tools/terraform/)
 

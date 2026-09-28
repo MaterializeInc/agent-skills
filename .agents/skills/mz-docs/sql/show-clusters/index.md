@@ -1,6 +1,6 @@
 # SHOW CLUSTERS
 `SHOW CLUSTERS` lists the clusters configured in Materialize.
-`SHOW CLUSTERS` lists the [clusters](/concepts/clusters/) configured in Materialize.
+`SHOW CLUSTERS` lists the [clusters](/fundamentals/concepts/clusters/) configured in Materialize.
 
 ## Syntax
 
@@ -62,7 +62,7 @@ The following characteristics apply to the `mz_catalog_server` cluster:
   * You cannot create objects in this cluster.
   * You cannot drop this cluster.
   * You can run `SELECT` or `SUBSCRIBE` queries in this cluster as long
-    as you only reference objects in the [system catalog](/reference/system-catalog/).
+    as you only reference objects in the [system catalog](/sql/system-catalog/).
 
 ### `mz_probe` system cluster
 

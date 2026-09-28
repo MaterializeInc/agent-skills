@@ -2,7 +2,7 @@
 
 `CREATE SINK` connects Materialize to an external data sink.
 
-A [sink](/concepts/sinks/) describes an external system you
+A [sink](/fundamentals/concepts/sinks/) describes an external system you
 want Materialize to write data to, and provides details about how to encode
 that data. You can define a sink over a materialized view, source, or table.
 
@@ -224,7 +224,7 @@ The privileges required to execute this statement are:
 
 ## Related pages
 
-- [Sinks](/concepts/sinks/)
+- [Sinks](/fundamentals/concepts/sinks/)
 - [`SHOW SINKS`](/sql/show-sinks/)
 - [`SHOW COLUMNS`](/sql/show-columns/)
 - [`SHOW CREATE SINK`](/sql/show-create-sink/)
@@ -483,7 +483,7 @@ if conflicts persist, ensure no other writers are modifying the same table.
 
 ### Prerequisites: Create connections
 
-To create an Iceberg sink, you need an [Iceberg catalog connection](/serve-results/sink/iceberg/):
+To create an Iceberg sink, you need an [Iceberg catalog connection](/export-data/iceberg/):
 
 **AWS S3 Tables:**
 
@@ -505,7 +505,7 @@ CREATE CONNECTION iceberg_catalog_connection TO ICEBERG CATALOG (
 
 **GCP BigLake:**
 
-The following example creates a [GCP connection](/sql/create-connection/#gcp) and an [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) for Google Cloud BigLake:
+The following example creates a [GCP connection](/sql/create-connection/#gcp) and an [Iceberg catalog connection](/sql/create-connection/#iceberg-catalog) for Google Cloud BigLake. The service account reaches both the catalog and the warehouse bucket, so no credential vending is involved:
 ```mzsql
 -- Using the base64-encoded service account key (e.g. base64 < sa_key.json)
 CREATE SECRET gcp_service_account_key
@@ -592,7 +592,7 @@ mode](#append-mode).
 
 ## Related pages
 
-- [Iceberg sink guide](/serve-results/sink/iceberg/)
+- [Iceberg sink guide](/export-data/iceberg/)
 - [`SHOW SINKS`](/sql/show-sinks)
 - [`DROP SINK`](/sql/drop-sink)
 - [`CREATE CONNECTION`](/sql/create-connection)

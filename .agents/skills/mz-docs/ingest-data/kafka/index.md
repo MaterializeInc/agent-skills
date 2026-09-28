@@ -316,7 +316,7 @@ Before you begin, make sure you have access to a bastion host. You will need:
 1. Configure the SSH bastion host. The bastion host needs a **public key** to
 connect to the Materialize tunnel you created in the previous step. Materialize
 stores public keys for SSH tunnels in the system catalog. Query
-[`mz_ssh_tunnel_connections`](/reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
+[`mz_ssh_tunnel_connections`](/sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
 to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```mzsql
@@ -569,7 +569,7 @@ The process to connect Materialize to Amazon MSK consists of the following steps
 
     c. Copy the url under **Private endpoint** and against **SASL/SCRAM**. This will be your `<broker-url>` going forward.
 
-    d. Connect to Materialize using the [SQL Shell](/console/),
+    d. Connect to Materialize using the [SQL Shell](/developer-tools/console/),
        or your preferred SQL client.
 
     e. Create a connection using the command below. The broker URL is what you copied in step c of this subsection. The `<topic-name>` is the name of the topic you created in Step 4. The `<your-username>` and `<your-password>` is from _Store a new secret_ under Step 2.
@@ -618,7 +618,7 @@ Before you begin, make sure you have access to a bastion host. You will need:
 1. Configure the SSH bastion host. The bastion host needs a **public key** to
 connect to the Materialize tunnel you created in the previous step. Materialize
 stores public keys for SSH tunnels in the system catalog. Query
-[`mz_ssh_tunnel_connections`](/reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
+[`mz_ssh_tunnel_connections`](/sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
 to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```mzsql
@@ -861,7 +861,7 @@ The process to connect Materialize to Amazon MSK consists of the following steps
 
     c. Copy the url under **Private endpoint** and against **SASL/SCRAM**. This will be your `<broker-url>` going forward.
 
-    d. Connect to Materialize using the [SQL Shell](/console/),
+    d. Connect to Materialize using the [SQL Shell](/developer-tools/console/),
        or your preferred SQL client.
 
     e. Create a connection using the command below. The broker URL is what you copied in step c of this subsection. The `<topic-name>` is the name of the topic you created in Step 4. The `<your-username>` and `<your-password>` is from _Store a new secret_ under Step 2.
@@ -993,7 +993,7 @@ Otherwise, you can find more information about how to do that [here](https://doc
 1. Copy the URL under **Bootstrap server**. This will be your `<broker-url>`
    going forward.
 
-1. Connect to Materialize using the [SQL Shell](/console/), or your preferred
+1. Connect to Materialize using the [SQL Shell](/developer-tools/console/), or your preferred
    SQL client.
 
 1. Create the connection. The exact steps depend on your networking
@@ -1023,7 +1023,7 @@ public internet.
 your cluster's **Networking** settings and set up a PrivateLink endpoint.
 Record the **VPC Endpoint Service Name** and the **DNS domain**.
 
-1. In the Materialize [SQL shell](/console/), create a
+1. In the Materialize [SQL shell](/developer-tools/console/), create a
 [PrivateLink connection](/ingest-data/network-security/privatelink/)using
 the service name from the previous step. Be sure to specify **all
 availability zones** of your Confluent Cloud cluster.
@@ -1583,7 +1583,7 @@ Before you begin, make sure you have access to a bastion host. You will need:
 1. Configure the SSH bastion host. The bastion host needs a **public key** to
 connect to the Materialize tunnel you created in the previous step. Materialize
 stores public keys for SSH tunnels in the system catalog. Query
-[`mz_ssh_tunnel_connections`](/reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
+[`mz_ssh_tunnel_connections`](/sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
 to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```mzsql
@@ -1700,7 +1700,7 @@ connection you configured in the previous section:
 
 **Allow Materialize IPs:**
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, find the static egress IP addresses for the
    Materialize region you are running in:
 
@@ -1765,7 +1765,7 @@ Before you begin, make sure you have access to a bastion host. You will need:
 1. Configure the SSH bastion host. The bastion host needs a **public key** to
 connect to the Materialize tunnel you created in the previous step. Materialize
 stores public keys for SSH tunnels in the system catalog. Query
-[`mz_ssh_tunnel_connections`](/reference/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
+[`mz_ssh_tunnel_connections`](/sql/system-catalog/mz_catalog/#mz_ssh_tunnel_connections)
 to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```mzsql

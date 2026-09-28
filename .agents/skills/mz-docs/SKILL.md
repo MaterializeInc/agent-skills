@@ -12,35 +12,35 @@ This skill provides comprehensive documentation for Materialize, a streaming dat
 When a user asks about Materialize:
 
 1. **For SQL syntax/commands**: Read files in the `sql/` directory
-2. **For core concepts**: Read files in the `concepts/` directory
+2. **For core concepts**: Read files in the `fundamentals/concepts/` directory
 3. **For data ingestion**: Read files in the `ingest-data/` directory
 4. **For transformations**: Read files in the `transform-data/` directory
 
 ## Documentation Sections
 
-### Administrations
+### Clusters
+Guidance for configuring and operating Materialize clusters.
 
-- **Usage (Self-Managed)**: `administration/usage/index.md`
-- **Usage & billing (Cloud)**: `administration/billing/index.md`
+- **Autoscaling for hydration**: `clusters/autoscaling/index.md`
+- **M.1 to cc size mapping**: `clusters/m1-cc-mapping/index.md`
+- **Operational guidelines**: `clusters/operational-guidelines/index.md`
+- **Optimize hydration requirements**: `clusters/optimize-hydration-requirements/index.md`
+- **Size clusters for hydration**: `clusters/sizing/index.md`
+- **System clusters**: `clusters/system-clusters/index.md`
+- **Troubleshoot clusters**: `clusters/troubleshoot-clusters/index.md`
 
-### Architecture Patterns
-Patterns for building with Materialize.
+### Developer tools
+Tools for developing, deploying, and managing Materialize.
 
-- **Live Context Graph**: `architecture-patterns/live-context-graph/index.md`
-- **Use an ontology table**: `architecture-patterns/ontology/index.md`
-
-### Concepts
-Learn about the core concepts in Materialize.
-
-- **Namespaces**: `concepts/namespaces/index.md`
-- **Clusters**: `concepts/clusters/index.md`
-- **Hydration**: `concepts/hydration/index.md`
-- **Indexes**: `concepts/indexes/index.md`
-- **Reaction Time, Freshness, and Query Latency**: `concepts/reaction-time/index.md`
-- **Sinks**: `concepts/sinks/index.md`
-- **Snapshotting**: `concepts/snapshotting/index.md`
-- **Sources**: `concepts/sources/index.md`
-- **Views**: `concepts/views/index.md`
+- **Download and run Materialize Emulator**: `developer-tools/install-materialize-emulator/index.md`
+- **Manage Materialize**: `developer-tools/manage/index.md`
+- **Materialize console**: `developer-tools/console/index.md`
+- **MCP Servers and agent skills**: `developer-tools/mcp-server/index.md`
+- **mz-debug**: `developer-tools/mz-debug/index.md`
+- **Tools and integrations**: `developer-tools/integrations/index.md`
+- **Use dbt to manage Materialize**: `developer-tools/dbt/index.md`
+- **Use mz-deploy to manage Materialize**: `developer-tools/mz-deploy/index.md`
+- **Use Terraform to manage Materialize**: `developer-tools/terraform/index.md`
 
 ### Ingest data
 Best practices for ingesting data into Materialize from external systems.
@@ -52,33 +52,27 @@ Best practices for ingesting data into Materialize from external systems.
 - **Debezium**: `ingest-data/debezium/index.md`
 - **Fivetran**: `ingest-data/fivetran/index.md`
 - **HubSpot**: `ingest-data/webhooks/hubspot/index.md`
+- **Ingestion performance**: `ingest-data/performance/index.md`
 - **Kafka**: `ingest-data/kafka/index.md`
 - **MongoDB**: `ingest-data/mongodb/index.md`
-- **Monitoring data ingestion**: `ingest-data/monitoring-data-ingestion/index.md`
-- _(and 14 more files in this section)_
+- _(and 16 more files in this section)_
 
-### Manage Materialize
+### Materialize Cloud
+Guidance for operating Materialize Cloud.
 
-- **Appendix: Alternative cluster architectures**: `manage/appendix-alternative-cluster-architectures/index.md`
-- **Disaster recovery (Cloud)**: `manage/disaster-recovery/index.md`
-- **Monitoring and alerting**: `manage/monitor/index.md`
-- **Operational guidelines**: `manage/operational-guidelines/index.md`
-- **Use dbt to manage Materialize**: `manage/dbt/index.md`
-- **Use mz-deploy to manage Materialize**: `manage/mz-deploy/index.md`
-- **Use Terraform to manage Materialize**: `manage/terraform/index.md`
+- **Customer responsibility model (Cloud)**: `materialize-cloud/customer-responsibilities/index.md`
+- **Disaster recovery (Cloud)**: `materialize-cloud/disaster-recovery/index.md`
+- **Free Trials**: `materialize-cloud/free-trials/index.md`
+- **Usage & billing (Cloud)**: `materialize-cloud/billing/index.md`
 
-### Materialize console
-Introduction to the Materialize Console, user interface for Materialize
+### Monitoring and alerting
+Monitor the performance of your Materialize region with Datadog and Grafana.
 
-- **Admin (Cloud-only)**: `console/admin/index.md`
-- **Clusters**: `console/clusters/index.md`
-- **Connect (Cloud-only)**: `console/connect/index.md`
-- **Create new**: `console/create-new/index.md`
-- **Database object explorer**: `console/data/index.md`
-- **Integrations**: `console/integrations/index.md`
-- **Monitoring**: `console/monitoring/index.md`
-- **SQL Shell**: `console/sql-shell/index.md`
-- **User profile**: `console/user-profile/index.md`
+- **Appendix: Metrics**: `observability/appendix-metrics/index.md`
+- **Cloud**: `observability/cloud/index.md`
+- **Essential metrics**: `observability/essential-metrics/index.md`
+- **Replica resource usage**: `observability/replica-resource-usage/index.md`
+- **Self-Managed**: `observability/self-managed/index.md`
 
 ### Overview
 Learn how to efficiently transform data using Materialize SQL.
@@ -91,17 +85,7 @@ Learn how to efficiently transform data using Materialize SQL.
 - **Idiomatic Materialize SQL**: `transform-data/idiomatic-materialize-sql/index.md`
 - **Optimization**: `transform-data/optimization/index.md`
 - **Patterns**: `transform-data/patterns/index.md`
-- **Troubleshooting**: `transform-data/troubleshooting/index.md`
 - **Updating materialized views**: `transform-data/updating-materialized-views/index.md`
-
-### References
-
-- **Explain plan operators**: `reference/explain-plan-operators/index.md`
-- **Ingestion performance**: `reference/performance/index.md`
-- **Isolation levels**: `reference/isolation-level/index.md`
-- **M.1 to cc size mapping**: `reference/m1-cc-mapping/index.md`
-- **System catalog**: `reference/system-catalog/index.md`
-- **System clusters**: `reference/system-clusters/index.md`
 
 ### Security
 
@@ -119,17 +103,40 @@ Learn about the key components and architecture of self-managed Materialize depl
 - **Installation**: `self-managed-deployments/installation/index.md`
 - **Materialize CRD Field Descriptions**: `self-managed-deployments/materialize-crd-field-descriptions/index.md`
 - **Materialize Operator Configuration**: `self-managed-deployments/operator-configuration/index.md`
+- **Query History**: `self-managed-deployments/query-history/index.md`
 - **Self-managed release versions**: `self-managed-deployments/release-versions/index.md`
 - **Troubleshooting**: `self-managed-deployments/troubleshooting/index.md`
-- **Upgrading**: `self-managed-deployments/upgrading/index.md`
+- _(and 2 more files in this section)_
 
 ### Serve results
 Serving results from Materialize
 
 - **`SELECT` and `SUBSCRIBE`**: `serve-results/query-results/index.md`
-- **Sink results**: `serve-results/sink/index.md`
-- **Use BI/data collaboration tools**: `serve-results/bi-tools/index.md`
-- **Use foreign data wrapper (FDW)**: `serve-results/fdw/index.md`
+- **ADBC (Arrow Database Connectivity)**: `serve-results/adbc/index.md`
+- **Client libraries**: `serve-results/client-libraries/index.md`
+- **Connect to Materialize via HTTP**: `serve-results/http-api/index.md`
+- **Connect to Materialize via WebSocket**: `serve-results/websocket-api/index.md`
+- **Connection Pooling**: `serve-results/connection-pooling/index.md`
+- **Durable subscriptions**: `serve-results/durable-subscriptions/index.md`
+- **Foreign data wrapper (FDW) **: `serve-results/fdw-setup/index.md`
+- **Isolation levels**: `serve-results/isolation-level/index.md`
+- **SQL clients**: `serve-results/sql-clients/index.md`
+- _(and 3 more files in this section)_
+
+### Sink results
+Sinking results from Materialize to external systems.
+
+- **Amazon S3**: `export-data/s3/index.md`
+- **Apache Iceberg**: `export-data/iceberg/index.md`
+- **AWS S3 Tables**: `export-data/iceberg-aws/index.md`
+- **Census**: `export-data/census/index.md`
+- **Consume from Snowflake on AWS S3 Tables**: `export-data/iceberg-aws-snowflake/index.md`
+- **Databricks Unity Catalog**: `export-data/iceberg-databricks/index.md`
+- **Elasticsearch**: `export-data/elasticsearch/index.md`
+- **GCP BigLake**: `export-data/iceberg-gcp/index.md`
+- **Kafka and Redpanda**: `export-data/kafka/index.md`
+- **OpenSearch**: `export-data/opensearch/index.md`
+- _(and 5 more files in this section)_
 
 ### SQL commands
 SQL commands reference.
@@ -144,22 +151,13 @@ SQL commands reference.
 - **ALTER MATERIALIZED VIEW**: `sql/alter-materialized-view/index.md`
 - **ALTER NETWORK POLICY (Cloud)**: `sql/alter-network-policy/index.md`
 - **ALTER ROLE**: `sql/alter-role/index.md`
-- _(and 109 more files in this section)_
+- _(and 111 more files in this section)_
 
-### Tools and integrations
-Get details about third-party tools and integrations supported by Materialize
+### What is Materialize?
+Learn more about Materialize
 
-- **ADBC (Arrow Database Connectivity)**: `integrations/adbc/index.md`
-- **Agent Skills**: `integrations/coding-agent-skills/index.md`
-- **Client libraries**: `integrations/client-libraries/index.md`
-- **Connect to Materialize via HTTP**: `integrations/http-api/index.md`
-- **Connect to Materialize via WebSocket**: `integrations/websocket-api/index.md`
-- **Connection Pooling**: `integrations/connection-pooling/index.md`
-- **Foreign data wrapper (FDW) **: `integrations/fdw/index.md`
-- **MCP Servers and agent skills**: `integrations/mcp-server/index.md`
-- **mz - Materialize CLI**: `integrations/cli/index.md`
-- **mz-debug**: `integrations/mz-debug/index.md`
-- _(and 1 more files in this section)_
+- **Architecture Patterns**: `fundamentals/architecture-patterns/index.md`
+- **Concepts**: `fundamentals/concepts/index.md`
 
 ## Quick Reference
 

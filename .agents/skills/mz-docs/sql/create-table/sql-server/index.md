@@ -88,8 +88,8 @@ use either the `TEXT COLUMNS` or the `EXCLUDE COLUMNS` option:
 The use of `CREATE SOURCE` (new syntax) with `CREATE TABLE FROM SOURCE` allows
 for the handling of the upstream DDL changes, specifically adding or dropping
 columns in the upstream tables, without downtime. For details, see [SQL Server:
-Handling upstream schema changes with zero
-downtime](/ingest-data/sql-server/source-versioning/).
+Handle upstream schema
+changes](/ingest-data/sql-server/source-versioning/).
 
 See also [Handling upstream operations](#handling-upstream-operations) for
 additional upstream operation considerations.
@@ -170,6 +170,20 @@ Materialize ingests from one of them.
 Removing the capture instance that Materialize is using puts the affected table
 into an error state. Removing a capture instance that Materialize is not using does not affect
 ingestion.
+
+### Disabling CDC on a table
+
+Running `sys.sp_cdc_disable_table` removes the capture instance Materialize is
+ingesting from, which puts the affected table into an error state. The other
+tables in the source keep replicating. You can recover without re-creating the
+whole source by dropping just the affected table in Materialize:
+
+```mzsql
+DROP TABLE table_1;
+```
+
+Then re-create it, optionally after re-enabling CDC on the upstream table with
+`sys.sp_cdc_enable_table`.
 
 ### Table-level operations
 

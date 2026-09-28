@@ -167,7 +167,7 @@ operator:
 | <strong>selectors</strong> | map | A map of Kubernetes label selector keys to values used to schedule pods for this cluster size on specific nodes. | It is generally not required to set this. |
 
 > **Note:** If you have modified the default cluster size configurations, you can query the
-> [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes)
+> [`mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes)
 > system catalog table for the specific resource allocations.
 
 ---

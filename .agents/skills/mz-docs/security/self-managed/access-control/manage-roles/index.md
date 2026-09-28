@@ -1435,4 +1435,4 @@ The results show that `lemon@example.com` now only has access through
 ## See also
 
 - [Access control best practices](/security/self-managed/access-control/#best-practices)
-- [Manage privileges with Terraform](/manage/terraform/manage-rbac/)
+- [Manage privileges with Terraform](/developer-tools/terraform/manage-rbac/)

@@ -8,8 +8,8 @@ your applications, services, dashboards, and AI agents read.
 
 ## From SQL to live data products
 
-You use [views](/concepts/views/) and [materialized
-views](/concepts/views/#materialized-views) to define your business objects in
+You use [views](/fundamentals/concepts/views/) and [materialized
+views](/fundamentals/concepts/views/#materialized-views) to define your business objects in
 SQL. Materialize keeps the results of **indexed views** and **materialized
 views** up to date as it ingests your data.
 
@@ -32,7 +32,7 @@ Materialize might support syntax from any released PostgreSQL version, but does
 not provide full coverage of the PostgreSQL dialect. The implementation and
 performance of specific features (like [window functions](/transform-data/idiomatic-materialize-sql/appendix/window-function-to-materialize))
 might also differ, because Materialize uses an entirely different database
-engine based on [Timely and Differential Dataflow](/get-started/#incremental-updates).
+engine based on [Timely and Differential Dataflow](/fundamentals/#incremental-updates).
 
 If you need specific syntax or features that are not currently supported in
 Materialize, please submit a [feature request](/support/#share-your-feedback).
@@ -58,7 +58,7 @@ Materialize, please submit a [feature request](/support/#share-your-feedback).
   <ul>
 <li><a href="/transform-data/optimization/" >Query optimization</a></li>
 <li><a href="/transform-data/updating-materialized-views/" >Updating materialized views</a></li>
-<li><a href="/concepts/indexes/#best-practices" >Indexes: best practices</a></li>
+<li><a href="/fundamentals/concepts/indexes/#best-practices" >Indexes: best practices</a></li>
 </ul>
 
 </div>
@@ -68,7 +68,7 @@ Materialize, please submit a [feature request](/support/#share-your-feedback).
     Troubleshoot
   </div>
   <ul>
-<li><a href="/transform-data/troubleshooting/" >Troubleshooting</a></li>
+<li><a href="/serve-results/troubleshooting/" >Troubleshooting</a></li>
 <li><a href="/transform-data/freshness-troubleshooting/" >Freshness troubleshooting</a></li>
 <li><a href="/transform-data/dataflow-troubleshooting/" >Dataflow troubleshooting</a></li>
 <li><a href="/transform-data/faq/" >FAQ: Indexes</a></li>
@@ -83,7 +83,7 @@ Materialize, please submit a [feature request](/support/#share-your-feedback).
 ## Dataflow troubleshooting
 
 If you're unable to troubleshoot your issue using the [`Ingest data`](/ingest-data/troubleshooting/)
-and [`Transform data`](/transform-data/troubleshooting/) troubleshooting guides,
+and [`Transform data`](/serve-results/troubleshooting/) troubleshooting guides,
 going a level deeper in the stack might be needed. This guide collects common
 questions around dataflows to help you troubleshoot your queries.
 
@@ -99,7 +99,7 @@ arrives.
 
 Materialize dataflows act on collections of data. To provide fast access to the
 changes to individual records, the records can be stored in an indexed
-representation called [arrangements](/get-started/arrangements/#arrangements).
+representation called [arrangements](/fundamentals/concepts/arrangements/#arrangements).
 Arrangements can be manually created by users on views by creating an index on
 the view. But they are also used internally in dataflows, for instance, when
 joining relations.
@@ -183,7 +183,7 @@ just important to know than that they define a hierarchy on the operators.
 ## The system catalog and introspection relations
 
 Materialize collects a lot of useful information about the dataflows and
-operators in the system catalog in [introspection relations](/reference/system-catalog/mz_introspection).
+operators in the system catalog in [introspection relations](/sql/system-catalog/mz_introspection).
 The introspection relations are useful to troubleshoot and understand what is
 happening under the hood when Materialize is not behaving as expected. However,
 it is important to understand that most of the statistics we need for
@@ -458,11 +458,11 @@ ORDER BY mas.size DESC;
 
 In the [Materialize Console](https://console.materialize.com),
 
-- The [**Cluster Overview**](/console/clusters/) page displays the cluster
+- The [**Cluster Overview**](/developer-tools/console/clusters/) page displays the cluster
   resource utilization for a selected cluster as well as the resource intensive
   objects in the cluster.
 
-- The [**Environment Overview**](/console/monitoring/) page displays the
+- The [**Environment Overview**](/developer-tools/console/monitoring/) page displays the
   resource utilization for all your clusters. You can select a specific cluster
   to view its **Overview** page.
 
@@ -604,7 +604,7 @@ index, you have to drop and recreate all downstream dependencies.
 
 > **Warning:** Forcing a re-plan using the approach above **will trigger hydration**,
 > which incurs downtime while the objects are recreated and backfilled with
-> pre-existing data. We recommend doing a [blue/green deployment](/manage/dbt/blue-green-deployments/)
+> pre-existing data. We recommend doing a [blue/green deployment](/developer-tools/dbt/blue-green-deployments/)
 > to handle these changes in production environments.
 
 ---
@@ -615,7 +615,7 @@ index, you have to drop and recreate all downstream dependencies.
 
 Starting in v26.38, dictionary compression is available for managed clusters.
 Dictionary compression reduces the memory that
-[arrangements](/get-started/arrangements/#arrangements) use when a column holds
+[arrangements](/fundamentals/concepts/arrangements/#arrangements) use when a column holds
 the same values repeatedly. Instead of storing a repeated column value each time
 it appears, Materialize stores that value once and has each row reference it. This can reduce steady state memory requirements after hydration has completed.
 
@@ -772,11 +772,11 @@ re-hydrates the cluster, wait until hydration has completed before you measure.
 - [`ALTER CLUSTER`](/sql/alter-cluster/)
 - [`SHOW CREATE CLUSTER`]
 
-[Arrangements]: /get-started/arrangements/
-[indexes]: /concepts/indexes/
+[Arrangements]: /fundamentals/concepts/arrangements/
+[indexes]: /fundamentals/concepts/indexes/
 [`SHOW CREATE CLUSTER`]: /sql/show-create-cluster/
-[`mz_introspection.mz_arrangement_sizes`]: /reference/system-catalog/mz_introspection/#mz_arrangement_sizes
-[`mz_introspection.mz_dataflow_arrangement_sizes`]: /reference/system-catalog/mz_introspection/#mz_dataflow_arrangement_sizes
+[`mz_introspection.mz_arrangement_sizes`]: /sql/system-catalog/mz_introspection/#mz_arrangement_sizes
+[`mz_introspection.mz_dataflow_arrangement_sizes`]: /sql/system-catalog/mz_introspection/#mz_dataflow_arrangement_sizes
 
 ---
 
@@ -820,7 +820,7 @@ No. An index on the grouping key does not reduce the work of computing the aggre
 
 ## Freshness troubleshooting
 
-[Freshness](/concepts/reaction-time/#freshness) measures the time from when a
+[Freshness](/fundamentals/concepts/reaction-time/#freshness) measures the time from when a
 change occurs in an upstream system to when it becomes visible in the results of
 a query. This guide can help diagnose why freshness is degraded for an object as
 well as measure freshness across your deployment.
@@ -1026,6 +1026,11 @@ ORDER BY u.cpu_percent DESC;
 - If the returned `memory_percent` is high, Materialize may force data to disk,
   which can slow down processing.
 
+Note that `cpu_percent` averages over the replica's workers, so a cluster whose
+work is concentrated on one worker can degrade while reporting unremarkable CPU.
+To attribute CPU to a cause, see [Cluster CPU
+troubleshooting](/clusters/troubleshoot-clusters/cpu-troubleshooting/).
+
 To resolve, scale the cluster up to a larger size ([`ALTER CLUSTER ... SET (SIZE
 = '<new size>')`](/sql/alter-cluster/)), and/or move enough objects to another
 cluster to reduce load on the current cluster. If the pressure is caused by an
@@ -1102,7 +1107,7 @@ credential expiration, or a deliberately paused source.
 ### Check source status
 
 To check if a source or its associated subsource/table is unhealthy, query
-[`mz_internal.mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses):
+[`mz_internal.mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses):
 
 ```mzsql
 SELECT s.id, o.name, s.type, s.status, s.error, s.details
@@ -1125,7 +1130,7 @@ downstream objects. If the `status` for a source shows:
 
 A spike in lag refers to a sudden increase in lag. Materialize retains wallclock
 lag history for at least 30 days in
-[`mz_internal.mz_wallclock_global_lag_history`](/reference/system-catalog/mz_internal/#mz_wallclock_global_lag_history),
+[`mz_internal.mz_wallclock_global_lag_history`](/sql/system-catalog/mz_internal/#mz_wallclock_global_lag_history),
 binned by minute. You can use this data to find past spikes and determine their
 cause.
 
@@ -1220,7 +1225,7 @@ transient freshness degradation.
 When a decrease in freshness affects a single cluster but is not explained by
 [CPU or memory pressure](#check-the-cpu-or-memory-pressure), check whether DDL
 operations occurred during the spike window.
-[`mz_catalog.mz_audit_events`](/reference/system-catalog/mz_catalog/#mz_audit_events)
+[`mz_catalog.mz_audit_events`](/sql/system-catalog/mz_catalog/#mz_audit_events)
 records all `CREATE`, `DROP`, and `ALTER` operations (substitute `<spike_start>`
 and `<spike_end>` with your spike window):
 
@@ -1387,7 +1392,7 @@ This gives an accurate picture of baseline freshness without masking unknown pro
 
 ## How to monitor freshness in Materialize
 
-[Freshness](/concepts/reaction-time/#freshness) measures the time from when a
+[Freshness](/fundamentals/concepts/reaction-time/#freshness) measures the time from when a
 change occurs in an upstream system to when it becomes visible in the results of
 a query. This guide shows how to track freshness for an object over time and how
 to summarize a whole window of freshness observations with a CCDF or an HDR
@@ -1430,18 +1435,65 @@ Each row is one minute-binned observation of the object's wallclock lag, most
 recent first. Here lag holds steady at about two seconds, which is the expected,
 healthy pattern for a lightly loaded object.
 
-> **Note:** Materialize exposes wallclock lag history through two relations. Which one you
-> query has a large impact on performance.
-> - [`mz_internal.mz_wallclock_global_lag_recent_history`](/reference/system-catalog/mz_internal/#mz_wallclock_global_lag_recent_history)
->   is indexed and holds only the past 24 hours of data. Querying it is fast, so
->   it is the right choice for frequent or interactive monitoring and for
->   dashboards. Use this relation by default, as in the query above.
-> - [`mz_internal.mz_wallclock_global_lag_history`](/reference/system-catalog/mz_internal/#mz_wallclock_global_lag_history)
->   covers the full retention window (at least 30 days) but is unindexed, so it
->   can be slow to query. A single query can occupy `mz_catalog_server` for
->   several seconds. Reach for this
->   relation only when you specifically need data older than 24 hours, and avoid
->   querying it frequently.
+> **Note:** [`mz_internal.mz_wallclock_global_lag_recent_history`](/sql/system-catalog/mz_internal/#mz_wallclock_global_lag_recent_history)
+> is indexed and holds only the past 24 hours of data. Querying it is fast, so it
+> is the right choice for frequent or interactive monitoring and for dashboards.
+> Use this relation by default, as in the query above. For older data, see
+> [Monitor historical freshness](#monitor-historical-freshness).
+
+## Monitor historical freshness
+
+`mz_wallclock_global_lag_recent_history` holds only the past 24 hours. To look
+further back, query
+[`mz_internal.mz_wallclock_global_lag_history`](/sql/system-catalog/mz_internal/#mz_wallclock_global_lag_history)
+instead, which covers the full retention window of at least 30 days. The
+columns are identical, so any query in this guide works against it by swapping
+the relation name and widening the time filter:
+
+```mzsql
+SELECT wl.occurred_at, wl.lag
+FROM mz_internal.mz_wallclock_global_lag_history wl
+JOIN mz_catalog.mz_objects o ON wl.object_id = o.id
+WHERE o.name = '<your_mv_name>'
+  AND wl.occurred_at > now() - INTERVAL '7 days'
+ORDER BY wl.occurred_at DESC;
+```
+
+Because the relation is unindexed, a single query can occupy
+`mz_catalog_server` for several seconds. Keep the `occurred_at` filter as
+narrow as the question allows, and aggregate in the query rather than pulling
+raw rows out for a longer window. For example, the following returns one
+maximum lag per day over the past 30 days:
+
+```mzsql
+SELECT
+    date_trunc('day', wl.occurred_at) AS day,
+    max(wl.lag) AS max_lag
+FROM mz_internal.mz_wallclock_global_lag_history wl
+JOIN mz_catalog.mz_objects o ON wl.object_id = o.id
+WHERE o.name = '<your_mv_name>'
+  AND wl.occurred_at > now() - INTERVAL '30 days'
+GROUP BY 1
+ORDER BY 1 DESC;
+```
+
+For recurring or dashboard queries that fit within the last 24 hours, stay on
+`mz_wallclock_global_lag_recent_history`.
+
+If you need historical data on a recurring basis, run the query from a separate
+cluster instead of the default `mz_catalog_server`. A slow scan of the unindexed
+relation can tie up `mz_catalog_server` for seconds at a time, and because it
+also serves the `SHOW` commands and catalog lookups behind the Console and
+interactive tooling, that slows catalog queries across your whole environment.
+These queries read only system catalog relations, so Materialize routes them to
+`mz_catalog_server` by default. Point the session at your own cluster and turn
+off catalog auto-routing so the query actually runs there:
+
+```mzsql
+CREATE CLUSTER freshness_monitoring (SIZE = '25cc');
+SET cluster = freshness_monitoring;
+SET auto_route_catalog_queries = false;
+```
 
 ## Summarize freshness with a CCDF
 
@@ -1830,7 +1882,7 @@ databases, Materialize can use an index to serve query results even if the query
 does not specify a `WHERE` condition on the index keys. Serving queries from
 an index is fast since the results are already up-to-date and in memory.
 
-Materialize can use [indexes](/concepts/indexes/) to further optimize query
+Materialize can use [indexes](/fundamentals/concepts/indexes/) to further optimize query
 performance in Materialize. Improvements can be significant, reducing some query
 times down to single-digit milliseconds.
 
@@ -1846,7 +1898,7 @@ as your expected access patterns. Use the following as a guide:
 Unlike some other databases, Materialize can use an index to serve query results
 even if the query does not specify a `WHERE` condition on the index keys. For
 some queries, Materialize can perform [**point
-lookups**](/concepts/indexes/#point-lookups) on the index (as opposed to an
+lookups**](/fundamentals/concepts/indexes/#point-lookups) on the index (as opposed to an
 index scan) if the query's `WHERE` clause:
 
 - Specifies equality (`=` or `IN`) condition on **all** the indexed fields. The
@@ -1861,7 +1913,7 @@ lookups.
 #### Create an index to support point lookups
 
 To [create an index](/sql/create-index/) to support [**point
-lookups**](/concepts/indexes/#point-lookups):
+lookups**](/fundamentals/concepts/indexes/#point-lookups):
 
 ```mzsql
 CREATE INDEX ON obj_name (<keys>);
@@ -2393,12 +2445,12 @@ WHERE mz_now() <= floor(extract(epoch FROM event_ts)) * 1000 + 86400000
   costly to maintain and rewrite each one.
 
 [query hints]: /sql/select/#query-hints
-[arrangements]: /get-started/arrangements/#arrangements
+[arrangements]: /fundamentals/concepts/arrangements/#arrangements
 [`MIN`]: /sql/functions/#min
 [`MAX`]: /sql/functions/#max
 [Top K]: /transform-data/patterns/top-k
-[`mz_introspection.mz_expected_group_size_advice`]: /reference/system-catalog/mz_introspection/#mz_expected_group_size_advice
-[dataflows]: /get-started/arrangements/#dataflows
+[`mz_introspection.mz_expected_group_size_advice`]: /sql/system-catalog/mz_introspection/#mz_expected_group_size_advice
+[dataflows]: /fundamentals/concepts/arrangements/#dataflows
 [`SELECT` syntax]: /sql/select/#syntax
 
 ---
@@ -2410,307 +2462,6 @@ patterns in Materialize:
 
 ---
 
-## Troubleshooting
-
-Once data is flowing into Materialize and you start modeling it in SQL, you
-might run into some snags or unexpected scenarios. This guide collects common
-questions around data transformation to help you troubleshoot your queries.
-
-## Why is my query slow?
-
-<!-- TODO: update this to use the query history UI once it's available -->
-The most common reasons for query execution taking longer than expected are:
-
-* Processing lag in upstream dependencies, like materialized views and indexes
-* Index design
-* Query design
-
-Each of these reasons requires a different approach for troubleshooting. Follow
-the guidance below to first detect the source of slowness, and then address it
-accordingly.
-
-### Lagging materialized views or indexes
-
-#### Detect
-
-When a materialized view or index upstream of your query is behind on
-processing, your query must wait for it to catch up before returning results.
-This is how Materialize ensures consistent results for all queries.
-
-To check if any materialized views or indexes are lagging, use the workflow
-graphs in the Materialize console.
-
-1. Go to https://console.materialize.com/.
-2. Click on the **"Clusters"** tab in the side navigation bar.
-3. Click on the cluster that contains your upstream materialized view or index.
-4. Go to the **"Materialized Views"** or **"Indexes"** section, and click on the
-object name to access its workflow graph.
-
-If you find that one of the upstream materialized views or indexes is lagging,
-this could be the cause of your query slowness.
-
-#### Address
-
-To troubleshoot and fix a lagging materialized view or index, follow the steps
-in the [dataflow troubleshooting](/transform-data/dataflow-troubleshooting) guide.
-
-*Do you have multiple materialized views chained on top of each other? Are you
-seeing small amounts of lag?*<br>
-Tip: avoid intermediary materialized views where not necessary. Each chained
-materialized view incurs a small amount of processing lag from the previous
-one.
-<!-- TODO add more guidance on avoiding chained mat views-->
-
-Other options to consider:
-
-* If you've gone through the dataflow troubleshooting and do not want to make
-  any changes to your query, consider [sizing up your cluster](/sql/create-cluster/#available-sizes).
-* You can also consider changing your [isolation level](/reference/isolation-level/),
-  depending on the consistency guarantees that you need. With a lower isolation
-  level, you may be able to query stale results out of lagging indexes and
-  materialized views.
-* You can also check whether you're using a [transaction](#transactions) and
-  follow the guidance there.
-
-### Slow query execution
-
-Query execution time largely depends on the amount of on-the-fly work that needs
-to be done to compute the result. You can cut back on execution time in a few
-ways:
-
-#### Indexing and query optimization
-
-Like in any other database, index design affects query performance. If the
-dependencies of your query don't have [indexes](/sql/create-index/) defined,
-you should consider creating one (or many). Check out the [optimization guide](/transform-data/optimization)
-for guidance on how to optimize query performance. For information on when
-to use a materialized view versus an index, check out the
-[materialized view reference documentation](/sql/create-materialized-view/#details) .
-
-If the dependencies of your query are indexed, you should confirm that the query
-is actually using the index! This information is available in the query plan,
-which you can view using the [`EXPLAIN PLAN`](/sql/explain-plan/) command. If
-you run `EXPLAIN PLAN` for your query and see the index(es) under `Used indexes`,
-this means that the index was correctly used. If that's not the case, consider:
-
-* Are you running the query in the same cluster which contains the index? You
-  must do so in order for the index to be used.
-* Does the index's indexed expression (key) match up with how you're querying
-  the data?
-
-#### Result filtering
-
-If you are just looking to validate data and don't want to deal with query
-optimization at this stage, you can improve the efficiency of validation
-queries by reducing the amount of data that Materialize needs to read. You can
-achieve this by adding `LIMIT` clauses or [temporal filters](/transform-data/patterns/temporal-filters/)
-to your queries.
-
-**`LIMIT` clause**
-
-Use the standard `LIMIT` clause to return at most the specified number of rows.
-It's important to note that this only applies to basic queries against **a
-single** source, materialized view or table, with no ordering, filters or
-offsets.
-
-```mzsql
-SELECT <column list or *>
-FROM <source, materialized view or table>
-LIMIT <25 or less>;
-```
-
-To verify whether the query will return quickly, use [`EXPLAIN PLAN`](/sql/explain-plan/)
-to get the execution plan for the query, and validate that it starts with
-`Explained Query (fast path)`.
-
-**Temporal filters**
-
-Use temporal flters to filter results on a timestamp column that correlates with
-the insertion or update time of each row. For example:
-
-```mzsql
-WHERE mz_now() <= event_ts + INTERVAL '1hr'
-```
-
-Materialize is able to “push down” temporal filters all the way down to its
-storage layer, skipping over old data that isn't relevant to the query. For
-more details on temporal filter pushdown, see the [reference documentation](/transform-data/patterns/temporal-filters/#temporal-filter-pushdown).
-
-### Other things to consider
-
-#### Transactions
-<!-- Copied from doc/user/content/manage/troubleshooting.md#Transactions -->
-Transactions are a database concept for bundling multiple query steps into a
-single, all-or-nothing operation. You can read more about them in the
-[transactions](/sql/begin) section of our docs.
-
-In Materialize, `BEGIN` starts a transaction block. All statements in a
-transaction block will be executed in a single transaction until an explicit
-`COMMIT` or `ROLLBACK` is given. All statements in that transaction happen at
-the same timestamp, and that timestamp must be valid for all objects the
-transaction may access.
-
-What this means for latency: Materialize may delay queries against "slow"
-tables, materialized views, and indexes until they catch up to faster ones in
-the same schema. We recommend you avoid using transactions in contexts where
-you require low latency responses and are not certain that all objects in a
-schema will be equally current.
-
-What you can do:
-
-- Avoid using transactions where you don’t need them. For example, if you’re
-  only executing single statements at a time.
-- Double check whether your SQL library or ORM is wrapping all queries in
-  transactions on your behalf, and disable that setting, only using
-  transactions explicitly when you want them.
-
-#### Client-side latency
-<!-- Copied from doc/user/content/manage/troubleshooting.md#client-side-latency -->
-To minimize the roundtrip latency associated with making requests from your
-client to Materialize, make your requests as physically close to your
-Materialize region as possible. For example, if you use the AWS `us-east-1`
-region for Materialize, your client server would ideally also be running in AWS
-`us-east-1`.
-
-#### Result size
-<!-- TODO: Use the query history UI to fetch result size -->
-Smaller results lead to less time spent transmitting data over the network. You
-can calculate your result size as `number of rows returned x byte size of each
-row`, where `byte size of each row = sum(byte size of each column)`. If your
-result size is large, this will be a factor in query latency.
-
-#### Cluster CPU
-Another thing to check is how busy the cluster you're issuing queries on is. A
-busy cluster means your query might be blocked by some other processing going
-on, taking longer to return. As an example, if you issue a lot of
-resource-intensive queries at once, that might spike the CPU.
-
-The measure of cluster busyness is CPU. You can monitor CPU usage in the
-[Materialize console](/console/) by clicking
-the **"Clusters"** tab in the navigation bar, and clicking into the cluster.
-You can also grab CPU usage from the system catalog using SQL:
-
-```mzsql
-SELECT cru.cpu_percent
-FROM mz_internal.mz_cluster_replica_utilization cru
-LEFT JOIN mz_catalog.mz_cluster_replicas cr ON cru.replica_id = cr.id
-LEFT JOIN mz_catalog.mz_clusters c ON cr.cluster_id = c.id
-WHERE c.name = <CLUSTER_NAME>;
-```
-
-## Why is my query not responding?
-
-The most common reasons for query hanging are:
-
-* An upstream source is stalled
-* An upstream source is still snapshotting
-* An upstream object is still hydrating
-* Your cluster is unhealthy
-
-Each of these reasons requires a different approach for troubleshooting. Follow
-the guidance below to first detect the source of the hang, and then address it
-accordingly.
-
-> **Note:** Your query may be running, just slowly. If none of the reasons below detects
-> your issue, jump to [Why is my query slow?](#why-is-my-query-slow) for further
-> guidance.
-
-### Stalled source
-
-<!-- TODO: update this to use the query history UI once it's available -->
-To detect and address stalled sources, follow the [`Ingest data` troubleshooting](/ingest-data/troubleshooting)
-guide.
-
-### Snapshotting source
-
-When a source is created, it must first _snapshot_ the existing data from the
-upstream system before it can serve results. That is, queries that depend on a
-source that is snapshotting **block until the snapshot is complete**.
-
-Unlike hydration, snapshotting reads from the upstream system. For large upsert
-sources, this process can be resource-intensive and take a long time. For help
-on diagnosing a slow snapshot and sizing a cluster appropriately for
-snapshotting, follow the [`Ingest data`
-troubleshooting](/ingest-data/troubleshooting) guide.
-
-For upsert sources, see also [Hydrating objects](#hydrating-objects).
-
-### Hydrating objects
-
-Queries that depend on objects that are hydrating **block until hydration is
-complete**. _Hydration_ is when Materialize reconstructs the in-memory state of
-an object by reading from its storage layer (not from the upstream system).
-Hydration time is proportional to data volume and query complexity. This means
-that you should expect objects with large volumes of data and/or complex queries
-to take longer to hydrate.
-
-When a materialized view or index is created, it undergoes hydration. Hydration
-also happens whenever a cluster is restarted or resized: the materialized views
-and indexes on that cluster rebuild their in-memory state, and upsert sources
-rebuild their internal index. On Materialize Cloud, this includes restarts
-during the [routine maintenance
-window](/releases/schedule/#cloud-upgrade-schedule).
-
-To see whether an object is still hydrating, navigate to the
-[workflow graph](#detect) for the object in the Materialize console.
-
-### Unhealthy cluster
-
-#### Detect
-
-If your cluster replica reaches its capacity (i.e., it OOMs at 100% Memory Utilization), this will result in a crash. After a crash, the cluster replica has to restart, which can take a few seconds. On cluster restart, your query will also automatically restart execution from the beginning.
-
-If your cluster replica is CPU-maxed out (~100% CPU usage), your query may be blocked while the cluster processes the other activity. It may eventually complete, but it will continue to be slow and potentially blocked until the CPU usage goes down. As an example, if you issue a lot of resource-intensive queries at once, that might spike the CPU.
-
-We recommend setting [Alerting thresholds](https://materialize.com/docs/manage/monitor/alerting/#thresholds) to notify your team when a cluster is reaching its capacity. Please note that these are recommendations, and some configurations may reach unstable memory utilization levels sooner than the thresholds.
-
-To see Memory Utilization and CPU usage for your cluster replica in the [Materialize console](https://materialize.com/docs/console/clusters/), go to [https://console.materialize.com/](/console/), click the **“Clusters”** tab in the navigation bar, and click on the cluster name.
-
-#### Address
-
-Your query may have been the root cause of the increased Memory Utilization and CPU usage, or it may have been something else happening on the cluster at the same time. To troubleshoot and fix Memory Utilization and CPU usage, follow the steps in the [dataflow troubleshooting](https://materialize.com/docs/transform-data/dataflow-troubleshooting) guide.
-
-For guidance on how to reduce Memory Utilization and CPU usage for this or another query, take a look at the [indexing and query optimization](https://materialize.com/docs/transform-data/troubleshooting/#indexing-and-query-optimization) and result filtering sections above.
-
-If your query was the root cause, you’ll need to kill it for the cluster replica’s Memory Utilization or CPU to go down. If your query was causing an OOM, the cluster replica will continue to be in an “OOM loop” - every time the replica restarts, the query restarts executing automatically then causes an OOM again - until you kill the query.
-
-If your query was not the root cause, you can wait for the other activity on the cluster to stop and Memory Utilization/CPU to go down, or switch to a different cluster.
-
-If you’ve gone through the dataflow troubleshooting and do not want to make any changes to your query, consider [sizing up your cluster](https://materialize.com/docs/sql/create-cluster/#available-sizes). A larger size cluster will provision more resources.
-
-## Which part of my query runs slowly or uses a lot of memory?
-
-You can [`EXPLAIN`](/sql/explain-plan/) a query to see how it will be run as a
-dataflow. In particular, `EXPLAIN PHYSICAL PLAN` (the default) will show the concrete, fully
-optimized plan that Materialize will run. That plan is written in our "low-level
-intermediate representation" (LIR).
-
-You can [`EXPLAIN ANALYZE`](/sql/explain-analyze) an index or materialized view to
-attribute performance information to each LIR operator.
-
-## How do I troubleshoot slow queries?
-
-Materialize stores a (sampled) log of the SQL statements that are issued against
-your Materialize region in the last **three days**, along with various metadata
-about these statements. You can access this log via the **"Query history"** tab
-in the [Materialize console](/console/). You can filter
-and sort statements by type, duration, and other dimensions.
-
-This data is also available via the
-[mz_internal.mz_recent_activity_log](/reference/system-catalog/mz_internal/#mz_recent_activity_log)
-catalog table.
-
-It's important to note that the default (and max) sample rate for most
-Materialize organizations is 99%, which means that not all statements will be
-captured in the log. The sampling rate is not user-configurable, and may change
-at any time.
-
-If you're looking for a complete audit history, use the [mz_audit_events](/reference/system-catalog/mz_catalog/#mz_audit_events)
-catalog table, which records all DDL commands issued against your Materialize
-region.
-
----
-
 ## Updating materialized views
 
 As your application and workload evolves, you might need to update materialized view definitions. Materialize offers multiple strategies to update your materialized views, each with different tradeoffs for complexity, resource usage, and impact on freshness.
@@ -2719,7 +2470,7 @@ As your application and workload evolves, you might need to update materialized 
 
 | Strategy | When to use | Tradeoffs |
 |----------|-------------|-----------|
-| [**Blue/green deployments**](/manage/dbt/blue-green-deployments/) | Complex changes across multiple objects, or when using dbt for deployment orchestration. | Ensures no impact to data freshness during cutover, but temporarily doubles resource usage and requires team coordination. |
+| [**Blue/green deployments**](/developer-tools/dbt/blue-green-deployments/) | Complex changes across multiple objects, or when using dbt for deployment orchestration. | Ensures no impact to data freshness during cutover, but temporarily doubles resource usage and requires team coordination. |
 | [**Replace materialized view**](replace-materialized-view/) | Simple changes to a single materialized view's query definition. | Simpler to deploy with no additional tooling, but may impact freshness on the materialized view and all downstream objects. |
 
 ## Blue/green deployments
@@ -2735,7 +2486,7 @@ This strategy is ideal when:
 - You need to ensure zero impact to data freshness during the cutover
 - You have the resources to temporarily run two environments in parallel
 
-For detailed instructions, see the [Blue/green deployment guide](/manage/dbt/blue-green-deployments/).
+For detailed instructions, see the [Blue/green deployment guide](/developer-tools/dbt/blue-green-deployments/).
 
 ## Replace materialized view
 

@@ -58,5 +58,5 @@
   REPLICA`, which enables configuring the amount of effort a replica exerts on
   compacting arrangements during idle periods.
 
-* **Private preview.** Support [bearer token authentication](/integrations/websocket-api/#endpoint)
+* **Private preview.** Support [bearer token authentication](/serve-results/websocket-api/#endpoint)
   in the WebSocket API endpoint, which supports interactive SQL queries over WebSockets.
