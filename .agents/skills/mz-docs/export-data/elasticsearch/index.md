@@ -225,7 +225,7 @@ with `POST /connectors`:
     "value.converter": "io.confluent.connect.avro.AvroConverter",
     "value.converter.schema.registry.url": "<CSR_URL>",
     "transforms": "extractKey,embed",
-    "transforms.extractKey.type": "org.apache.kafka.connect.transforms.ExtractField$Key",
+    "transforms.extractKey.type": "org.apache.kafka.connect.transforms.ExtractField<Key>",
     "transforms.extractKey.field": "id",
     "transforms.embed.type": "com.materialize.connect.smt.embedding.EmbeddingDiffTransform",
     "transforms.embed.embedded.columns": "title,body",

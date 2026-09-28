@@ -905,11 +905,11 @@ To [connect](https://www.php.net/manual/en/ref.pdo-pgsql.connection.php) to Mate
 function connect(string $host, int $port, string $db, string $user, string $password): PDO
 {
     try {
-        $dsn = "pgsql:host=$host;port=$port;dbname=$db;";
+        <dsn> = "pgsql:host=$host;port=$port;dbname=$db;";
 
         // make a database connection
         return new PDO(
-            $dsn,
+            <dsn>,
             $user,
             $password,
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]

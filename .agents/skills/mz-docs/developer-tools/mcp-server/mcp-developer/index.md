@@ -91,7 +91,7 @@ your MCP client. The `materialize-developer` MCP server URL has the form:
 
 1. Add the `materialize-developer` MCP server as [local-scoped
    server](https://code.claude.com/docs/en/mcp#local-scope) (i.e., the
-   configurations are stored in `~/.claude.json`):
+   configurations are stored in `<CLAUDE_CONFIG_FILE>`):
 
    ```sh
    claude mcp add --transport http materialize-developer \
@@ -351,7 +351,7 @@ where `http://localhost:6876` is your base URL.
 
 1. Add the `materialize-developer` MCP server as [local-scoped
    server](https://code.claude.com/docs/en/mcp#local-scope) (i.e., the
-   configurations are stored in `~/.claude.json`):
+   configurations are stored in `<CLAUDE_CONFIG_FILE>`):
 
    ```sh
    claude mcp add --transport http materialize-developer \
@@ -494,7 +494,7 @@ http://localhost:6876/api/mcp/developer
 
 1. Add the `materialize-developer` MCP server as [local-scoped
    server](https://code.claude.com/docs/en/mcp#local-scope) (i.e., the
-   configurations are stored in `~/.claude.json`):
+   configurations are stored in `<CLAUDE_CONFIG_FILE>`):
 
    ```sh
    claude mcp add --transport http materialize-developer \

@@ -164,7 +164,7 @@ in a region supported by Materialize: `us-east-1`,`us-west-2`, or `eu-west-1`.
     CLOUD_CLIENT_SECRET="<your-redpanda-client-secret>"
     CLUSTER_ID="<your-redpanda-cluster-id>"
 
-    AUTH_TOKEN=$(
+    <AUTH_TOKEN>=$(
       curl -s -X POST 'https://auth.prd.cloud.redpanda.com/oauth/token' \
              -H 'content-type: application/x-www-form-urlencoded' \
              -d grant_type=client_credentials \
@@ -185,13 +185,13 @@ in a region supported by Materialize: `us-east-1`,`us-west-2`, or `eu-west-1`.
 
     curl -X PATCH \
        -H "Content-Type: application/json" \
-       -H "Authorization: Bearer $AUTH_TOKEN" \
+       -H "Authorization: Bearer <AUTH_TOKEN>" \
        -d "$CLUSTER_PATCH_BODY" \
         $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID
 
     curl -X GET \
         -H "Content-Type: application/json" \
-        -H "Authorization: Bearer $AUTH_TOKEN" \
+        -H "Authorization: Bearer <AUTH_TOKEN>" \
         $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID | jq \
         '.cluster.aws_private_link'
     ```
@@ -237,7 +237,7 @@ principal:
 
     MATERIALIZE_CONNECTION_ARN="<arn-created-for-materialize-aws-privatelink-connection>"
 
-    AUTH_TOKEN=$(
+    <AUTH_TOKEN>=$(
     curl -s -X POST 'https://auth.prd.cloud.redpanda.com/oauth/token' \
            -H 'content-type: application/x-www-form-urlencoded' \
            -d grant_type=client_credentials \
@@ -258,7 +258,7 @@ principal:
 
     curl -X PATCH \
        -H "Content-Type: application/json" \
-       -H "Authorization: Bearer $AUTH_TOKEN" \
+       -H "Authorization: Bearer <AUTH_TOKEN>" \
        -d "$CLUSTER_PATCH_BODY" \
        $PUBLIC_API_ENDPOINT/v1beta2/clusters/$CLUSTER_ID
     ```

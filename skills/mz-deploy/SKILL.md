@@ -179,8 +179,8 @@ gitignored `.mzprofile` in the project root (written by `mz-deploy profile
 set`). A built-in `emulator` profile always exists, so a local Materialize
 emulator works with zero configuration.
 
-Passwords support `${VAR}` substitution, overridable by
-`MZ_PROFILE_<NAME>_PASSWORD`. `sslmode` follows PostgreSQL's vocabulary and
+Passwords support `<VAR>` substitution, overridable by
+`<MZ_PROFILE_NAME_PASSWORD>`. `sslmode` follows PostgreSQL's vocabulary and
 defaults to `prefer` for loopback hosts, `require` otherwise — use
 `verify-full` for Materialize Cloud.
 

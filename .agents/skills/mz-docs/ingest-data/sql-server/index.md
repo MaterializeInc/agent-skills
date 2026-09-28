@@ -922,8 +922,8 @@ connection**, so the SQL Server connection must specify `SSL MODE 'required'`.
 
     ```sh
     # Command for Linux
-    echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-    echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+    echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+    echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
     ```
 
 1. Back in the SQL client connected to Materialize, validate the SSH tunnel
@@ -1773,8 +1773,8 @@ details for Materialize to use:
 
     ```sh
     # Command for Linux
-    echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-    echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+    echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+    echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
     ```
 
 1. Back in the SQL client connected to Materialize, validate the SSH tunnel connection you created using the [`VALIDATE CONNECTION`](/sql/validate-connection) command:

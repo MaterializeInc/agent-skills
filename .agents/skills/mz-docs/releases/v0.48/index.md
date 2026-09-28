@@ -62,7 +62,7 @@ shipping in v0.48 -— so mentioning it here."
     -X security.protocol=SASL_SSL \
     -X sasl.mechanisms=SCRAM-SHA-256 \
     -X sasl.username=$KAFKA_USERNAME \
-    -X sasl.password=$KAFKA_PASSWORD
+    -X sasl.password=<KAFKA_PASSWORD>
   ```
 
 * Fix a bug that prevented the correct parsing of connection settings specified

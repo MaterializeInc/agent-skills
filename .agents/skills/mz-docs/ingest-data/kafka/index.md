@@ -344,8 +344,8 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```bash
     # Command for Linux
-    echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-    echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+    echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+    echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
     ```
 
 1. Configure your internal firewall to allow the SSH bastion host to connect to your Kafka cluster or PostgreSQL instance.
@@ -646,8 +646,8 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```bash
     # Command for Linux
-    echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-    echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+    echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+    echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
     ```
 
 1. Configure your internal firewall to allow the SSH bastion host to connect to your Kafka cluster or PostgreSQL instance.
@@ -1611,8 +1611,8 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```bash
     # Command for Linux
-    echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-    echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+    echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+    echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
     ```
 
 1. Configure your internal firewall to allow the SSH bastion host to connect to your Kafka cluster or PostgreSQL instance.
@@ -1793,8 +1793,8 @@ to retrieve the public keys for the SSH tunnel connection you just created:
 
     ```bash
     # Command for Linux
-    echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-    echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+    echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+    echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
     ```
 
 1. Configure your internal firewall to allow the SSH bastion host to connect to your Kafka cluster or PostgreSQL instance.

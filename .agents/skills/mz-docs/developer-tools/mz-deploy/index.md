@@ -1095,7 +1095,7 @@ password = "${STAGING_PASSWORD}"
 [production]
 host = "production.example.com"
 username = "deploy_bot"
-password = "${PROD_PASSWORD}"
+password = "<PROD_PASSWORD>"
 ```
 
 The active profile is resolved in this order:

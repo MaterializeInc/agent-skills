@@ -2054,8 +2054,8 @@ tunnel connection:   ```mzsql
 1. Log in to your SSH bastion host and add Materialize's public keys to the
 `authorized_keys` file, for example:
    ```mzsql
-   echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-   echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+   echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+   echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
 
    ```
 
@@ -3051,8 +3051,8 @@ tunnel connection:   ```mzsql
 1. Log in to your SSH bastion host and add Materialize's public keys to the
 `authorized_keys` file, for example:
    ```mzsql
-   echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-   echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+   echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+   echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
 
    ```
 
@@ -4118,8 +4118,8 @@ tunnel connection:   ```mzsql
 1. Log in to your SSH bastion host and add Materialize's public keys to the
 `authorized_keys` file, for example:
    ```mzsql
-   echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-   echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+   echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+   echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
 
    ```
 
@@ -4876,8 +4876,8 @@ tunnel connection:   ```mzsql
 1. Log in to your SSH bastion host and add Materialize's public keys to the
 `authorized_keys` file, for example:
    ```mzsql
-   echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-   echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+   echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+   echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
 
    ```
 
@@ -5631,8 +5631,8 @@ tunnel connection:   ```mzsql
 1. Log in to your SSH bastion host and add Materialize's public keys to the
 `authorized_keys` file, for example:
    ```mzsql
-   echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-   echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+   echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+   echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
 
    ```
 
@@ -6200,7 +6200,7 @@ to create a new role.
 ```bash
 curl 'https://console.neon.tech/api/v2/projects/<project_id>/branches/<branch_id>/roles' \
 -H 'Accept: application/json' \
--H "Authorization: Bearer $NEON_API_KEY" \
+-H "Authorization: Bearer <NEON_API_KEY>" \
 -H 'Content-Type: application/json' \
 -d '{
 "role": {
@@ -7270,8 +7270,8 @@ tunnel connection:   ```mzsql
 1. Log in to your SSH bastion host and add Materialize's public keys to the
 `authorized_keys` file, for example:
    ```mzsql
-   echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-   echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+   echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+   echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
 
    ```
 

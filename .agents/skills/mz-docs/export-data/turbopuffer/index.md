@@ -175,7 +175,7 @@ run_sink(
         kafka_bootstrap_servers="<BROKER_HOST>:9092",
         kafka_topic="articles_v1",
         schema_registry_url="<CSR_URL>",
-        schema_registry_auth=f"<CSR_USERNAME>:{os.environ['CSR_PASSWORD']}",
+        schema_registry_auth=f"<CSR_USERNAME>:<CSR_PASSWORD>",
         materialize_dsn=os.environ["MATERIALIZE_DSN"],
         materialize_sink="materialize.public.articles_sink_v1",
         turbopuffer_api_key=os.environ["TURBOPUFFER_API_KEY"],

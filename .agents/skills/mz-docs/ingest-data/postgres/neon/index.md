@@ -139,7 +139,7 @@ to create a new role.
 ```bash
 curl 'https://console.neon.tech/api/v2/projects/<project_id>/branches/<branch_id>/roles' \
 -H 'Accept: application/json' \
--H "Authorization: Bearer $NEON_API_KEY" \
+-H "Authorization: Bearer <NEON_API_KEY>" \
 -H 'Content-Type: application/json' \
 -d '{
 "role": {

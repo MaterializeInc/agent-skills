@@ -484,7 +484,7 @@ echo ":" | kcat -b $BROKER -t $TOPIC -Z -K: \
   -X security.protocol=SASL_SSL \
   -X sasl.mechanisms=SCRAM-SHA-256 \
   -X sasl.username=$KAFKA_USERNAME \
-  -X sasl.password=$KAFKA_PASSWORD
+  -X sasl.password=<KAFKA_PASSWORD>
 ```
 
 #### Value decoding errors

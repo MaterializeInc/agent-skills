@@ -635,8 +635,8 @@ tunnel connection:   ```mzsql
 1. Log in to your SSH bastion host and add Materialize's public keys to the
 `authorized_keys` file, for example:
    ```mzsql
-   echo "ssh-ed25519 AAAA...76RH materialize" >> ~/.ssh/authorized_keys
-   echo "ssh-ed25519 AAAA...hLYV materialize" >> ~/.ssh/authorized_keys
+   echo "ssh-ed25519 AAAA...76RH materialize" >> <AUTHORIZED_KEYS_FILE>
+   echo "ssh-ed25519 AAAA...hLYV materialize" >> <AUTHORIZED_KEYS_FILE>
 
    ```
 

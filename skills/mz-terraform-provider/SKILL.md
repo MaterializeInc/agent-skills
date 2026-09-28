@@ -87,7 +87,7 @@ provider "materialize" {
 }
 ```
 
-All arguments have environment variable equivalents: `MZ_HOST`, `MZ_PORT`, `MZ_USER`, `MZ_DATABASE`, `MZ_PASSWORD`, `MZ_SSLMODE`, `MZ_DEFAULT_REGION`.
+All arguments have environment variable equivalents: `MZ_HOST`, `MZ_PORT`, `MZ_USER`, `MZ_DATABASE`, `<MZ_PASSWORD>`, `MZ_SSLMODE`, `MZ_DEFAULT_REGION`.
 
 **Important:** Self-managed mode does not support Frontegg-dependent resources (app passwords, users, SSO, SCIM). Those only work against Materialize Cloud.
 
