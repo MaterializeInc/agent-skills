@@ -10,23 +10,11 @@
     {
       "name": "materialize",
       "source": "./",
-      "strict": false,
       "description": "Materialize agent skills: docs, dbt, Terraform, mz-deploy, health checks, freshness debugging, and memory tuning",
       "category": "database",
       "tags": ["materialize", "sql", "streaming", "skills"],
       "license": "Apache-2.0",
-      "repository": "https://github.com/MaterializeInc/agent-skills",
-      "skills": [
-        "./.agents/skills/mz-docs",
-        "./.agents/skills/mz-health-check",
-        "./skills/mz-dbt",
-        "./skills/mz-debug-freshness",
-        "./skills/mz-deploy",
-        "./skills/mz-ontology-design",
-        "./skills/mz-optimize-memory",
-        "./skills/mz-terraform-provider",
-        "./skills/mz-terraform-self-managed"
-      ]
+      "repository": "https://github.com/MaterializeInc/agent-skills"
     },
     {
       "name": "mz-sql-lsp",

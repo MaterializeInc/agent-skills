@@ -17,6 +17,8 @@ skills/
       README.md
     {topic}/              # Topic directories containing documentation
       index.md
+.agents/skills/
+  {skill-name}/           # mz-docs and mz-health-check, same layout as skills/
 evals/
   {skill-name}/           # Optional: the eval harness a skill was developed against
     README.md             # (environment generator, runner, prompts, rubric, answer key)
@@ -40,7 +42,7 @@ evals/
 
 ### Reading Documentation
 
-When answering questions about Materialize, navigate the `skills/mz-docs/` directory:
+When answering questions about Materialize, navigate the `.agents/skills/mz-docs/` directory:
 
 - **SQL syntax and commands**: `sql/` (120+ command references)
 - **Core concepts**: `fundamentals/concepts/` (clusters, sources, sinks, views, indexes), with architecture patterns in `fundamentals/architecture-patterns/`
@@ -139,7 +141,7 @@ Skills load in three stages:
 
 When adding new documentation to an existing skill:
 
-1. Create the appropriate directory under the skill (e.g., `skills/mz-docs/{section}/{topic}/`)
+1. Create the appropriate directory under the skill (e.g., `.agents/skills/mz-docs/{section}/{topic}/`)
 2. Add an `index.md` file with the documentation content
 3. Update the skill's `SKILL.md` to reference the new documentation in the appropriate section
 
@@ -163,7 +165,7 @@ plugins/
 
 | Plugin | Description |
 |--------|-------------|
-| `materialize` | Bundles every skill in `skills/`, so users can install and update them as one plugin |
+| `materialize` | Bundles every skill in `skills/` and `.agents/skills/`, so users can install and update them as one plugin |
 | `mz-sql-lsp` | Registers the `mz-deploy` language server for `.sql` files (go-to-definition, hover, symbols) |
 
 ### Conventions
@@ -172,17 +174,20 @@ plugins/
 - Plugin sources in `marketplace.json` use the explicit `./plugins/{name}` form. The documented `metadata.pluginRoot` shorthand fails validation.
 - Set an explicit semver `version` in `plugin.json` and bump it on every user-visible change. Without a bump, Claude Code keeps the cached copy. `claude plugin validate --strict` also fails on a missing version.
 - Add each new plugin to the `validate-plugins` workflow, this table, and the root `README.md`.
-- The `materialize` plugin is the exception to the rules above. Its source is the repo root (`./`), its marketplace entry is its whole definition (`strict: false`), and it has no `version`, so every commit to `main` is an update. The skills change weekly with the docs sync, and a version that has to be bumped by hand would leave users on old copies.
-- Add each new skill to the `materialize` plugin's `skills` list, by its real directory rather than the `skills/` symlink. Codex drops symlinked skills when it installs a plugin. The `validate-plugins` workflow fails when the list and `skills/` differ.
+- The `materialize` plugin is the exception to the rules above. Its source is the repo root (`./`), its manifest is `.claude-plugin/plugin.json`, and it has no `version`, so every commit to `main` is an update. The skills change weekly with the docs sync, and a version that has to be bumped by hand would leave users on old copies.
+- Keep the `materialize` marketplace entry to metadata. Its skill list lives in `.claude-plugin/plugin.json`, because Anthropic's plugin directory screens only a plugin's own manifest and files and rejects skills listed inline in `marketplace.json`.
+- Add each new skill to the `skills` list in `.claude-plugin/plugin.json`, by its real directory. Don't symlink skill directories: Codex drops symlinked skills when it installs a plugin, and Anthropic's plugin directory rejects symlinks at skill paths. The `validate-plugins` workflow fails when the list differs from the skills in `skills/` and `.agents/skills/`.
 
 ### Validating
 
 CI runs these on every push touching `plugins/`, the skills, or the marketplace manifest. Run them locally before pushing:
 
 ```bash
-claude plugin validate . --strict                      # marketplace manifest
+claude plugin validate .                               # marketplace manifest; the only expected warning is the materialize plugin's missing version
 claude plugin validate ./plugins/mz-sql-lsp --strict   # plugin manifest
 ```
+
+CI validates the marketplace as strictly as `--strict`, except that it allows that one warning.
 
 Manifest validation does not exercise runtime behavior. To test a plugin end to end without installing it globally, load it for one session and point Claude at a real project:
 
@@ -220,7 +225,7 @@ installs the skill to each one.
 
 **Claude Code:**
 ```bash
-cp -r skills/{skill-name} ~/.claude/skills/
+cp -r skills/{skill-name} ~/.claude/skills/          # or .agents/skills/{skill-name} for mz-docs and mz-health-check
 ```
 
 **Claude.ai:**

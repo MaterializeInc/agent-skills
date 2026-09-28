@@ -49,11 +49,35 @@ jobs:
         run: npm install -g @anthropic-ai/claude-code
 
       - name: Validate ${{ matrix.target }}
+        if: matrix.target != '.'
         run: claude plugin validate "${{ matrix.target }}" --strict
 
-  # The materialize plugin lists its skills by their real directories, since
-  # the symlinks in skills/ are dropped when Codex installs the plugin. A
-  # skill added to skills/ but not to that list is missing for plugin users.
+      # Same as --strict, except that it allows the one warning for the
+      # materialize plugin's missing version, which is deliberate (AGENTS.md).
+      - name: Validate ${{ matrix.target }}, allowing the materialize plugin's missing version
+        if: matrix.target == '.'
+        shell: python
+        run: |
+          import json, subprocess, sys
+          names = [p["name"] for p in json.load(open(".claude-plugin/marketplace.json"))["plugins"]]
+          allowed = f"plugins[{names.index('materialize')}] plugin.json \u2192 version"
+          result = subprocess.run(["claude", "plugin", "validate", ".", "--json"], capture_output=True, text=True)
+          print(result.stdout, result.stderr, sep="\n")
+          report = json.loads(result.stdout)
+          failed = result.returncode != 0 or not report["success"]
+          for section in [report["manifest"], *report.get("contents", [])]:
+              for finding in section.get("errors", []):
+                  print(f"::error::{finding['path']}: {finding['message']}")
+                  failed = True
+              for finding in section.get("warnings", []):
+                  if finding["path"] != allowed:
+                      print(f"::error::{finding['path']}: {finding['message']}")
+                      failed = True
+          sys.exit(1 if failed else 0)
+
+  # The materialize plugin lists its skills in .claude-plugin/plugin.json by
+  # their real directories, in skills/ and .agents/skills/. A skill added to
+  # either directory but not to that list is missing for plugin users.
   materialize-plugin-skills:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -67,12 +91,12 @@ jobs:
         shell: python
         run: |
           import json, os, sys
-          plugins = json.load(open(".claude-plugin/marketplace.json"))["plugins"]
-          entry = next(p for p in plugins if p["name"] == "materialize")
-          listed = {os.path.realpath(p) for p in entry["skills"]}
-          present = {os.path.realpath(os.path.join("skills", d)) for d in os.listdir("skills")}
+          manifest = json.load(open(".claude-plugin/plugin.json"))
+          listed = {os.path.realpath(p) for p in manifest["skills"]}
+          skill_dirs = ["skills", ".agents/skills"]
+          present = {os.path.realpath(os.path.join(root, d)) for root in skill_dirs for d in os.listdir(root)}
           for path in sorted(present - listed):
               print(f"::error::{os.path.relpath(path)} is missing from the materialize plugin's skills list")
           for path in sorted(listed - present):
-              print(f"::error::{os.path.relpath(path)} is listed but has no entry in skills/")
+              print(f"::error::{os.path.relpath(path)} is listed but has no entry in skills/ or .agents/skills/")
           sys.exit(1 if listed != present else 0)
