@@ -59,13 +59,16 @@ Materialize documentation for SQL syntax, data ingestion, concepts, and best pra
 
 - SQL Commands (120+ command references)
 - Core Concepts (clusters, sources, sinks, views, indexes)
+- Clusters (sizing, autoscaling, troubleshooting)
 - Data Ingestion (Kafka, PostgreSQL, MySQL, MongoDB, SQL Server, webhooks)
 - Data Transformation (patterns, optimization, idiomatic SQL)
-- Serving Results (sinks, BI tools, FDW)
-- Integrations (CLI, client libraries, HTTP/WebSocket APIs)
+- Serving Results (BI tools, client libraries, HTTP/WebSocket APIs, FDW)
+- Exporting Data (sinks to Kafka, Iceberg, S3, Snowflake, and more)
+- Developer Tools (Console, dbt, Terraform, mz-deploy, MCP server)
+- Observability (metrics and monitoring)
 - Security (RBAC, network policies, SSO)
+- Materialize Cloud (billing, disaster recovery)
 - Self-Managed Deployments (AWS, Azure, GCP, Kubernetes)
-- Management (monitoring, dbt, Terraform, disaster recovery)
 
 **Synced with the [online Materialize documentation](https://materialize.com/docs/).** Either one can be used to identify the Materialize version that introduced or updated a particular feature.
 

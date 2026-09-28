@@ -43,15 +43,17 @@ evals/
 When answering questions about Materialize, navigate the `skills/mz-docs/` directory:
 
 - **SQL syntax and commands**: `sql/` (120+ command references)
-- **Core concepts**: `concepts/` (clusters, sources, sinks, views, indexes)
+- **Core concepts**: `fundamentals/concepts/` (clusters, sources, sinks, views, indexes), with architecture patterns in `fundamentals/architecture-patterns/`
+- **Clusters**: `clusters/` (sizing, autoscaling, system clusters, troubleshooting)
 - **Data ingestion**: `ingest-data/` (Kafka, PostgreSQL, MySQL, webhooks, etc.)
 - **Data transformation**: `transform-data/` (patterns, optimization, idiomatic SQL)
-- **Serving results**: `serve-results/` (sinks, BI tools, FDW)
-- **Integrations**: `integrations/` (CLI, client libraries, HTTP/WebSocket APIs)
+- **Serving results**: `serve-results/` (BI tools, client libraries, HTTP/WebSocket APIs, FDW)
+- **Exporting data**: `export-data/` (sinks to Kafka, Iceberg, S3, Snowflake, and more)
+- **Developer tools**: `developer-tools/` (Console, dbt, Terraform, mz-deploy, MCP server, emulator)
+- **Observability**: `observability/` (metrics and monitoring)
 - **Security**: `security/` (RBAC, network policies, SSO)
+- **Materialize Cloud**: `materialize-cloud/` (billing, disaster recovery)
 - **Deployment**: `self-managed-deployments/` (AWS, Azure, GCP, Kubernetes)
-- **Management**: `manage/` (monitoring, dbt, Terraform, disaster recovery)
-- **Console**: `console/` (Materialize web UI)
 
 Each topic directory contains an `index.md` with the full documentation for that topic.
 
