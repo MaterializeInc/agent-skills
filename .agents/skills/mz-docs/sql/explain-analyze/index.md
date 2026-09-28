@@ -54,7 +54,7 @@ The privileges required to execute this statement are:
 The attribution examples in this
 section reference the `wins_by_item` index (and the underlying `winning_bids`
 view) from the [quickstart
-guide](/get-started/quickstart/#step-2-create-the-source):
+guide](/get-started/#step-2-create-the-source):
 
 ```sql
 CREATE SOURCE auction_house
@@ -161,7 +161,7 @@ worker's ratio compared to the average.
 For the below example, assume there are 2 workers in the cluster.
 
 > **Tip:** To determine how many workers a given cluster size has, you can query
-> [`mz_catalog.mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes).
+> [`mz_catalog.mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes).
 
 You can explain `MEMORY` and/or `CPU` with the `WITH SKEW` option. For example,
 the following runs `EXPLAIN ANALYZE MEMORY WITH SKEW`:
@@ -317,15 +317,15 @@ Under the hood:
 
 - For returning Memory/CPU information, `EXPLAIN ANALYZE` runs SQL queries that
 correlate [`mz_introspection` performance
-information](https://materialize.com/docs/reference/system-catalog/mz_introspection/)
+information](https://materialize.com/docs/sql/system-catalog/mz_introspection/)
 with the LIR operators in
-[`mz_introspection.mz_lir_mapping`](../../reference/system-catalog/mz_introspection/#mz_lir_mapping).
+[`mz_introspection.mz_lir_mapping`](/sql/system-catalog/mz_introspection/#mz_lir_mapping).
 Its `lir_id` is the node ID that `EXPLAIN PHYSICAL PLAN WITH (node identifiers)`
 prints, so a row of that SQL can be matched to a plan operator by ID rather
 than by its text.
 
 - For TopK hints, `EXPLAIN ANALYZE` uses
-[`mz_introspection.mz_expected_group_size_advice`](/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice)
+[`mz_introspection.mz_expected_group_size_advice`](/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice)
 introspection source to offer hints on sizing `TopK` operators.
 
 You can append `AS SQL` to any `EXPLAIN ANALYZE` statement to see the SQL that

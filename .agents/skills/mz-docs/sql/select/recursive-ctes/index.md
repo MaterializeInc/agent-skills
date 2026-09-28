@@ -63,7 +63,7 @@ When the set of changes for all bindings becomes empty, the recursive computatio
 
 Let's consider a very simple schema consisting of `users` that belong to a
 hierarchy of geographical `areas` and exchange `transfers` between each other.
-Use the [SQL Shell](/console/) to run the sequence of
+Use the [SQL Shell](/developer-tools/console/) to run the sequence of
 commands below.
 
 ### Example schema

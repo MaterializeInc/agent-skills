@@ -105,8 +105,8 @@ and load balancer were added in v10.1.0, and are both billable. Starting with
 v11.0.0, `enable_observability` defaults to `true`, so set it to `false` if you
 do not want the stack. For what the stack stores and where else it can send
 it, see [How logs and metrics are
-stored](/manage/monitor/self-managed/storage/). For reaching Grafana, see
-[Grafana](/manage/monitor/self-managed/grafana/).
+stored](/observability/self-managed/storage/). For reaching Grafana, see
+[Grafana](/observability/self-managed/grafana/).
 
 ## Prerequisites
 
@@ -229,7 +229,7 @@ An active Azure subscription with appropriate permissions to create:
    > **Note:** With `enable_observability` on, the modules also create a
 >    `B_Standard_B1ms` PostgreSQL Flexible Server for Grafana's own state and an
 >    internal load balancer to reach Grafana on. Both are billable. See
->    [Grafana](/manage/monitor/self-managed/grafana/).
+>    [Grafana](/observability/self-managed/grafana/).
 
    <p><strong>Additional variables</strong>:</p>
    <ul>
@@ -245,7 +245,7 @@ An active Azure subscription with appropriate permissions to create:
    <li><code>enable_observability</code>: Flag that determines whether to deploy the
    monitoring stack (Grafana, metrics, and logs) alongside Materialize.
    Defaults to <code>false</code> in the <code>simple</code> example. See
-   <a href="/manage/monitor/self-managed/grafana/" >Grafana</a>.</li>
+   <a href="/observability/self-managed/grafana/" >Grafana</a>.</li>
    </ul>
    > **Note:** Refer to your organization's security practices to set these values accordingly.
 

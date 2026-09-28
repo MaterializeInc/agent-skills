@@ -5,6 +5,202 @@ Materialize release notes
 > **Note:** Starting with the v26.1.0 release, Materialize releases on a weekly schedule for
 > both Cloud and Self-Managed. See [Release schedule](/releases/schedule) for details.
 
+## v26.43.0
+*Released to Materialize Cloud: 2026-09-23* <br>
+*Released to Materialize Self-Managed: 2026-09-24* <br>
+
+### Iceberg support for Databricks on Azure {#v26.43-iceberg-support-for-databricks-on-azure}
+
+> **Public Preview:** This feature is in public preview.
+
+Iceberg sinks can now write to Apache Iceberg tables registered in [Databricks
+Unity Catalog](/export-data/iceberg-databricks/) on Azure, where catalogs store
+their data in Azure Data Lake Storage Gen2. Set `STORAGE PROVIDER = 'adls'` on
+the Iceberg catalog connection alongside `ACCESS DELEGATION =
+'vended-credentials'`, and Materialize writes to Azure Data Lake Storage with
+temporary, table-scoped credentials that Unity Catalog vends. Materialize
+refreshes both the OAuth2 token and the vended credentials while the sink runs,
+so the sink needs no Azure credentials of its own.
+
+```mzsql
+CREATE SECRET databricks_oauth
+  AS '<client_id>:<client_secret>';
+
+CREATE CONNECTION iceberg_catalog_connection TO ICEBERG CATALOG (
+    CATALOG TYPE = 'rest',
+    URL = 'https://adb-<workspace_id>.<region_id>.azuredatabricks.net/api/2.1/unity-catalog/iceberg-rest',
+    WAREHOUSE = '<catalog_name>',
+    CREDENTIAL = SECRET databricks_oauth,
+    OAUTH2 SERVER URL = 'https://adb-<workspace_id>.<region_id>.azuredatabricks.net/oidc/v1/token',
+    SCOPE = 'all-apis',
+    ACCESS DELEGATION = 'vended-credentials',
+    STORAGE PROVIDER = 'adls'
+);
+
+CREATE SINK <sink_name>
+  IN CLUSTER <sink_cluster>
+  FROM <my_materialize_object>
+  INTO ICEBERG CATALOG CONNECTION iceberg_catalog_connection (
+    NAMESPACE = '<unity_catalog_schema>',
+    TABLE = '<my_iceberg_table>'
+  )
+  MODE APPEND
+  WITH (COMMIT INTERVAL = '<commit_interval>');
+```
+
+For more information, see:
+- [Guide: Databricks Unity Catalog](/export-data/iceberg-databricks/)
+- [`CREATE CONNECTION`: Iceberg catalog](/sql/create-connection/#iceberg-catalog), including [storage access delegation](/sql/create-connection/#iceberg-catalog-access-delegation)
+- [`CREATE SINK`: Iceberg](/sql/create-sink/iceberg/), including [append mode](/sql/create-sink/iceberg/#append-mode)
+
+### Claude Code and Codex plugins for Materialize {#v26.43-agent-skills-plugins}
+
+The [Materialize agent skills](/developer-tools/mcp-server/coding-agent-skills/)
+are now available as a plugin for Claude Code and Codex. The plugin installs all
+the skills at once, and helps you keep them up to date automatically.
+
+In Claude Code:
+
+```
+/plugin marketplace add MaterializeInc/agent-skills
+/plugin install materialize@materialize
+```
+
+In Codex:
+
+```bash
+codex plugin marketplace add MaterializeInc/agent-skills
+codex plugin add materialize@materialize
+```
+
+If you installed the skills with `npx skills`, remove them before you install
+the plugin, so each skill appears only once. For more information, see [Agent
+Skills](/developer-tools/mcp-server/coding-agent-skills/#install-as-a-plugin).
+
+### Improvements {#v26.43-improvements}
+- **Graceful cluster resizes wait for replacements to catch up**: A graceful resize now retires the outgoing replicas only once the new replicas have hydrated and caught up to the replicas they replace, so cut-overs no longer stall query progress. A resize that cannot catch up in time follows its `ON TIMEOUT` policy, which defaults to `ROLLBACK`.
+- **Swap usage in replica metrics**: `mz_internal.mz_cluster_replica_metrics` and `mz_cluster_replica_metrics_history` now report `swap_bytes` for each replica process, and `mz_internal.mz_cluster_replica_utilization` and `mz_cluster_replica_utilization_history` expose `swap_percent` as a share of the replica's heap allocation, so you can see how much of a replica's memory has spilled to swap.
+- **Per-process peaks in replica hydration history**: `mz_internal.mz_replica_hydration_history` now records one row per replica process, carrying that process's own memory and disk peaks, so resource skew across the processes of a multi-process replica is visible.
+
+### Guides {#v26.43-guides}
+- [Understand the lifecycle of a sink](/export-data/lifecycle-of-a-sink/)
+- [PostgreSQL: Supported database operations](/ingest-data/postgres/#supported-database-operations)
+- [SQL Server: Supported database operations](/ingest-data/sql-server/#supported-database-operations)
+
+### Bug Fixes {#v26.43-bug-fixes}
+- Fixed `DEALLOCATE`, `CLOSE`, `EXECUTE`, and `FETCH` failing with a "does not exist" error and aborting the surrounding transaction when the prepared statement or cursor name was given in double quotes; a name created over the extended wire protocol is stored exactly as it arrives, but these statements re-quoted it before looking it up, so drivers such as psqlODBC that prepare statements over the protocol and later deallocate them by quoted name could not release them.
+- Fixed an abort that dropped every session in the environment when a cursor declared over a `CLOSE` statement naming that same cursor was fetched from.
+- Fixed Iceberg sinks applying a commit's changes on top of newer table state when retrying, which could duplicate written data if an earlier attempt had in fact succeeded or another writer had taken over; the sink now inspects the catalog's table state before applying the commit.
+- Fixed `object_count` in `mz_internal.mz_replica_hydration_history` counting a replica's built-in introspection dataflows, which made it disagree with the rows recorded in `mz_internal.mz_object_hydration_history` for the same episode; introspection-only episodes are still recorded, with `object_count = 0`.
+
+## v26.42.0
+*Released to Materialize Self-Managed: 2026-09-18* <br>
+
+### Safely drop upstream constraints in your Postgres sources {#v26.42-constraint-exclusion-for-postgres-sources}
+Materialize now allows you to `EXCLUDE CONSTRAINTS` when creating a table from a Postgres source. You can use this workflow to safely drop an upstream constraint, without causing your source to stall. Today, the Postgres source incorporates `PRIMARY KEY`, `UNIQUE` and `NOT NULL` constraints.
+
+```mzsql
+CREATE TABLE orders
+  FROM SOURCE pg_source (REFERENCE public.orders)
+  WITH (EXCLUDE CONSTRAINTS ('orders_customer_email_key'));
+```
+
+If you want to exclude all constraints, you can do that too:
+
+```mzsql
+CREATE TABLE orders
+  FROM SOURCE pg_source (REFERENCE public.orders)
+  WITH (EXCLUDE ALL CONSTRAINTS);
+```
+
+For more details, see [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/postgres/) for PostgreSQL and the guide on [handling upstream schema changes](/ingest-data/postgres/source-versioning/).
+
+### Size clusters using hydration history {#v26.42-hydration-history}
+You can now track how long a cluster took to hydrate, and what resources it needed. Every completed hydration is now recorded in two new introspection tables:
+- [`mz_internal.mz_replica_hydration_history`](/sql/system-catalog/mz_internal/#mz_replica_hydration_history) to track hydration metrics per replica
+- [`mz_internal.mz_object_hydration_history`](/sql/system-catalog/mz_internal/#mz_object_hydration_history) to track hydration metrics per object
+
+Use these tables to determine your hydration requirements, and right-size your clusters accordingly.
+
+```mzsql
+SELECT
+    rh.replica_name AS replica,
+    rh.size,
+    h.started_at,
+    h.finished_at - h.started_at AS hydration_time,
+    h.object_count,
+    pg_size_pretty(h.peak_memory_bytes) AS peak_memory,
+    pg_size_pretty(h.peak_disk_bytes) AS peak_disk
+FROM mz_internal.mz_replica_hydration_history AS h
+JOIN mz_internal.mz_cluster_replica_history AS rh ON rh.replica_id = h.replica_id
+WHERE rh.cluster_name = 'analytics'
+ORDER BY h.started_at DESC;
+```
+
+```none
+ replica | size  |          started_at           | hydration_time | object_count | peak_memory | peak_disk
+---------+-------+-------------------------------+----------------+--------------+-------------+-----------
+ r1      | 400cc | 2026-09-08 09:12:04.117841+00 | 00:04:11.83    |           41 | 11 GB       | 2438 MB
+(1 row)
+```
+
+Compare `peak_memory` against the replica sizes in [`mz_catalog.mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes) to find the size that fits your workload. This lets you create a cluster at a generous size, hydrate once, and then size down with confidence. The new [cluster sizing guide](/clusters/sizing/) walks through that workflow, and [Optimize hydration requirements](/clusters/optimize-hydration-requirements/) covers what to do when a single object accounts for most of the peak.
+
+### Improvements {#v26.42-improvements}
+- **Vended credentials for Iceberg sink to GCP BigLake**: `CREATE CONNECTION ... TO ICEBERG CATALOG` now accepts a storage provider option, and `ACCESS DELEGATION` is allowed on GCP BigLake catalog connections, so an Iceberg catalog backed by Google Cloud Storage can authenticate with credentials the catalog vends. For more information, see [GCP BigLake](/export-data/iceberg-gcp/).
+- **IANA time zone data updated to 2026c**: Time zone rules now follow IANA tzdata 2026c, covering Morocco's move to permanent +00 on 2026-09-20, Alberta's permanent -06, British Columbia's permanent -07, and Moldova's EU transition instants since 2022.
+- **Pod priority classes in Self-Managed deployments**: Operators can set `environmentd.priorityClassName` and `clusterd.priorityClassName` in the Helm chart, so a higher-priority pod scheduled onto a full node no longer evicts Materialize ahead of other workloads.
+- **Composite types in `mz-deploy` projects**: `mz-deploy` records the full catalog type for composite types such as records in `types.lock`, so views that read a dependency's record-typed column type check offline instead of resolving to a pseudo type.
+
+### Guides {#v26.42-guides}
+- [Size clusters for hydration](/clusters/sizing/)
+- [Optimize hydration requirements](/clusters/optimize-hydration-requirements/)
+- [Autoscaling for hydration](/clusters/autoscaling/)
+- [Troubleshoot anomalies in memory usage](/clusters/troubleshoot-clusters/memory-spike/)
+- [Troubleshoot anomalies in CPU usage](/clusters/troubleshoot-clusters/cpu-troubleshooting/)
+
+### Bug Fixes {#v26.42-bug-fixes}
+- Fixed `CREATE TABLE ... FROM SOURCE` and `ALTER SOURCE` connecting to a source's upstream system before checking the caller's privileges on that source, which let a role holding no privilege on the source read upstream schema, table, and column names out of the resulting purification errors; `CREATE TABLE ... FROM SOURCE` now requires `SELECT` on the source plus schema `USAGE`, and `ALTER SOURCE` requires ownership.
+- Fixed `ALTER CLUSTER` resource-limit enforcement during graceful reconfiguration, which predicted a reshape's peak replica overlap instead of checking the replica set actually being created; a target that does not fit now leaves the existing replicas serving and reports `INSUFFICIENT_RESOURCES` with a hint.
+- Fixed `ALTER CLUSTER ... WITH (WAIT UNTIL READY (..., ON TIMEOUT = 'COMMIT'))` needing room for the old and new replica sets at once when its deadline passed; the cut-over is now a single transaction that creates the target and retires the previous replicas together, so only the net change has to fit.
+- Fixed cluster- and replica-scoped configuration not reaching the replacement replicas the cluster controller creates during a reconfiguration, so those replicas now apply the overrides before their first render.
+- Fixed `mz_object_dependencies` omitting a sink's dependency on a user-defined type that the sink references through a `DOC ON TYPE` or `DOC ON COLUMN` option.
+- Fixed `mz-deploy compile` rejecting valid SQL with `precision for type numeric must be between 1 and 39` when a view aggregated a `bigint` or `uint8` column with `sum()` and another view in the project read it, and fixed declared `numeric(p, s)` columns being stubbed with the scale in the precision position.
+
+## v26.41.0
+*Released to Materialize Cloud: 2026-09-10* <br>
+*Released to Materialize Self-Managed: 2026-09-11* <br>
+
+### Improvements {#v26.41-improvements}
+- **Improved Clusters Page on console**: The Clusters Page now shows you per-replica usage, including CPU, memory, disk, and heap usage. Use the filters on the page to quickly identify unhealthy clusters. We've also sped up the page; page-loads which previously took ~600ms now take 25-50ms on environments with 2,000 objects.
+- **MySQL snapshot parallelism enabled by default**: In v26.39, we launched [parallelized snapshots](/ingest-data/mysql/snapshot-parallelism/) for [MySQL sources](/ingest-data/mysql/) on tables which have a `CHAR` or `VARCHAR` primary key using the `utf8mb4` character set with the `utf8mb4_bin` collation. In our tests, we saw snapshot speedups of up to 80%. This behavior is now enabled by default.
+- **Pre-flight reference checks in `mz-deploy`**: `mz-deploy apply`, `apply tables`, and their `--dry-run` forms now check every `CREATE TABLE ... FROM SOURCE` reference against what the source can actually expose before creating anything, and report the mismatches grouped by source with close-name suggestions instead of failing partway through the batch with a raw server error.
+
+### Guides {#v26.41-guides}
+- **Reorganized documentation**: The docs are now grouped by what you are trying to do, with [Fundamentals](/fundamentals/), [Clusters](/clusters/), [Developer tools](/developer-tools/), and [Export data](/export-data/). Every moved page redirects from its previous URL.
+- [Export data to Snowflake on AWS, using the Iceberg Sink to AWS S3 Tables](/export-data/iceberg-aws-snowflake/)
+- [Query History for Self-Managed](/self-managed-deployments/query-history/)
+- [ADBC (Arrow Database Connectivity)](/serve-results/adbc/)
+- [Understand the lifecycle of a source](/ingest-data/lifecycle-of-a-source/)
+- [Upgrade the major version of your PostgreSQL source](/ingest-data/postgres/major-version-upgrade/)
+
+### Bug Fixes {#v26.41-bug-fixes}
+- Fixed `ALTER MATERIALIZED VIEW ... APPLY REPLACEMENT` run while a zero-downtime upgrade was in progress leaving the upgraded environment on the view's previous definition, which either put `environmentd` into a crash loop that restarting could not clear or left the view silently computing and serving the replaced definition.
+- Fixed `EXPLAIN TIMESTAMP AS DOT` aborting `environmentd`, which let any role that can run SQL take an environment down with a single statement; the statement now returns an unsupported-format error.
+- Fixed `environmentd` entering a crash loop that restarting could not clear, after an `ALTER MATERIALIZED VIEW ... APPLY REPLACEMENT` was followed by dropping the old definition's dependencies.
+- Fixed a coordinator panic during `ALTER TABLE ... ADD COLUMN` when the schema change committed but its response was lost, so the retry now recognizes the evolution as already applied instead of reporting a mismatch.
+- Fixed Iceberg sinks panicking during Parquet writes when the sink's schema no longer matched that of an existing table, which could recur on every sink restart or zero-downtime upgrade; the sink now reports the mismatch instead.
+- Fixed MCP clients built on the official SDK failing the handshake, because Materialize answered `notifications/initialized` with `200` rather than the `202` the Streamable HTTP transport requires for a message that carries no reply.
+- `ALTER CLUSTER ... WITH (WAIT FOR ...)` now rolls back when its timeout is processed while the target replicas are still unhydrated, matching `WAIT UNTIL READY`'s safe default instead of forcing a cut-over that can cause downtime; request the previous behavior explicitly with `WAIT UNTIL READY (..., ON TIMEOUT = 'COMMIT')`.
+- Fixed the Console showing the previous region's clusters and Object Explorer contents after a region switch, until a full page refresh.
+
+## v26.40.2
+*Released to Materialize Cloud: 2026-09-07* <br>
+*Released to Materialize Self-Managed: 2026-09-08* <br>
+
+### Bug Fixes {#v26.40.2-bug-fixes}
+- Fixed `ALTER MATERIALIZED VIEW ... APPLY REPLACEMENT` run while a zero-downtime upgrade was in progress leaving the upgraded environment on the view's previous definition, which either put `environmentd` into a crash loop that restarting could not clear or left the view silently computing and serving the replaced definition.
+
 ## v26.40.0
 *Released to Materialize Cloud: 2026-09-02* <br>
 *Released to Materialize Self-Managed: 2026-09-03* <br>
@@ -14,7 +210,7 @@ Materialize release notes
 > **Public Preview:** This feature is in public preview.
 
 Iceberg sinks can now write to Apache Iceberg tables registered in [Databricks
-Unity Catalog](/serve-results/sink/iceberg-databricks/) on AWS, reached through
+Unity Catalog](/export-data/iceberg-databricks/) on AWS, reached through
 Unity Catalog's Iceberg REST catalog endpoint. Two new Iceberg catalog
 connection options make this work: `OAUTH2 SERVER URL`, which names a token
 endpoint that does not sit under the catalog URI, and `ACCESS DELEGATION =
@@ -49,13 +245,13 @@ CREATE SINK <sink_name>
 ```
 
 For more information, see:
-- [Guide: Databricks on AWS](/serve-results/sink/iceberg-databricks/)
+- [Guide: Databricks on AWS](/export-data/iceberg-databricks/)
 - [`CREATE CONNECTION`: Iceberg catalog](/sql/create-connection/#iceberg-catalog), including [storage access delegation](/sql/create-connection/#iceberg-catalog-access-delegation)
 - [`CREATE SINK`: Iceberg](/sql/create-sink/iceberg/), including [append mode](/sql/create-sink/iceberg/#append-mode)
 
 ### Improvements {#v26.40-improvements}
 - **Query History for Self-Managed**: Self-Managed deployments can now use the Console's Query History view to debug latency and performance.
-- **Bounded staleness isolation is generally available**: The [`bounded staleness <duration>`](/reference/isolation-level/#bounded-staleness) transaction [isolation level](/reference/isolation-level/) is out of public preview and is now a supported part of the [`transaction_isolation`](/reference/isolation-level/#setting-isolation-level) surface. See [when to use bounded staleness](/reference/isolation-level/#when-to-use-bounded-staleness) and its [restrictions](/reference/isolation-level/#restrictions).
+- **Bounded staleness isolation is generally available**: The [`bounded staleness <duration>`](/serve-results/isolation-level/#bounded-staleness) transaction [isolation level](/serve-results/isolation-level/) is out of public preview and is now a supported part of the [`transaction_isolation`](/serve-results/isolation-level/#setting-isolation-level) surface. See [when to use bounded staleness](/serve-results/isolation-level/#when-to-use-bounded-staleness) and its [restrictions](/serve-results/isolation-level/#restrictions).
 - **Replica resource usage introspection**: A new `mz_introspection.mz_cluster_replica_resource_usage` relation reports each replica process's own memory, swap, and disk observations at a higher cadence than the roughly once-a-minute orchestrator samples, so a spike between two samples is no longer invisible.
 - **Self-Managed: Automatic rollouts on GKE node pool upgrades**: The Materialize operator can now detect GKE node pool upgrades and automatically trigger rollouts to move workloads onto the new nodes, preventing outages from automatic node evictions. Deployments that use the [Materialize Terraform modules](/self-managed-deployments/installation/#install-using-terraform-modules) (v9.0.0 and later) get this configured for them, with no action needed; for all other deployments, see [GKE node pool upgrades](/self-managed-deployments/deployment-guidelines/gke-node-pool-upgrades/) for the setup steps.
 
@@ -83,7 +279,7 @@ For more information, see:
 ### Improvements {#v26.39-improvements}
 - **Improved connect modal in the console**: We've updated the UI to make it easier to connect coding agents to our MCP servers, and connect applications to Materialize.
 - **Faster MySQL table snapshots** (private preview): Initial snapshots for MySQL tables are now parallelized. We saw speedups of up to 80%. When we tested a snapshot of a 2bn row table (2.45TB), previously the snapshot completed in 220 minutes. With the new parallelization, the snapshot completed in 43 minutes. Tables are eligible for parallel snapshots when they have a single-column `CHAR` or `VARCHAR` primary key using the `utf8mb4` character set with the `utf8mb4_bin` collation. For more information, see [MySQL snapshot parallelism](/ingest-data/mysql/snapshot-parallelism/).
-- **App password expiration** (<red>*Materialize Cloud only*</red>): When creating an app password in the [Materialize Console](/console/), you can now set an optional expiration, after which the app password is no longer valid.
+- **App password expiration** (<red>*Materialize Cloud only*</red>): When creating an app password in the [Materialize Console](/developer-tools/console/), you can now set an optional expiration, after which the app password is no longer valid.
 
 ### Agent Skills {#v26.39-agent-skills}
 - **mz-ontology-design**: A new skill that structures a Materialize SQL code base as a canonical ontology — a shared `raw` database, a shared `core` database, and one database per use case — with rules for semantic object grain and identity, temporal semantics, and a machine-readable relationship registry.
@@ -108,7 +304,7 @@ For more information, see:
 > **Public Preview:** This feature is in public preview.
 
 Dictionary compression reduces the memory that
-[arrangements](/get-started/arrangements/#arrangements) use when a column holds the same values repeatedly. Instead of storing a repeated column value each time it appears, Materialize stores that value once and has each row reference it. This can reduce steady state memory requirements after [hydration](/concepts/hydration/) has completed.
+[arrangements](/fundamentals/concepts/arrangements/#arrangements) use when a column holds the same values repeatedly. Instead of storing a repeated column value each time it appears, Materialize stores that value once and has each row reference it. This can reduce steady state memory requirements after [hydration](/fundamentals/concepts/hydration/) has completed.
 
 Dictionary compression is off by default. You opt in per cluster with the
 `EXPERIMENTAL ARRANGEMENT COMPRESSION` option:
@@ -140,25 +336,25 @@ backend with an Open Telemetry (OTLP) endpoint. Template dashboards and alerts a
 help you get started.
 
 Follow the instructions for your destination:
-- [Datadog](/manage/monitor/self-managed/datadog/)
-- [Honeycomb](/manage/monitor/self-managed/honeycomb/)
-- [Google Cloud Monitoring](/manage/monitor/self-managed/google-cloud-monitoring/)
-- [Prometheus remote write](/manage/monitor/self-managed/prometheus-remote-write/), for Mimir, Amazon Managed Prometheus, or Grafana Cloud
-- [OpenTelemetry](/manage/monitor/self-managed/opentelemetry/), for any other OTLP endpoint, including your own collector
+- [Datadog](/observability/self-managed/datadog/)
+- [Honeycomb](/observability/self-managed/honeycomb/)
+- [Google Cloud Monitoring](/observability/self-managed/google-cloud-monitoring/)
+- [Prometheus remote write](/observability/self-managed/prometheus-remote-write/), for Mimir, Amazon Managed Prometheus, or Grafana Cloud
+- [OpenTelemetry](/observability/self-managed/opentelemetry/), for any other OTLP endpoint, including your own collector
 
 If you don't have an observability stack set up, the [Materialize Terraform
 modules](/self-managed-deployments/installation/#install-using-terraform-modules)
 can deploy one alongside Materialize. It collects metrics from Materialize and
 from your Kubernetes cluster, collects Materialize's container logs and
-Kubernetes events, stores both in your own object storage, and ships [Grafana](/manage/monitor/self-managed/grafana/)
+Kubernetes events, stores both in your own object storage, and ships [Grafana](/observability/self-managed/grafana/)
 dashboards and Alertmanager alert rules to query them. The stack is controlled by
 the `enable_observability` variable, which defaults to `true` starting with
 v11.0.0 of the modules.
 
 For more information, see:
-- [Monitoring Self-Managed Materialize](/manage/monitor/self-managed/)
-- [How logs and metrics are stored and delivered](/manage/monitor/self-managed/storage/)
-- [Alerting](/manage/monitor/self-managed/alerting/)
+- [Monitoring Self-Managed Materialize](/observability/self-managed/)
+- [How logs and metrics are stored and delivered](/observability/self-managed/storage/)
+- [Alerting](/observability/self-managed/alerting/)
 
 ### Improvements {#v26.38-improvements}
 - **Notice for single-replica sources on multi-replica clusters**: Materialize now warns when a command leaves a cluster holding more than one replica alongside PostgreSQL, MySQL, or SQL Server sources, which always run on a single replica, since the extra replicas make those sources neither more fault tolerant nor faster to ingest.
@@ -254,7 +450,7 @@ SHOW CLUSTERS;
 ```
 
 For detailed status, query
-[`mz_internal.mz_cluster_reconfigurations`](/reference/system-catalog/mz_internal/#mz_cluster_reconfigurations),
+[`mz_internal.mz_cluster_reconfigurations`](/sql/system-catalog/mz_internal/#mz_cluster_reconfigurations),
 which reports the target shape, the deadline, and the reconfiguration's
 lifecycle `status` (`in-progress`, then a terminal `finalized`, `timed-out`,
 `cancelled`, or `resource-exhausted`):
@@ -354,7 +550,7 @@ SHOW CLUSTERS;
 ```
 
 For detailed status, query
-[`mz_internal.mz_cluster_reconfigurations`](/reference/system-catalog/mz_internal/#mz_cluster_reconfigurations),
+[`mz_internal.mz_cluster_reconfigurations`](/sql/system-catalog/mz_internal/#mz_cluster_reconfigurations),
 which reports the target shape, the deadline, and the reconfiguration's
 lifecycle `status` (`in-progress`, then a terminal `finalized`, `timed-out`,
 `cancelled`, or `resource-exhausted`):
@@ -409,7 +605,7 @@ For more information, see the `AUTO SCALING STRATEGY` option on
 
 <red>*Materialize Cloud only*</red>
 
-You can now map identity provider groups to Materialize roles via SCIM, automatically syncing group membership from your identity provider to role assignments in Materialize. This keeps access in Materialize aligned with your identity provider as team membership changes, without manual role management. For details, see [Sync IdP groups](/security/cloud/users-service-accounts/sync-idp-groups/).
+You can provision identity provider groups via SCIM and map their members to Materialize database roles. The revised setup described in the guide uses an explicit intermediate mapping: assign each synced group a custom organization role, then create a database role matching that organization role’s JWT key. IdP group names can differ from database role names. For setup and migration steps, see [Sync IdP groups](/security/cloud/users-service-accounts/sync-idp-groups/).
 
 ### Improvements {#v26.34-improvements}
 - **Azure SQL source support**: Materialize can now ingest data from Azure SQL databases using the [SQL Server source connector](/ingest-data/sql-server/).
@@ -418,7 +614,7 @@ You can now map identity provider groups to Materialize roles via SCIM, automati
 - **Smaller container images**: The `environmentd` and `clusterd` container images now use a distroless base, reducing image size and attack surface for Self-Managed deployments.
 
 ### Agent Skills {#v26.34-agent-skills}
-To start using our skills, install them with `npx skills add MaterializeInc/agent-skills`. To update your installed skills, run `npx skills update`. For more information, see [Coding agent skills](/integrations/coding-agent-skills/).
+To start using our skills, install them with `npx skills add MaterializeInc/agent-skills`. To update your installed skills, run `npx skills update`. For more information, see [Coding agent skills](/developer-tools/mcp-server/coding-agent-skills/).
 
 - **Materialize Terraform Provider**: New agent skill covering Terraform provider configuration for Cloud and self-managed deployments, resource conventions, cross-resource patterns, import workflows, and known gotchas.
 - **Materialize Terraform Self-Managed**: New agent skill covering the Terraform modules for deploying self-managed Materialize on AWS, Azure, and GCP, including IAM-based storage auth, upgrade procedures, and project integration patterns.
@@ -473,7 +669,7 @@ notes](/self-managed-deployments/upgrading/version-notes/).
 - **`EXPLAIN ANALYZE` on multi-replica clusters via MCP**: The Materialize MCP developer endpoint's `query` tool now accepts an optional cluster replica parameter, so `EXPLAIN ANALYZE` can target a specific replica.
 - **Faster queries on busy environments**: We've improved query latency on query-heavy clusters. We've reduced by caching the catalog snapshot for the duration of a session. In our tests, we've seen QPS improvements of up to 13%.
 - **Improved responsiveness under load**: A slow timestamp oracle no longer stalls unrelated sessions that are running `EXPLAIN TIMESTAMP` or `SUBSCRIBE`.
-- **New materialize-dbt [agent skill](/integrations/coding-agent-skills/)**: The
+- **New materialize-dbt [agent skill](/developer-tools/mcp-server/coding-agent-skills/)**: The
   `materialize-dbt` skill helps coding agents build and manage dbt models for
   Materialize.
 
@@ -559,7 +755,7 @@ For more information, see the [Self-Managed upgrade notes](/self-managed-deploym
 ### OAuth sign-in for MCP servers {#v26.31-mcp-oauth}
 The `materialize-agent` and `materialize-developer` MCP servers now support OAuth (browser-based) sign-in, so MCP-compatible clients such as Claude Code, Claude Desktop, and Cursor can authenticate through your browser instead of a Base64-encoded token. With OAuth, the client connects as your own user role with your existing privileges.
 
-For more information, see [MCP Server for Agents](/integrations/mcp-server/mcp-agent/) and [MCP Server for Developers](/integrations/mcp-server/mcp-developer/).
+For more information, see [MCP Server for Agents](/developer-tools/mcp-server/mcp-agent/) and [MCP Server for Developers](/developer-tools/mcp-server/mcp-developer/).
 
 ### Improvements {#v26.31-improvements}
 - **Faster `count(*)` over `generate_series`**: Queries like `SELECT count(*) FROM generate_series(1, N)` now evaluate in constant time instead of materializing all rows.
@@ -601,7 +797,7 @@ The MCP server for developers now includes a `query` tool for running `SELECT`, 
 - **mz-debug OIDC and SASL authentication**: The `mz-debug` diagnostic tool now supports OIDC and SASL authentication modes in addition to password authentication.
 - **Faster LIKE pattern matching**: `LIKE` patterns with multiple `%` wildcards (e.g., `%a%a%a`) no longer exhibit super-linear matching time against long strings, while common patterns like `%substring%` remain on the fast string matcher.
 - **Fivetran Destination restored**: The Fivetran Destination integration, which was removed in v26.29.0, has been restored.
-- **Self-managed monitoring docs refreshed**: Self-managed deployments now have a published reference of the metrics Materialize exposes: [essential metrics](/manage/monitor/essential-metrics/) and an [appendix of all metrics](/manage/monitor/appendix-metrics/). The self-managed monitoring guides for [Prometheus and Grafana](/manage/monitor/self-managed/prometheus/) and [Datadog](/manage/monitor/self-managed/datadog/) have been refreshed with updated scrape configurations and dashboards.
+- **Self-managed monitoring docs refreshed**: Self-managed deployments now have a published reference of the metrics Materialize exposes: [essential metrics](/observability/essential-metrics/) and an [appendix of all metrics](/observability/appendix-metrics/). The self-managed monitoring guides for [Prometheus and Grafana](/observability/self-managed/grafana/) and [Datadog](/observability/self-managed/datadog/) have been refreshed with updated scrape configurations and dashboards.
 
 ### Bug Fixes {#v26.30.1-bug-fixes}
 - Fixed `IS [NOT] DISTINCT FROM` binding too loosely relative to `AND`/`OR`, causing `a IS DISTINCT FROM b AND c` to silently produce wrong results by parsing as `a IS DISTINCT FROM (b AND c)` instead of `(a IS DISTINCT FROM b) AND c`.
@@ -639,18 +835,18 @@ The MCP server for developers now includes a `query` tool for running `SELECT`, 
 
 > **Public Preview:** This feature is in public preview.
 
-Bounded staleness is a new SQL isolation level that lets you set a freshness target for your queries. For example, you can configure a session to only serve data that is at most 10 seconds stale. If sufficiently fresh data is unavailable, the query immediately returns an error (`SQLSTATE 40001`) rather than blocking. This positions bounded staleness between [Serializable](/reference/isolation-level/#serializable) and [Strict Serializable](/reference/isolation-level/#strict-serializable): it never blocks on input frontiers, but errors immediately when the staleness bound cannot be met. Bounded staleness is read-only and can be set at the session or connection level.
+Bounded staleness is a new SQL isolation level that lets you set a freshness target for your queries. For example, you can configure a session to only serve data that is at most 10 seconds stale. If sufficiently fresh data is unavailable, the query immediately returns an error (`SQLSTATE 40001`) rather than blocking. This positions bounded staleness between [Serializable](/serve-results/isolation-level/#serializable) and [Strict Serializable](/serve-results/isolation-level/#strict-serializable): it never blocks on input frontiers, but errors immediately when the staleness bound cannot be met. Bounded staleness is read-only and can be set at the session or connection level.
 
 ```mzsql
 -- Serve data no more than 10 seconds stale; error immediately if unavailable.
 SET TRANSACTION_ISOLATION TO 'bounded staleness 10s';
 ```
 
-For more information, see [Bounded Staleness](/reference/isolation-level/#bounded-staleness).
+For more information, see [Bounded Staleness](/serve-results/isolation-level/#bounded-staleness).
 
 ### mz-deploy (v0.1) {#v26.29-mz-deploy}
 
-[mz-deploy](/manage/mz-deploy/) is a new CLI for declarative Materialize deployments. You can use mz-deploy to define sources, views, indexes, clusters, and other Materialize objects as code—and so can your coding agents. Projects compile locally with no running Materialize instance required: run unit tests, inspect query plans, and validate changes entirely inside a sandbox before touching a shared environment. Built in Rust, mz-deploy cold-compiles a project with 40,000+ models in under 500ms, with most incremental changes compiling in under 10ms. Deployments only redeploy changed objects, support blue-green deployments, and allow concurrent deployments with conflict detection at promote time.
+[mz-deploy](/developer-tools/mz-deploy/) is a new CLI for declarative Materialize deployments. You can use mz-deploy to define sources, views, indexes, clusters, and other Materialize objects as code—and so can your coding agents. Projects compile locally with no running Materialize instance required: run unit tests, inspect query plans, and validate changes entirely inside a sandbox before touching a shared environment. Built in Rust, mz-deploy cold-compiles a project with 40,000+ models in under 500ms, with most incremental changes compiling in under 10ms. Deployments only redeploy changed objects, support blue-green deployments, and allow concurrent deployments with conflict detection at promote time.
 
 For instance, to create a new Materialize project called `order-monitoring`:
 
@@ -673,7 +869,7 @@ order-monitoring/
 └── .gitignore
 ```
 
-For more information, see [mz-deploy](/manage/mz-deploy/).
+For more information, see [mz-deploy](/developer-tools/mz-deploy/).
 
 ### Iceberg Sinks for Google Cloud Platform {#v26.29-google-cloud-support-for-iceberg-sinks}
 
@@ -795,7 +991,7 @@ improvements, and bug fixes.
 We've made several improvements to our MCP Server for Agents, which can be used to give agents in production fresh context from Materialize.
 
 - **`query` tool enabled by default**: The MCP Server for Agents now
-  enables the [`query` tool](/integrations/mcp-server/mcp-agent-tools/#query)
+  enables the [`query` tool](/developer-tools/mcp-server/mcp-agent-tools/#query)
   by default, allowing agents to join across data products.
 - **Data product routing**: The `read_data_product` tool now
   automatically routes queries to the data product's catalog cluster,
@@ -805,7 +1001,7 @@ We've made several improvements to our MCP Server for Agents, which can be used 
   to check whether a data product is fully hydrated before querying.
 
 For more information, refer to:
-- [MCP Server for Agents](/integrations/mcp-server/mcp-agent/)
+- [MCP Server for Agents](/developer-tools/mcp-server/mcp-agent/)
 
 ### Improvements {#v26.27-improvements}
 
@@ -1006,20 +1202,20 @@ bug fixes.
 
 Give your agents fresh context using Materialize. Materialize environments now
 include a built-in Model Context Protocol (MCP) [server for agents
-(`/api/mcp/agent`)](/integrations/mcp-server/mcp-agent/). Once connected, an
+(`/api/mcp/agent`)](/developer-tools/mcp-server/mcp-agent/). Once connected, an
 agent can discover your data products, understand the underlying data ontology,
 and run queries to fetch fresh data.
 
-Agents can discover [materialized views](/sql/create-materialized-view/) or [indexed](/sql/create-index/) views. You can use [comments](/sql/comment-on/) to document the data products, and describe them to agents. Agents authenticate as [roles](/sql/create-role/) in Materialize, so [RBAC privileges](/manage/access-control/) govern which data products are visible. Finally, you can set up a dedicated [cluster](/concepts/clusters/) for your agents, so they're isolated from the rest of your environment.
+Agents can discover [materialized views](/sql/create-materialized-view/) or [indexed](/sql/create-index/) views. You can use [comments](/sql/comment-on/) to document the data products, and describe them to agents. Agents authenticate as [roles](/sql/create-role/) in Materialize, so [RBAC privileges](/manage/access-control/) govern which data products are visible. Finally, you can set up a dedicated [cluster](/fundamentals/concepts/clusters/) for your agents, so they're isolated from the rest of your environment.
 
 The MCP server for agents complements the [MCP server for
-developers](/integrations/mcp-server/mcp-developer/) released in v26.20.2. The
+developers](/developer-tools/mcp-server/mcp-developer/) released in v26.20.2. The
 developer server gives coding agents (like Claude Code) access to Materialize's
 observability so you can build on Materialize faster; the agent server gives
 production agents fresh, governed context from your data products.
 
 For more information, refer to:
-- [Integrations: MCP Server for Agents](/integrations/mcp-server/mcp-agent/)
+- [Integrations: MCP Server for Agents](/developer-tools/mcp-server/mcp-agent/)
 
 ### Improvements {#v26.24-improvements}
 
@@ -1029,7 +1225,7 @@ For more information, refer to:
 - **`COPY FROM` rejects HTTP redirects**: `COPY FROM` now returns a clear error
   if the target URL responds with an HTTP redirect, preventing unexpected data
   sources and potential security issues.
-- **[Agent skills](/integrations/coding-agent-skills/) — improved `mcp-developer-analysis` client setup**: The skill now includes a comprehensive playbook for connecting MCP-capable clients (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to the [MCP server for developers](/integrations/mcp-server/mcp-developer/).
+- **[Agent skills](/developer-tools/mcp-server/coding-agent-skills/) — improved `mcp-developer-analysis` client setup**: The skill now includes a comprehensive playbook for connecting MCP-capable clients (Claude Code, Cursor, VS Code, Zed, Continue, Windsurf, Claude Desktop) to the [MCP server for developers](/developer-tools/mcp-server/mcp-developer/).
 
 ### Bug Fixes {#v26.24-bug-fixes}
 
@@ -1118,13 +1314,13 @@ improvements, and bug fixes.
   `interval`) at query planning time with a clear error, rather than failing at
   execution time with an opaque message.
 - **`mcp-developer-analysis`**: A new
-  [coding agent skill](/integrations/coding-agent-skills/) that pairs with the
+  [coding agent skill](/developer-tools/mcp-server/coding-agent-skills/) that pairs with the
   `/api/mcp/developer` endpoint to provide diagnostic workflows, system catalog
   references, and remediation runbooks for AI-powered troubleshooting.
 - **System catalog ontology for the MCP developer server**: The system
   catalog now exposes an ontology that describes how `mz_*` tables relate to
   one another and which tables to consult for common diagnostic questions. The
-  [MCP server for developers](/integrations/mcp-server/mcp-developer/) uses
+  [MCP server for developers](/developer-tools/mcp-server/mcp-developer/) uses
   this ontology to plan catalog queries directly instead of probing the schema,
   reducing the number of round trips needed to answer questions about
   hydration, freshness, and resource usage.
@@ -1253,7 +1449,7 @@ improvements, and bug fixes.
 
 Materialize environments now include a built-in Model Context Protocol (MCP)
 [Developer endpoint
-(`/api/mcp/developer`)](/integrations/mcp-server/mcp-developer/). Connecting an
+(`/api/mcp/developer`)](/developer-tools/mcp-server/mcp-developer/). Connecting an
 MCP-compatible coding agent (such as Claude Code, Claude Desktop, or Cursor) to
 this endpoint lets you ask natural language questions about your environment.
 
@@ -1261,7 +1457,7 @@ For example, you could ask *why is my materialized view stale?* or *how much mem
 
 For more information, refer to:
 - [Integrations: MCP Server for
-  Developers](/integrations/mcp-server/mcp-developer/)
+  Developers](/developer-tools/mcp-server/mcp-developer/)
 
 ### Improvements {#v26-20-improvements}
 - **Better Console schema navigation**: The schema dropdown in the SQL Shell now
@@ -1302,7 +1498,7 @@ CREATE SINK events_log_iceberg
 ```
 
 For more information, refer to:
-- [Guide: Apache Iceberg sink](/serve-results/sink/iceberg/)
+- [Guide: Apache Iceberg sink](/export-data/iceberg/)
 - [Reference: `CREATE SINK ICEBERG`](/sql/create-sink/iceberg/)
 
 ### Bug Fixes {#v26.19-bug-fixes}
@@ -1432,7 +1628,7 @@ For more information, refer to:
 - **Improved [`AS OF`](/sql/subscribe/#as-of) error messages**: Error messages
   for `AS OF` queries now use user-facing terminology (e.g., "Indexed
   input", "Storage inputs") instead of internal names.
-- **Streamed [WebSocket](/integrations/websocket-api/) query results**:
+- **Streamed [WebSocket](/serve-results/websocket-api/) query results**:
   WebSocket query results are now streamed directly instead of buffered,
   reducing memory usage for large result sets.
 
@@ -1596,7 +1792,7 @@ CREATE SINK my_iceberg_sink
 ```
 
 For more information, refer to:
-- [Guide: How to export results from Materialize to Apache Iceberg Tables](/serve-results/sink/iceberg)
+- [Guide: How to export results from Materialize to Apache Iceberg Tables](/export-data/iceberg)
 - [Blog: Making Iceberg work for Operational Data](https://materialize.com/blog/making-iceberg-work-for-operational-data/)
 - [Syntax: CREATE SINK... INTO ICEBERG ](/sql/create-sink/iceberg)
 
@@ -1783,7 +1979,7 @@ v26.5.1 enhances our SQL Server source, improves performance, and strengthens Ma
 ### Improvements {#v26.5-improvements}
 - **VARCHAR(MAX) and NVARCHAR(MAX) support for SQL Server**: The Materialize SQL Server source now supports `varchar(max)` and `nvarchar(max)` data types.
 - **Faster authentication for connection poolers**: We've added an index to the `pg_authid` system catalog. This should significantly improve the performance of default authentication queries made by connection poolers like pgbouncer.
-- **Faster Kafka sink startup**: We've updated the default Kafka progress topic configuration to reduce the amount of progress data processed when creating new [Kafka sinks](/serve-results/sink/kafka/).
+- **Faster Kafka sink startup**: We've updated the default Kafka progress topic configuration to reduce the amount of progress data processed when creating new [Kafka sinks](/export-data/kafka/).
 - **dbt strict mode**: We've introduced `strict_mode` to dbt-materialize, our dbt adapter. `strict_mode` enforces production-ready isolation rules and improves cluster health monitoring. It does so by validating source idempotency, schema isolation, cluster isolation and index restrictions.
 - **SQL Server Always On HA failover support** (<red>*Materialize Self-Managed only*</red>): Materialize Self-Managed now offers better support for handling failovers, without downtime, in SQL Server Always On sources. [Contact our support team](/support/) to enable this in your environment.
 - **Auto-repair accidental changes** (<red>*Materialize Self-Managed only*</red>): Improvements to the controller logic allow Materialize to auto-repair changes such as deleting a StatefulSet. This means that your production setups should be more robust in the face of accidental changes.
@@ -1904,7 +2100,7 @@ see [Authentication](/security/self-managed/authentication/).
 When SASL authentication is enabled:
 
 - **PostgreSQL connections** (e.g., `psql`, client libraries, [connection
-  poolers](/integrations/connection-pooling/)) use SCRAM-SHA-256 authentication
+  poolers](/serve-results/connection-pooling/)) use SCRAM-SHA-256 authentication
 - **HTTP/Web Console connections** use standard password authentication
 
 This hybrid approach provides maximum security for SQL connections while maintaining
@@ -2005,6 +2201,22 @@ notes](/self-managed-deployments/upgrading/version-notes/).
 ## See also
 
 - [Release Schedule](/releases/schedule/)
+
+---
+
+## Materialize v26.45
+
+---
+
+## Materialize v26.44
+
+---
+
+## Materialize v26.43
+
+---
+
+## Materialize v26.42
 
 ---
 
@@ -2421,7 +2633,7 @@ notes](/self-managed-deployments/upgrading/version-notes/).
 
 #### SQL
 
-* Add `hydration_time` to the [`mz_internal.mz_compute_hydration_statuses`](/reference/system-catalog/mz_internal/#mz_compute_hydration_statuses)
+* Add `hydration_time` to the [`mz_internal.mz_compute_hydration_statuses`](/sql/system-catalog/mz_internal/#mz_compute_hydration_statuses)
   system catalog view. This column shows the amount of time it took for a
   dataflow-powered object to hydrate (i.e., be backfilled with any pre-existing
   data).
@@ -2462,11 +2674,11 @@ notes](/self-managed-deployments/upgrading/version-notes/).
   ```
 
 * Add `database_name` and `search_path` to the
-  [mz_internal.mz_recent_activity_log](/reference/system-catalog/mz_internal/#mz_recent_activity_log)
+  [mz_internal.mz_recent_activity_log](/sql/system-catalog/mz_internal/#mz_recent_activity_log)
   system catalog view. These columns show the value of the `database` and
   `search_path` configuration parameters at execution time, respectively.
 
-* Add `connection_id` to the [mz_internal.mz_sessions](/reference/system-catalog/mz_internal/#mz_sessions)
+* Add `connection_id` to the [mz_internal.mz_sessions](/sql/system-catalog/mz_internal/#mz_sessions)
   system catalog table. This column shows the connection ID of the session, which
   is unique for active sessions and corresponds to `pg_backend_pid()`.
 
@@ -2503,9 +2715,9 @@ continue ingesting data in the presence of decoding errors."
 
 #### Bug fixes and other improvements
 
-* Add the `mz_catalog_unstable` and [`mz_introspection`](/reference/system-catalog/mz_introspection/)
+* Add the `mz_catalog_unstable` and [`mz_introspection`](/sql/system-catalog/mz_introspection/)
   system schemas to the system catalog, in support of the ongoing migration of
-  unstable and replica introspection relations from the [`mz_internal`](/reference/system-catalog/mz_internal/)
+  unstable and replica introspection relations from the [`mz_internal`](/sql/system-catalog/mz_internal/)
   system schema into dedicated schemas.
 
 * Add `introspection_debugging` and `introspection_interval` to the
@@ -2627,8 +2839,8 @@ continue ingesting data in the presence of decoding errors."
 #### SQL
 
 * **Private preview.** Support setting a history retention period for sources,
-    tables, materialized views, and indexes via the new [`RETAIN HISTORY`](/transform-data/patterns/durable-subscriptions/#history-retention-period)
-    option. This is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/).
+    tables, materialized views, and indexes via the new [`RETAIN HISTORY`](/serve-results/durable-subscriptions/#history-retention-period)
+    option. This is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/).
 
   **Syntax**
 
@@ -2640,12 +2852,12 @@ continue ingesting data in the presence of decoding errors."
   ALTER MATERIALIZED VIEW winning_bids RESET (RETAIN HISTORY);
   ```
 
-* Add [`mz_internal.mz_history_retention_strategies`](https://materialize.com/docs/reference/system-catalog/mz_internal/#mz_history_retention_strategies)
+* Add [`mz_internal.mz_history_retention_strategies`](https://materialize.com/docs/sql/system-catalog/mz_internal/#mz_history_retention_strategies)
   to the system catalog. This table describes the history retention strategies
   for tables, sources, indexes, and materialized views that are configured with
   a history retention period.
 
-* Add [`mz_internal.mz_materialized_view_refreshes`](https://materialize.com/docs/reference/system-catalog/mz_internal/#mz_materialized_view_refreshes)
+* Add [`mz_internal.mz_materialized_view_refreshes`](https://materialize.com/docs/sql/system-catalog/mz_internal/#mz_materialized_view_refreshes)
   to the system catalog. This table shows the time of the last successfully
   completed refresh and the time of the next scheduled refresh for each
   materialized view with a refresh strategy other than `on-commit`.
@@ -2682,7 +2894,7 @@ continue ingesting data in the presence of decoding errors."
 
 #### SQL
 
-* Add [`mz_internal.mz_postgres_source_tables`](/reference/system-catalog/mz_internal/#mz_postgres_source_tables) and [`mz_internal.mz_mysql_source_tables`](/reference/system-catalog/mz_internal/#mz_mysql_source_tables)
+* Add [`mz_internal.mz_postgres_source_tables`](/sql/system-catalog/mz_internal/#mz_postgres_source_tables) and [`mz_internal.mz_mysql_source_tables`](/sql/system-catalog/mz_internal/#mz_mysql_source_tables)
 to the system catalog. These tables .
 
 ---
@@ -2711,8 +2923,8 @@ to the system catalog. These tables .
    (1 row)
   ```
 
-* Add [`mz_materialized_view_refresh_strategies`](/reference/system-catalog/mz_internal/#mz_materialized_view_refresh_strategies)
-  and [`mz_cluster_schedules`](/reference/system-catalog/mz_internal/#mz_cluster_schedules)
+* Add [`mz_materialized_view_refresh_strategies`](/sql/system-catalog/mz_internal/#mz_materialized_view_refresh_strategies)
+  and [`mz_cluster_schedules`](/sql/system-catalog/mz_internal/#mz_cluster_schedules)
   to the system catalog. These tables were added in support of ongoing feature
   development.
 
@@ -2727,7 +2939,7 @@ to the system catalog. These tables .
 * Support `FORMAT CSV` in the `COPY .. TO STDOUT`
   command.
 
-* Add [`mz_role_parameters`](/reference/system-catalog/mz_catalog/#mz_role_parameters)
+* Add [`mz_role_parameters`](/sql/system-catalog/mz_catalog/#mz_role_parameters)
   to the system catalog. This table contains a row for each parameter whose default
 value has been altered for a given role using [ALTER ROLE ... SET](/sql/alter-role/#syntax).
 
@@ -2907,7 +3119,7 @@ behind a feature flag."
 * Support using `LIKE`, `NOT LIKE`, `ILIKE`, and `NOT ILIKE` as operators within
   `ANY`, `SOME`, and `ALL` expressions.
 
-* Add `mz_version` to the [`mz_internal.mz_recent_activity_log`](/reference/system-catalog/mz_internal/#mz_recent_activity_log)
+* Add `mz_version` to the [`mz_internal.mz_recent_activity_log`](/sql/system-catalog/mz_internal/#mz_recent_activity_log)
   system catalog view. This column stores the version of Materialize that was
   running when the statement was executed.
 
@@ -2927,7 +3139,7 @@ behind a feature flag."
 #### Sources and sinks
 
 * Improve source and sink statistics reporting to no longer reset on restarts,
-  and include the following new metrics in [`mz_internal.mz_source_statistics`](https://materialize.com/docs/reference/system-catalog/mz_internal/#mz_source_statistics):
+  and include the following new metrics in [`mz_internal.mz_source_statistics`](https://materialize.com/docs/sql/system-catalog/mz_internal/#mz_source_statistics):
 
   | Metric                                        | Description                                                             |
   | --------------------------------------------- | ----------------------------------------------------------------------- |
@@ -2943,11 +3155,11 @@ behind a feature flag."
 #### SQL
 
 * Remove the `mz_activity_log` system catalog view. These view was superseeded
-by [`mz_recent_activity_log`](/reference/system-catalog/mz_internal/#mz_recent_activity_log),
+by [`mz_recent_activity_log`](/sql/system-catalog/mz_internal/#mz_recent_activity_log),
 which contains a log of the SQL statements that have been issued to
 Materialize in the past 3 days.
 
-* Add [`mz_internal.mz_compute_operator_hydration_statuses`](/reference/system-catalog/mz_internal/#mz_compute_operator_hydration_statuses)
+* Add [`mz_internal.mz_compute_operator_hydration_statuses`](/sql/system-catalog/mz_internal/#mz_compute_operator_hydration_statuses)
 to the system catalog. This table describes the dataflow operator hydration
 status of compute objects (indexes or materialized views).
 
@@ -3034,7 +3246,7 @@ status of compute objects (indexes or materialized views).
   );
   ```
 
-* Add `topic` to the [`mz_internal.mz_kafka_sources`](https://materialize.com/docs/reference/system-catalog/mz_catalog/#mz_kafka_sources)
+* Add `topic` to the [`mz_internal.mz_kafka_sources`](https://materialize.com/docs/sql/system-catalog/mz_catalog/#mz_kafka_sources)
   system catalog table. This column contains the name of the Kafka topic the
   source is reading from.
 
@@ -3128,7 +3340,7 @@ the plan ([#24944](https://github.com/MaterializeInc/materialize/issues/24944)).
 
 #### SQL
 
-* Add [`mz_internal.mz_recent_activity_log`](/reference/system-catalog/mz_internal/#mz_recent_activity_log)
+* Add [`mz_internal.mz_recent_activity_log`](/sql/system-catalog/mz_internal/#mz_recent_activity_log)
   to the system catalog. This view contains a log of the SQL statements that have
   been issued to Materialize in the past 3 days, along with various metadata
   about them. Querying this view is typically much faster than querying
@@ -3255,13 +3467,13 @@ behind a feature flag."
   HISTORY` syntax. Support in multi-output sources will be added in a future
   release.
 
-* Add [`mz_hydration_statuses`](/reference/system-catalog/mz_internal/#mz_hydration_statuses)
+* Add [`mz_hydration_statuses`](/sql/system-catalog/mz_internal/#mz_hydration_statuses)
   to the system catalog. This view describes the per-replica hydration status of
   each object powered by a dataflow.
 
 #### Bug fixes and other improvements
 
-* Rename `mz_compute_hydration_status` to [`mz_compute_hydration_statuses`](/reference/system-catalog/mz_internal/#mz_compute_hydration_statuses),
+* Rename `mz_compute_hydration_status` to [`mz_compute_hydration_statuses`](/sql/system-catalog/mz_internal/#mz_compute_hydration_statuses),
   for consistency with other objects in the system catalog.
 
 * Fix a bug in which Avro-formatted Kafka sources could fail to decode records
@@ -3293,7 +3505,7 @@ clause and AWS connections behind a feature flag."
 This column provides the type of the logged statement, e.g. `select` for a
 `SELECT` query, or `NULL` if the statement was empty.
 
-* Add [mz_internal.mz_notices](/reference/system-catalog/mz_internal/#mz_notices) to
+* Add [mz_internal.mz_notices](/sql/system-catalog/mz_internal/#mz_notices) to
   the system catalog. This view contains a list of currently active notices
   emitted by the system, and requires `superuser` privileges for querying.
 
@@ -3318,14 +3530,14 @@ This column provides the type of the logged statement, e.g. `select` for a
   schema of the source, when using the `FOR SCHEMAS` option in
   [PostgreSQL sources](https://materialize.com/docs/sql/create-source/postgres/).
 
-* Add [`mz_aws_privatelink_connection_status_history`](/reference/system-catalog/mz_internal/#mz_aws_privatelink_connection_status_history)
+* Add [`mz_aws_privatelink_connection_status_history`](/sql/system-catalog/mz_internal/#mz_aws_privatelink_connection_status_history)
   to the system catalog. This table contains a row describing the historical
   status for each [AWS PrivateLink connection](/sql/create-connection/#aws-privatelink)
   in the system.
 
 #### SQL
 
-* Add [`mz_compute_hydration_status`](/reference/system-catalog/mz_internal/#mz_compute_hydration_statuses)
+* Add [`mz_compute_hydration_status`](/sql/system-catalog/mz_internal/#mz_compute_hydration_statuses)
   to the system catalog. This table describes the per-replica hydration status of
   indexes, materialized views, or subscriptions, which is useful to track when
   objects are "caught up" in the context of [blue/green deployments](/manage/blue-green).
@@ -3395,8 +3607,8 @@ expose them as columns of the source.
 
 #### SQL
 
-* Add [`mz_timezone_names`](/reference/system-catalog/mz_catalog/#mz_timezone_names)
-and [`mz_timezone_abbreviations`](/reference/system-catalog/mz_catalog/#mz_timezone_abbreviations)
+* Add [`mz_timezone_names`](/sql/system-catalog/mz_catalog/#mz_timezone_names)
+and [`mz_timezone_abbreviations`](/sql/system-catalog/mz_catalog/#mz_timezone_abbreviations)
 to the system catalog. These views contains a row for each supported timezone
 and each supported timezone abbreviation, respectively.
 
@@ -3438,7 +3650,7 @@ and each supported timezone abbreviation, respectively.
   (EST,-05:00:00,00:00:00)
   ```
 
-* Add [`mz_internal.mz_materialization_lag`](/reference/system-catalog/mz_internal/#mz_materialization_lag)
+* Add [`mz_internal.mz_materialization_lag`](/sql/system-catalog/mz_internal/#mz_materialization_lag)
   to the system catalog. This view describes the difference between the input
   frontiers and the output frontier for each materialized view, index, and sink
   in the system. For hydrated dataflows, this lag roughly corresponds to the time
@@ -3502,8 +3714,8 @@ and each supported timezone abbreviation, respectively.
   atomically renaming clusters and schemas. This is useful in the context of
   [Blue/Green deployments](/manage/blue-green/).
 
-* Change the semantics and schema of the [`mz_internal.mz_frontiers`](https://materialize.com/docs/reference/system-catalog/mz_internal/#mz_frontiers)
-  system catalog table, and add the [`mz_internal.mz_cluster_replica_frontiers`](https://materialize.com/docs/reference/system-catalog/mz_internal/#mz_cluster_replica_frontiers)
+* Change the semantics and schema of the [`mz_internal.mz_frontiers`](https://materialize.com/docs/sql/system-catalog/mz_internal/#mz_frontiers)
+  system catalog table, and add the [`mz_internal.mz_cluster_replica_frontiers`](https://materialize.com/docs/sql/system-catalog/mz_internal/#mz_cluster_replica_frontiers)
   system catalog table. These objects are mostly useful to support existing and
   upcoming features in Materialize.
 
@@ -3683,7 +3895,7 @@ uppercase case style (as required by `librdkafka`).
 
 #### Bug fixes and other improvements
 
-* Refactor [`mz_internal.mz_dataflow_arrangement_sizes`](/reference/system-catalog/mz_introspection/#mz_dataflow_arrangement_sizes)
+* Refactor [`mz_internal.mz_dataflow_arrangement_sizes`](/sql/system-catalog/mz_introspection/#mz_dataflow_arrangement_sizes)
 to include **all active dataflows**, not just the ones referenced from the
 system catalog. This makes debugging issues like high memory usage caused by
 arrangements more intuitive for users.
@@ -3795,7 +4007,7 @@ flag. The flag was raised in v0.69 — so mentioning it here."
   The old `EXPECTED GROUP SIZE` hint is still supported for backwards
   compatibility, but its use is discouraged.
 
-* Add `savings` to the [`mz_internal.mz_expected_group_size_advice`](/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice)
+* Add `savings` to the [`mz_internal.mz_expected_group_size_advice`](/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice)
   system catalog table. This column provides a conservative estimate of the memory
   savings that can be expected by using [`GROUP SIZE` query hints](/transform-data/optimization/#query-hints).
 
@@ -3854,7 +4066,7 @@ here."
 
 #### SQL
 
-* Add [`mz_internal.mz_compute_dependencies`](/reference/system-catalog/mz_internal/#mz_compute_dependencies)
+* Add [`mz_internal.mz_compute_dependencies`](/sql/system-catalog/mz_internal/#mz_compute_dependencies)
   to the system catalog. This table describes the dependency structure between
   each compute object (index, materialized view, or subscription) and the
   sources of its data.
@@ -3912,12 +4124,12 @@ not introduce any new user-facing features. 👷
   default**. You must [contact us](https://materialize.com/contact/) to enable
   this feature in your Materialize region.
 
-* Add [`mz_internal.mz_object_fully_qualified_names`](/reference/system-catalog/mz_internal/#mz_object_fully_qualified_names)
-  and [`mz_internal.mz_object_lifetimes`](/reference/system-catalog/mz_internal/#mz_object_lifetimes)
-  to the system catalog. These views enrich [`mz_objects`](/reference/system-catalog/mz_catalog/#mz_objects)
+* Add [`mz_internal.mz_object_fully_qualified_names`](/sql/system-catalog/mz_internal/#mz_object_fully_qualified_names)
+  and [`mz_internal.mz_object_lifetimes`](/sql/system-catalog/mz_internal/#mz_object_lifetimes)
+  to the system catalog. These views enrich [`mz_objects`](/sql/system-catalog/mz_catalog/#mz_objects)
   with namespace and lifetime event information, respectively.
 
-* Add [`mz_internal.mz_expected_group_size_advice`](/reference/system-catalog/mz_introspection/#mz_expected_group_size_advice)
+* Add [`mz_internal.mz_expected_group_size_advice`](/sql/system-catalog/mz_introspection/#mz_expected_group_size_advice)
   to the system catalog. This view provides advice on opportunities to set the
   `EXPECTED GROUP SIZE` [query hint](https://materialize.com/docs/sql/select/#query-hints).
 
@@ -3980,17 +4192,17 @@ not introduce any new user-facing features. 👷
 
     **Privileges**
 
-    * [`mz_internal.mz_show_all_privileges`](/reference/system-catalog/mz_internal/#mz_show_all_privileges)
-    * [`mz_internal.mz_show_[my_]cluster_privileges`](/reference/system-catalog/mz_internal/#mz_show_cluster_privileges)
-    * [`mz_internal.mz_show_[my_]database_privileges`](/reference/system-catalog/mz_internal/#mz_show_database_privileges)
-    * [`mz_internal.mz_show_[my_]default_privileges`](/reference/system-catalog/mz_internal/#mz_show_default_privileges)
-    * [`mz_internal.mz_show_[my_]object_privileges`](/reference/system-catalog/mz_internal/#mz_show_object_privileges)
-    * [`mz_internal.mz_show_[my_]schema_privileges`](/reference/system-catalog/mz_internal/#mz_show_schema_privileges)
-    * [`mz_internal.mz_show_[my_]system_privileges`](/reference/system-catalog/mz_internal/#mz_show_system_privileges)
+    * [`mz_internal.mz_show_all_privileges`](/sql/system-catalog/mz_internal/#mz_show_all_privileges)
+    * [`mz_internal.mz_show_[my_]cluster_privileges`](/sql/system-catalog/mz_internal/#mz_show_cluster_privileges)
+    * [`mz_internal.mz_show_[my_]database_privileges`](/sql/system-catalog/mz_internal/#mz_show_database_privileges)
+    * [`mz_internal.mz_show_[my_]default_privileges`](/sql/system-catalog/mz_internal/#mz_show_default_privileges)
+    * [`mz_internal.mz_show_[my_]object_privileges`](/sql/system-catalog/mz_internal/#mz_show_object_privileges)
+    * [`mz_internal.mz_show_[my_]schema_privileges`](/sql/system-catalog/mz_internal/#mz_show_schema_privileges)
+    * [`mz_internal.mz_show_[my_]system_privileges`](/sql/system-catalog/mz_internal/#mz_show_system_privileges)
 
     **Roles**
 
-    * [`mz_internal.mz_show_[my_]role_members`](/reference/system-catalog/mz_internal/#mz_show_role_members)
+    * [`mz_internal.mz_show_[my_]role_members`](/sql/system-catalog/mz_internal/#mz_show_role_members)
 
   It's important to note that role-based access control (RBAC) is **disabled by
   default**. You must [contact us](https://materialize.com/contact/) to enable
@@ -4077,7 +4289,7 @@ released behind a feature flag."
   access control** (RBAC):
 
   * Include `GRANT`, `REVOKE`, `ALTER DEFAULT PRIVILEGES`, and `ALTER OWNER`
-    events in the [`mz_audit_events`](/reference/system-catalog/mz_catalog/#mz_audit_events)
+    events in the [`mz_audit_events`](/sql/system-catalog/mz_catalog/#mz_audit_events)
     system catalog table.
 
   * Require connection and secret `USAGE` privileges to execute [`CREATE SINK`](/sql/create-sink/)
@@ -4246,7 +4458,7 @@ supported in the next release.
 
 * Allow specifying a comma-separated list of schemas in the `DROP SCHEMA`.
 
-* Add [`mz_internal.mz_object_transitive_dependencies`](/reference/system-catalog/mz_internal/#mz_object_transitive_dependencies)
+* Add [`mz_internal.mz_object_transitive_dependencies`](/sql/system-catalog/mz_internal/#mz_object_transitive_dependencies)
   to the system catalog. This table describes the transitive dependency structure between all database objects in the system.
 
 * Improve and extend the base implementation of **Role-based
@@ -4426,13 +4638,13 @@ supported in the next release.
 
 #### SQL
 
-* Add [`mz_internal.mz_cluster_replica_history`](/reference/system-catalog/mz_internal/#mz_cluster_replica_history)
+* Add [`mz_internal.mz_cluster_replica_history`](/sql/system-catalog/mz_internal/#mz_cluster_replica_history)
   to the system catalog. This view contains information about the timespan of
   each replica, including the times at which it was created and dropped (if
   applicable).
 
 * Add `envelope_state_bytes` and `envelope_state_count` to the
-  [`mz_internal.mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+  [`mz_internal.mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
   system catalog table. These columns provide an approximation of the state
   size maintained for upsert sources (i.e. sources using `ENVELOPE
   UPSERT` or `ENVELOPE DEBEZIUM`). In the future, this will allow users to
@@ -4640,7 +4852,7 @@ mentioning it here."
 
 #### SQL
 
-* Add [`mz_internal.mz_dataflow_arrangement_sizes`](/reference/system-catalog/mz_introspection/#mz_dataflow_arrangement_sizes)
+* Add [`mz_internal.mz_dataflow_arrangement_sizes`](/sql/system-catalog/mz_introspection/#mz_dataflow_arrangement_sizes)
   to the system catalog. This view describes how many records and batches are
   contained in operators under each dataflow, which is useful to approximate how
   much memory a dataflow is using.
@@ -4669,10 +4881,10 @@ mentioning it here."
 
 * Change the type of the following system catalog replica ID columns from integer to string:
 
-    * [`mz_catalog.mz_cluster_replicas.id`](/reference/system-catalog/mz_catalog/#mz_cluster_replicas)
-    * [`mz_internal.mz_cluster_replica_statuses.replica_id`](/reference/system-catalog/mz_internal/#mz_cluster_replica_statuses)
+    * [`mz_catalog.mz_cluster_replicas.id`](/sql/system-catalog/mz_catalog/#mz_cluster_replicas)
+    * [`mz_internal.mz_cluster_replica_statuses.replica_id`](/sql/system-catalog/mz_internal/#mz_cluster_replica_statuses)
     * `mz_internal.mz_cluster_replica_heartbeats.replica_id`
-    * [`mz_internal.mz_cluster_replica_metrics.replica_id`](/reference/system-catalog/mz_internal/#mz_cluster_replica_metrics)
+    * [`mz_internal.mz_cluster_replica_metrics.replica_id`](/sql/system-catalog/mz_internal/#mz_cluster_replica_metrics)
     * `mz_internal.mz_cluster_replica_frontiers.replica_id`
 
     This is part of the work to introduce system replicas, which Materialize
@@ -4694,7 +4906,7 @@ mentioning it here."
 * Apply `PRIMARY KEY`, `UNIQUE`, and `NOT NULL` constraints to tables ingested
   from PostgreSQL sources.
 
-* Rename [replica introspection views](https://materialize.com/docs/reference/system-catalog/mz_introspection)
+* Rename [replica introspection views](https://materialize.com/docs/sql/system-catalog/mz_introspection)
   for consistency, and use the `_per_worker` name suffix for per-worker introspection views.
 
 * Automatically restart failed SSH tunnels to improve the reliability of
@@ -4743,7 +4955,7 @@ mentioning it here."
   This is part of the work to enable **Role-based access control** (RBAC) in a
   future release ([#11579](https://github.com/MaterializeInc/materialize/issues/11579)).
 
-* Add [`mz_internal.mz_sessions`](/reference/system-catalog/mz_internal/#mz_sessions)
+* Add [`mz_internal.mz_sessions`](/sql/system-catalog/mz_internal/#mz_sessions)
   to the system catalog. This table describes all active sessions in the
   system.
 
@@ -4803,12 +5015,12 @@ shipping in v0.48 -— so mentioning it here."
   exclusive to _superusers_. This is part of the work to enable **Role-based
   access control** (RBAC) in a future release ([#11579](https://github.com/MaterializeInc/materialize/issues/11579)).
 
-* Add [`mz_internal.mz_dataflow_operator_parents`](/reference/system-catalog/mz_introspection/#mz_dataflow_operator_parents)
+* Add [`mz_internal.mz_dataflow_operator_parents`](/sql/system-catalog/mz_introspection/#mz_dataflow_operator_parents)
   to the system catalog. This view describes how operators are nested into
   scopes, by relating operators to their parent operators, which is useful for
   internal system observability.
 
-* Add `dataflow_id` to the [`mz_compute_exports`](/reference/system-catalog/mz_introspection/#mz_compute_exports)
+* Add `dataflow_id` to the [`mz_compute_exports`](/sql/system-catalog/mz_introspection/#mz_compute_exports)
   introspection source. This introspection source describes the dataflows
   created by indexes, materialized views, and subscriptions in the system.
 
@@ -4820,7 +5032,7 @@ shipping in v0.48 -— so mentioning it here."
 
 #### SQL
 
-* Add [`mz_internal.mz_subscriptions`](/reference/system-catalog/mz_internal/#mz_subscriptions)
+* Add [`mz_internal.mz_subscriptions`](/sql/system-catalog/mz_internal/#mz_subscriptions)
   to the system catalog. This table describes all active `SUBSCRIBE` operations
   in the system.
 
@@ -5019,12 +5231,12 @@ not introduce any new user-facing features or bug fixes. 👷
 
 ## v0.41.0
 
-* Add [`mz_internal.mz_sink_statistics`](/reference/system-catalog/mz_internal/#mz_sink_statistics)
+* Add [`mz_internal.mz_sink_statistics`](/sql/system-catalog/mz_internal/#mz_sink_statistics)
   to the system catalog. This table contains statistics for each
   process of each sink in the system, like the number of messages
   and bytes committed to the external system.
 
-* Add [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+* Add [`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources)
   to the system catalog. This table exposes the randomly-generated
   name of the replication slot created in the upstream PostgreSQL
   database that Materialize will create for each source.
@@ -5157,7 +5369,7 @@ not introduce any new user-facing features or bug fixes. 👷
   REPLICA`, which enables configuring the amount of effort a replica exerts on
   compacting arrangements during idle periods.
 
-* **Private preview.** Support [bearer token authentication](/integrations/websocket-api/#endpoint)
+* **Private preview.** Support [bearer token authentication](/serve-results/websocket-api/#endpoint)
   in the WebSocket API endpoint, which supports interactive SQL queries over WebSockets.
 
 ---
@@ -5195,7 +5407,7 @@ not introduce any new user-facing features or bug fixes. 👷
   [SSH tunnel](/sql/create-connection/#ssh-tunnel) connection to an SSH bastion
   server.
 
-* Add [`mz_internal.mz_cluster_replica_utilization`](/reference/system-catalog/mz_internal/#mz_cluster_replica_utilization)
+* Add [`mz_internal.mz_cluster_replica_utilization`](/sql/system-catalog/mz_internal/#mz_cluster_replica_utilization)
   to the system catalog. This view allows you to monitor the resource utilization for
   all extant cluster replicas as a % of the total resource allocation:
 
@@ -5243,10 +5455,10 @@ not introduce any new user-facing features or bug fixes. 👷
   00:00:00 UTC) ([#16610](https://github.com/MaterializeInc/materialize/issues/16610)), and return an error instead of `NULL` when the
   timestamp is out of range. The new behavior matches PostgreSQL.
 
-* **Private preview.** Add a [WebSocket API endpoint](/integrations/websocket-api/)
+* **Private preview.** Add a [WebSocket API endpoint](/serve-results/websocket-api/)
 	which supports interactive SQL queries over WebSockets.
 
-* Change the JSON serialization for rows emitted by the [HTTP API endpoint](/integrations/http-api/)
+* Change the JSON serialization for rows emitted by the [HTTP API endpoint](/serve-results/http-api/)
   to exactly match the JSON serialization used by `FORMAT JSON` Kafka sinks.
   Previously, the HTTP SQL endpoint serialized datums using slightly different
   rules.
@@ -5323,13 +5535,13 @@ to an SSH bastion server.
   );
   ```
 
-* Add [`mz_internal.mz_source_status`](/reference/system-catalog/mz_internal/#mz_source_statuses) and
-  [`mz_internal.mz_source_status_history`](/reference/system-catalog/mz_internal/#mz_source_status_history)
+* Add [`mz_internal.mz_source_status`](/sql/system-catalog/mz_internal/#mz_source_statuses) and
+  [`mz_internal.mz_source_status_history`](/sql/system-catalog/mz_internal/#mz_source_status_history)
   to the system catalog. These objects respectively expose the current
   and historical state for each source in the system, including potential
   error messages and additional metadata helpful for debugging.
 
-* Add [`mz_internal.mz_cluster_replica_metrics`](https://materialize.com/docs/reference/system-catalog/mz_internal/#mz_cluster_replica_metrics) to the system
+* Add [`mz_internal.mz_cluster_replica_metrics`](https://materialize.com/docs/sql/system-catalog/mz_internal/#mz_cluster_replica_metrics) to the system
   catalog. This table records the last known CPU and RAM utilization statistics
   for all processes of all extant cluster replicas.
 
@@ -5593,7 +5805,7 @@ substantial breaking changes from [v0.26 LTS].
   arrives.
 
   A materialized view is created in a
-  [cluster](/concepts/clusters/) that
+  [cluster](/fundamentals/concepts/clusters/) that
   is tasked with keeping its results up-to-date, but **can be referenced in any
   cluster**.
 
@@ -5627,7 +5839,7 @@ substantial breaking changes from [v0.26 LTS].
 * Add [load generator sources](/sql/create-source/load-generator), which
   produce synthetic data for use in demos and performance tests.
 
-* Add an [HTTP API](/integrations/http-api) which supports executing SQL queries
+* Add an [HTTP API](/serve-results/http-api) which supports executing SQL queries
   over HTTP.
 
 * **Breaking change.** Require all [indexes](/sql/create-index) to be associated
@@ -5690,13 +5902,13 @@ substantial breaking changes from [v0.26 LTS].
 
 * **Breaking change.** Overhaul the system catalog.
 
-  The relations in the [`mz_catalog`](/reference/system-catalog/mz_catalog) schema
+  The relations in the [`mz_catalog`](/sql/system-catalog/mz_catalog) schema
   have been adjusted substantially to support the above changes. Many column
   and relation names were adjusted for consistency. The resulting relations
   are now part of Materialize's stable interface.
 
   Relations which were not ready for stabilization were moved to a new
-  [`mz_internal`](/reference/system-catalog/mz_internal) schema.
+  [`mz_internal`](/sql/system-catalog/mz_internal) schema.
 
 * **Breaking change.** Rename `mz_logical_timestamp()` to [`mz_now`](/sql/functions/now_and_mz_now/).
 

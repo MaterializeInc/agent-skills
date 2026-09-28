@@ -38,7 +38,7 @@ FROM SQL SERVER CONNECTION <connection_name>
 | **EXCLUDE COLUMNS** ( `<col1>` [, ...] ) | Optional. Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.  |
 | **TEXT COLUMNS** ( `<col1>` [, ...] ) | Optional. If specified, decode data from the specified columns in the subsource(s) as `text` for the listed column(s), such as for unsupported data types.  |
 | **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables with CDC enabled in all schemas upstream. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables upstream. Requires fully-qualified table names (`<schema1>.<table1>`). \|  |
-| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
 ## Creating a source
 
@@ -141,7 +141,7 @@ use either the `TEXT COLUMNS` or the `EXCLUDE COLUMNS` option:
 | `image`          | `EXCLUDE COLUMNS`                                           |
 | `varbinary(max)` | `EXCLUDE COLUMNS`                                           |
 
-### Timestamp Rounding
+### Timestamp rounding
 
 The `time`, `datetime2`, and `datetimeoffset` types in SQL Server have a default
 scale of 7 decimal places, or in other words a accuracy of 100 nanoseconds. But
@@ -186,7 +186,7 @@ most recent `create_date`.
 
 If two capture instances for a table share the same timestamp (unlikely given the millisecond resolution), Materialize selects the `capture_instance` with the lexicographically larger name.
 
-### Modifying an existing source
+### Adding a table to an existing source
 
 When you add a new subsource to an existing source ([`ALTER SOURCE ... ADD
 SUBSOURCE ...`](/sql/alter-source/)), Materialize starts the snapshotting
@@ -272,6 +272,20 @@ Removing the capture instance that Materialize is using puts the affected table
 into an error state. Removing a capture instance that Materialize is not using does not affect
 ingestion.
 
+### Disabling CDC on a table
+
+Running `sys.sp_cdc_disable_table` removes the capture instance Materialize is
+ingesting from, which puts the affected table into an error state. The other
+tables in the source keep replicating. You can recover without re-creating the
+whole source by dropping just the affected table in Materialize:
+
+```mzsql
+DROP TABLE table_1;
+```
+
+Then re-create it, optionally after re-enabling CDC on the upstream table with
+`sys.sp_cdc_enable_table`.
+
 ### Table-level operations
 
 The following upstream operations put the affected table into an error state.
@@ -280,6 +294,139 @@ table in Materialize to resume:
 
 - Dropping a table (`DROP TABLE`).
 - Renaming a table or moving it to a different schema.
+
+## Source failure states and recovery
+
+### Operations that do not require re-creating the source
+For operations that are supported automatically, Materialize is able to resume
+replication from a [log sequence number
+(LSN)](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-log-architecture-and-management-guide)
+that it tracks as it consumes the upstream change data capture (CDC) change
+tables. Because LSNs live in the SQL Server transaction log, they survive
+routine operational events: after a transient interruption the source stalls,
+then resumes from its last committed LSN and catches up automatically. **No
+action is required** for the operations in the first section below.
+
+The source recovers on its own. It will briefly reports a `stalled` status while the
+condition persists, then returns to `running` and catch up for all of the
+following scenarios:
+
+- Restarting or patching SQL Server (including OS-level restarts).
+- Restarting Materialize. The source resumes from its tracked LSN and does
+  **not** re-snapshot already-ingested data.
+- Transient network interruptions between Materialize and SQL Server.
+- Taking the database `OFFLINE` and back `ONLINE`.
+- Toggling the database between `SINGLE_USER`/`MULTI_USER` or
+  `READ_ONLY`/`READ_WRITE` (for example, during patching).
+- Data-file, filegroup, or index maintenance that rewrites data in place.
+- [Availability group failover](#always-on-failovers), with the
+  configuration change described below.
+
+> **Note:** Recovery after an interruption depends on the required LSNs still being present
+> in the SQL Server CDC change tables. If the interruption lasts longer than the
+> CDC **retention period** (3 days by default) and SQL Server's cleanup job
+> removes change-table rows past the source's resume point, the source can no
+> longer recover on its own. See [Change-table retention](#change-table-retention).
+
+> **Warning:** If a maintenance script places the database into `SINGLE_USER` mode, note that an
+> active Materialize source's reconnection attempts can occupy the single available
+> connection and cause `ALTER DATABASE ... SET MULTI_USER` to fail with error 5064.
+> Terminate the Materialize session (or use `SET MULTI_USER WITH ROLLBACK
+> IMMEDIATE` after terminating it) before returning the database to multi-user
+> mode.
+
+### Operations that require re-creating the source
+A smaller set of events breaks LSN or CDC-change-table continuity. When this
+happens, Materialize cannot guarantee a correct, gap-free view of your data, so
+it puts the **entire source** into an error state that requires **re-creating**
+the source. Re-creating triggers a fresh [snapshot](/ingest-data/#snapshotting)
+and rehydration of dependent objects. Upstream changes to an individual table's
+schema are handled separately, and do not error the entire source.
+
+The following events put the **entire source** into an error state. In each
+case, the remediation is to drop and re-create the source:
+
+```mzsql
+DROP SOURCE mz_source CASCADE;
+
+CREATE SOURCE mz_source
+  FROM SQL SERVER CONNECTION sql_server_connection;
+
+-- Re-create the tables you were ingesting.
+CREATE TABLE table_1 FROM SOURCE mz_source (REFERENCE dbo.table_1);
+```
+
+#### Point-in-time restore
+
+Restoring the source database from a backup — including restoring to a different
+server for disaster recovery — is detected as a discontinuity. The source fails
+with an error of the form:
+
+```
+source must be dropped and recreated due to failure: Restore history id changed
+from None to Some(<n>)
+```
+
+Materialize detects the restore by reading `msdb.dbo.restorehistory`. (This check
+does not apply to Azure SQL Database, which does not expose `msdb`.)
+
+#### CDC disabled at the database level
+
+Running `sys.sp_cdc_disable_db` drops all change tables. The source stalls with:
+
+```
+invalid SQL Server system setting 'database CDC'. Expected 'true'. Got 'Some(false)'.
+```
+
+Re-enable CDC on the database and on each table (`sys.sp_cdc_enable_db`,
+`sys.sp_cdc_enable_table`), then re-create the source.
+
+#### Change-table retention
+
+SQL Server's CDC cleanup job removes change-table rows older than the retention
+period (3 days by default). If Materialize is disconnected long enough that
+cleanup removes rows past the source's resume LSN, the source stalls with:
+
+```
+the requested LSN '...' is less than the minimum '...' for `dbo_<table>`
+```
+
+To avoid this during a planned outage, keep the outage shorter than the retention
+period, or increase retention beforehand with
+[`sys.sp_cdc_change_job`](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sys-sp-cdc-change-job-transact-sql)
+(`@job_type = 'cleanup'`, `@retention`).
+
+### Always-On failovers
+
+Materialize supports SQL Server configured with Always On availability groups,
+including failover between replicas, with one configuration change.
+
+By default, an availability group failover is misdetected as a point-in-time
+restore and fails the source with the `Restore history id changed` error
+described above. This is a false positive: the LSN stream is continuous across an
+availability group failover, but seeding a secondary replica writes rows to
+`msdb.dbo.restorehistory`, which the restore-detection check reads as a restore.
+
+To allow the source to survive failover, disable restore-history validation with
+the [`sql_server_source_validate_restore_history`](/sql/alter-system-set/) system
+parameter:
+
+```mzsql
+ALTER SYSTEM SET sql_server_source_validate_restore_history = false;
+```
+
+> **Warning:** Disabling this check is a trade-off: with it off, Materialize will also **not**
+> detect a genuine [point-in-time restore](#point-in-time-restore) of the source
+> database. Only disable it when the source connects to a database that fails over
+> between availability group replicas.
+
+With the check disabled, the source no longer fails on failover. Because `msdb`
+is per-instance, the CDC capture and cleanup jobs do not move with the
+availability group database — after a failover, confirm that CDC is healthy on
+the new primary (the capture and cleanup jobs exist, SQL Server Agent is running,
+and the change tables are advancing) so that replication continues. Adding the
+jobs on a replica that lacks them is done with
+[`sys.sp_cdc_add_job`](https://learn.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sys-sp-cdc-add-job-transact-sql).
 
 ## Examples
 

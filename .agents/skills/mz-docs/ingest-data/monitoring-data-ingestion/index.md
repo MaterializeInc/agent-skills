@@ -21,6 +21,10 @@ INNER JOIN mz_objects AS o ON (s.id = o.id)
 WHERE NOT s.snapshot_committed;
 ```
 
+Materialize commits the snapshot only once all of it has been read, so a
+source's committed statistics do not move while it snapshots. See [Understand
+the lifecycle of a source](/ingest-data/lifecycle-of-a-source/#snapshotting).
+
 It's also important to monitor CPU and memory utilization for the cluster
 hosting the source during snapshotting. If there are signs of resource
 exhaustion, you may need to [resize the cluster](/sql/alter-cluster/#alter-cluster-size).
@@ -76,7 +80,7 @@ In the Materialize Console, you can go to the source overview page to view the
 data ingestion progress (e.g., rows_received, bytes_received, ingestion rate).
 
 Alternatively, you can query the
-[`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+[`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
 table and look for ingestion statistics that advance over time:
 
 ```mzsql

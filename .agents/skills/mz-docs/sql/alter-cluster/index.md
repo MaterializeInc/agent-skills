@@ -125,7 +125,7 @@ ALTER CLUSTER <cluster1> SWAP WITH <cluster2>;
 ### Resizing
 
 > **Tip:** For help sizing your clusters, navigate to **Materialize Console >**
-> [**Monitoring**](/console/monitoring/)>**Environment Overview**. This page
+> [**Monitoring**](/developer-tools/console/monitoring/)>**Environment Overview**. This page
 > displays cluster resource utilization and sizing advice.
 
 #### Available sizes
@@ -201,7 +201,7 @@ See also:
 #### Resource allocation
 
 To determine the specific resource allocation for a given cluster size, query
-the [`mz_cluster_replica_sizes`](/reference/system-catalog/mz_catalog/#mz_cluster_replica_sizes)
+the [`mz_cluster_replica_sizes`](/sql/system-catalog/mz_catalog/#mz_cluster_replica_sizes)
 system catalog table.
 
 > **Warning:** The values in the `mz_cluster_replica_sizes` table may change at any
@@ -222,22 +222,23 @@ immediately.
 During a graceful resize, Materialize:
 1. Provisions new replicas at the target size, alongside the current replicas.
 2. Waits for the new replicas to
-   [hydrate](/concepts/hydration/).
+   [hydrate](/fundamentals/concepts/hydration/) and for their compute collections
+   to catch up to the outgoing replicas within the configured lag allowance.
 3. Retires the old replicas.
 
 Throughout, the cluster keeps serving queries, first from the old replicas,
 then from both sets as the new replicas come up, so the resize incurs no
 downtime.
 
-If the new replicas do not hydrate within the reconfiguration timeout (24 hours
-by default), Materialize rolls back the resize and the cluster keeps its current
-size. To customize the timeout behavior, use the `WAIT UNTIL READY` or `WAIT FOR` options.
+If the new replicas do not become ready within the reconfiguration
+timeout (24 hours by default), Materialize rolls back the resize and the cluster
+keeps its current size. To customize the timeout behavior, use the `WAIT UNTIL READY` or `WAIT FOR` options.
 The resize still proceeds in the background.
 
 - `WAIT UNTIL READY (TIMEOUT = ..., ON TIMEOUT = ...)` sets the timeout for the
   resize. On timeout, `ON TIMEOUT` selects whether to `COMMIT` (retire the old
-  replicas and proceed with the not-yet-hydrated new ones, which can cause
-  downtime) or `ROLLBACK` (keep the current size). Default: `ROLLBACK`.
+  replicas and proceed with the new ones even if they are not ready) or
+  `ROLLBACK` (keep the current size). Default: `ROLLBACK`.
 
   ```mzsql
   ALTER CLUSTER c1
@@ -246,9 +247,9 @@ The resize still proceeds in the background.
 
 - `WAIT FOR '<duration>'` is equivalent to `WAIT UNTIL READY (TIMEOUT =
   '<duration>', ON TIMEOUT = 'ROLLBACK')`. Materialize cuts over once the target
-  replicas hydrate. When Materialize processes an expired timeout, it
-  rolls back the resize and keeps the current size if the target replicas are
-  still unhydrated.
+  replicas are ready. When Materialize processes an expired timeout,
+  it rolls back the resize and keeps the current size if the target replicas
+  are not ready.
 
 See [Monitoring a resize](#monitoring-a-resize) to track progress and
 [cancel](#monitoring-a-resize) an in-flight resize.
@@ -260,18 +261,18 @@ You can monitor a resize through the following:
   summarizes any in-flight reconfiguration or hydration burst, and is `NULL`
   when the cluster is steady.
 
-- [`mz_internal.mz_cluster_reconfigurations`](/reference/system-catalog/mz_internal/#mz_cluster_reconfigurations),
+- [`mz_internal.mz_cluster_reconfigurations`](/sql/system-catalog/mz_internal/#mz_cluster_reconfigurations),
   which shows the target shape, deadline, timeout action, and lifecycle status
   of the latest reconfiguration.
 
-- [`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies),
+- [`mz_internal.mz_cluster_auto_scaling_strategies`](/sql/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies),
   which shows any in-flight hydration burst.
 
-- [`mz_internal.mz_hydration_statuses`](/reference/system-catalog/mz_internal/#mz_hydration_statuses),
+- [`mz_internal.mz_hydration_statuses`](/sql/system-catalog/mz_internal/#mz_hydration_statuses),
   which shows per-object hydration status.
 
 - The audit log
-  ([`mz_catalog.mz_audit_events`](/reference/system-catalog/mz_catalog/#mz_audit_events)),
+  ([`mz_catalog.mz_audit_events`](/sql/system-catalog/mz_catalog/#mz_audit_events)),
   which records each reconfiguration transition.
 
 ##### Cancel a resize
@@ -284,8 +285,8 @@ configuration.
 You can use the `WAIT UNTIL READY` option to perform a zero-downtime resizing,
 which incurs **no downtime**. Instead of restarting the cluster, this approach
 spins up an additional cluster replica under the covers with the desired new
-size, waits for the replica to be hydrated, and then replaces the original
-replica.
+size, waits for the replica to be hydrated, and then replaces the
+original replica.
 
 ```sql
 ALTER CLUSTER c1
@@ -318,10 +319,10 @@ autoscaling](#configure-autoscaling) for the `ALTER CLUSTER` form.
 
 When you create an index, materialized view, or Kafka upsert source, or when a
 cluster restarts, the cluster must
-[hydrate](/concepts/hydration/) the affected
+[hydrate](/fundamentals/concepts/hydration/) the affected
 objects before they can serve results. Hydration reads the input data
 and rebuilds in-memory state, and its speed scales with the cluster
-[size](#available-sizes).
+[size](/sql/create-cluster/#available-sizes).
 
 The `AUTO SCALING STRATEGY (ON HYDRATION)` option lets a cluster **automatically
 provision an extra burst replica at the configured `HYDRATION SIZE` while it has
@@ -330,7 +331,7 @@ cluster up before hydration and back down afterward. The steady-size replicas
 continue hydrating in parallel, and once one of them catches up with the burst,
 the burst replica lingers for the `LINGER DURATION` and is then removed. The
 burst replica is an ordinary cluster replica, billed only for the time it is
-provisioned. See [Usage & billing](/administration/billing/) for details.
+provisioned. See [Usage & billing](/materialize-cloud/billing/) for details.
 
 `AUTO SCALING STRATEGY (ON HYDRATION)` is particularly useful for [blue/green
 deployments](/manage/blue-green/), where a new cluster must hydrate before the
@@ -355,7 +356,7 @@ You can specify the following options:
 
 Option | Description
 -------|------------
-`HYDRATION SIZE` | The [size](#available-sizes) of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration.
+`HYDRATION SIZE` | The [size](/sql/create-cluster/#available-sizes) of the burst replica provisioned while the cluster has un-hydrated objects. Must differ from the cluster's steady `SIZE`. Choose a larger size to speed up hydration.
 `LINGER DURATION` | Optional. How long the burst replica lingers after a steady-size replica catches up, before it is removed. Default: `0s`.
 
 Provisioning the burst replica requires enough compute capacity to run it. In
@@ -371,7 +372,7 @@ To remove the autoscaling strategy from a cluster, use `ALTER CLUSTER ... RESET
 ()`.
 
 You can inspect the configured strategy and any in-flight burst in the
-[`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
+[`mz_internal.mz_cluster_auto_scaling_strategies`](/sql/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies)
 catalog view.
 
 ### Dictionary compression
@@ -380,7 +381,7 @@ catalog view.
 
 Starting in v26.38, dictionary compression is available for managed clusters.
 Dictionary compression reduces the memory that
-[arrangements](/get-started/arrangements/#arrangements) use when a column holds
+[arrangements](/fundamentals/concepts/arrangements/#arrangements) use when a column holds
 the same values repeatedly. Instead of storing a repeated column value each time
 it appears, Materialize stores that value once and has each row reference it. This can reduce steady state memory requirements after hydration has completed.
 
@@ -419,7 +420,7 @@ The `REPLICATION FACTOR` option determines the number of replicas provisioned
 for the cluster. Each replica of the cluster provisions a new pool of compute
 resources to perform exactly the same computations on exactly the same data.
 Each replica incurs cost, calculated as `cluster size * replication factor` per
-second. See [Usage & billing](/administration/billing/) for more details.
+second. See [Usage & billing](/materialize-cloud/billing/) for more details.
 
 #### Replication factor and fault tolerance
 
@@ -430,7 +431,7 @@ available, the cluster can continue to maintain dataflows and serve queries.
 
 > **Note:** - Each replica incurs cost, calculated as `cluster size *
 >   replication factor` per second. See [Usage &
->   billing](/administration/billing/) for more details.
+>   billing](/materialize-cloud/billing/) for more details.
 > - Increasing the replication factor does **not** increase the cluster's work
 >   capacity. Replicas are exact copies of one another: each replica must do
 >   exactly the same work (i.e., maintain the same dataflows and process the same
@@ -528,7 +529,7 @@ ALTER CLUSTER c1 RESET (AUTO SCALING STRATEGY);
 ```
 
 To inspect the configured strategy and any in-flight burst, query
-[`mz_internal.mz_cluster_auto_scaling_strategies`](/reference/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies).
+[`mz_internal.mz_cluster_auto_scaling_strategies`](/sql/system-catalog/mz_internal/#mz_cluster_auto_scaling_strategies).
 The `strategy` column holds the configured policy, and the `state` column holds
 the in-flight burst details, or `NULL` when no burst is running:
 

@@ -8,7 +8,7 @@ As your application and workload evolves, you might need to update materialized 
 
 | Strategy | When to use | Tradeoffs |
 |----------|-------------|-----------|
-| [**Blue/green deployments**](/manage/dbt/blue-green-deployments/) | Complex changes across multiple objects, or when using dbt for deployment orchestration. | Ensures no impact to data freshness during cutover, but temporarily doubles resource usage and requires team coordination. |
+| [**Blue/green deployments**](/developer-tools/dbt/blue-green-deployments/) | Complex changes across multiple objects, or when using dbt for deployment orchestration. | Ensures no impact to data freshness during cutover, but temporarily doubles resource usage and requires team coordination. |
 | [**Replace materialized view**](replace-materialized-view/) | Simple changes to a single materialized view's query definition. | Simpler to deploy with no additional tooling, but may impact freshness on the materialized view and all downstream objects. |
 
 ## Blue/green deployments
@@ -24,7 +24,7 @@ This strategy is ideal when:
 - You need to ensure zero impact to data freshness during the cutover
 - You have the resources to temporarily run two environments in parallel
 
-For detailed instructions, see the [Blue/green deployment guide](/manage/dbt/blue-green-deployments/).
+For detailed instructions, see the [Blue/green deployment guide](/developer-tools/dbt/blue-green-deployments/).
 
 ## Replace materialized view
 
@@ -66,14 +66,14 @@ In this guide, you will:
 
 Before using this guide, you should be familiar with:
 
-- [Sources](/concepts/sources/) and how data flows into Materialize
-- [Views and materialized views](/concepts/views/)
-- [Indexes](/concepts/indexes/) and how they improve query performance
-- [Clusters](/concepts/clusters/) and compute resource management
+- [Sources](/fundamentals/concepts/sources/) and how data flows into Materialize
+- [Views and materialized views](/fundamentals/concepts/views/)
+- [Indexes](/fundamentals/concepts/indexes/) and how they improve query performance
+- [Clusters](/fundamentals/concepts/clusters/) and compute resource management
 
 ### Step 0. Create clusters
 
-This guide uses a [three-tier cluster architecture](/manage/operational-guidelines/#three-tier-architecture),
+This guide uses a [three-tier cluster architecture](/clusters/operational-guidelines/#three-tier-architecture),
 with separate clusters for ingestion, computation, and serving.
 
 **cc clusters:**
@@ -425,7 +425,7 @@ replacement view.
 - [Updating materialized views](/transform-data/updating-materialized-views/)
 - [`CREATE MATERIALIZED VIEW`](/sql/create-materialized-view)
 - [`ALTER MATERIALIZED VIEW`](/sql/alter-materialized-view)
-- [Views](/concepts/views/)
-- [Indexes](/concepts/indexes/)
-- [Clusters](/concepts/clusters/)
+- [Views](/fundamentals/concepts/views/)
+- [Indexes](/fundamentals/concepts/indexes/)
+- [Clusters](/fundamentals/concepts/clusters/)
 

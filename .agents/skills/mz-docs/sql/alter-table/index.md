@@ -51,7 +51,7 @@ ALTER TABLE <name> SET (RETAIN HISTORY [=] FOR <retention_period>);
 | Syntax element | Description |
 | --- | --- |
 | `<name>` | The name of the table you want to alter.  |
-| `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
+| `<retention_period>` | ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`.  |
 
 To reset the retention history to the default for a user-populated table:
 

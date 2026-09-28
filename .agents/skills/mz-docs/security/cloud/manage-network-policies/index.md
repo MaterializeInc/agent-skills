@@ -8,6 +8,10 @@ network-layer access control. As an **administrator** of a Materialize
 organization, you can configure network policies to restrict access to a
 Materialize region using IP-based rules.
 
+Network policies are enforced at the database layer and apply to both SQL
+(pgwire) and HTTP connections. Because the Materialize Console connects over
+HTTP, network policies restrict Console access in addition to SQL access.
+
 ## Create a network policy
 
 > **Note:** Network policies are applied **globally** (i.e., at the region level) and rules

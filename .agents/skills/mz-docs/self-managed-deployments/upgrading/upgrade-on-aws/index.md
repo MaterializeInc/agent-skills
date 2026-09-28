@@ -207,7 +207,7 @@ durable state for Grafana and a load balancer to reach it on.
 > PersistentVolumeClaims. Up to 15 days of local Prometheus data goes with them,
 > along with anything hand-created in the old Grafana. There is no backfill. See
 > [How to upgrade from previous versions of the Materialize Terraform
-> Modules](/manage/monitor/self-managed/grafana/#how-to-upgrade-from-previous-versions-of-the-materialize-terraform-modules).
+> Modules](/observability/self-managed/grafana/#how-to-upgrade-from-previous-versions-of-the-materialize-terraform-modules).
 
 ### If you use the example configuration
 
@@ -311,9 +311,9 @@ the load balancer are both billable.
 
 For accessing Grafana, pointing the stack at a database you already run, sizing
 profiles, and retention, see
-[Grafana](/manage/monitor/self-managed/grafana/). For what the stack stores and
+[Grafana](/observability/self-managed/grafana/). For what the stack stores and
 the backends it can forward to, see [How logs and metrics are
-stored](/manage/monitor/self-managed/storage/).
+stored](/observability/self-managed/storage/).
 
 ## See also
 

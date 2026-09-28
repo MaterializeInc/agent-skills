@@ -78,4 +78,4 @@ output.
 [`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
 [`money`]: https://www.postgresql.org/docs/current/datatype-money.html
 
-See also: [PostgreSQL considerations](/ingest-data/postgres/#considerations).
+See also: [Supported data types](/ingest-data/postgres/#supported-data-types).

@@ -11,7 +11,7 @@
 * Support using `LIKE`, `NOT LIKE`, `ILIKE`, and `NOT ILIKE` as operators within
   `ANY`, `SOME`, and `ALL` expressions.
 
-* Add `mz_version` to the [`mz_internal.mz_recent_activity_log`](/reference/system-catalog/mz_internal/#mz_recent_activity_log)
+* Add `mz_version` to the [`mz_internal.mz_recent_activity_log`](/sql/system-catalog/mz_internal/#mz_recent_activity_log)
   system catalog view. This column stores the version of Materialize that was
   running when the statement was executed.
 

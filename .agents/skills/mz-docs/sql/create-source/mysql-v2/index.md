@@ -40,7 +40,7 @@ FROM MYSQL CONNECTION <connection_name>
 | --- | --- |
 | **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
 | `<source_name>` | The name of the source to create. Names for sources must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
-| **IN CLUSTER** `<cluster_name>` | *Optional.* The [cluster](/sql/create-cluster) to maintain this source. Otherwise, the source will be created in the active cluster.  {{< tip >}} If possible, use a cluster dedicated just for sources. See also [Operational guidelines](/manage/operational-guidelines/#sources). {{< /tip >}}  |
+| **IN CLUSTER** `<cluster_name>` | *Optional.* The [cluster](/sql/create-cluster) to maintain this source. Otherwise, the source will be created in the active cluster.  {{< tip >}} If possible, use a cluster dedicated just for sources. See also [Operational guidelines](/clusters/operational-guidelines/#sources). {{< /tip >}}  |
 | `<connection_name>` | The name of the MySQL connection to use for the source. For details on creating connections, see [`CREATE CONNECTION`](/sql/create-connection/#mysql).  A connection is **reusable** across multiple `CREATE SOURCE` statements.  To start ingesting data, create a [`CREATE TABLE FROM SOURCE`](/sql/create-table/) statement for each upstream table to replicate.  |
 | **WITH** (`<with_option>` [, ...]) | *Optional.* The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
 
@@ -60,7 +60,7 @@ SOURCE`](/sql/create-table/) allows for the handling of certain upstream schema
 changes, specifically adding or dropping columns in the upstream tables, without
 downtime.
 
-See [Guide: Handle upstream schema
+See [Handle upstream schema
 changes](/ingest-data/mysql/source-versioning/) for details.
 
 See also [Handling upstream operations](#handling-upstream-operations) for

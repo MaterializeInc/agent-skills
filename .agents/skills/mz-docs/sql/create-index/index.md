@@ -1,8 +1,8 @@
 # CREATE INDEX
 `CREATE INDEX` creates an in-memory index on a source, view, or materialized view.
-`CREATE INDEX` creates an in-memory [index](/concepts/indexes/) on a source, view, or materialized view.
+`CREATE INDEX` creates an in-memory [index](/fundamentals/concepts/indexes/) on a source, view, or materialized view.
 
-In Materialize, indexes store query results in memory within a specific [cluster](/concepts/clusters/), and keep these results **incrementally updated** as new data arrives. This ensures that indexed data remains [fresh](/concepts/reaction-time), reflecting the latest changes with minimal latency.
+In Materialize, indexes store query results in memory within a specific [cluster](/fundamentals/concepts/clusters/), and keep these results **incrementally updated** as new data arrives. This ensures that indexed data remains [fresh](/fundamentals/concepts/reaction-time), reflecting the latest changes with minimal latency.
 
 The primary use case for indexes is to accelerate direct queries issued via [`SELECT`](/sql/select/) statements.
 By maintaining fresh, up-to-date results in memory, indexes can significantly [optimize query performance](/transform-data/optimization/), reducing both response time and compute load—especially for resource-intensive operations such as joins, aggregations, and repeated subqueries.
@@ -30,7 +30,7 @@ ON <obj_name> [USING <method>] (<col_expr>, ...)
 | `<obj_name>` | The name of the source, view, or materialized view on which you want to create an index.  |
 | `USING <method>` | The name of the index method to use. The only supported method is [`arrangement`](/overview/arrangements).  |
 | `(<col_expr>, ...)` | The expressions to use as the key for the index.  |
-| `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
+| `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
 **CREATE DEFAULT INDEX:**
 
@@ -50,7 +50,7 @@ ON <obj_name> [USING <method>]
 | `IN CLUSTER <cluster_name>` | The [cluster](/sql/create-cluster) to maintain this index. If not specified, defaults to the active cluster.  |
 | `<obj_name>` | The name of the source, view, or materialized view on which you want to create an index.  |
 | `USING <method>` | The name of the index method to use. The only supported method is [`arrangement`](/overview/arrangements).  |
-| `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/transform-data/patterns/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
+| `WITH (<with_option>[,...])` | The following `<with_option>` is supported: \| Option                     \| Description \| \|----------------------------\|-------------\| \| `RETAIN HISTORY FOR`    \|  ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). **Note:** Configuring indexes to retain history is not recommended. Instead, consider creating a materialized view for your subscription query and configuring the history retention period on the view instead. See [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \|  |
 
 ## Details
 
@@ -128,8 +128,8 @@ Before creating an index, consider the following:
 
 #### Indexes on views vs. materialized views
 
-In Materialize, both [indexes](/concepts/indexes) on views and [materialized
-views](/concepts/views/#materialized-views) incrementally update the view
+In Materialize, both [indexes](/fundamentals/concepts/indexes) on views and [materialized
+views](/fundamentals/concepts/views/#materialized-views) incrementally update the view
 results when Materialize ingests new data. Whereas materialized views persist
 the view results in durable storage and can be accessed across clusters, indexes
 on views compute and store view results in memory within a **single** cluster.
@@ -140,8 +140,8 @@ Some general guidelines for usage patterns include:
 |--------------------------------------------------------------------------------|--------------------|
 | View results are accessed from a single cluster only;<br>such as in a 1-cluster or a 2-cluster architecture. | View with an [index](/sql/create-index) |
 | View used as a building block for stacked views; i.e., views not used to serve results. | View |
-| View results are accessed across [clusters](/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
-| Use with a [sink](/serve-results/sink/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
+| View results are accessed across [clusters](/fundamentals/concepts/clusters);<br>such as in a 3-cluster architecture. | Materialized view (in the transform cluster)<br>Index on the materialized view (in the serving cluster) |
+| Use with a [sink](/export-data/) or a [`SUBSCRIBE`](/sql/subscribe) operation | Materialized view  |
 | Use with [temporal filters](/transform-data/patterns/temporal-filters/) | Materialized view  |
 
 #### Indexes and query optimizations

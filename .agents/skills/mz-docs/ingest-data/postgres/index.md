@@ -5,7 +5,7 @@ Connecting Materialize to a PostgreSQL database for Change Data Capture (CDC).
 ## Change Data Capture (CDC)
 
 Materialize supports PostgreSQL as a real-time data source. The
-[PostgreSQL source](/sql/create-source/postgres//) uses PostgreSQL's
+[PostgreSQL source](/sql/create-source/postgres/) uses PostgreSQL's
 [replication protocol](/sql/create-source/postgres/#change-data-capture)
 to **continually ingest changes** resulting from CRUD operations in the upstream
 database. The native support for PostgreSQL Change Data Capture (CDC) in
@@ -29,14 +29,14 @@ Materialize gives you the following benefits:
 When a source is created, Materialize parallelizes the initial snapshot
 across the cluster's workers and, on PostgreSQL 14 and later, splits each
 table's read across workers. See [Snapshot
-parallelism](/concepts/snapshotting/#parallelism).
+parallelism](/fundamentals/concepts/snapshotting/#parallelism).
 
-## Supported versions and services
+### Supported versions and services
 
 The PostgreSQL source requires **PostgreSQL 11+** and is compatible with most
 common PostgreSQL hosted services.
 
-## Integration guides
+### Integration guides
 
 To help you get started, the following integration guides are available:
 
@@ -48,126 +48,164 @@ To help you get started, the following integration guides are available:
 - [Neon](/ingest-data/postgres/neon/)
 - [Self-hosted PostgreSQL](/ingest-data/postgres/self-hosted/)
 
-## Considerations
+## Supported data types
 
-<h3 id="publication-membership">Publication membership</h3>
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
-remove tables from publications. Because of this, Materialize relies on
-periodic checks to determine if a table has been removed from a publication,
-at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
-it before Materialize notices that the table was removed. In this case,
-Materialize can no longer provide any consistency guarantees about the data
-we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
-<p>To mitigate this issue, if you need to drop and re-add a table to a
-publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
-<h3 id="supported-types">Supported types</h3>
+### Supported types
+
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
 <ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
-<p>Replicating tables that contain <strong>unsupported <a href="/sql/types/" >data types</a></strong> is
-possible via the <code>TEXT COLUMNS</code> option. The specified columns will be
-treated as <code>text</code>; i.e., will not have the expected PostgreSQL type
-features. For example:</p>
-<ul>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-enum.html" ><code>enum</code></a>: When decoded as <code>text</code>, the implicit ordering of the original
-PostgreSQL <code>enum</code> type is not preserved; instead, Materialize will sort values
-as <code>text</code>.</p>
-</li>
-<li>
-<p><a href="https://www.postgresql.org/docs/current/datatype-money.html" ><code>money</code></a>: When decoded as <code>text</code>, resulting <code>text</code> value cannot be cast
-back to <code>numeric</code>, since PostgreSQL adds typical currency formatting to the
-output.</p>
-</li>
-</ul>
-<h3 id="inherited-tables">Inherited tables</h3>
-<p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
-PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
-also present in the inherited table. However, both PostgreSQL&rsquo;s logical
-replication and <code>COPY</code> only present data written to the tables themselves,
-i.e. the inheriting data is <em>not</em> treated as part of the inherited table.</p>
-<p>PostgreSQL sources use logical replication and <code>COPY</code> to ingest table data,
-so inheriting tables&rsquo; data will only be ingested as part of the inheriting
-table, i.e. in Materialize, the data will not be returned when serving
-<code>SELECT</code>s from the inherited table.</p>
-<ul>
-<li>
-<p>If using legacy syntax <a href="/sql/create-source/postgres/" ><code>CREATE SOURCE ... FOR ...</code></a>:</p>
-<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
-creating a materialized view that unions data from the inherited and
-inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
-the table, data from the inheriting tables will not be available in the
-view. You will need to add the inheriting tables via <code>ADD SUBSOURCE</code> and
-create a new view (materialized or non-) that unions the new table.</p>
-</li>
-<li>
-<p>If using new <a href="/sql/create-table/" ><code>CREATE TABLE FROM SOURCE</code></a> syntax:</p>
-<p>You can mimic PostgreSQL&rsquo;s <code>SELECT</code> behavior with inherited tables by
-creating a materialized view that unions data from the inherited and
-inheriting tables (using <code>UNION ALL</code>). However, if new tables inherit from
-the table, data from the inheriting tables will not be available in the
-view. You will need to add the inheriting tables via <code>CREATE TABLE .. FROM SOURCE</code> and create a new view (materialized or non-) that unions the new
-table.</p>
-</li>
-</ul>
-<h3 id="partitioned-tables">Partitioned tables</h3>
-<p>When you add a <a href="https://www.postgresql.org/docs/current/ddl-partitioning.html" >declaratively partitioned
-table</a> to a
-publication, PostgreSQL expands it to the table&rsquo;s leaf partitions; the parent
-table is not itself replicated. Materialize ingests one table per partition,
-which you can reassemble into the parent table using <code>UNION ALL</code>.</p>
-<p>Materialize does <strong>not</strong> support ingesting from a publication created with
-<a href="https://www.postgresql.org/docs/current/sql-createpublication.html" ><code>publish_via_partition_root = true</code></a>,
-and doing so can produce incorrect results.</p>
-<p>See <a href="/ingest-data/postgres/partitioned-tables/" >Ingest from partitioned
-tables</a> for the supported
-approaches, including how to add and remove partitions over time.</p>
-<h3 id="replication-slots">Replication slots</h3>
-<p>Each source ingests the raw replication stream data for all tables in the
-specified publication using <strong>a single</strong> replication slot. To manage
-replication slots:</p>
-<ul>
-<li>
-<p>For PostgreSQL 13+, set a reasonable value
-for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-to limit the amount of storage used by replication slots.</p>
-</li>
-<li>
-<p>If you stop using Materialize, or if either the Materialize instance or
+
+Replicating tables that contain **unsupported [data types](/sql/types/)** is
+possible via the `TEXT COLUMNS` option. The specified columns will be
+treated as `text`; i.e., will not have the expected PostgreSQL type
+features. For example:
+
+* [`enum`]: When decoded as `text`, the implicit ordering of the original
+  PostgreSQL `enum` type is not preserved; instead, Materialize will sort values
+  as `text`.
+
+* [`money`]: When decoded as `text`, resulting `text` value cannot be cast
+back to `numeric`, since PostgreSQL adds typical currency formatting to the
+output.
+
+[`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
+[`money`]: https://www.postgresql.org/docs/current/datatype-money.html
+
+## How ingestion from PostgreSQL works
+
+### Replication slots
+
+Each source ingests the raw replication stream data for all tables in the
+specified publication using **a single** replication slot. To manage
+replication slots:
+
+- For PostgreSQL 13+, set a reasonable value
+for [`max_slot_wal_keep_size`](https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE)
+to limit the amount of storage used by replication slots.
+
+- If you stop using Materialize, or if either the Materialize instance or
 the PostgreSQL instance crash, delete any replication slots. You can query
-the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-replication slot created for each source.</p>
-</li>
-<li>
-<p>If you delete all objects that depend on a source without also dropping
+the `mz_internal.mz_postgres_sources` table to look up the name of the
+replication slot created for each source.
+
+- If you delete all objects that depend on a source without also dropping
 the source, the upstream replication slot remains and will continue to
 accumulate data so that the source can resume in the future. To avoid
-unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-</li>
-</ul>
-<h3 id="modifying-an-existing-source">Modifying an existing source</h3>
-<p>When you add a new subsource to an existing source (<a href="/sql/alter-source/" ><code>ALTER SOURCE ... ADD SUBSOURCE ...</code></a>), Materialize starts the snapshotting
+unbounded disk space usage, make sure to use [`DROP
+SOURCE`](/sql/drop-source/) or manually delete the replication slot.
+
+### Snapshotting
+
+The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+[`CTID`](https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID).
+Materialize uses
+[PostgreSQL statistics to estimate](https://www.postgresql.org/docs/current/row-estimation-examples.html)
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.
+
+To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL `ANALYZE` command.
+
+### Publication membership
+
+PostgreSQL's logical replication API does not provide a signal when users
+remove tables from publications. Because of this, Materialize relies on
+periodic checks to determine if a table has been removed from a publication,
+at which time it generates an irrevocable error, preventing any values from
+being read from the table.
+
+However, it is possible to remove a table from a publication and then re-add
+it before Materialize notices that the table was removed. In this case,
+Materialize can no longer provide any consistency guarantees about the data
+we present from the table and, unfortunately, is wholly unaware that this
+occurred.
+
+To mitigate this issue, if you need to drop and re-add a table to a
+publication, ensure that you remove the table/subsource from the source
+_before_ re-adding it using the [`DROP SOURCE`](/sql/drop-source/) command.
+
+### Inherited tables
+
+When using [PostgreSQL table inheritance](https://www.postgresql.org/docs/current/tutorial-inheritance.html),
+PostgreSQL serves data from `SELECT`s as if the inheriting tables' data is
+also present in the inherited table. However, both PostgreSQL's logical
+replication and `COPY` only present data written to the tables themselves,
+i.e. the inheriting data is _not_ treated as part of the inherited table.
+
+PostgreSQL sources use logical replication and `COPY` to ingest table data,
+so inheriting tables' data will only be ingested as part of the inheriting
+table, i.e. in Materialize, the data will not be returned when serving
+`SELECT`s from the inherited table.
+
+- If using legacy syntax [`CREATE SOURCE ... FOR
+  ...`](/sql/create-source/postgres/):
+
+  You can mimic PostgreSQL's `SELECT` behavior with inherited tables by
+  creating a materialized view that unions data from the inherited and
+  inheriting tables (using `UNION ALL`). However, if new tables inherit from
+  the table, data from the inheriting tables will not be available in the
+  view. You will need to add the inheriting tables via `ADD SUBSOURCE` and
+  create a new view (materialized or non-) that unions the new table.
+
+- If using new [`CREATE TABLE FROM SOURCE`](/sql/create-table/) syntax:
+
+  You can mimic PostgreSQL's `SELECT` behavior with inherited tables by
+  creating a materialized view that unions data from the inherited and
+  inheriting tables (using `UNION ALL`). However, if new tables inherit from
+  the table, data from the inheriting tables will not be available in the
+  view. You will need to add the inheriting tables via `CREATE TABLE .. FROM
+  SOURCE` and create a new view (materialized or non-) that unions the new
+  table.
+
+### Partitioned tables
+
+When you add a [declaratively partitioned
+table](https://www.postgresql.org/docs/current/ddl-partitioning.html) to a
+publication, PostgreSQL expands it to the table's leaf partitions; the parent
+table is not itself replicated. Materialize ingests one table per partition,
+which you can reassemble into the parent table using `UNION ALL`.
+
+Materialize does **not** support ingesting from a publication created with
+[`publish_via_partition_root =
+true`](https://www.postgresql.org/docs/current/sql-createpublication.html),
+and doing so can produce incorrect results.
+
+See [Ingest from partitioned
+tables](/ingest-data/postgres/partitioned-tables/) for the supported
+approaches, including how to add and remove partitions over time.
+
+### Modifying an existing source
+
+When you add a new subsource to an existing source ([`ALTER SOURCE ... ADD
+SUBSOURCE ...`](/sql/alter-source/)), Materialize starts the snapshotting
 process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
-once the process finishes, resize the cluster for steady-state.</p>
-<h3 id="snapshotting">Snapshotting</h3>
-<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
-workers using ranges of
-<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
-Materialize uses
-<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
-the amount of data and number of rows to read. Missing or stale statistics can result in uneven
-work distribution, reducing snapshot performance. They can also cause incorrect snapshot
-progress reporting in the Console.</p>
-<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
-date by running PostgreSQL <code>ANALYZE</code> command.</p>
+once the process finishes, resize the cluster for steady-state.
 
-## Handling upstream operations
+## Supported schema and table changes
+
+The following table summarizes how Materialize handles changes to an upstream
+table it is ingesting. See the details below the table for the remediation for
+each syntax.
+
+| Change | Effect |
+| --- | --- |
+| Foreign key, `CHECK`, or `EXCLUSION` constraint changes | No impact: Materialize ignores these changes. |
+| Dropping a column that is not ingested | No impact. |
+| Adding a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint | No impact. |
+| [Adding a column](#adding-a-column) | Handled automatically. Materialize keeps ingesting the existing columns. To pick up the new column, create a new table (current syntax) or re-add the subsource (legacy syntax). |
+| [Dropping an ingested column](#dropping-a-column) | Table enters an error state. Re-create the table. |
+| [Renaming an ingested column](#renaming-a-column) | Table enters an error state. Re-create the table. |
+| [Changing an ingested column's data type](#changing-a-columns-data-type) | Table enters an error state, unless the column is ingested as `text` via `TEXT COLUMNS`. Re-create the table. |
+| [Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint](#changing-constraints) that existed when the table was created | Table enters an error state. Re-create the table. |
+| [Dropping, renaming, or moving a table](#table-level-operations) | Table enters an error state. Re-create the table. |
+| [Removing a table from the publication](#table-level-operations) | Table enters an error state. Re-create the table. |
+| [Setting a replica identity other than `FULL`](#table-level-operations) | Table enters an error state. Re-create the table. |
+| [Truncating a table](#table-level-operations) | Table enters an error state. Use an unqualified `DELETE FROM` instead. |
 
 This section describes how changes to upstream tables that Materialize ingests
 affect the corresponding Materialize tables.
@@ -220,6 +258,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -239,10 +282,235 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
+
+## Supported database operations
+
+The following table summarizes how Materialize handles operational events on
+the upstream PostgreSQL database. See the details below the table for the error
+text and any required configuration.
+
+| Operation | Resolution |
+| --- | --- |
+| Restarting or patching PostgreSQL (including OS-level restarts) | Supported automatically. |
+| Restarting Materialize | Supported automatically. |
+| Transient network interruptions between Materialize and PostgreSQL | Supported automatically. |
+| Resizing the source cluster or changing its replication factor | Supported automatically. |
+| The upstream database running out of disk space | Supported automatically, once space is freed. |
+| [High-availability failover](#high-availability-failovers) | Requires re-creating the source. On self-managed Materialize, a configuration change can avoid this. |
+| [Point-in-time restore](#point-in-time-restore) | Requires re-creating the source. |
+| [Restoring from a volume or disk snapshot](#restoring-from-a-volume-or-disk-snapshot) | Not detected. Requires re-creating the source even though it keeps running. |
+| [Promoting a physical replica](#promotion-of-a-physical-replica) | Requires re-creating the source. |
+| [Replication slot invalidated](#replication-slot-invalidated) by WAL retention | Requires re-creating the source. |
+| [Replication slot dropped or rewound](#replication-slot-dropped-or-rewound) | Requires re-creating the source. |
+| [Dropping the publication](#dropping-the-publication) | Requires re-creating the source. |
+| [Major version upgrades](#major-version-upgrades) | Requires re-creating the source. |
+
+### Operations that do not require re-creating the source
+
+Materialize tracks a [log sequence number
+(LSN)](https://www.postgresql.org/docs/current/wal-internals.html) as it
+consumes the upstream write-ahead log (WAL), and the source's replication slot
+retains the WAL that Materialize has not yet consumed. Because the slot outlives
+the connection, routine operational events do not lose data: after a transient
+interruption the source stalls, then resumes from its committed LSN and catches
+up automatically. **No action is required** for the following operations:
+
+- Restarting or patching PostgreSQL (including OS-level restarts).
+- Restarting Materialize. The source resumes from its committed LSN and does
+  **not** re-snapshot already-ingested data.
+- Transient network interruptions between Materialize and PostgreSQL. These
+  surface as [`connection closed`](/ingest-data/postgres/connection-closed/).
+- Resizing the cluster that hosts the source, or changing its replication
+  factor. Briefly, the source may report [`replication slot ... is
+  active`](/ingest-data/postgres/replication-slot-active/) while the upstream
+  releases the slot from the previous connection.
+- The upstream database running out of disk space, once space is freed.
+
+> **Note:** Recovery after an interruption depends on the WAL that the replication slot is
+> holding still being available upstream. An interruption long enough for the slot
+> to be invalidated, or for the slot to be dropped, is not recoverable. See
+> [Replication slot invalidated](#replication-slot-invalidated) and [Replication
+> slot dropped or rewound](#replication-slot-dropped-or-rewound).
+
+> **Warning:** While a source is disconnected, the upstream WAL accumulates behind its
+> replication slot and cannot be reclaimed. A long outage, an undersized source
+> cluster, or a source cluster stuck in a restart loop can therefore consume
+> significant upstream disk. Monitor `restart_lsn` in
+> [`pg_replication_slots`](https://www.postgresql.org/docs/current/view-pg-replication-slots.html)
+> during planned maintenance.
+
+### Operations that require re-creating the source
+
+A smaller set of events breaks LSN continuity or destroys the replication slot.
+When this happens, Materialize cannot guarantee a correct, gap-free view of your
+data. Most of these put the **entire source** into an error or permanently
+stalled state. One, [restoring from a volume or disk
+snapshot](#restoring-from-a-volume-or-disk-snapshot), cannot be detected at all,
+so the source keeps running on diverged data. Every event in this section
+requires **re-creating** the source. Upstream changes to an individual table's
+schema are handled separately, and do not error the entire source.
+
+In each case below, the remediation is to drop and re-create the source:
+
+```mzsql
+DROP SOURCE mz_source CASCADE;
+
+CREATE SOURCE mz_source
+  FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source');
+
+-- Re-create the tables you were ingesting.
+CREATE TABLE table_1 FROM SOURCE mz_source (REFERENCE public.table_1);
+```
+
+If you are using the legacy `CREATE SOURCE ... FOR TABLES` syntax, re-create the
+source with the same `FOR TABLES` list instead of adding tables separately.
+
+Because a re-created source snapshots from the current state of the upstream
+database, any changes it missed while it was in an error state are reflected in
+the snapshot rather than replayed as individual updates.
+
+> **Warning:** `CASCADE` drops every object that depends on the source, including its tables,
+> views, materialized views, indexes, and sinks. Capture their definitions before
+> you run it, and re-create them once the new source has finished snapshotting.
+
+#### Point-in-time restore
+
+Restoring the source database from a backup, including restoring to a different
+server for disaster recovery, increments the PostgreSQL timeline and is detected
+as a discontinuity. The source fails with an error of the form:
+
+```
+unsupported action: database restored from point-in-time backup. Expected
+timeline ID 8 but got 9
+```
+
+The same error covers other events that change the timeline, such as a managed
+failover between replicas. To see the timeline a source is pinned to, query
+[`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources):
+
+```mzsql
+SELECT s.name, p.replication_slot, p.timeline_id
+FROM mz_internal.mz_postgres_sources p
+JOIN mz_catalog.mz_sources s ON s.id = p.id;
+```
+
+If your upstream fails over between replicas as part of routine maintenance, see
+[High-availability failovers](#high-availability-failovers).
+
+#### Restoring from a volume or disk snapshot
+
+Restoring the upstream data directory from a crash-consistent volume or disk
+snapshot rolls the database back, but preserves the timeline ID and the
+replication slot. Materialize cannot detect this kind of restore. The source
+keeps running without an error, but its contents diverge from upstream. This can
+surface later as incorrect results, or as negative-accumulation errors in
+queries such as `Non-positive multiplicity`.
+
+> **Warning:** After any restore of this kind, drop and re-create the source even if it reports
+> as `running`. Do not wait for the source to enter an error state, because it
+> will not.
+
+#### Promotion of a physical replica
+
+When a source reads from a physical standby (read replica) rather than the
+primary, promoting that standby to a primary fails the source with:
+
+```
+unsupported action: upstream physical replica status changed (e.g. a physical
+replica was promoted to a primary). Expected pg_is_in_recovery()=true but got
+false
+```
+
+Materialize detects the promotion while the replication stream is live, without
+waiting for a restart. Re-create the source against the promoted node.
+
+#### Replication slot invalidated
+
+PostgreSQL invalidates a replication slot once the WAL it holds exceeds
+[`max_slot_wal_keep_size`](https://www.postgresql.org/docs/current/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE).
+This protects the upstream from running out of disk, at the cost of ending
+replication. The source fails with:
+
+```
+replication slot has been invalidated because it exceeded the maximum reserved
+size
+```
+
+To avoid this, size the source cluster so that it keeps up with the upstream
+write rate, and set `max_slot_wal_keep_size` high enough to cover your longest
+expected outage. Some hosted PostgreSQL services set this value for you and do
+not allow it to be raised.
+
+#### Replication slot dropped or rewound
+
+If the slot Materialize is using is dropped upstream, or the upstream is rebuilt
+from a base backup (which does not carry replication slots), a new slot starts
+at the current LSN, past the point the source needs to resume from. The source
+stalls with:
+
+```
+slot overcompacted. Requested LSN ... but only LSNs >= ... are available
+```
+
+For diagnosis steps, see [Slot
+overcompacted](/ingest-data/postgres/slot-overcompacted/). PostgreSQL refuses to
+drop a slot that is in use, so this generally happens only while the source is
+paused or disconnected.
+
+Not every rewind is caught this way. A rewind that leaves the slot able to serve
+the LSN the source asks for, such as [restoring from a volume or disk
+snapshot](#restoring-from-a-volume-or-disk-snapshot), raises no error at all.
+
+#### Dropping the publication
+
+Running `DROP PUBLICATION` upstream stalls the source, and all of its tables,
+with:
+
+```
+publication "mz_source" does not exist
+```
+
+Re-create the publication upstream, then re-create the source.
+
+#### Major version upgrades
+
+A PostgreSQL major version upgrade rewrites the on-disk format and does not
+preserve the replication slot, so there is no in-place recovery. To upgrade without a gap in your downstream views, run a second source
+against the upgraded instance in parallel and cut over once it has hydrated. See
+[Upgrade the major version of your PostgreSQL
+source](/ingest-data/postgres/major-version-upgrade/).
+
+### High-availability failovers
+
+Some managed PostgreSQL services increment the timeline during routine
+high-availability operations, such as maintenance, a machine-tier change, or an
+automatic failover between replicas. Materialize cannot distinguish these from a
+genuine restore, so by default they fail the source with the [`Expected timeline
+ID`](#point-in-time-restore) error.
+
+On self-managed Materialize, where the upstream service guarantees that a
+failover is a contiguous fork of the WAL with no data loss, you can disable
+timeline validation with the
+[`pg_source_validate_timeline`](/sql/alter-system-set/) system parameter:
+
+```mzsql
+ALTER SYSTEM SET pg_source_validate_timeline = false;
+```
+
+This parameter is not available on Materialize Cloud. There, a
+high-availability failover that changes the timeline requires re-creating the
+source.
+
+> **Warning:** Disabling this check is a trade-off. With it off, Materialize also does **not**
+> detect a genuine [point-in-time restore](#point-in-time-restore) or any other
+> discontinuous timeline change, and silently ingesting across one can corrupt the
+> contents of the source. Only disable it when your provider documents that its
+> failovers preserve WAL continuity for logical replication subscribers, and
+> re-create the source manually after any operation that does not.
 
 ---
 
@@ -326,192 +594,7 @@ output.
 [`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
 [`money`]: https://www.postgresql.org/docs/current/datatype-money.html
 
-See also: [PostgreSQL considerations](/ingest-data/postgres/#considerations).
-
----
-
-## Guide: Handle upstream schema changes with zero downtime
-
-> **Public Preview:** This feature is in public preview.
-
-> **Note:** - Changing column types is currently unsupported.
-
-Materialize allows you to handle certain types of upstream
-table schema changes seamlessly, specifically:
-
-- Adding a column in the upstream database.
-- Dropping a column in the upstream database.
-
-This guide walks you through how to handle these changes without any downtime in Materialize.
-
-## Prerequisites
-
-Some familiarity with Materialize. If you've never used Materialize before,
-start with our [guide to getting started](/get-started/quickstart/).
-
-### Set up a PostgreSQL database
-
-For this guide, setup a PostgreSQL 11+ database. In your PostgreSQL, create a
-table `T` and populate:
-
-```sql
-CREATE TABLE T (
-    A INT
-);
-
-INSERT INTO T (A) VALUES
-    (10);
-```
-
-### Connect your source database to Materialize
-
-To create a source from PostgreSQL 11+, you must first:
-
-- **Configure upstream PostgreSQL instance**
-  - Set up logical replication.
-  - Create a publication.
-  - Create a replication user and password for Materialize to use to connect.
-- **Configure network security**
-  - Ensure Materialize can connect to your PostgreSQL instance.
-- **Create a connection to PostgreSQL in Materialize**
-  - The connection setup depends on the network security configuration.
-
-For details, see the [PostgreSQL integration
-guides](/ingest-data/postgres/#integration-guides).
-
-## Create a source using the new syntax
-
-In Materialize, create a source using the updated [`CREATE SOURCE`
-syntax](/sql/create-source/postgres-v2/).
-
-```sql
-CREATE SOURCE IF NOT EXISTS my_source
-    FROM POSTGRES CONNECTION my_connection (PUBLICATION 'mz_source');
-```
-
-Unlike the [legacy syntax](/sql/create-source/postgres/), the new syntax does
-not include the `FOR [[ALL] TABLES|SCHEMAS]` clause; i.e., the new syntax does
-not create corresponding subsources in Materialize automatically. Instead, the
-new syntax requires a separate [`CREATE TABLE ... FROM
-SOURCE`](/sql/create-table/), which will create the corresponding tables and
-start the snapshotting process. See [Create a table from the
-source](#create-a-table-from-the-source).
-
-> **Note:** The [legacy syntax](/sql/create-source/postgres/) is still supported. However,
-> the legacy syntax doesn't support upstream schema changes.
-
-## Create a table from the source
-To start ingesting specific tables from your source database, you can create a
-table in Materialize. We'll add it into the v1 schema in Materialize.
-
-```sql
-CREATE SCHEMA v1;
-
-CREATE TABLE v1.T
-    FROM SOURCE my_source(REFERENCE public.T);
-```
-
-Once you've created a table from source, the [initial
-snapshot](/ingest-data/#snapshotting) of table `v1.T` will begin.
-
-> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
-> source is temporarily blocked. As such, if possible, you can resize the cluster
-> to speed up the snapshotting process and once the process finishes, resize the
-> cluster for steady-state. You can monitor the snapshot progress on the overview
-> page for the source in the Materialize console.
-
-## Create a view on top of the table.
-
-For this guide, add a materialized view `matview` (also in schema `v1`) that
-sums column `A` from table `T`.
-
-```sql
-CREATE MATERIALIZED VIEW v1.matview AS
-    SELECT SUM(A) from v1.T;
-```
-
-## Handle upstream column addition
-
-### A. Add a column in your upstream PostgreSQL database
-
-In your upstream PostgreSQL database, add a new column `B` to the table `T`:
-
-```sql
-ALTER TABLE T
-    ADD COLUMN B BOOLEAN DEFAULT false;
-
-INSERT INTO T (A, B) VALUES
-    (20, true);
-```
-
-This operation will have no immediate effect in Materialize. In Materialize,
-`v1.T` will continue to ingest only column `A`. The materialized view
-`v1.matview` will continue to have access to column `A` as well.
-
-### B. Incorporate the new column in Materialize
-
-To incorporate the new column into Materialize, create a new `v2` schema and
-recreate the table in the new schema:
-
-```sql
-CREATE SCHEMA v2;
-
-CREATE TABLE v2.T
-    FROM SOURCE my_source(REFERENCE public.T);
-```
-
-The [snapshotting](/ingest-data/#snapshotting) of table `v2.T` will begin.
-`v2.T` will include columns `A` and `B`.
-
-> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
-> source is temporarily blocked. As such, if possible, you can resize the cluster
-> to speed up the snapshotting process and once the process finishes, resize the
-> cluster for steady-state. You can monitor the snapshot progress on the overview
-> page for the source in the Materialize console.
-
-When the new `v2.T` table has finished snapshotting, create a new materialized
-view `matview` in the new schema.  Since the new `v2.matview` is referencing the
-new `v2.T`, it can reference column `B`:
-
-```sql {hl_lines="4"}
-CREATE MATERIALIZED VIEW v2.matview AS
-    SELECT SUM(A)
-    FROM v2.T
-    WHERE B = true;
-```
-
-## Handle upstream column drop
-
-### A. Exclude the column in Materialize
-
-To drop a column safely, in Materialize, first, create a new `v3` schema, and
-recreate table `T` in the new schema but exclude the column to drop. In this
-example, we'll drop the column B.
-
-```sql
-CREATE SCHEMA v3;
-CREATE TABLE v3.T
-    FROM SOURCE my_source(REFERENCE public.T) WITH (EXCLUDE COLUMNS (B));
-```
-
-> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
-> source is temporarily blocked. As such, if possible, you can resize the cluster
-> to speed up the snapshotting process and once the process finishes, resize the
-> cluster for steady-state. You can monitor the snapshot progress on the overview
-> page for the source in the Materialize console.
-
-### B. Drop a column in your upstream PostgreSQL database
-
-In your upstream PostgreSQL database, drop the column `B` from the table `T`:
-
-```sql
-ALTER TABLE T DROP COLUMN B;
-```
-
-Dropping the column B will have no effect on `v3.T`. However, the drop affects
-`v2.T` and `v2.matview` from our earlier examples. When the user attempts to
-read from either, Materialize will report an error that the source table schema
-has been altered.
+See also: [Supported data types](/ingest-data/postgres/#supported-data-types).
 
 ---
 
@@ -1133,6 +1216,501 @@ DELETE FROM orders WHERE order_date >= '2026-01-01' AND order_date < '2026-02-01
 
 ---
 
+## Guide: Upgrade the major version of your PostgreSQL source
+
+This guide shows you how to upgrade the **major version** (for example,
+PostgreSQL 15 to 16) of the upstream database behind a Materialize
+[PostgreSQL source](/sql/create-source/postgres/) while keeping Materialize
+serving fresh results.
+
+The challenge specific to Materialize is that the source holds an active
+[logical replication slot](https://www.postgresql.org/docs/current/logical-replication.html)
+on the upstream primary. A major-version upgrade replaces the primary with a
+new instance running the new version, and the replication slot does **not**
+carry over automatically. How you handle the slot determines whether reads stay
+fresh through the upgrade.
+
+The approach in this guide keeps Materialize continuously fresh. You keep the
+existing source running against the old primary the entire time, build the
+new-version primary in parallel, and hydrate a second source against it before
+cutting consumers over.
+
+> **Note:** This procedure involves a brief **write** freeze on the application at the
+> moment of cutover, which is inherent to any major-version upgrade. Materialize
+> keeps serving fresh **reads** throughout.
+
+> **Warning:** Managed upgrade services that swap the primary out from under Materialize, such
+> as [Amazon RDS Blue/Green
+> deployments](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments.html),
+> cannot be used while a Materialize source is attached. See [Why managed
+> Blue/Green deployments don't work](#why-managed-bluegreen-deployments-dont-work).
+
+## Upgrade with a parallel source
+
+```text
+app writes ──▶ PG (old major) ──native logical replication──▶ PG (new major)
+                    │                                              │
+                    ▼                                              ▼
+              existing source                                new source
+              (serving fresh)                          (snapshotting + catching up)
+```
+
+### 1. Stand up the new-version primary
+
+Provision a new PostgreSQL instance running the target major version, with
+logical replication enabled (for RDS, `rds.logical_replication = 1`; see
+[enable logical replication](/ingest-data/postgres/amazon-rds/#1-enable-logical-replication)).
+
+### 2. Create the table definitions on the new primary
+
+Logical replication does **not** replicate DDL, so the tables you replicate
+must already exist on the new primary, with matching definitions and with
+`REPLICA IDENTITY FULL` set:
+
+```sql
+-- On the new-version primary, recreate each replicated table...
+CREATE TABLE my_table (
+    id      bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    balance numeric NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ...then set REPLICA IDENTITY FULL on it.
+ALTER TABLE my_table REPLICA IDENTITY FULL;
+```
+
+For anything beyond a handful of tables, generate the definitions from the old
+primary with `pg_dump --schema-only` rather than transcribing them by hand.
+
+### 3. Replicate old to new with native logical replication
+
+#### Check capacity on the old primary
+
+The upgrade subscription adds a second logical consumer alongside Materialize's
+own slot, so confirm the old primary has room for it before you create it:
+
+Setting                 | Guidance
+------------------------|---------
+`max_replication_slots` | At least the total number of logical subscriptions plus any physical replicas.
+`max_wal_senders`       | At least `max_replication_slots` plus the number of active physical replicas.
+`max_slot_wal_keep_size`| Large enough to retain WAL while the new primary snapshots the tables and catches up. If it is too small, the slot is dropped and you start over; see [replication slot overcompacted](/ingest-data/postgres/slot-overcompacted/).
+
+Depending on your workload, other settings may also need headroom. Raising
+`max_replication_slots` or `max_wal_senders` requires a restart of the old
+primary, so plan for it before the upgrade window.
+
+#### Create the publication and subscription
+
+On the **old** primary, create (or reuse) a publication for the tables you
+replicate to Materialize:
+
+```sql
+-- On the old primary.
+CREATE PUBLICATION upgrade_pub FOR TABLE my_table;
+```
+
+On the **new** primary, subscribe to it:
+
+```sql
+-- On the new primary.
+CREATE SUBSCRIPTION upgrade_sub
+    CONNECTION 'host=OLD_PRIMARY_HOST port=5432 dbname=DB user=REPL_USER password=...'
+    PUBLICATION upgrade_pub;
+```
+
+A single publication can feed **multiple** subscribers, so the old primary now
+has two logical consumers at once, Materialize's slot and this subscription's
+slot, coexisting without conflict. Confirm both are active:
+
+```sql
+-- On the old primary.
+SELECT slot_name, plugin, active FROM pg_replication_slots;
+```
+
+> **Warning:** Ensure the new primary can reach the old primary on the PostgreSQL port. In a
+> cloud VPC, the upstream endpoint typically resolves to a **private** IP, so the
+> security group must allow instance-to-instance traffic, not just the client's
+> IP.
+
+### 4. Create a parallel source in Materialize
+
+Leave your existing source untouched and serving. Create a **second**
+connection and source pointed at the new primary, in its own schema and on its
+own cluster so the subsources and downstream objects don't collide and don't
+contend with production for resources:
+
+```mzsql
+CREATE SCHEMA upgrade;
+CREATE CLUSTER upgrade_compute (SIZE = '<size>');
+
+CREATE SOURCE upgrade.my_source
+    FROM POSTGRES CONNECTION pg_new (PUBLICATION 'upgrade_pub')
+    FOR ALL TABLES;
+```
+
+The new source begins [snapshotting](/ingest-data/#snapshotting) and then
+catches up. Snapshot time scales with data volume and is the long pole of the
+upgrade, but it happens **in the background** while the existing source keeps
+serving fresh. Recreate your downstream views, materialized views, and indexes
+in the `upgrade` schema on the `upgrade_compute` cluster, mirroring the schema
+and cluster your production objects use.
+
+### 5. Cut over
+
+Once the new source has caught up, perform a coordinated cutover:
+
+1. **Freeze application writes** to the old primary.
+1. **Drain replication:** wait until the new primary matches the old primary
+   exactly. Comparing an order-independent fingerprint across both databases is
+   a reliable check:
+
+    ```sql
+    SELECT count(*), sum(id), min(id), max(id), count(DISTINCT id) FROM my_table;
+    ```
+
+1. **Synchronize sequences.** Native logical replication does **not** advance
+   sequences on the target. Copy each sequence's value forward, or post-cutover
+   inserts will collide on the primary key:
+
+    ```sql
+    -- Read on the old primary...
+    SELECT last_value FROM my_table_id_seq;
+    -- ...then set on the new primary.
+    SELECT setval('my_table_id_seq', <last_value>);
+    ```
+
+1. **Drain both sources:** wait until both sources in Materialize reflect the
+   frozen state, then verify the fingerprint matches across the old primary,
+   new primary, existing source, and new source.
+1. **Swap the schemas and clusters.** Rather than repointing each consumer,
+   swap the production schema and cluster with their `upgrade` counterparts.
+   Each swap is atomic, so consumers keep referencing the same
+   schema-qualified names and the same cluster name:
+
+    ```mzsql
+    ALTER SCHEMA public SWAP WITH upgrade;
+    ALTER CLUSTER prod_compute SWAP WITH upgrade_compute;
+    ```
+
+    To roll back, run the same statements again.
+
+1. **Resume application writes**, now pointed at the new primary.
+
+Throughout the cutover, reads against Materialize stay live and fresh. The
+existing source serves until the swap, and the new source is already caught up
+at the swap.
+
+> **Warning:** If you have [sinks](/sql/create-sink/), create them in a **dedicated schema and
+> cluster** that is excluded from the swap. Sinks must not be recreated as part of
+> a blue/green cutover; instead, cut them over to the new definition of their
+> upstream dependencies after the swap. This mirrors the guidance in [blue/green
+> deployments with dbt](/manage/dbt/blue-green-deployments/).
+
+> **Note:** Any active [`SUBSCRIBE`](/sql/subscribe/) commands attached to a swapped
+> cluster will break at the swap. On retry, the client automatically connects to
+> the newly deployed cluster.
+
+### 6. Decommission
+
+Drop the subscription on the new primary, drop the old source in Materialize,
+and decommission the old primary and the swapped-out cluster.
+
+## Why managed Blue/Green deployments don't work
+
+[Amazon RDS Blue/Green deployments](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/blue-green-deployments.html)
+let AWS build the upgraded "green" instance, keep it in sync, and swap endpoints
+at switchover. This is an appealing shortcut, but it is **not compatible with an
+attached Materialize source**.
+
+Creating the deployment fails at `CREATING_READ_REPLICA_OF_SOURCE` with *"external
+replication on the blue primary instance"*. One of the documented prerequisites
+is that the DB instance is not the source or target of external replication, and
+Materialize's logical replication slot is external replication. No RDS setting
+bypasses this.
+
+Releasing the slot by [dropping the source](/sql/drop-source/) does let the
+deployment be created, but that is not a viable production step:
+
+- `DROP SOURCE` defaults to `RESTRICT` and fails when the source has dependents.
+  Forcing it with `CASCADE` drops the entire downstream dataflow, including
+  tables, views, materialized views, indexes, and sinks, which means rebuilding
+  and rehydrating your environment, not a brief pause.
+- Even after the switchover, Materialize's original slot on blue is unusable, so
+  the new source must snapshot from scratch against green.
+
+The result is a staleness window that begins when you detach from blue and lasts
+through provisioning and a full re-snapshot. Use the [parallel
+source](#upgrade-with-a-parallel-source) procedure above instead: it keeps the
+existing source serving fresh for the entire upgrade, and the only coordinated
+pause is the write freeze at cutover.
+
+## Considerations
+
+- **DDL is not replicated.** Pre-create the target schema on the new instance
+  before subscribing.
+- **Sequences are not advanced on the target** by native logical replication.
+  Synchronize them at cutover.
+- **`REPLICA IDENTITY FULL`** must be set on replicated tables so Materialize
+  captures all column values on updates and deletes.
+- **A publication can feed multiple subscribers**, so Materialize's slot and the
+  upgrade subscription's slot coexist on the old primary without conflict, as
+  long as the old primary has slot and WAL sender capacity for both.
+
+## Related pages
+
+- [Ingest data from Amazon RDS](/ingest-data/postgres/amazon-rds/)
+- [Guide: Ingest from a dedicated PostgreSQL replica](/ingest-data/postgres/logical-replica/)
+- [Handle upstream schema changes](/ingest-data/postgres/source-versioning/)
+- [Blue/green deployments with dbt](/manage/dbt/blue-green-deployments/)
+- [`ALTER SCHEMA`](/sql/alter-schema/)
+- [`ALTER CLUSTER`](/sql/alter-cluster/)
+
+---
+
+## Handle upstream schema changes
+
+> **Public Preview:** This feature is in public preview.
+
+> **Note:** - Changing column types is currently unsupported.
+
+Materialize allows you to handle certain types of upstream
+table schema changes seamlessly, specifically:
+
+- Adding a column in the upstream database.
+- Dropping a column in the upstream database.
+- Dropping a `PRIMARY KEY` or `UNIQUE` constraint in the upstream database.
+
+This guide walks you through how to handle these changes without any downtime in Materialize.
+
+## Prerequisites
+
+Some familiarity with Materialize. If you've never used Materialize before,
+start with our [guide to getting started](/get-started/quickstart/).
+
+### Set up a PostgreSQL database
+
+For this guide, setup a PostgreSQL 11+ database. In your PostgreSQL, create a
+table `T` and populate:
+
+```sql
+CREATE TABLE T (
+    A INT,
+    CONSTRAINT t_pkey PRIMARY KEY (A)
+);
+
+INSERT INTO T (A) VALUES
+    (10);
+```
+
+### Connect your source database to Materialize
+
+To create a source from PostgreSQL 11+, you must first:
+
+- **Configure upstream PostgreSQL instance**
+  - Set up logical replication.
+  - Create a publication.
+  - Create a replication user and password for Materialize to use to connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your PostgreSQL instance.
+- **Create a connection to PostgreSQL in Materialize**
+  - The connection setup depends on the network security configuration.
+
+For details, see the [PostgreSQL integration
+guides](/ingest-data/postgres/#integration-guides).
+
+## Create a source using the new syntax
+
+In Materialize, create a source using the updated [`CREATE SOURCE`
+syntax](/sql/create-source/postgres-v2/).
+
+```sql
+CREATE SOURCE IF NOT EXISTS my_source
+    FROM POSTGRES CONNECTION my_connection (PUBLICATION 'mz_source');
+```
+
+Unlike the [legacy syntax](/sql/create-source/postgres/), the new syntax does
+not include the `FOR [[ALL] TABLES|SCHEMAS]` clause; i.e., the new syntax does
+not create corresponding subsources in Materialize automatically. Instead, the
+new syntax requires a separate [`CREATE TABLE ... FROM
+SOURCE`](/sql/create-table/), which will create the corresponding tables and
+start the snapshotting process. See [Create a table from the
+source](#create-a-table-from-the-source).
+
+> **Note:** The [legacy syntax](/sql/create-source/postgres/) is still supported. However,
+> the legacy syntax doesn't support upstream schema changes.
+
+## Create a table from the source
+To start ingesting specific tables from your source database, you can create a
+table in Materialize. We'll add it into the v1 schema in Materialize.
+
+```sql
+CREATE SCHEMA v1;
+
+CREATE TABLE v1.T
+    FROM SOURCE my_source(REFERENCE public.T);
+```
+
+Once you've created a table from source, the [initial
+snapshot](/ingest-data/#snapshotting) of table `v1.T` will begin.
+
+> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
+> source is temporarily blocked. As such, if possible, you can resize the cluster
+> to speed up the snapshotting process and once the process finishes, resize the
+> cluster for steady-state. You can monitor the snapshot progress on the overview
+> page for the source in the Materialize console.
+
+## Create a view on top of the table.
+
+For this guide, add a materialized view `matview` (also in schema `v1`) that
+sums column `A` from table `T`.
+
+```sql
+CREATE MATERIALIZED VIEW v1.matview AS
+    SELECT SUM(A) from v1.T;
+```
+
+## Handle upstream column addition
+
+### A. Add a column in your upstream PostgreSQL database
+
+In your upstream PostgreSQL database, add a new column `B` to the table `T`:
+
+```sql
+ALTER TABLE T
+    ADD COLUMN B BOOLEAN DEFAULT false;
+
+INSERT INTO T (A, B) VALUES
+    (20, true);
+```
+
+This operation will have no immediate effect in Materialize. In Materialize,
+`v1.T` will continue to ingest only column `A`. The materialized view
+`v1.matview` will continue to have access to column `A` as well.
+
+### B. Incorporate the new column in Materialize
+
+To incorporate the new column into Materialize, create a new `v2` schema and
+recreate the table in the new schema:
+
+```sql
+CREATE SCHEMA v2;
+
+CREATE TABLE v2.T
+    FROM SOURCE my_source(REFERENCE public.T);
+```
+
+The [snapshotting](/ingest-data/#snapshotting) of table `v2.T` will begin.
+`v2.T` will include columns `A` and `B`.
+
+> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
+> source is temporarily blocked. As such, if possible, you can resize the cluster
+> to speed up the snapshotting process and once the process finishes, resize the
+> cluster for steady-state. You can monitor the snapshot progress on the overview
+> page for the source in the Materialize console.
+
+When the new `v2.T` table has finished snapshotting, create a new materialized
+view `matview` in the new schema.  Since the new `v2.matview` is referencing the
+new `v2.T`, it can reference column `B`:
+
+```sql {hl_lines="4"}
+CREATE MATERIALIZED VIEW v2.matview AS
+    SELECT SUM(A)
+    FROM v2.T
+    WHERE B = true;
+```
+
+## Handle upstream column drop
+
+### A. Exclude the column in Materialize
+
+To drop a column safely, in Materialize, first, create a new `v3` schema, and
+recreate table `T` in the new schema but exclude the column to drop. In this
+example, we'll drop the column B.
+
+```sql
+CREATE SCHEMA v3;
+CREATE TABLE v3.T
+    FROM SOURCE my_source(REFERENCE public.T) WITH (EXCLUDE COLUMNS (B));
+```
+
+> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
+> source is temporarily blocked. As such, if possible, you can resize the cluster
+> to speed up the snapshotting process and once the process finishes, resize the
+> cluster for steady-state. You can monitor the snapshot progress on the overview
+> page for the source in the Materialize console.
+
+### B. Drop a column in your upstream PostgreSQL database
+
+In your upstream PostgreSQL database, drop the column `B` from the table `T`:
+
+```sql
+ALTER TABLE T DROP COLUMN B;
+```
+
+Dropping the column B will have no effect on `v3.T`. However, the drop affects
+`v2.T` and `v2.matview` from our earlier examples. When the user attempts to
+read from either, Materialize will report an error that the source table schema
+has been altered.
+
+## Handle upstream constraint drop
+
+> **Public Preview:** This feature is in public preview.
+
+Materialize ignores the following constraints: foreign key, `CHECK`, and
+`EXCLUSION`. As such, you can add or drop them without affecting ingestion.
+To handle changes in `PRIMARY KEY`, `UNIQUE`, and `NOT NULL` constraints,
+follow the steps below.
+
+### A. Exclude the constraint in Materialize
+
+To drop a `PRIMARY KEY`, `UNIQUE`, or `NOT NULL` constraint, in Materialize,
+first, create a new `v4` schema, and recreate table `T` in the new schema but
+exclude the constraint to drop. In this example, we'll drop the primary key
+`t_pkey`. The constraint name is a string literal and must match the upstream
+name exactly, including case.
+
+```sql
+CREATE SCHEMA v4;
+CREATE TABLE v4.T
+    FROM SOURCE my_source(REFERENCE public.T) WITH (EXCLUDE CONSTRAINTS ('t_pkey'));
+```
+
+Materialize does not record the excluded constraint as a key of `v4.T`.
+
+`EXCLUDE CONSTRAINTS` only accepts `PRIMARY KEY` and `UNIQUE` constraint
+names. A `NOT NULL` constraint on a specific column cannot be excluded by
+name. To drop a `NOT NULL` constraint safely, use `EXCLUDE ALL CONSTRAINTS`
+instead, which records no constraints at all: the table has no keys and every
+column is nullable, so any later constraint drop is safe.
+
+```sql
+CREATE SCHEMA v4;
+CREATE TABLE v4.T
+    FROM SOURCE my_source(REFERENCE public.T) WITH (EXCLUDE ALL CONSTRAINTS);
+```
+
+> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
+> source is temporarily blocked. As such, if possible, you can resize the cluster
+> to speed up the snapshotting process and once the process finishes, resize the
+> cluster for steady-state. You can monitor the snapshot progress on the overview
+> page for the source in the Materialize console.
+
+### B. Drop the constraint in your upstream PostgreSQL database
+
+In your upstream PostgreSQL database, drop the constraint `t_pkey` from the
+table `T`:
+
+```sql
+ALTER TABLE T DROP CONSTRAINT t_pkey;
+```
+
+Dropping the constraint will have no effect on `v4.T`. However, the drop affects
+`v3.T` from our earlier example, which still records `t_pkey` as a key. When the
+user attempts to read from it, Materialize will report an error that the
+constraint was dropped upstream.
+
+---
+
 ## Ingest data from AlloyDB
 
 This page shows you how to stream data from [AlloyDB for PostgreSQL](https://cloud.google.com/alloydb)
@@ -1275,7 +1853,7 @@ Materialize with AlloyDB:
 
 **Allow Materialize IPs:**
 
-1. In the [Materialize console's SQL Shell](/console/),
+1. In the [Materialize console's SQL Shell](/developer-tools/console/),
    or your preferred SQL client connected to Materialize, find the static egress
    IP addresses for the Materialize region you are running in:
 
@@ -1307,7 +1885,7 @@ network to allow traffic from the bastion host.
 1. Configure the SSH bastion host to allow traffic only from Materialize.
 
     1. In the [Materialize console's SQL
-       Shell](/console/), or your preferred SQL client
+       Shell](/developer-tools/console/), or your preferred SQL client
        connected to Materialize, get the static egress IP addresses for the
        Materialize region you are running in:
 
@@ -1379,7 +1957,7 @@ network to allow traffic from the bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
+In Materialize, a [cluster](/fundamentals/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
@@ -1389,7 +1967,7 @@ combination.
 In this step, you'll create a dedicated cluster for ingesting source data from
 your PostgreSQL database.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
    command to create the new cluster:
 
@@ -1417,7 +1995,7 @@ your networking configuration.
 
 **Allow Materialize IPs:**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 SECRET`](/sql/create-secret/) command to securely store the password for the
 `materialize` PostgreSQL user you created
@@ -1448,7 +2026,7 @@ use:
 
 **Use an SSH tunnel:**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 CONNECTION`](/sql/create-connection/#ssh-tunnel) command to create an SSH
 tunnel connection:   ```mzsql
@@ -1549,7 +2127,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -1577,7 +2155,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -1648,7 +2226,7 @@ accordingly.
 follows:
 
     1. In Materialize, get the replication slot name associated with your
-    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources)
     table:
 
         ```mzsql
@@ -1698,25 +2276,11 @@ new data arrives, and serving results efficiently.
   or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
   [`CREATE SINK`](/sql/create-sink/).
 
-- Check out the [tools and integrations](/integrations/) supported by
+- Check out the [tools and integrations](/developer-tools/integrations/) supported by
   Materialize.
 
 ## Considerations
 
-<h3 id="publication-membership">Publication membership</h3>
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
-remove tables from publications. Because of this, Materialize relies on
-periodic checks to determine if a table has been removed from a publication,
-at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
-it before Materialize notices that the table was removed. In this case,
-Materialize can no longer provide any consistency guarantees about the data
-we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
-<p>To mitigate this issue, if you need to drop and re-add a table to a
-publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
@@ -1737,6 +2301,54 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
+<h3 id="replication-slots">Replication slots</h3>
+<p>Each source ingests the raw replication stream data for all tables in the
+specified publication using <strong>a single</strong> replication slot. To manage
+replication slots:</p>
+<ul>
+<li>
+<p>For PostgreSQL 13+, set a reasonable value
+for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
+to limit the amount of storage used by replication slots.</p>
+</li>
+<li>
+<p>If you stop using Materialize, or if either the Materialize instance or
+the PostgreSQL instance crash, delete any replication slots. You can query
+the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
+replication slot created for each source.</p>
+</li>
+<li>
+<p>If you delete all objects that depend on a source without also dropping
+the source, the upstream replication slot remains and will continue to
+accumulate data so that the source can resume in the future. To avoid
+unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
+</li>
+</ul>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
+<h3 id="publication-membership">Publication membership</h3>
+<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
+remove tables from publications. Because of this, Materialize relies on
+periodic checks to determine if a table has been removed from a publication,
+at which time it generates an irrevocable error, preventing any values from
+being read from the table.</p>
+<p>However, it is possible to remove a table from a publication and then re-add
+it before Materialize notices that the table was removed. In this case,
+Materialize can no longer provide any consistency guarantees about the data
+we present from the table and, unfortunately, is wholly unaware that this
+occurred.</p>
+<p>To mitigate this issue, if you need to drop and re-add a table to a
+publication, ensure that you remove the table/subsource from the source
+<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
@@ -1779,46 +2391,12 @@ and doing so can produce incorrect results.</p>
 <p>See <a href="/ingest-data/postgres/partitioned-tables/" >Ingest from partitioned
 tables</a> for the supported
 approaches, including how to add and remove partitions over time.</p>
-<h3 id="replication-slots">Replication slots</h3>
-<p>Each source ingests the raw replication stream data for all tables in the
-specified publication using <strong>a single</strong> replication slot. To manage
-replication slots:</p>
-<ul>
-<li>
-<p>For PostgreSQL 13+, set a reasonable value
-for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-to limit the amount of storage used by replication slots.</p>
-</li>
-<li>
-<p>If you stop using Materialize, or if either the Materialize instance or
-the PostgreSQL instance crash, delete any replication slots. You can query
-the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-replication slot created for each source.</p>
-</li>
-<li>
-<p>If you delete all objects that depend on a source without also dropping
-the source, the upstream replication slot remains and will continue to
-accumulate data so that the source can resume in the future. To avoid
-unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-</li>
-</ul>
 <h3 id="modifying-an-existing-source">Modifying an existing source</h3>
 <p>When you add a new subsource to an existing source (<a href="/sql/alter-source/" ><code>ALTER SOURCE ... ADD SUBSOURCE ...</code></a>), Materialize starts the snapshotting
 process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
-<h3 id="snapshotting">Snapshotting</h3>
-<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
-workers using ranges of
-<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
-Materialize uses
-<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
-the amount of data and number of rows to read. Missing or stale statistics can result in uneven
-work distribution, reducing snapshot performance. They can also cause incorrect snapshot
-progress reporting in the Console.</p>
-<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
-date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 ## Handling upstream operations
 
@@ -1873,6 +2451,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -1892,7 +2475,7 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
@@ -2048,7 +2631,7 @@ to connect:
 
 **Allow Materialize IPs:**
 
-1. In the [SQL Shell](/console/) or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/) or your preferred SQL
    client connected to Materialize, find the static egress IP addresses for the
    Materialize region you are running in:
 
@@ -2182,7 +2765,7 @@ network to allow traffic from the bastion host.
 
 1. Configure the SSH bastion host to allow traffic only from Materialize.
 
-    1. In the [SQL Shell](/console/), or your preferred
+    1. In the [SQL Shell](/developer-tools/console/), or your preferred
        SQL client connected to Materialize, get the static egress IP addresses for
        the Materialize region you are running in:
 
@@ -2272,7 +2855,7 @@ network to allow traffic from the bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
+In Materialize, a [cluster](/fundamentals/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
@@ -2282,7 +2865,7 @@ combination.
 In this step, you'll create a dedicated cluster for ingesting source data from
 your PostgreSQL database.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
    command to create the new cluster:
 
@@ -2310,7 +2893,7 @@ your networking configuration.
 
 **Allow Materialize IPs:**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 SECRET`](/sql/create-secret/) command to securely store the password for the
 `materialize` PostgreSQL user you created
@@ -2349,7 +2932,7 @@ use:
 
 **Use AWS PrivateLink (Cloud-only):**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 CONNECTION`](/sql/create-connection/#aws-privatelink) command to create an
 AWS PrivateLink connection:   ```mzsql
@@ -2432,7 +3015,7 @@ details for Materialize to use:
 
 **Use an SSH tunnel:**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 CONNECTION`](/sql/create-connection/#ssh-tunnel) command to create an SSH
 tunnel connection:   ```mzsql
@@ -2543,7 +3126,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -2571,7 +3154,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -2642,7 +3225,7 @@ accordingly.
 follows:
 
     1. In Materialize, get the replication slot name associated with your
-    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources)
     table:
 
         ```mzsql
@@ -2692,25 +3275,11 @@ new data arrives, and serving results efficiently.
   or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
   [`CREATE SINK`](/sql/create-sink/).
 
-- Check out the [tools and integrations](/integrations/) supported by
+- Check out the [tools and integrations](/developer-tools/integrations/) supported by
   Materialize.
 
 ## Considerations
 
-<h3 id="publication-membership">Publication membership</h3>
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
-remove tables from publications. Because of this, Materialize relies on
-periodic checks to determine if a table has been removed from a publication,
-at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
-it before Materialize notices that the table was removed. In this case,
-Materialize can no longer provide any consistency guarantees about the data
-we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
-<p>To mitigate this issue, if you need to drop and re-add a table to a
-publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
@@ -2731,6 +3300,54 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
+<h3 id="replication-slots">Replication slots</h3>
+<p>Each source ingests the raw replication stream data for all tables in the
+specified publication using <strong>a single</strong> replication slot. To manage
+replication slots:</p>
+<ul>
+<li>
+<p>For PostgreSQL 13+, set a reasonable value
+for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
+to limit the amount of storage used by replication slots.</p>
+</li>
+<li>
+<p>If you stop using Materialize, or if either the Materialize instance or
+the PostgreSQL instance crash, delete any replication slots. You can query
+the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
+replication slot created for each source.</p>
+</li>
+<li>
+<p>If you delete all objects that depend on a source without also dropping
+the source, the upstream replication slot remains and will continue to
+accumulate data so that the source can resume in the future. To avoid
+unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
+</li>
+</ul>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
+<h3 id="publication-membership">Publication membership</h3>
+<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
+remove tables from publications. Because of this, Materialize relies on
+periodic checks to determine if a table has been removed from a publication,
+at which time it generates an irrevocable error, preventing any values from
+being read from the table.</p>
+<p>However, it is possible to remove a table from a publication and then re-add
+it before Materialize notices that the table was removed. In this case,
+Materialize can no longer provide any consistency guarantees about the data
+we present from the table and, unfortunately, is wholly unaware that this
+occurred.</p>
+<p>To mitigate this issue, if you need to drop and re-add a table to a
+publication, ensure that you remove the table/subsource from the source
+<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
@@ -2773,46 +3390,12 @@ and doing so can produce incorrect results.</p>
 <p>See <a href="/ingest-data/postgres/partitioned-tables/" >Ingest from partitioned
 tables</a> for the supported
 approaches, including how to add and remove partitions over time.</p>
-<h3 id="replication-slots">Replication slots</h3>
-<p>Each source ingests the raw replication stream data for all tables in the
-specified publication using <strong>a single</strong> replication slot. To manage
-replication slots:</p>
-<ul>
-<li>
-<p>For PostgreSQL 13+, set a reasonable value
-for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-to limit the amount of storage used by replication slots.</p>
-</li>
-<li>
-<p>If you stop using Materialize, or if either the Materialize instance or
-the PostgreSQL instance crash, delete any replication slots. You can query
-the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-replication slot created for each source.</p>
-</li>
-<li>
-<p>If you delete all objects that depend on a source without also dropping
-the source, the upstream replication slot remains and will continue to
-accumulate data so that the source can resume in the future. To avoid
-unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-</li>
-</ul>
 <h3 id="modifying-an-existing-source">Modifying an existing source</h3>
 <p>When you add a new subsource to an existing source (<a href="/sql/alter-source/" ><code>ALTER SOURCE ... ADD SUBSOURCE ...</code></a>), Materialize starts the snapshotting
 process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
-<h3 id="snapshotting">Snapshotting</h3>
-<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
-workers using ranges of
-<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
-Materialize uses
-<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
-the amount of data and number of rows to read. Missing or stale statistics can result in uneven
-work distribution, reducing snapshot performance. They can also cause incorrect snapshot
-progress reporting in the Console.</p>
-<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
-date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 ## Handling upstream operations
 
@@ -2867,6 +3450,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -2886,7 +3474,7 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
@@ -3093,7 +3681,7 @@ to connect:
 
 **Allow Materialize IPs:**
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, find the static egress IP addresses for the
    Materialize region you are running in:
 
@@ -3228,7 +3816,7 @@ network to allow traffic from the bastion host.
 1. Configure the SSH bastion host to allow traffic only from Materialize.
 
     1. In the [Materialize console's SQL
-       Shell](/console/), or your preferred SQL client
+       Shell](/developer-tools/console/), or your preferred SQL client
        connected to Materialize, get the static egress IP addresses for the
        Materialize region you are running in:
 
@@ -3317,7 +3905,7 @@ network to allow traffic from the bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
+In Materialize, a [cluster](/fundamentals/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
@@ -3327,7 +3915,7 @@ combination.
 In this step, you'll create a dedicated cluster for ingesting source data from
 your PostgreSQL database.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
    command to create the new cluster:
 
@@ -3355,7 +3943,7 @@ your networking configuration.
 
 **Allow Materialize IPs:**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 SECRET`](/sql/create-secret/) command to securely store the password for the
 `materialize` PostgreSQL user you created
@@ -3494,7 +4082,7 @@ details for Materialize to use:
 
 **Use an SSH tunnel:**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 CONNECTION`](/sql/create-connection/#ssh-tunnel) command to create an SSH
 tunnel connection:   ```mzsql
@@ -3605,7 +4193,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -3633,7 +4221,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -3704,7 +4292,7 @@ accordingly.
 follows:
 
     1. In Materialize, get the replication slot name associated with your
-    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources)
     table:
 
         ```mzsql
@@ -3754,25 +4342,11 @@ new data arrives, and serving results efficiently.
   or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
   [`CREATE SINK`](/sql/create-sink/).
 
-- Check out the [tools and integrations](/integrations/) supported by
+- Check out the [tools and integrations](/developer-tools/integrations/) supported by
   Materialize.
 
 ## Considerations
 
-<h3 id="publication-membership">Publication membership</h3>
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
-remove tables from publications. Because of this, Materialize relies on
-periodic checks to determine if a table has been removed from a publication,
-at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
-it before Materialize notices that the table was removed. In this case,
-Materialize can no longer provide any consistency guarantees about the data
-we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
-<p>To mitigate this issue, if you need to drop and re-add a table to a
-publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
@@ -3793,6 +4367,54 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
+<h3 id="replication-slots">Replication slots</h3>
+<p>Each source ingests the raw replication stream data for all tables in the
+specified publication using <strong>a single</strong> replication slot. To manage
+replication slots:</p>
+<ul>
+<li>
+<p>For PostgreSQL 13+, set a reasonable value
+for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
+to limit the amount of storage used by replication slots.</p>
+</li>
+<li>
+<p>If you stop using Materialize, or if either the Materialize instance or
+the PostgreSQL instance crash, delete any replication slots. You can query
+the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
+replication slot created for each source.</p>
+</li>
+<li>
+<p>If you delete all objects that depend on a source without also dropping
+the source, the upstream replication slot remains and will continue to
+accumulate data so that the source can resume in the future. To avoid
+unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
+</li>
+</ul>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
+<h3 id="publication-membership">Publication membership</h3>
+<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
+remove tables from publications. Because of this, Materialize relies on
+periodic checks to determine if a table has been removed from a publication,
+at which time it generates an irrevocable error, preventing any values from
+being read from the table.</p>
+<p>However, it is possible to remove a table from a publication and then re-add
+it before Materialize notices that the table was removed. In this case,
+Materialize can no longer provide any consistency guarantees about the data
+we present from the table and, unfortunately, is wholly unaware that this
+occurred.</p>
+<p>To mitigate this issue, if you need to drop and re-add a table to a
+publication, ensure that you remove the table/subsource from the source
+<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
@@ -3835,46 +4457,12 @@ and doing so can produce incorrect results.</p>
 <p>See <a href="/ingest-data/postgres/partitioned-tables/" >Ingest from partitioned
 tables</a> for the supported
 approaches, including how to add and remove partitions over time.</p>
-<h3 id="replication-slots">Replication slots</h3>
-<p>Each source ingests the raw replication stream data for all tables in the
-specified publication using <strong>a single</strong> replication slot. To manage
-replication slots:</p>
-<ul>
-<li>
-<p>For PostgreSQL 13+, set a reasonable value
-for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-to limit the amount of storage used by replication slots.</p>
-</li>
-<li>
-<p>If you stop using Materialize, or if either the Materialize instance or
-the PostgreSQL instance crash, delete any replication slots. You can query
-the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-replication slot created for each source.</p>
-</li>
-<li>
-<p>If you delete all objects that depend on a source without also dropping
-the source, the upstream replication slot remains and will continue to
-accumulate data so that the source can resume in the future. To avoid
-unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-</li>
-</ul>
 <h3 id="modifying-an-existing-source">Modifying an existing source</h3>
 <p>When you add a new subsource to an existing source (<a href="/sql/alter-source/" ><code>ALTER SOURCE ... ADD SUBSOURCE ...</code></a>), Materialize starts the snapshotting
 process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
-<h3 id="snapshotting">Snapshotting</h3>
-<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
-workers using ranges of
-<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
-Materialize uses
-<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
-the amount of data and number of rows to read. Missing or stale statistics can result in uneven
-work distribution, reducing snapshot performance. They can also cause incorrect snapshot
-progress reporting in the Console.</p>
-<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
-date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 ## Handling upstream operations
 
@@ -3929,6 +4517,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -3948,7 +4541,7 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
@@ -4090,7 +4683,7 @@ Select the option that works best for you.
 
 **Allow Materialize IPs:**
 
-1. In the [Materialize console's SQL Shell](/console/),
+1. In the [Materialize console's SQL Shell](/developer-tools/console/),
    or your preferred SQL client connected to Materialize, find the static egress
    IP addresses for the Materialize region you are running in:
 
@@ -4121,7 +4714,7 @@ to serve as your SSH bastion host.
 1. Configure the SSH bastion host to allow traffic only from Materialize.
 
     1. In the [Materialize console's SQL
-       Shell](/console/), or your preferred SQL client
+       Shell](/developer-tools/console/), or your preferred SQL client
        connected to Materialize, get the static egress IP addresses for the
        Materialize region you are running in:
 
@@ -4186,7 +4779,7 @@ to serve as your SSH bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
+In Materialize, a [cluster](/fundamentals/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
@@ -4196,7 +4789,7 @@ combination.
 In this step, you'll create a dedicated cluster for ingesting source data from
 your PostgreSQL database.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
    command to create the new cluster:
 
@@ -4224,7 +4817,7 @@ your networking configuration.
 
 **Allow Materialize IPs:**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 SECRET`](/sql/create-secret/) command to securely store the password for the
 `materialize` PostgreSQL user you created
@@ -4255,7 +4848,7 @@ use:
 
 **Use an SSH tunnel:**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 CONNECTION`](/sql/create-connection/#ssh-tunnel) command to create an SSH
 tunnel connection:   ```mzsql
@@ -4356,7 +4949,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -4384,7 +4977,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -4455,7 +5048,7 @@ accordingly.
 follows:
 
     1. In Materialize, get the replication slot name associated with your
-    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources)
     table:
 
         ```mzsql
@@ -4505,25 +5098,11 @@ new data arrives, and serving results efficiently.
   or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
   [`CREATE SINK`](/sql/create-sink/).
 
-- Check out the [tools and integrations](/integrations/) supported by
+- Check out the [tools and integrations](/developer-tools/integrations/) supported by
   Materialize.
 
 ## Considerations
 
-<h3 id="publication-membership">Publication membership</h3>
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
-remove tables from publications. Because of this, Materialize relies on
-periodic checks to determine if a table has been removed from a publication,
-at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
-it before Materialize notices that the table was removed. In this case,
-Materialize can no longer provide any consistency guarantees about the data
-we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
-<p>To mitigate this issue, if you need to drop and re-add a table to a
-publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
@@ -4544,6 +5123,54 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
+<h3 id="replication-slots">Replication slots</h3>
+<p>Each source ingests the raw replication stream data for all tables in the
+specified publication using <strong>a single</strong> replication slot. To manage
+replication slots:</p>
+<ul>
+<li>
+<p>For PostgreSQL 13+, set a reasonable value
+for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
+to limit the amount of storage used by replication slots.</p>
+</li>
+<li>
+<p>If you stop using Materialize, or if either the Materialize instance or
+the PostgreSQL instance crash, delete any replication slots. You can query
+the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
+replication slot created for each source.</p>
+</li>
+<li>
+<p>If you delete all objects that depend on a source without also dropping
+the source, the upstream replication slot remains and will continue to
+accumulate data so that the source can resume in the future. To avoid
+unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
+</li>
+</ul>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
+<h3 id="publication-membership">Publication membership</h3>
+<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
+remove tables from publications. Because of this, Materialize relies on
+periodic checks to determine if a table has been removed from a publication,
+at which time it generates an irrevocable error, preventing any values from
+being read from the table.</p>
+<p>However, it is possible to remove a table from a publication and then re-add
+it before Materialize notices that the table was removed. In this case,
+Materialize can no longer provide any consistency guarantees about the data
+we present from the table and, unfortunately, is wholly unaware that this
+occurred.</p>
+<p>To mitigate this issue, if you need to drop and re-add a table to a
+publication, ensure that you remove the table/subsource from the source
+<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
@@ -4586,46 +5213,12 @@ and doing so can produce incorrect results.</p>
 <p>See <a href="/ingest-data/postgres/partitioned-tables/" >Ingest from partitioned
 tables</a> for the supported
 approaches, including how to add and remove partitions over time.</p>
-<h3 id="replication-slots">Replication slots</h3>
-<p>Each source ingests the raw replication stream data for all tables in the
-specified publication using <strong>a single</strong> replication slot. To manage
-replication slots:</p>
-<ul>
-<li>
-<p>For PostgreSQL 13+, set a reasonable value
-for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-to limit the amount of storage used by replication slots.</p>
-</li>
-<li>
-<p>If you stop using Materialize, or if either the Materialize instance or
-the PostgreSQL instance crash, delete any replication slots. You can query
-the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-replication slot created for each source.</p>
-</li>
-<li>
-<p>If you delete all objects that depend on a source without also dropping
-the source, the upstream replication slot remains and will continue to
-accumulate data so that the source can resume in the future. To avoid
-unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-</li>
-</ul>
 <h3 id="modifying-an-existing-source">Modifying an existing source</h3>
 <p>When you add a new subsource to an existing source (<a href="/sql/alter-source/" ><code>ALTER SOURCE ... ADD SUBSOURCE ...</code></a>), Materialize starts the snapshotting
 process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
-<h3 id="snapshotting">Snapshotting</h3>
-<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
-workers using ranges of
-<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
-Materialize uses
-<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
-the amount of data and number of rows to read. Missing or stale statistics can result in uneven
-work distribution, reducing snapshot performance. They can also cause incorrect snapshot
-progress reporting in the Console.</p>
-<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
-date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 ## Handling upstream operations
 
@@ -4680,6 +5273,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -4699,7 +5297,7 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
@@ -4841,7 +5439,7 @@ Select the option that works best for you.
 
 **Allow Materialize IPs:**
 
-1. In the [Materialize console's SQL Shell](/console/),
+1. In the [Materialize console's SQL Shell](/developer-tools/console/),
    or your preferred SQL client connected to Materialize, find the static egress
    IP addresses for the Materialize region you are running in:
 
@@ -4872,7 +5470,7 @@ network to allow traffic from the bastion host.
 1. Configure the SSH bastion host to allow traffic only from Materialize.
 
     1. In the [Materialize console's SQL
-       Shell](/console/), or your preferred SQL client
+       Shell](/developer-tools/console/), or your preferred SQL client
        connected to Materialize, get the static egress IP addresses for the
        Materialize region you are running in:
 
@@ -4937,7 +5535,7 @@ bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
+In Materialize, a [cluster](/fundamentals/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
@@ -4947,7 +5545,7 @@ combination.
 In this step, you'll create a dedicated cluster for ingesting source data from
 your PostgreSQL database.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
    command to create the new cluster:
 
@@ -4974,7 +5572,7 @@ Once you have configured your network, create a connection in Materialize per
 your networking configuration.
 
 **Allow Materialize IPs:**
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 SECRET`](/sql/create-secret/) command to securely store the password for the
 `materialize` PostgreSQL user you created
@@ -5005,7 +5603,7 @@ use:
 
 **Use an SSH tunnel:**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 CONNECTION`](/sql/create-connection/#ssh-tunnel) command to create an SSH
 tunnel connection:   ```mzsql
@@ -5106,7 +5704,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -5134,7 +5732,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -5205,7 +5803,7 @@ accordingly.
 follows:
 
     1. In Materialize, get the replication slot name associated with your
-    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources)
     table:
 
         ```mzsql
@@ -5255,25 +5853,11 @@ new data arrives, and serving results efficiently.
   or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
   [`CREATE SINK`](/sql/create-sink/).
 
-- Check out the [tools and integrations](/integrations/) supported by
+- Check out the [tools and integrations](/developer-tools/integrations/) supported by
   Materialize.
 
 ## Considerations
 
-<h3 id="publication-membership">Publication membership</h3>
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
-remove tables from publications. Because of this, Materialize relies on
-periodic checks to determine if a table has been removed from a publication,
-at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
-it before Materialize notices that the table was removed. In this case,
-Materialize can no longer provide any consistency guarantees about the data
-we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
-<p>To mitigate this issue, if you need to drop and re-add a table to a
-publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
@@ -5294,6 +5878,54 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
+<h3 id="replication-slots">Replication slots</h3>
+<p>Each source ingests the raw replication stream data for all tables in the
+specified publication using <strong>a single</strong> replication slot. To manage
+replication slots:</p>
+<ul>
+<li>
+<p>For PostgreSQL 13+, set a reasonable value
+for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
+to limit the amount of storage used by replication slots.</p>
+</li>
+<li>
+<p>If you stop using Materialize, or if either the Materialize instance or
+the PostgreSQL instance crash, delete any replication slots. You can query
+the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
+replication slot created for each source.</p>
+</li>
+<li>
+<p>If you delete all objects that depend on a source without also dropping
+the source, the upstream replication slot remains and will continue to
+accumulate data so that the source can resume in the future. To avoid
+unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
+</li>
+</ul>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
+<h3 id="publication-membership">Publication membership</h3>
+<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
+remove tables from publications. Because of this, Materialize relies on
+periodic checks to determine if a table has been removed from a publication,
+at which time it generates an irrevocable error, preventing any values from
+being read from the table.</p>
+<p>However, it is possible to remove a table from a publication and then re-add
+it before Materialize notices that the table was removed. In this case,
+Materialize can no longer provide any consistency guarantees about the data
+we present from the table and, unfortunately, is wholly unaware that this
+occurred.</p>
+<p>To mitigate this issue, if you need to drop and re-add a table to a
+publication, ensure that you remove the table/subsource from the source
+<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
@@ -5336,46 +5968,12 @@ and doing so can produce incorrect results.</p>
 <p>See <a href="/ingest-data/postgres/partitioned-tables/" >Ingest from partitioned
 tables</a> for the supported
 approaches, including how to add and remove partitions over time.</p>
-<h3 id="replication-slots">Replication slots</h3>
-<p>Each source ingests the raw replication stream data for all tables in the
-specified publication using <strong>a single</strong> replication slot. To manage
-replication slots:</p>
-<ul>
-<li>
-<p>For PostgreSQL 13+, set a reasonable value
-for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-to limit the amount of storage used by replication slots.</p>
-</li>
-<li>
-<p>If you stop using Materialize, or if either the Materialize instance or
-the PostgreSQL instance crash, delete any replication slots. You can query
-the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-replication slot created for each source.</p>
-</li>
-<li>
-<p>If you delete all objects that depend on a source without also dropping
-the source, the upstream replication slot remains and will continue to
-accumulate data so that the source can resume in the future. To avoid
-unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-</li>
-</ul>
 <h3 id="modifying-an-existing-source">Modifying an existing source</h3>
 <p>When you add a new subsource to an existing source (<a href="/sql/alter-source/" ><code>ALTER SOURCE ... ADD SUBSOURCE ...</code></a>), Materialize starts the snapshotting
 process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
-<h3 id="snapshotting">Snapshotting</h3>
-<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
-workers using ranges of
-<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
-Materialize uses
-<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
-the amount of data and number of rows to read. Missing or stale statistics can result in uneven
-work distribution, reducing snapshot performance. They can also cause incorrect snapshot
-progress reporting in the Console.</p>
-<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
-date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 ## Handling upstream operations
 
@@ -5430,6 +6028,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -5449,7 +6052,7 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
@@ -5633,7 +6236,7 @@ If you use Neon's [**IP Allow**](https://neon.tech/docs/introduction/ip-allow)
 feature to limit the IP addresses that can connect to your Neon instance, you
 will need to allow inbound traffic from Materialize IP addresses.
 
-1. In the [Materialize console's SQL Shell](/console/),
+1. In the [Materialize console's SQL Shell](/developer-tools/console/),
    or your preferred SQL client connected to
    Materialize, run the following query to find the static egress IP addresses,
    for the Materialize region you are running in:
@@ -5669,7 +6272,7 @@ will need to allow inbound traffic from Materialize IP addresses.
 ## C. Ingest data in Materialize
 
 The steps in this section are specific to Materialize. You can run them in the
-[Materialize console's SQL Shell](/console/) or your
+[Materialize console's SQL Shell](/developer-tools/console/) or your
 preferred SQL client connected to Materialize.
 
 ### 1. (Optional) Create a cluster
@@ -5679,7 +6282,7 @@ preferred SQL client connected to Materialize.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
+In Materialize, a [cluster](/fundamentals/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
@@ -5689,7 +6292,7 @@ combination.
 In this step, you'll create a dedicated cluster for ingesting source data from
 your PostgreSQL database.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
    command to create the new cluster:
 
@@ -5788,7 +6391,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -5816,7 +6419,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -5887,7 +6490,7 @@ accordingly.
 follows:
 
     1. In Materialize, get the replication slot name associated with your
-    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources)
     table:
 
         ```mzsql
@@ -5937,25 +6540,11 @@ new data arrives, and serving results efficiently.
   or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
   [`CREATE SINK`](/sql/create-sink/).
 
-- Check out the [tools and integrations](/integrations/) supported by
+- Check out the [tools and integrations](/developer-tools/integrations/) supported by
   Materialize.
 
 ## Considerations
 
-<h3 id="publication-membership">Publication membership</h3>
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
-remove tables from publications. Because of this, Materialize relies on
-periodic checks to determine if a table has been removed from a publication,
-at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
-it before Materialize notices that the table was removed. In this case,
-Materialize can no longer provide any consistency guarantees about the data
-we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
-<p>To mitigate this issue, if you need to drop and re-add a table to a
-publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
@@ -5976,6 +6565,54 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
+<h3 id="replication-slots">Replication slots</h3>
+<p>Each source ingests the raw replication stream data for all tables in the
+specified publication using <strong>a single</strong> replication slot. To manage
+replication slots:</p>
+<ul>
+<li>
+<p>For PostgreSQL 13+, set a reasonable value
+for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
+to limit the amount of storage used by replication slots.</p>
+</li>
+<li>
+<p>If you stop using Materialize, or if either the Materialize instance or
+the PostgreSQL instance crash, delete any replication slots. You can query
+the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
+replication slot created for each source.</p>
+</li>
+<li>
+<p>If you delete all objects that depend on a source without also dropping
+the source, the upstream replication slot remains and will continue to
+accumulate data so that the source can resume in the future. To avoid
+unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
+</li>
+</ul>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
+<h3 id="publication-membership">Publication membership</h3>
+<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
+remove tables from publications. Because of this, Materialize relies on
+periodic checks to determine if a table has been removed from a publication,
+at which time it generates an irrevocable error, preventing any values from
+being read from the table.</p>
+<p>However, it is possible to remove a table from a publication and then re-add
+it before Materialize notices that the table was removed. In this case,
+Materialize can no longer provide any consistency guarantees about the data
+we present from the table and, unfortunately, is wholly unaware that this
+occurred.</p>
+<p>To mitigate this issue, if you need to drop and re-add a table to a
+publication, ensure that you remove the table/subsource from the source
+<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
@@ -6018,46 +6655,12 @@ and doing so can produce incorrect results.</p>
 <p>See <a href="/ingest-data/postgres/partitioned-tables/" >Ingest from partitioned
 tables</a> for the supported
 approaches, including how to add and remove partitions over time.</p>
-<h3 id="replication-slots">Replication slots</h3>
-<p>Each source ingests the raw replication stream data for all tables in the
-specified publication using <strong>a single</strong> replication slot. To manage
-replication slots:</p>
-<ul>
-<li>
-<p>For PostgreSQL 13+, set a reasonable value
-for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-to limit the amount of storage used by replication slots.</p>
-</li>
-<li>
-<p>If you stop using Materialize, or if either the Materialize instance or
-the PostgreSQL instance crash, delete any replication slots. You can query
-the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-replication slot created for each source.</p>
-</li>
-<li>
-<p>If you delete all objects that depend on a source without also dropping
-the source, the upstream replication slot remains and will continue to
-accumulate data so that the source can resume in the future. To avoid
-unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-</li>
-</ul>
 <h3 id="modifying-an-existing-source">Modifying an existing source</h3>
 <p>When you add a new subsource to an existing source (<a href="/sql/alter-source/" ><code>ALTER SOURCE ... ADD SUBSOURCE ...</code></a>), Materialize starts the snapshotting
 process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
-<h3 id="snapshotting">Snapshotting</h3>
-<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
-workers using ranges of
-<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
-Materialize uses
-<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
-the amount of data and number of rows to read. Missing or stale statistics can result in uneven
-work distribution, reducing snapshot performance. They can also cause incorrect snapshot
-progress reporting in the Console.</p>
-<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
-date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 ## Handling upstream operations
 
@@ -6112,6 +6715,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -6131,7 +6739,7 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
@@ -6303,7 +6911,7 @@ Select the option that works best for you.
 
 **Allow Materialize IPs:**
 
-1. In the [Materialize console's SQL Shell](/console/),
+1. In the [Materialize console's SQL Shell](/developer-tools/console/),
    or your preferred SQL client connected to Materialize, find the static egress
    IP addresses for the Materialize region you are running in:
 
@@ -6464,7 +7072,7 @@ traffic from the bastion host.
 1. Configure the SSH bastion host to allow traffic only from Materialize.
 
     1. In the [Materialize console's SQL
-       Shell](/console/), or your preferred SQL client
+       Shell](/developer-tools/console/), or your preferred SQL client
        connected to Materialize, get the static egress IP addresses for the
        Materialize region you are running in:
 
@@ -6527,7 +7135,7 @@ traffic from the bastion host.
 > scenarios, we recommend separating your workloads into multiple clusters for
 > [resource isolation](/sql/create-cluster/#resource-isolation).
 
-In Materialize, a [cluster](/concepts/clusters/) is an isolated environment,
+In Materialize, a [cluster](/fundamentals/concepts/clusters/) is an isolated environment,
 similar to a virtual warehouse in Snowflake. When you create a cluster, you
 choose the size of its compute resource allocation based on the work you need
 the cluster to do, whether ingesting data from a source, computing
@@ -6537,7 +7145,7 @@ combination.
 In this step, you'll create a dedicated cluster for ingesting source data from
 your PostgreSQL database.
 
-1. In the [SQL Shell](/console/), or your preferred SQL
+1. In the [SQL Shell](/developer-tools/console/), or your preferred SQL
    client connected to Materialize, use the [`CREATE CLUSTER`](/sql/create-cluster/)
    command to create the new cluster:
 
@@ -6565,7 +7173,7 @@ your networking configuration.
 
 **Allow Materialize IPs:**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 SECRET`](/sql/create-secret/) command to securely store the password for the
 `materialize` PostgreSQL user you created
@@ -6626,7 +7234,7 @@ details for Materialize to use:
 
 **Use an SSH tunnel:**
 
-1. In the [Materialize Console's SQL Shell](/console/), or your preferred SQL
+1. In the [Materialize Console's SQL Shell](/developer-tools/console/), or your preferred SQL
 client connected to Materialize, use the [`CREATE
 CONNECTION`](/sql/create-connection/#ssh-tunnel) command to create an SSH
 tunnel connection:   ```mzsql
@@ -6735,7 +7343,7 @@ In this step, you'll first verify that the source is running and then check the
 status of the snapshotting process.
 
 1. Back in the SQL client connected to Materialize, use the
-   [`mz_source_statuses`](/reference/system-catalog/mz_internal/#mz_source_statuses)
+   [`mz_source_statuses`](/sql/system-catalog/mz_internal/#mz_source_statuses)
    table to check the overall status of your source:
 
     ```mzsql
@@ -6763,7 +7371,7 @@ status of the snapshotting process.
     Also, if the `status` of any subsource is `starting` for more than a few
     minutes, [contact our team](/support/).
 
-2. Once the source is running, use the [`mz_source_statistics`](/reference/system-catalog/mz_internal/#mz_source_statistics)
+2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
 
     ```mzsql
@@ -6834,7 +7442,7 @@ accordingly.
 follows:
 
     1. In Materialize, get the replication slot name associated with your
-    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/reference/system-catalog/mz_internal/#mz_postgres_sources)
+    PostgreSQL source from the [`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources)
     table:
 
         ```mzsql
@@ -6884,25 +7492,11 @@ new data arrives, and serving results efficiently.
   or [`SUBSCRIBE`](/sql/subscribe/) or to an external message broker with
   [`CREATE SINK`](/sql/create-sink/).
 
-- Check out the [tools and integrations](/integrations/) supported by
+- Check out the [tools and integrations](/developer-tools/integrations/) supported by
   Materialize.
 
 ## Considerations
 
-<h3 id="publication-membership">Publication membership</h3>
-<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
-remove tables from publications. Because of this, Materialize relies on
-periodic checks to determine if a table has been removed from a publication,
-at which time it generates an irrevocable error, preventing any values from
-being read from the table.</p>
-<p>However, it is possible to remove a table from a publication and then re-add
-it before Materialize notices that the table was removed. In this case,
-Materialize can no longer provide any consistency guarantees about the data
-we present from the table and, unfortunately, is wholly unaware that this
-occurred.</p>
-<p>To mitigate this issue, if you need to drop and re-add a table to a
-publication, ensure that you remove the table/subsource from the source
-<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="supported-types">Supported types</h3>
 <p>Materialize natively supports the following PostgreSQL types (including the
 array type for each of the types):</p>
@@ -6923,6 +7517,54 @@ back to <code>numeric</code>, since PostgreSQL adds typical currency formatting 
 output.</p>
 </li>
 </ul>
+<h3 id="replication-slots">Replication slots</h3>
+<p>Each source ingests the raw replication stream data for all tables in the
+specified publication using <strong>a single</strong> replication slot. To manage
+replication slots:</p>
+<ul>
+<li>
+<p>For PostgreSQL 13+, set a reasonable value
+for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
+to limit the amount of storage used by replication slots.</p>
+</li>
+<li>
+<p>If you stop using Materialize, or if either the Materialize instance or
+the PostgreSQL instance crash, delete any replication slots. You can query
+the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
+replication slot created for each source.</p>
+</li>
+<li>
+<p>If you delete all objects that depend on a source without also dropping
+the source, the upstream replication slot remains and will continue to
+accumulate data so that the source can resume in the future. To avoid
+unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
+</li>
+</ul>
+<h3 id="snapshotting">Snapshotting</h3>
+<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
+workers using ranges of
+<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
+Materialize uses
+<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
+the amount of data and number of rows to read. Missing or stale statistics can result in uneven
+work distribution, reducing snapshot performance. They can also cause incorrect snapshot
+progress reporting in the Console.</p>
+<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
+date by running PostgreSQL <code>ANALYZE</code> command.</p>
+<h3 id="publication-membership">Publication membership</h3>
+<p>PostgreSQL&rsquo;s logical replication API does not provide a signal when users
+remove tables from publications. Because of this, Materialize relies on
+periodic checks to determine if a table has been removed from a publication,
+at which time it generates an irrevocable error, preventing any values from
+being read from the table.</p>
+<p>However, it is possible to remove a table from a publication and then re-add
+it before Materialize notices that the table was removed. In this case,
+Materialize can no longer provide any consistency guarantees about the data
+we present from the table and, unfortunately, is wholly unaware that this
+occurred.</p>
+<p>To mitigate this issue, if you need to drop and re-add a table to a
+publication, ensure that you remove the table/subsource from the source
+<em>before</em> re-adding it using the <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> command.</p>
 <h3 id="inherited-tables">Inherited tables</h3>
 <p>When using <a href="https://www.postgresql.org/docs/current/tutorial-inheritance.html" >PostgreSQL table inheritance</a>,
 PostgreSQL serves data from <code>SELECT</code>s as if the inheriting tables&rsquo; data is
@@ -6965,46 +7607,12 @@ and doing so can produce incorrect results.</p>
 <p>See <a href="/ingest-data/postgres/partitioned-tables/" >Ingest from partitioned
 tables</a> for the supported
 approaches, including how to add and remove partitions over time.</p>
-<h3 id="replication-slots">Replication slots</h3>
-<p>Each source ingests the raw replication stream data for all tables in the
-specified publication using <strong>a single</strong> replication slot. To manage
-replication slots:</p>
-<ul>
-<li>
-<p>For PostgreSQL 13+, set a reasonable value
-for <a href="https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE" ><code>max_slot_wal_keep_size</code></a>
-to limit the amount of storage used by replication slots.</p>
-</li>
-<li>
-<p>If you stop using Materialize, or if either the Materialize instance or
-the PostgreSQL instance crash, delete any replication slots. You can query
-the <code>mz_internal.mz_postgres_sources</code> table to look up the name of the
-replication slot created for each source.</p>
-</li>
-<li>
-<p>If you delete all objects that depend on a source without also dropping
-the source, the upstream replication slot remains and will continue to
-accumulate data so that the source can resume in the future. To avoid
-unbounded disk space usage, make sure to use <a href="/sql/drop-source/" ><code>DROP SOURCE</code></a> or manually delete the replication slot.</p>
-</li>
-</ul>
 <h3 id="modifying-an-existing-source">Modifying an existing source</h3>
 <p>When you add a new subsource to an existing source (<a href="/sql/alter-source/" ><code>ALTER SOURCE ... ADD SUBSOURCE ...</code></a>), Materialize starts the snapshotting
 process for the new subsource. During this snapshotting, the data ingestion for
 the existing subsources for the same source is temporarily blocked. As such, if
 possible, you can resize the cluster to speed up the snapshotting process and
 once the process finishes, resize the cluster for steady-state.</p>
-<h3 id="snapshotting">Snapshotting</h3>
-<p>The PostgreSQL source performs parallel snapshotting of tables by distributing rows among
-workers using ranges of
-<a href="https://www.postgresql.org/docs/current/ddl-system-columns.html#DDL-SYSTEM-COLUMNS-CTID" ><code>CTID</code></a>.
-Materialize uses
-<a href="https://www.postgresql.org/docs/current/row-estimation-examples.html" >PostgreSQL statistics to estimate</a>
-the amount of data and number of rows to read. Missing or stale statistics can result in uneven
-work distribution, reducing snapshot performance. They can also cause incorrect snapshot
-progress reporting in the Console.</p>
-<p>To avoid this situation, before creating the source in Materialize, ensure statistics are up to
-date by running PostgreSQL <code>ANALYZE</code> command.</p>
 
 ## Handling upstream operations
 
@@ -7059,6 +7667,11 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -7078,7 +7691,7 @@ The following upstream operations put the affected table into an error state.
 Ingestion for that table stops, and you must drop and recreate the affected
 table in Materialize to resume:
 
-- Dropping a table (`DROP TABLE`), removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`), or dropping the publication (`DROP PUBLICATION`).
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
 - Renaming a table or moving it to a different schema.
 - Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
 - Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
@@ -7419,7 +8032,7 @@ This allows you to replicate tables with `REPLICA IDENTITY DEFAULT`, `INDEX`, or
 
 ### D. Create a view on the source
 
-A [view](/concepts/views/) saves a query under a name to provide a shorthand for
+A [view](/fundamentals/concepts/views/) saves a query under a name to provide a shorthand for
 referencing the query. During view creation, the underlying query is not
 executed.
 
@@ -7433,9 +8046,9 @@ CREATE VIEW cnt_table1 AS
 
 ### E. Create an index on the view
 
-In Materialize, [indexes](/concepts/indexes) on views compute and, as new data
+In Materialize, [indexes](/fundamentals/concepts/indexes) on views compute and, as new data
 arrives, incrementally update view results in memory within a
-[cluster](/concepts/clusters/) instead of recomputing the results from scratch.
+[cluster](/fundamentals/concepts/clusters/) instead of recomputing the results from scratch.
 
 Create an index on `cnt_table1` view. Then, as new change events stream in
 through Kafka (as the result of `INSERT`, `UPDATE` and `DELETE` operations in
@@ -7448,7 +8061,7 @@ CREATE INDEX idx_cnt_table1_field1 ON cnt_table1(field1);
 ```
 
 For best practices on when to index a view, see
-[Indexes](/concepts/indexes/) and [Views](/concepts/views/).
+[Indexes](/fundamentals/concepts/indexes/) and [Views](/fundamentals/concepts/views/).
 
 ---
 

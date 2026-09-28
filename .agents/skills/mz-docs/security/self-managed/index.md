@@ -147,8 +147,8 @@ privileges were set.
 
 In addition, all roles have:
 - `USAGE` on all built-in types and [all system catalog
-schemas](/reference/system-catalog/).
-- `SELECT` on [system catalog objects](/reference/system-catalog/).
+schemas](/sql/system-catalog/).
+- `SELECT` on [system catalog objects](/sql/system-catalog/).
 - All [applicable privileges](/security/appendix/appendix-privileges/) for
   an object they create; for example, the creator of a schema gets `CREATE` and
   `USAGE`; the creator of a table gets `SELECT`, `INSERT`, `UPDATE`, and
@@ -237,7 +237,7 @@ SASL authentication requires users to log in with a password.
 
 When SASL authentication is enabled:
 - **PostgreSQL connections** (e.g., `psql`, client libraries, [connection
-  poolers](/integrations/connection-pooling/)) use SCRAM-SHA-256 authentication.
+  poolers](/serve-results/connection-pooling/)) use SCRAM-SHA-256 authentication.
 - **HTTP/Web Console connections** use standard password authentication.
 
 This hybrid approach provides maximum security for SQL connections while
@@ -284,7 +284,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.40.0
+  environmentdImageRef: materialize/environmentd:v26.43.0
   backendSecretName: materialize-backend
   authenticatorKind: Sasl
   requestRollout: 00000000-0000-0000-0000-000000000003 # Enabling auth on an existing instance requires a rollout
@@ -317,7 +317,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.40.0
+  environmentdImageRef: materialize/environmentd:v26.43.0
   backendSecretName: materialize-backend
   authenticatorKind: Sasl
 ```
@@ -370,7 +370,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.40.0
+  environmentdImageRef: materialize/environmentd:v26.43.0
   backendSecretName: materialize-backend
   authenticatorKind: Password
   requestRollout: 00000000-0000-0000-0000-000000000003 # Enabling auth on an existing instance requires a rollout
@@ -403,7 +403,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.40.0
+  environmentdImageRef: materialize/environmentd:v26.43.0
   backendSecretName: materialize-backend
   authenticatorKind: Password
 ```
@@ -737,7 +737,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.40.0
+  environmentdImageRef: materialize/environmentd:v26.43.0
   backendSecretName: materialize-backend
   authenticatorKind: Oidc
   requestRollout: 00000000-0000-0000-0000-000000000003 # Switching to Oidc requires a rollout
@@ -786,7 +786,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.40.0
+  environmentdImageRef: materialize/environmentd:v26.43.0
   backendSecretName: materialize-backend
   authenticatorKind: Oidc
   systemParameterConfigmapName: mz-system-params
@@ -881,7 +881,7 @@ ALTER SYSTEM SET console_oidc_scopes = 'openid email';
 1. Sign in through your IdP. After successful authentication, you are redirected
    back to the Materialize Console.
 
-1. To confirm which role you've signed in as via SSO, open the [SQL Shell](/console/sql-shell/) in the Materialize Console. In the welcome message, you should see the role name labeled under "User". This is derived from the `oidc_authentication_claim` claim in your identity token:
+1. To confirm which role you've signed in as via SSO, open the [SQL Shell](/developer-tools/console/sql-shell/) in the Materialize Console. In the welcome message, you should see the role name labeled under "User". This is derived from the `oidc_authentication_claim` claim in your identity token:
 
 ![Materialize Console Shell](/images/console/console.png "Materialize Console Shell")
 
@@ -957,10 +957,10 @@ Replace `<username>` with the value of the authentication claim in your JWT
 
 *OAuth sign-in for MCP clients is available starting in v26.31.*
 
-Materialize provides built-in [MCP servers](/integrations/mcp-server/) at
+Materialize provides built-in [MCP servers](/developer-tools/mcp-server/) at
 `/api/mcp/agent` and `/api/mcp/developer`. When SSO is enabled, MCP clients
 can authenticate with OAuth instead of an [MCP
-token](/integrations/mcp-server/mcp-agent/#method-2-token-based-authentication).
+token](/developer-tools/mcp-server/mcp-agent/#method-2-token-based-authentication).
 Materialize publishes OAuth 2.0 Protected Resource Metadata ([RFC
 9728](https://datatracker.ietf.org/doc/html/rfc9728)) at
 `/.well-known/oauth-protected-resource`, which MCP-aware clients use to
@@ -1037,7 +1037,7 @@ requirements:
    The `--callback-port` value must match the port in the
    `http://localhost:<port>/callback` redirect URI registered on the OIDC
    client. For more information, see
-   [MCP servers](/integrations/mcp-server/).
+   [MCP servers](/developer-tools/mcp-server/).
 
 > **Note:** Deployments behind a load balancer or proxy that rewrites the `Host` header
 > must set the `http_host_name` configuration so that the URLs Materialize
@@ -1141,8 +1141,8 @@ password.
     psql -h <materialize-host> -p 6875 -U svc-dbt materialize
     ```
 
-For dbt-specific setup, see [dbt connection profiles](/manage/dbt/get-started/).
-For Terraform, see [Terraform: get started](/manage/terraform/get-started/).
+For dbt-specific setup, see [dbt connection profiles](/developer-tools/dbt/get-started/).
+For Terraform, see [Terraform: get started](/developer-tools/terraform/get-started/).
 
 ### Resource Owner Password flow
 

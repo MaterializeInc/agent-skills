@@ -30,7 +30,7 @@
   This is part of the work to enable **Role-based access control** (RBAC) in a
   future release ([#11579](https://github.com/MaterializeInc/materialize/issues/11579)).
 
-* Add [`mz_internal.mz_sessions`](/reference/system-catalog/mz_internal/#mz_sessions)
+* Add [`mz_internal.mz_sessions`](/sql/system-catalog/mz_internal/#mz_sessions)
   to the system catalog. This table describes all active sessions in the
   system.
 

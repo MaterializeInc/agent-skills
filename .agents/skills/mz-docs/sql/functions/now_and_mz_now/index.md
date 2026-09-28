@@ -44,7 +44,7 @@ The typical uses of `now()` and `mz_now()` are:
 
 ### Logical timestamp selection
 
-When using the [serializable](/reference/isolation-level#serializable)
+When using the [serializable](/serve-results/isolation-level#serializable)
 isolation level, the logical timestamp may be arbitrarily ahead of or behind the
 system clock. For example, at a wall clock time of 9pm, Materialize may choose
 to execute a serializable query as of logical time 8:30pm, perhaps because data
@@ -52,7 +52,7 @@ for 8:30–9pm has not yet arrived. In this scenario, `now()` would return 9pm,
 while `mz_now()` would return 8:30pm.
 
 When using the [strict
-serializable](/reference/isolation-level#strict-serializable) isolation level,
+serializable](/serve-results/isolation-level#strict-serializable) isolation level,
 Materialize attempts to keep the logical timestamp reasonably close to wall
 clock time. In most cases, the logical timestamp of a query will be within a few
 seconds of the wall clock time. For example, when executing a strict
