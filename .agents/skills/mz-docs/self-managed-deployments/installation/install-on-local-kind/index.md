@@ -108,7 +108,8 @@ Starting in v26.0, Self-Managed Materialize requires a license key.
    we recommend installing it even if you are not yet enabling CRD `v1`.
 
    ```shell
-   helm install cert-manager oci://quay.io/jetstack/charts/cert-manager \
+   helm repo add jetstack https://charts.jetstack.io --force-update
+   helm install cert-manager jetstack/cert-manager \
        --version v1.19.2 \
        --namespace cert-manager \
        --create-namespace \
