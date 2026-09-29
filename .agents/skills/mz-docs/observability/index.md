@@ -1714,7 +1714,7 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     </tr>
     <tr>
       <td><code>mz_persist_blob_hedge_armed</code></td>
-      <td>1 if this process opened a hedge sibling and can hedge when enabled</td>
+      <td>1 once this process has opened a hedge sibling and can hedge when enabled</td>
       <td></td>
     </tr>
     <tr>
