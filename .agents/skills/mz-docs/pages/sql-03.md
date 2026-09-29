@@ -1,0 +1,3900 @@
+<!-- mz-docs page: sql/create-source/kafka -->
+
+# CREATE SOURCE: Kafka/Redpanda (Legacy Syntax)
+Connecting Materialize to a Kafka or Redpanda broker
+> **Disambiguation:** This page reflects the legacy syntax. For the new syntax, see [new reference page](/sql/create-source/kafka-v2/).
+
+[`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
+
+To connect to a Kafka/Redpanda broker (and optionally a schema registry), you
+first need to [create a connection](#prerequisite-creating-a-connection) that specifies
+access and authentication parameters. Once created, a connection is **reusable**
+across multiple `CREATE SOURCE` and `CREATE SINK` statements. 
+
+> **Note:** The same syntax, supported formats and features can be used to connect to a
+> [Redpanda](/integrations/redpanda/) broker.
+
+## Syntax
+
+**Format Avro:**
+### Format Avro
+
+Materialize can decode Avro messages by integrating with a schema registry to
+retrieve a schema, and automatically determine the columns and data types to use
+in the source.
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM KAFKA CONNECTION <connection_name> (
+  TOPIC '<topic>'
+  [, GROUP ID PREFIX '<group_id_prefix>']
+  [, START OFFSET ( <partition_offset> [, ...] ) ]
+  [, START TIMESTAMP <timestamp> ]
+)
+FORMAT AVRO
+    USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
+      [KEY STRATEGY <key_strategy>]
+      [VALUE STRATEGY <value_strategy>]
+  | USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> (
+      SCHEMA NAME = '<schema_name>'
+    )
+[INCLUDE
+    KEY [AS <name>]
+  | PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE
+    NONE
+  | DEBEZIUM
+  | UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]
+]
+[EXPOSE PROGRESS AS <progress_subsource_name>]
+[WITH ( <with_option> [, ...] )]
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<src_name>` | The name for the source.  |
+| **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
+| `<connection_name>` | The name of the Kafka connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection) documentation page.  |
+| `'<topic>'` | The Kafka topic you want to subscribe to.  |
+| **GROUP ID PREFIX** `<group_id_prefix>` | Optional. The prefix of the consumer group ID to use. See [Monitoring consumer lag](#monitoring-consumer-lag).<br>Default: `materialize-{REGION-ID}-{CONNECTION-ID}-{SOURCE_ID}`  |
+| **START OFFSET** (`<partition_offset>` [, ...]) | Optional. Read partitions from the specified offset. You cannot update the offsets once a source has been created; you will need to recreate the source. Offset values must be zero or positive integers. See [Setting start offsets](#setting-start-offsets) for details.  |
+| **START TIMESTAMP** `<timestamp>` | Optional. Use the specified value to set `START OFFSET` based on the Kafka timestamp. Negative values will be interpreted as relative to the current system time in milliseconds (e.g. `-1000` means 1000 ms ago). See [Time-based offsets](#time-based-offsets) for details.  |
+| `<csr_connection_name>` | The [Confluent Schema Registry connection](/sql/create-connection/#confluent-schema-registry) to use in the source. Applies to both the key and value.  |
+| `<glue_connection_name>` (**SCHEMA NAME** `'<schema_name>'`) | ***Private preview.** This feature is under active development.*  Decode Avro messages using a schema managed in AWS Glue Schema Registry. `<glue_connection_name>` is the [AWS Glue Schema Registry connection](/sql/create-connection/#aws-glue-schema-registry), and `SCHEMA NAME` (**required**) is the name of the schema to read from the connection's registry. The schema is pinned at the time the source is created.  A single `FORMAT AVRO USING AWS GLUE SCHEMA REGISTRY` clause resolves one schema. To set the key and value independently (for example, under `ENVELOPE UPSERT` or `ENVELOPE DEBEZIUM`), specify `KEY FORMAT ... VALUE FORMAT ...` explicitly.  |
+| **KEY STRATEGY** `<key_strategy>` | Optional. Define how an Avro reader schema will be chosen for the message key. \| Strategy \| Description \| \|--------\|-------------\| \| **LATEST** \| (Default) Use the latest writer schema from the schema registry as the reader schema. \| \| **ID** \| Use a specific schema from the registry. \| \| **INLINE** \| Use the inline schema. \|  |
+| **VALUE STRATEGY** `<value_strategy>` | Optional. Define how an Avro reader schema will be chosen for the message value. \| Strategy \| Description \| \|--------\|-------------\| \| **LATEST** \| (Default) Use the latest writer schema from the schema registry as the reader schema. \| \| **ID** \| Use a specific schema from the registry. \| \| **INLINE** \| Use the inline schema. \|  |
+| **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| **KEY [AS \<name\>]** \| Include a column containing the Kafka message key. If the key is encoded using a format that includes schemas, the column will take its name from the schema. For unnamed formats (e.g. `TEXT`), the column will be named `key`. The column can be renamed with the optional **AS** *name* statement. \| **PARTITION [AS \<name\>]** \| Include a `partition` column containing the Kafka message partition. The column can be renamed with the optional **AS** *name* clause. \| **OFFSET [AS \<name\>]** \| Include an `offset` column containing the Kafka message offset. The column can be renamed with the optional **AS** *name* clause. \| **TIMESTAMP [AS \<name\>]** \| Include a `timestamp` column containing the Kafka message timestamp. The column can be renamed with the optional **AS** *name* clause. <br><br>Note that the timestamp of a Kafka message depends on how the topic and its producers are configured. See the [Confluent documentation](https://docs.confluent.io/3.0.0/streams/concepts.html?#time) for details. \| **HEADERS [AS \<name\>]** \| Include a `headers` column containing the Kafka message headers as a list of records of type `(key text, value bytea)`. The column can be renamed with the optional **AS** *name* clause. \| **HEADER \<key\> AS \<name\> [**BYTES**]** \| Include a *name* column containing the Kafka message header *key* parsed as a UTF-8 string. To expose the header value as `bytea`, use the `BYTES` option.  |
+| **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. \| \| `DEBEZIUM` \| Decode Kafka messages produced by [Debezium](https://debezium.io/). \| \| `UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]` \| Use the standard key-value convention to support inserts, updates, and deletes. Required to consume [log compacted topics](https://docs.confluent.io/platform/current/kafka/design.html#log-compaction). \|  |
+| **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+
+#### Schema registries
+
+Materialize can retrieve Avro schemas from either of two schema registries,
+selected by the `USING` clause:
+
+- **[Confluent Schema Registry](/sql/create-connection/#confluent-schema-registry)**
+  (`USING CONFLUENT SCHEMA REGISTRY`): schemas are looked up by topic using the
+  `TopicNameStrategy`, and the message's embedded schema ID resolves the writer
+  schema at decode time.
+
+- **[AWS Glue Schema Registry](/sql/create-connection/#aws-glue-schema-registry)**
+  (`USING AWS GLUE SCHEMA REGISTRY`) <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
+: schemas are
+  looked up by the `SCHEMA NAME` you provide, and the message's embedded schema
+  version ID resolves the writer schema at decode time. Each `FORMAT AVRO USING
+  AWS GLUE` clause resolves a single schema. To decode keys and values from
+  different schemas (for example, under `ENVELOPE UPSERT` or `ENVELOPE
+  DEBEZIUM`), you must specify `KEY FORMAT ... VALUE FORMAT ...` explicitly.
+
+#### Schema versioning
+
+The schema is resolved when the source or table is created. With
+[Confluent Schema Registry](/sql/create-connection/#confluent-schema-registry),
+the _latest_ schema is retrieved using the
+[`TopicNameStrategy`](https://docs.confluent.io/current/schema-registry/serdes-develop/index.html)
+strategy. With [AWS Glue Schema
+Registry](/sql/create-connection/#aws-glue-schema-registry), the latest version
+of the schema named by `SCHEMA NAME` is retrieved.
+
+#### Schema evolution
+
+As long as the writer schema changes in a [compatible way](https://avro.apache.org/docs/++version++/specification/#schema-resolution), Materialize will continue using the original reader schema definition by mapping values from the new to the old schema version. This applies to both Confluent Schema Registry and AWS Glue Schema Registry.
+
+To pick up the new version of the writer schema, the approach depends on the syntax you used:
+
+- **Legacy syntax** (`CREATE SOURCE ... FORMAT AVRO ...`): you need to **drop and recreate** the source, which incurs downtime.
+- **New syntax** (`CREATE SOURCE` plus [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/)): you can create a new table that reads the evolved schema and cut over without downtime. See [Handle upstream schema changes with zero downtime](/ingest-data/kafka/source-versioning/).
+
+#### Name collision
+
+To avoid [case-sensitivity](/sql/identifiers/#case-sensitivity) conflicts with Materialize identifiers, we recommend double-quoting all field names when working with Avro-formatted sources.
+
+#### Supported types
+
+Materialize supports all [Avro
+types](https://avro.apache.org/docs/++version++/specification/), _except for_
+recursive types and union types in arrays.
+
+**Format JSON:**
+### Format JSON
+
+Materialize can decode JSON messages into a single column named `data` with type
+`jsonb`. Refer to the [`jsonb` type](/sql/types/jsonb) documentation for the
+supported operations on this type.
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM KAFKA CONNECTION <connection_name> (
+  TOPIC '<topic>'
+  [, GROUP ID PREFIX '<group_id_prefix>']
+  [, START OFFSET ( <partition_offset> [, ...] ) ]
+  [, START TIMESTAMP <timestamp> ]
+)
+FORMAT JSON
+[INCLUDE
+    PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE NONE]
+[EXPOSE PROGRESS AS <progress_subsource_name>]
+[WITH ( <with_option> [, ...] )]
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<src_name>` | The name for the source.  |
+| **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
+| **CONNECTION** `<connection_name>` | The name of the Kafka connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection) documentation page.  |
+| **TOPIC** `'<topic>'` | **Required.** The Kafka topic you want to subscribe to.  |
+| **GROUP ID PREFIX** `<group_id_prefix>` | Optional. The prefix of the consumer group ID to use. See [Monitoring consumer lag](#monitoring-consumer-lag).<br>Default: `materialize-{REGION-ID}-{CONNECTION-ID}-{SOURCE_ID}`  |
+| **START OFFSET** (`<partition_offset>` [, ...]) | Optional. Read partitions from the specified offset. You cannot update the offsets once a source has been created; you will need to recreate the source. Offset values must be zero or positive integers. See [Setting start offsets](#setting-start-offsets) for details.  |
+| **START TIMESTAMP** `<timestamp>` | Optional. Use the specified value to set `START OFFSET` based on the Kafka timestamp. Negative values will be interpreted as relative to the current system time in milliseconds (e.g. `-1000` means 1000 ms ago). See [Time-based offsets](#time-based-offsets) for details.  |
+| **FORMAT JSON** | Decode JSON-formatted messages. JSON-formatted messages are ingested as a JSON blob. We recommend creating a parsing view on top of your Kafka source that maps the individual fields to columns with the required data types.  |
+| **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION [AS <name>]` \| Expose the Kafka partition as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `OFFSET [AS <name>]` \| Expose the Kafka offset as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `TIMESTAMP [AS <name>]` \| Expose the Kafka timestamp as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `HEADERS [AS <name>]` \| Expose all message headers as a column with type `record(key: text, value: bytea?) list`. See [Headers](#headers) for details. \| \| `HEADER '<key>' AS <name> [BYTES]` \| Expose a specific message header as a column. The `bytea` value is automatically parsed into a UTF-8 string unless `BYTES` is specified. See [Headers](#headers) for details. \|  |
+| **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. See [Append-only envelope](/sql/create-source/kafka/#append-only-envelope) for details. \|  |
+| **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+
+If your JSON messages have a consistent shape, we recommend creating a parsing
+[view](/fundamentals/concepts/views) that maps the individual fields to
+columns with the required data types:
+
+```mzsql
+-- extract jsonb into typed columns
+CREATE VIEW my_typed_source AS
+  SELECT
+    (data->>'field1')::boolean AS field_1,
+    (data->>'field2')::int AS field_2,
+    (data->>'field3')::float AS field_3
+  FROM my_jsonb_source;
+```
+
+To avoid doing this task manually, you can use [this **JSON parsing
+widget**](/sql/types/jsonb/#parsing).
+
+#### Schema registry integration
+
+Retrieving schemas from a schema registry is not supported yet for JSON-formatted sources. This means that Materialize cannot decode messages serialized using the [JSON Schema](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/serdes-json.html#json-schema-serializer-and-deserializer) serialization format (`JSON_SR`).
+
+**Format TEXT/BYTES:**
+### Format Text/Bytes
+
+Materialize can:
+- Parse **new-line delimited** data as plain text. Data is assumed to be **valid
+  unicode** (UTF-8), and discarded if it cannot be converted to UTF-8.
+  Text-formatted sources have a single column, by default named `text`. For details on casting, check the [`text`](/sql/types/text/) documentation.
+
+- Read raw bytes without applying any formatting or decoding. Raw byte-formatted
+sources have a single column, by default named `data`. For details on encodings
+and casting, check the [`bytea`](/sql/types/bytea/) documentation.
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM KAFKA CONNECTION <connection_name> (
+  TOPIC '<topic>'
+  [, GROUP ID PREFIX '<group_id_prefix>']
+  [, START OFFSET ( <partition_offset> [, ...] ) ]
+  [, START TIMESTAMP <timestamp> ]
+)
+FORMAT TEXT | BYTES
+[INCLUDE
+    PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE NONE]
+[EXPOSE PROGRESS AS <progress_subsource_name>]
+[WITH ( <with_option> [, ...] )]
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<src_name>` | The name for the source.  |
+| **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
+| **CONNECTION** `<connection_name>` | The name of the Kafka connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection) documentation page.  |
+| **TOPIC** `'<topic>'` | **Required.** The Kafka topic you want to subscribe to.  |
+| **GROUP ID PREFIX** `<group_id_prefix>` | Optional. The prefix of the consumer group ID to use. See [Monitoring consumer lag](#monitoring-consumer-lag).<br>Default: `materialize-{REGION-ID}-{CONNECTION-ID}-{SOURCE_ID}`  |
+| **START OFFSET** (`<partition_offset>` [, ...]) | Optional. Read partitions from the specified offset. You cannot update the offsets once a source has been created; you will need to recreate the source. Offset values must be zero or positive integers. See [Setting start offsets](#setting-start-offsets) for details.  |
+| **START TIMESTAMP** `<timestamp>` | Optional. Use the specified value to set `START OFFSET` based on the Kafka timestamp. Negative values will be interpreted as relative to the current system time in milliseconds (e.g. `-1000` means 1000 ms ago). See [Time-based offsets](#time-based-offsets) for details.  |
+| **FORMAT TEXT\|BYTES** | - If `TEXT`, decode new-line delimited data as plain text. Data is assumed to be valid unicode (UTF-8), and discarded if it cannot be converted to UTF-8. Text-formatted sources have a single column, by default named `text`.  - If `BYTES`, read raw bytes without applying any formatting or decoding. Raw byte-formatted sources have a single column, by default named `data`.  |
+| **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION [AS <name>]` \| Expose the Kafka partition as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `OFFSET [AS <name>]` \| Expose the Kafka offset as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `TIMESTAMP [AS <name>]` \| Expose the Kafka timestamp as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `HEADERS [AS <name>]` \| Expose all message headers as a column with type `record(key: text, value: bytea?) list`. See [Headers](#headers) for details. \| \| `HEADER '<key>' AS <name> [BYTES]` \| Expose a specific message header as a column. The `bytea` value is automatically parsed into a UTF-8 string unless `BYTES` is specified. See [Headers](#headers) for details. \|  |
+| **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. See [Append-only envelope](/sql/create-source/kafka/#append-only-envelope) for details. \|  |
+| `EXPOSE PROGRESS AS <progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
+| `WITH (<with_option> [, ...])` | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+
+**Format CSV:**
+### Format CSV
+
+Materialize can parse CSV-formatted data. The data in CSV sources is read as
+[`text`](/sql/types/text).
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name> ( <col_name> [, ...] )
+[IN CLUSTER <cluster_name>]
+FROM KAFKA CONNECTION <connection_name> (
+  TOPIC '<topic>'
+  [, GROUP ID PREFIX '<group_id_prefix>']
+  [, START OFFSET ( <partition_offset> [, ...] ) ]
+  [, START TIMESTAMP <timestamp> ]
+)
+FORMAT CSV WITH <n> COLUMNS | WITH HEADER [ ( <col_name> [, ...] ) ]
+[INCLUDE
+    PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE NONE]
+[EXPOSE PROGRESS AS <progress_subsource_name>]
+[WITH ( <with_option> [, ...] )]
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<src_name> ( <col_name> [, ...] )` | The name for the source and the column names. Column names are required for CSV-formatted sources.  |
+| **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
+| **CONNECTION** `<connection_name>` | The name of the Kafka connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection) documentation page.  |
+| **TOPIC** `'<topic>'` | **Required.** The Kafka topic you want to subscribe to.  |
+| **GROUP ID PREFIX** `<group_id_prefix>` | Optional. The prefix of the consumer group ID to use. See [Monitoring consumer lag](#monitoring-consumer-lag).<br>Default: `materialize-{REGION-ID}-{CONNECTION-ID}-{SOURCE_ID}`  |
+| **START OFFSET** (`<partition_offset>` [, ...]) | Optional. Read partitions from the specified offset. You cannot update the offsets once a source has been created; you will need to recreate the source. Offset values must be zero or positive integers. See [Setting start offsets](#setting-start-offsets) for details.  |
+| **START TIMESTAMP** `<timestamp>` | Optional. Use the specified value to set `START OFFSET` based on the Kafka timestamp. Negative values will be interpreted as relative to the current system time in milliseconds (e.g. `-1000` means 1000 ms ago). See [Time-based offsets](#time-based-offsets) for details.  |
+| **FORMAT CSV WITH** `<csv_format_option>` | CSV format options:  \| Option \| Description \| \|--------\|-------------\| \| `WITH <n> COLUMNS` \| Treat the source data as if it has `<n>` columns. By default, columns are named `column1`, `column2`...`columnN`, but you can override these names by specifying column names in the source definition. \| \| `WITH HEADER [ ( <col_name> [, ...] ) ]` \| Materialize determines the number of columns and the name of each column using the header row. The header is not ingested as data. Optionally, you can provide a list of column names to validate against the header or override the source column names. \|  Any row that does not match the number of columns determined by the format is ignored, and Materialize logs an error.  |
+| **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `PARTITION [AS <name>]` \| Expose the Kafka partition as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `OFFSET [AS <name>]` \| Expose the Kafka offset as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `TIMESTAMP [AS <name>]` \| Expose the Kafka timestamp as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `HEADERS [AS <name>]` \| Expose all message headers as a column with type `record(key: text, value: bytea?) list`. See [Headers](#headers) for details. \| \| `HEADER '<key>' AS <name> [BYTES]` \| Expose a specific message header as a column. The `bytea` value is automatically parsed into a UTF-8 string unless `BYTES` is specified. See [Headers](#headers) for details. \|  |
+| **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. CSV format only supports `NONE`:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. See [Append-only envelope](/sql/create-source/kafka/#append-only-envelope) for details. \|  |
+| **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+
+**Format Protobuf:**
+### Format Protobuf
+
+Materialize can decode Protobuf messages by integrating with a schema registry
+or parsing an inline schema to retrieve a `.proto` schema definition. It can
+then automatically define the columns and data types to use in the source.
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM KAFKA CONNECTION <connection_name> (
+  TOPIC '<topic>'
+  [, GROUP ID PREFIX '<group_id_prefix>']
+  [, START OFFSET ( <partition_offset> [, ...] ) ]
+  [, START TIMESTAMP <timestamp> ]
+)
+FORMAT PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>
+  | FORMAT PROTOBUF MESSAGE '<message_name>' USING SCHEMA '<schema_bytes>'
+[INCLUDE
+    KEY [AS <name>]
+  | PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE
+    NONE
+  | UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]
+]
+[EXPOSE PROGRESS AS <progress_subsource_name>]
+[WITH ( <with_option> [, ...] )]
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<src_name>` | The name for the source.  |
+| **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
+| `<connection_name>` | The name of the Kafka connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection) documentation page.  |
+| `'<topic>'` | The Kafka topic you want to subscribe to.  |
+| **GROUP ID PREFIX** `<group_id_prefix>` | Optional. The prefix of the consumer group ID to use. See [Monitoring consumer lag](#monitoring-consumer-lag).<br>Default: `materialize-{REGION-ID}-{CONNECTION-ID}-{SOURCE_ID}`  |
+| **START OFFSET** (`<partition_offset>` [, ...]) | Optional. Read partitions from the specified offset. You cannot update the offsets once a source has been created; you will need to recreate the source. Offset values must be zero or positive integers. See [Setting start offsets](#setting-start-offsets) for details.  |
+| **START TIMESTAMP** `<timestamp>` | Optional. Use the specified value to set `START OFFSET` based on the Kafka timestamp. Negative values will be interpreted as relative to the current system time in milliseconds (e.g. `-1000` means 1000 ms ago). See [Time-based offsets](#time-based-offsets) for details.  |
+| **FORMAT PROTOBUF** `<decode-option>` | Decode Protobuf-formatted messages. The `<decode-option>` can be:  \| Option \| Description \| \|--------\|-------------\| \| `USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>` \| Use schemas from the Confluent Schema Registry. This format applies to both key and value. \| \| `MESSAGE '<message_name>' USING SCHEMA '<schema_bytes>'` \| Use an inline schema. `<message_name>` is the name of the Protobuf message type, and `<schema_bytes>` is the Protobuf schema definition as a string. This format applies to both key and value. \|  |
+| **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| **KEY [AS \<name\>]** \| Include a column containing the Kafka message key. If the key is encoded using a format that includes schemas, the column will take its name from the schema. For unnamed formats (e.g. `TEXT`), the column will be named `key`. The column can be renamed with the optional **AS** *name* statement. \| \| **PARTITION [AS \<name\>]** \| Include a `partition` column containing the Kafka message partition. The column can be renamed with the optional **AS** *name* clause. \| \| **OFFSET [AS \<name\>]** \| Include an `offset` column containing the Kafka message offset. The column can be renamed with the optional **AS** *name* clause. \| \| **TIMESTAMP [AS \<name\>]** \| Include a `timestamp` column containing the Kafka message timestamp. The column can be renamed with the optional **AS** *name* clause. <br><br>Note that the timestamp of a Kafka message depends on how the topic and its producers are configured. See the [Confluent documentation](https://docs.confluent.io/3.0.0/streams/concepts.html?#time) for details. \| \| **HEADERS [AS \<name\>]** \| Include a `headers` column containing the Kafka message headers as a list of records of type `(key text, value bytea)`. The column can be renamed with the optional **AS** *name* clause. \| \| **HEADER \<key\> AS \<name\> [**BYTES**]** \| Include a *name* column containing the Kafka message header *key* parsed as a UTF-8 string. To expose the header value as `bytea`, use the `BYTES` option. \|  |
+| **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. \| \| `UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]` \| Use the standard key-value convention to support inserts, updates, and deletes. Required to consume [log compacted topics](https://docs.confluent.io/platform/current/kafka/design.html#log-compaction). \|  |
+| **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+
+Unlike Avro, Protobuf does not serialize a schema with the message, so Materialize expects:
+
+* A `FileDescriptorSet` that encodes the Protobuf message schema. You can generate the `FileDescriptorSet` with [`protoc`](https://grpc.io/docs/protoc-installation/), for example:
+
+  ```shell
+  protoc --include_imports --descriptor_set_out=SCHEMA billing.proto
+  ```
+
+* A top-level message name and its package name, so Materialize knows which message from the `FileDescriptorSet` is the top-level message to decode, in the following format:
+
+  ```shell
+  <package name>.<top-level message>
+  ```
+
+  For example, if the `FileDescriptorSet` were from a `.proto` file in the
+    `billing` package, and the top-level message was called `Batch`, the
+    _message&lowbar;name_ value would be `billing.Batch`.
+
+#### Schema versioning
+
+The _latest_ schema is retrieved using the [`TopicNameStrategy`](https://docs.confluent.io/current/schema-registry/serdes-develop/index.html) strategy at the time the source or table is created.
+
+#### Schema evolution
+
+As long as the `.proto` schema definition changes in a [compatible way](https://developers.google.com/protocol-buffers/docs/overview#updating-defs), Materialize will continue using the original schema definition by mapping values from the new to the old schema version. To pick up the new version of the schema with the legacy syntax (`CREATE SOURCE ... FORMAT PROTOBUF ...`), you need to **drop and recreate** the source. With the new syntax (`CREATE SOURCE` plus [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/)), you can instead create a new table that reads the evolved schema and cut over without downtime, following the approach in [Handle upstream schema changes with zero downtime](/ingest-data/kafka/source-versioning/).
+
+#### Supported types
+
+Materialize supports all [well-known](https://developers.google.com/protocol-buffers/docs/reference/google.protobuf) Protobuf types from the `proto2` and `proto3` specs, _except for_ recursive `Struct` values and map types.
+
+#### Multiple message schemas
+
+When using a schema registry with Protobuf sources, the registered schemas must contain exactly one `Message` definition.
+
+**KEY FORMAT VALUE FORMAT:**
+### KEY FORMAT VALUE FORMAT
+By default, the message key is decoded using the same format as the message
+value. However, you can set the key and value encodings explicitly using the
+`KEY FORMAT ... VALUE FORMAT`.
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM KAFKA CONNECTION <connection_name> (
+  TOPIC '<topic>'
+  [, GROUP ID PREFIX '<group_id_prefix>']
+  [, START OFFSET ( <partition_offset> [, ...] ) ]
+  [, START TIMESTAMP <timestamp> ]
+)
+KEY FORMAT <key_format> VALUE FORMAT <value_format>
+-- <key_format> and <value_format> can be:
+-- AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <conn_name>
+--     [KEY STRATEGY <strategy>]
+--     [VALUE STRATEGY <strategy>]
+-- | AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_conn_name> (SCHEMA NAME = '<schema_name>')
+-- | CSV WITH <num> COLUMNS DELIMITED BY <char>
+-- | JSON | TEXT | BYTES
+-- | PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <conn_name>
+-- | PROTOBUF MESSAGE '<message_name>' USING SCHEMA '<schema_bytes>'
+[INCLUDE
+    KEY [AS <name>]
+  | PARTITION [AS <name>]
+  | OFFSET [AS <name>]
+  | TIMESTAMP [AS <name>]
+  | HEADERS [AS <name>]
+  | HEADER '<key>' AS <name> [BYTES]
+  [, ...]
+]
+[ENVELOPE
+    NONE
+  | DEBEZIUM
+  | UPSERT [(VALUE DECODING ERRORS = INLINE [AS name])]
+]
+[EXPOSE PROGRESS AS <progress_subsource_name>]
+[WITH ( <with_option> [, ...] )]
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<src_name>` | The name for the source.  |
+| **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
+| **CONNECTION** `<connection_name>` | The name of the Kafka connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection) documentation page.  |
+| **TOPIC** `'<topic>'` | **Required.** The Kafka topic you want to subscribe to.  |
+| **GROUP ID PREFIX** `<group_id_prefix>` | Optional. The prefix of the consumer group ID to use. See [Monitoring consumer lag](#monitoring-consumer-lag).<br>Default: `materialize-{REGION-ID}-{CONNECTION-ID}-{SOURCE_ID}`  |
+| **START OFFSET** (`<partition_offset>` [, ...]) | Optional. Read partitions from the specified offset. You cannot update the offsets once a source has been created; you will need to recreate the source. Offset values must be zero or positive integers. See [Setting start offsets](#setting-start-offsets) for details.  |
+| **START TIMESTAMP** `<timestamp>` | Optional. Use the specified value to set `START OFFSET` based on the Kafka timestamp. Negative values will be interpreted as relative to the current system time in milliseconds (e.g. `-1000` means 1000 ms ago). See [Time-based offsets](#time-based-offsets) for details.  |
+| **KEY FORMAT** `<key_format_spec>` | **Required.** Set the key encoding explicitly. Supported formats: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> (SCHEMA NAME = '<schema_name>')`, `JSON`, `PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `PROTOBUF MESSAGE '<message_name>' USING SCHEMA '<schema_bytes>'`, `TEXT`, `BYTES`.  |
+| **VALUE FORMAT** `<value_format_spec>` | **Required.** Set the value encoding explicitly. Supported formats: `AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION <glue_connection_name> (SCHEMA NAME = '<schema_name>')`, `JSON`, `PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION <csr_connection_name>`, `PROTOBUF MESSAGE '<message_name>' USING SCHEMA '<schema_bytes>'`, `TEXT`, `BYTES`. By default, the message key is decoded using the same format as the message value.  |
+| **INCLUDE** `<include_option>` | Optional. If specified, include the additional information as column(s) in the table. The following `<include_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `KEY [AS <name>]` \| Expose the message key as a column. Composite keys are also supported. The `UPSERT` envelope always includes keys. The `DEBEZIUM` envelope is incompatible with this option. See [Exposing source metadata](#exposing-source-metadata) for details. \| \| `PARTITION [AS <name>]` \| Expose the Kafka partition as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `OFFSET [AS <name>]` \| Expose the Kafka offset as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `TIMESTAMP [AS <name>]` \| Expose the Kafka timestamp as a column. See [Partition, offset, timestamp](#partition-offset-timestamp) for details. \| \| `HEADERS [AS <name>]` \| Expose all message headers as a column with type `record(key: text, value: bytea?) list`. The `DEBEZIUM` envelope is incompatible with this option. See [Headers](#headers) for details. \| \| `HEADER '<key>' AS <name> [BYTES]` \| Expose a specific message header as a column. The `bytea` value is automatically parsed into a UTF-8 string unless `BYTES` is specified. The `DEBEZIUM` envelope is incompatible with this option. See [Headers](#headers) for details. \|  |
+| **ENVELOPE** `<envelope>` | Optional. Specifies how Materialize interprets incoming records. Valid envelope types:  \| Envelope \| Description \| \|----------\|-------------\| \| `NONE` \| Append-only envelope (default). Each message is inserted as a new row. See [Append-only envelope](/sql/create-source/kafka/#append-only-envelope) for details. \| \| `DEBEZIUM` \| Decode Kafka messages produced by [Debezium](https://debezium.io/). \| \| `UPSERT [ ( VALUE DECODING ERRORS = INLINE [AS <name>] ) ]` \| Use the standard key-value convention to support inserts, updates, and deletes. Required to consume [log compacted topics](https://docs.confluent.io/platform/current/kafka/design.html#log-compaction). \|  |
+| **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+
+## Envelopes
+
+In addition to determining how to decode incoming records, Materialize also
+needs to understand how to interpret them. Whether a new record inserts,
+updates, or deletes existing data in Materialize depends on the `ENVELOPE`
+specified. For where the `ENVELOPE` clause goes, see [Syntax](#syntax).
+
+### Append-only envelope
+
+<p style="font-size:14px"><b>Syntax:</b> <code>ENVELOPE NONE</code></p>
+
+The append-only envelope treats all records as inserts. This is the **default** envelope, if no envelope is specified.
+
+### Upsert envelope
+
+<p style="font-size:14px"><b>Syntax:</b> <code>ENVELOPE UPSERT</code></p>
+
+The upsert envelope uses the standard key-value convention to support inserts,
+updates, and deletes within Materialize. It treats all records as having a
+**key** and a **value**:
+
+- If the key does not match a preexisting record, it inserts the record's key and value.
+
+- If the key matches a preexisting record and the value is _non-null_, Materialize updates
+  the existing record with the new value.
+
+- If the key matches a preexisting record and the value is _null_, Materialize deletes the record.
+
+> **Note:** - Using this envelope is required to consume [log compacted topics](https://docs.confluent.io/platform/current/kafka/design.html#log-compaction).
+> - This envelope can lead to high memory and disk utilization in the cluster
+>   maintaining the source. We recommend using a standard-sized cluster, rather
+>   than a legacy-sized cluster, to automatically spill the workload to disk. See
+>   [spilling to disk](/sql/create-source/kafka/#spilling-to-disk) for details.
+
+#### Null keys
+
+If a message with a `NULL` key is detected, Materialize sets the source into an
+error state. To recover an errored source, you must produce a record with a
+`NULL` value and a `NULL` key to the topic, to force a retraction.
+
+As an example, you can use [`kcat`](https://docs.confluent.io/platform/current/clients/kafkacat-usage.html)
+to produce an empty message:
+
+```bash
+echo ":" | kcat -b $BROKER -t $TOPIC -Z -K: \
+  -X security.protocol=SASL_SSL \
+  -X sasl.mechanisms=SCRAM-SHA-256 \
+  -X sasl.username=$KAFKA_USERNAME \
+  -X sasl.password=<KAFKA_PASSWORD>
+```
+
+#### Value decoding errors
+
+By default, if an error happens while decoding the value of a message for a
+specific key, Materialize sets the source into an error state. You can
+configure the source to continue ingesting data in the presence of value
+decoding errors using the `VALUE DECODING ERRORS = INLINE` option:
+
+```mzsql
+ENVELOPE UPSERT (VALUE DECODING ERRORS = INLINE)
+```
+
+When this option is specified the source will include an additional column named
+`error` with type `record(description: text)`.
+
+This column and all value columns will be nullable, such that if the most recent value
+for the given Kafka message key cannot be decoded, this `error` column will contain
+the error message. If the most recent value for a key has been successfully decoded,
+this column will be `NULL`.
+
+To use an alternative name for the error column, use `INLINE AS ..` to specify the
+column name to use:
+
+```mzsql
+ENVELOPE UPSERT (VALUE DECODING ERRORS = (INLINE AS my_error_col))
+```
+
+It might be convenient to implement a parsing view on top of your Kafka upsert source that
+excludes keys with decoding errors:
+
+```mzsql
+CREATE VIEW kafka_upsert_parsed
+SELECT *
+FROM kafka_upsert
+WHERE error IS NULL;
+```
+
+### Debezium envelope
+
+<p style="font-size:14px"><b>Syntax:</b> <code>ENVELOPE DEBEZIUM</code></p>
+
+<div class="note">
+  <strong class="gutter">NOTE:</strong> Currently, Materialize only supports Avro-encoded Debezium records. If you're interested in JSON support, please reach out in the community Slack or submit a <a href="https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests">feature request</a>.
+</div>
+
+Materialize provides a dedicated envelope (`ENVELOPE DEBEZIUM`) to decode Kafka
+messages produced by [Debezium](https://debezium.io/).
+
+Any materialized view defined on top of a Debezium source will be incrementally
+updated as new change events stream in through Kafka, as a result of `INSERT`,
+`UPDATE` and `DELETE` operations in the original database.
+
+This envelope treats all records as [change events](https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-events) with a diff structure that indicates whether each record should be interpreted as an insert, update or delete within Materialize:
+
+|    |   |
+ ----|---
+ **Insert** | If the `before` field is _null_, the record represents an upstream [`create` event](https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-create-events), and Materialize inserts the record's key and value.
+ **Update** | If the `before` and `after` fields are _non-null_, the record represents an upstream [`update` event](https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-update-events), and Materialize updates the existing record with the new value.
+ **Delete** | If the `after` field is _null_, the record represents an upstream [`delete` event](https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-delete-events), and Materialize deletes the record.
+
+> **Note:** - This envelope can lead to high memory utilization in the cluster maintaining
+>   the source. Materialize can automatically offload processing to
+>   disk as needed. See [spilling to disk](/sql/create-source/kafka/#spilling-to-disk) for details.
+> - Materialize expects a specific message structure that includes the row data
+>   before and after the change event, which is **not guaranteed** for every
+>   Debezium connector. For more details, check the [Debezium integration
+>   guide](/integrations/debezium/).
+
+#### Truncation
+
+The Debezium envelope does not support upstream [`truncate` events](https://debezium.io/documentation/reference/stable/connectors/postgresql.html#postgresql-truncate-events).
+
+#### Debezium metadata
+
+The envelope exposes the `before` and `after` value fields from change events.
+
+#### Duplicate handling
+
+Debezium may produce duplicate records if the connector is interrupted. Materialize makes a best-effort attempt to detect and filter out duplicates.
+
+## Features
+
+### Spilling to disk
+
+Kafka sources that use `ENVELOPE UPSERT` or `ENVELOPE DEBEZIUM` require storing
+the current value for _each key_ in the source to produce retractions when keys
+are updated. When using [standard cluster sizes](/sql/create-cluster/#available-sizes),
+Materialize will automatically offload this state to disk, seamlessly handling
+key spaces that are larger than memory.
+
+Spilling to disk is not available with [legacy cluster sizes](/sql/create-cluster/#legacy-sizes).
+
+### Exposing source metadata
+
+In addition to the message value, Materialize can expose the message key,
+headers and other source metadata fields to SQL through the `INCLUDE` clause.
+For where the `INCLUDE` clause goes, see [Syntax](#syntax).
+
+#### Key
+
+The message key is exposed via the `INCLUDE KEY` option. Composite keys are also
+supported.
+
+```mzsql
+INCLUDE KEY AS renamed_id
+```
+
+Note that:
+
+- This option requires specifying the key and value encodings explicitly using the `KEY FORMAT ... VALUE FORMAT` [syntax](#syntax).
+
+- The `UPSERT` envelope always includes keys.
+
+- The `DEBEZIUM` envelope is incompatible with this option.
+
+#### Headers
+
+Message headers can be retained in Materialize and exposed as part of the source data.
+
+Note that:
+- The `DEBEZIUM` envelope is incompatible with this option.
+
+**All headers**
+
+All of a message's headers can be exposed using `INCLUDE HEADERS`, followed by
+an `AS <header_col>`.
+
+This introduces column with the name specified or `headers` if none was
+specified. The column has the type `record(key: text, value: bytea?) list`,
+i.e. a list of records containing key-value pairs, where the keys are `text`
+and the values are nullable `bytea`s.
+
+```mzsql
+INCLUDE HEADERS
+```
+
+To simplify turning the headers column into a `map` (so individual headers can
+be searched), you can use the [`map_build`](/sql/functions/#map_build) function:
+
+```mzsql
+SELECT
+    id,
+    seller,
+    item,
+    convert_from(map_build(headers)->'client_id', 'utf-8') AS client_id,
+    map_build(headers)->'encryption_key' AS encryption_key,
+FROM kafka_metadata;
+```
+
+<p></p>
+
+```nofmt
+ id | seller |        item        | client_id |    encryption_key
+----+--------+--------------------+-----------+----------------------
+  2 |   1592 | Custom Art         |        23 | \x796f75207769736821
+  3 |   1411 | City Bar Crawl     |        42 | \x796f75207769736821
+```
+
+**Individual headers**
+
+Individual message headers can be exposed via the `INCLUDE HEADER key AS name`
+option.
+
+The `bytea` value of the header is automatically parsed into an UTF-8 string. To
+expose the raw `bytea` instead, the `BYTES` option can be used.
+
+```mzsql
+INCLUDE HEADER 'c_id' AS client_id, HEADER 'key' AS encryption_key BYTES
+```
+
+Headers can be queried as any other column in the source:
+
+```mzsql
+SELECT
+    id,
+    seller,
+    item,
+    client_id::numeric,
+    encryption_key
+FROM kafka_metadata;
+```
+
+<p></p>
+
+```nofmt
+ id | seller |        item        | client_id |    encryption_key
+----+--------+--------------------+-----------+----------------------
+  2 |   1592 | Custom Art         |        23 | \x796f75207769736821
+  3 |   1411 | City Bar Crawl     |        42 | \x796f75207769736821
+```
+
+Note that:
+
+- Messages that do not contain all header keys as specified in the source DDL
+  will cause an error that prevents further querying the source.
+
+- Header values containing badly formed UTF-8 strings will cause an error in the
+  source that prevents querying it, unless the `BYTES` option is specified.
+
+#### Partition, offset, timestamp
+
+These metadata fields are exposed via the `INCLUDE PARTITION`, `INCLUDE OFFSET`
+and `INCLUDE TIMESTAMP` options.
+
+```mzsql
+INCLUDE PARTITION, OFFSET, TIMESTAMP AS ts
+```
+
+```mzsql
+SELECT "offset" FROM kafka_metadata WHERE ts > '2021-01-01';
+```
+
+<p></p>
+
+```nofmt
+offset
+------
+15
+14
+13
+```
+
+### Setting start offsets
+
+To start consuming a Kafka stream from a specific offset, you can use the `START
+OFFSET` option.
+
+```mzsql
+CREATE SOURCE kafka_offset
+  FROM KAFKA CONNECTION kafka_connection (
+    TOPIC 'data',
+    -- Start reading from the earliest offset in the first partition,
+    -- the second partition at 10, and the third partition at 100.
+    START OFFSET (0, 10, 100)
+  );
+```
+
+Note that:
+
+- If fewer offsets than partitions are provided, the remaining partitions will
+  start at offset 0. This is true if you provide `START OFFSET (1)` or `START
+  OFFSET (1, ...)`.
+
+- Providing more offsets than partitions is not supported.
+
+#### Time-based offsets
+
+It's also possible to set a start offset based on Kafka timestamps, using the
+`START TIMESTAMP` option. This approach sets the start offset for each
+available partition based on the Kafka timestamp and the source behaves as if
+`START OFFSET` was provided directly.
+
+It's important to note that `START TIMESTAMP` is a property of the source: it
+will be calculated _once_ at the time the `CREATE SOURCE` statement is issued.
+This means that the computed start offsets will be the **same** for all views
+depending on the source and **stable** across restarts.
+
+If you need to limit the amount of data maintained as state after source
+creation, consider using [temporal filters](/sql/patterns/temporal-filters/)
+instead.
+
+### Monitoring source progress
+
+By default, Kafka sources expose progress metadata as a subsource that you can
+use to monitor source **ingestion progress**. The name of the progress
+subsource can be specified when creating a source using the `EXPOSE PROGRESS
+AS` clause; otherwise, it will be named `<src_name>_progress`.
+
+The following metadata is available for each source as a progress subsource:
+
+Field          | Type                                     | Meaning
+---------------|------------------------------------------|--------
+`partition`    | `numrange`                               | The upstream Kafka partition.
+`offset`       | [`uint8`](/sql/types/uint/#uint8-info)   | The greatest offset consumed from each upstream Kafka partition.
+
+And can be queried using:
+
+```mzsql
+SELECT
+  partition, "offset"
+FROM
+  (
+    SELECT
+      -- Take the upper of the range, which is null for non-partition rows
+      -- Cast partition to u64, which is more ergonomic
+      upper(partition)::uint8 AS partition, "offset"
+    FROM
+      <src_name>_progress
+  )
+WHERE
+  -- Remove all non-partition rows
+  partition IS NOT NULL;
+```
+
+As long as any offset continues increasing, Materialize is consuming data from
+the upstream Kafka broker. For more details on monitoring source ingestion
+progress and debugging related issues, see [Troubleshooting](/ops/troubleshooting/).
+
+### Monitoring consumer lag
+
+To support Kafka tools that monitor consumer lag, Kafka sources commit offsets
+once the messages up through that offset have been durably recorded in
+Materialize's storage layer.
+
+However, rather than relying on committed offsets, Materialize suggests using
+our native [progress monitoring](#monitoring-source-progress), which contains
+more up-to-date information.
+
+> **Note:** Some Kafka monitoring tools may indicate that Materialize's consumer groups have
+> no active members. This is **not a cause for concern**.
+> Materialize does not participate in the consumer group protocol nor does it
+> recover on restart by reading the committed offsets. The committed offsets are
+> provided solely for the benefit of Kafka monitoring tools.
+
+Committed offsets are associated with a consumer group specific to the source.
+The ID of the consumer group consists of the prefix configured with the [`GROUP
+ID PREFIX` option](#syntax) followed by a Materialize-generated
+suffix.
+
+You should not make assumptions about the number of consumer groups that
+Materialize will use to consume from a given source. The only guarantee is that
+the ID of each consumer group will begin with the configured prefix.
+
+The consumer group ID prefix for each Kafka source in the system is available in
+the `group_id_prefix` column of the [`mz_kafka_sources`] table. To look up the
+`group_id_prefix` for a source by name, use:
+
+```mzsql
+SELECT group_id_prefix
+FROM mz_internal.mz_kafka_sources ks
+JOIN mz_sources s ON s.id = ks.id
+WHERE s.name = '<src_name>'
+```
+
+## Required Kafka ACLs
+
+The access control lists (ACLs) on the Kafka cluster must allow Materialize
+to perform the following operations on the following resources:
+
+Operation type | Resource type    | Resource name
+---------------|------------------|--------------
+Read           | Topic            | The specified `TOPIC` option
+Read           | Group            | All group IDs starting with the specified [`GROUP ID PREFIX` option](#syntax)
+
+## Privileges
+
+The privileges required to execute this statement are:
+
+- `CREATE` privileges on the containing schema.
+- `CREATE` privileges on the containing cluster if the source is created in an existing cluster.
+- `CREATECLUSTER` privileges on the system if the source is not created in an existing cluster.
+- `USAGE` privileges on all connections and secrets used in the source definition.
+- `USAGE` privileges on the schemas that all connections and secrets in the
+  statement are contained in.
+
+## Examples
+
+### Prerequisite: Creating a connection
+
+A connection describes how to connect and authenticate to an external system you
+want Materialize to read data from.
+
+Once created, a connection is **reusable** across multiple `CREATE SOURCE`
+statements. For more details on creating connections, check the
+[`CREATE CONNECTION`](/sql/create-connection) documentation page.
+
+#### Broker
+
+**SSL:**
+```mzsql
+CREATE SECRET kafka_ssl_key AS '<BROKER_SSL_KEY>';
+CREATE SECRET kafka_ssl_crt AS '<BROKER_SSL_CRT>';
+
+CREATE CONNECTION kafka_connection TO KAFKA (
+    BROKER 'unique-jellyfish-0000.us-east-1.aws.confluent.cloud:9093',
+    SSL KEY = SECRET kafka_ssl_key,
+    SSL CERTIFICATE = SECRET kafka_ssl_crt
+);
+```
+
+**SASL:**
+
+```mzsql
+CREATE SECRET kafka_password AS '<BROKER_PASSWORD>';
+
+CREATE CONNECTION kafka_connection TO KAFKA (
+    BROKER 'unique-jellyfish-0000.us-east-1.aws.confluent.cloud:9092',
+    SASL MECHANISMS = 'SCRAM-SHA-256',
+    SASL USERNAME = 'foo',
+    SASL PASSWORD = SECRET kafka_password
+);
+```
+
+If your Kafka broker is not exposed to the public internet, you can [tunnel the connection](/sql/create-connection/#network-security-connections)
+through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host:
+
+**AWS PrivateLink (Materialize Cloud):**
+
+> **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
+
+```mzsql
+CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
+    SERVICE NAME 'com.amazonaws.vpce.us-east-1.vpce-svc-0e123abc123198abc',
+    AVAILABILITY ZONES ('use1-az1', 'use1-az4')
+);
+```
+
+```mzsql
+CREATE CONNECTION kafka_connection TO KAFKA (
+    BROKERS (
+        'broker1:9092' USING AWS PRIVATELINK privatelink_svc,
+        'broker2:9092' USING AWS PRIVATELINK privatelink_svc (PORT 9093)
+    )
+);
+```
+
+For step-by-step instructions on creating AWS PrivateLink connections and
+configuring an AWS PrivateLink service to accept connections from Materialize,
+check [this guide](/ops/network-security/privatelink/).
+
+**SSH tunnel:**
+
+```mzsql
+CREATE CONNECTION ssh_connection TO SSH TUNNEL (
+    HOST '<SSH_BASTION_HOST>',
+    USER '<SSH_BASTION_USER>',
+    PORT <SSH_BASTION_PORT>
+);
+```
+
+```mzsql
+CREATE CONNECTION kafka_connection TO KAFKA (
+BROKERS (
+    'broker1:9092' USING SSH TUNNEL ssh_connection,
+    'broker2:9092' USING SSH TUNNEL ssh_connection
+    )
+);
+```
+
+For step-by-step instructions on creating SSH tunnel connections and configuring
+an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
+
+#### Confluent Schema Registry
+
+**SSL:**
+```mzsql
+CREATE SECRET csr_ssl_crt AS '<CSR_SSL_CRT>';
+CREATE SECRET csr_ssl_key AS '<CSR_SSL_KEY>';
+CREATE SECRET csr_password AS '<CSR_PASSWORD>';
+
+CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
+    URL 'https://unique-jellyfish-0000.us-east-1.aws.confluent.cloud:9093',
+    SSL KEY = SECRET csr_ssl_key,
+    SSL CERTIFICATE = SECRET csr_ssl_crt,
+    USERNAME = 'foo',
+    PASSWORD = SECRET csr_password
+);
+```
+
+**Basic HTTP Authentication:**
+```mzsql
+CREATE SECRET IF NOT EXISTS csr_username AS '<CSR_USERNAME>';
+CREATE SECRET IF NOT EXISTS csr_password AS '<CSR_PASSWORD>';
+
+CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
+  URL '<CONFLUENT_REGISTRY_URL>',
+  USERNAME = SECRET csr_username,
+  PASSWORD = SECRET csr_password
+);
+```
+
+If your Confluent Schema Registry server is not exposed to the public internet,
+you can [tunnel the connection](/sql/create-connection/#network-security-connections)
+through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host:
+
+**AWS PrivateLink (Materialize Cloud):**
+
+> **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
+
+```mzsql
+CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
+    SERVICE NAME 'com.amazonaws.vpce.us-east-1.vpce-svc-0e123abc123198abc',
+    AVAILABILITY ZONES ('use1-az1', 'use1-az4')
+);
+```
+
+```mzsql
+CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
+    URL 'http://my-confluent-schema-registry:8081',
+    AWS PRIVATELINK privatelink_svc
+);
+```
+
+For step-by-step instructions on creating AWS PrivateLink connections and
+configuring an AWS PrivateLink service to accept connections from Materialize,
+check [this guide](/ops/network-security/privatelink/).
+
+**SSH tunnel:**
+```mzsql
+CREATE CONNECTION ssh_connection TO SSH TUNNEL (
+    HOST '<SSH_BASTION_HOST>',
+    USER '<SSH_BASTION_USER>',
+    PORT <SSH_BASTION_PORT>
+);
+```
+
+```mzsql
+CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
+    URL 'http://my-confluent-schema-registry:8081',
+    SSH TUNNEL ssh_connection
+);
+```
+
+For step-by-step instructions on creating SSH tunnel connections and configuring
+an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
+
+#### AWS Glue Schema Registry
+
+An [AWS Glue Schema Registry connection](/sql/create-connection/#aws-glue-schema-registry)
+authenticates through a separate [AWS connection](/sql/create-connection/#aws),
+which supplies the credentials and region:
+
+```mzsql
+CREATE CONNECTION aws_connection TO AWS (
+    ASSUME ROLE ARN = 'arn:aws:iam::123456789000:role/MaterializeGlue'
+);
+
+CREATE CONNECTION glue_connection TO AWS GLUE SCHEMA REGISTRY (
+    AWS CONNECTION = aws_connection,
+    REGISTRY = 'default-registry'
+);
+```
+
+The AWS connection must be allowed to read schemas from the registry. See
+[Permissions](/sql/create-connection/#glue-permissions) for the required IAM
+actions.
+
+### Creating a source
+
+**Avro:**
+
+**Using Confluent Schema Registry**
+
+```mzsql
+CREATE SOURCE avro_source
+  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+  FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection;
+```
+
+**Using AWS Glue Schema Registry** <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
+
+```mzsql
+CREATE SOURCE avro_source
+  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+  FORMAT AVRO USING AWS GLUE SCHEMA REGISTRY CONNECTION glue_connection (
+    SCHEMA NAME = 'test_schema'
+  );
+```
+
+**JSON:**
+
+```mzsql
+CREATE SOURCE json_source
+  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+  FORMAT JSON;
+```
+
+```mzsql
+CREATE VIEW typed_kafka_source AS
+  SELECT
+    (data->>'field1')::boolean AS field_1,
+    (data->>'field2')::int AS field_2,
+    (data->>'field3')::float AS field_3
+  FROM json_source;
+```
+
+JSON-formatted messages are ingested as a JSON blob. We recommend creating a
+parsing view on top of your Kafka source that maps the individual fields to
+columns with the required data types. To avoid doing this tedious task
+manually, you can use [this **JSON parsing widget**](/sql/types/jsonb/#parsing)!
+
+**Text/bytes:**
+
+```mzsql
+CREATE SOURCE text_source
+  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+  FORMAT TEXT
+  ENVELOPE UPSERT;
+```
+
+**CSV:**
+
+```mzsql
+CREATE SOURCE csv_source (col_foo, col_bar, col_baz)
+  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+  FORMAT CSV WITH 3 COLUMNS;
+```
+
+**Protobuf:**
+
+**Using Confluent Schema Registry**
+
+```mzsql
+CREATE SOURCE proto_source
+  FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+  FORMAT PROTOBUF USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection;
+```
+
+**Using an inline schema**
+
+If you're not using a schema registry, you can use the `MESSAGE...SCHEMA` clause
+to specify a Protobuf schema descriptor inline. Protobuf does not serialize a
+schema with the message, so before creating a source you must:
+
+* Compile the Protobuf schema into a descriptor file using [`protoc`](https://grpc.io/docs/protoc-installation/):
+
+  ```proto
+  // example.proto
+  syntax = "proto3";
+  message Batch {
+      int32 id = 1;
+      // ...
+  }
+  ```
+
+  ```bash
+  protoc --include_imports --descriptor_set_out=example.pb example.proto
+  ```
+
+* Encode the descriptor file into a SQL byte string:
+
+  ```bash
+  $ printf '\\x' && xxd -p example.pb | tr -d '\n'
+  \x0a300a0d62696...
+  ```
+
+* Create the source using the encoded descriptor bytes from the previous step
+  (including the `\x` at the beginning):
+
+  ```mzsql
+  CREATE SOURCE proto_source
+    FROM KAFKA CONNECTION kafka_connection (TOPIC 'test_topic')
+    FORMAT PROTOBUF MESSAGE 'Batch' USING SCHEMA '\x0a300a0d62696...';
+  ```
+
+## Related pages
+
+- [`CREATE SECRET`](/sql/create-secret)
+- [`CREATE CONNECTION`](/sql/create-connection)
+- [`CREATE SOURCE`](../)
+- [`SHOW SOURCES`](/sql/show-sources)
+- [`DROP SOURCE`](/sql/drop-source)
+- [Using Debezium](/integrations/debezium/)
+
+<!-- mz-docs page: sql/create-source/kafka-v2 -->
+
+# CREATE SOURCE: Kafka/Redpanda (New Syntax)
+Connecting Materialize to a Kafka or Redpanda broker using the new source syntax
+> **Disambiguation:** This page reflects the new syntax. For the legacy syntax, see the [old reference page](/sql/create-source/kafka/).
+
+Creates a new source from Kafka or Redpanda broker.  Once a new source is created, you can <a href="/sql/create-table/kafka" ><code>CREATE TABLE FROM SOURCE</code></a>
+to create the corresponding tables in Materialize and start the data ingestion
+process.
+
+The decoding options (`FORMAT`, `INCLUDE`, and `ENVELOPE`) are set on the
+[`CREATE TABLE ... FROM SOURCE`](/sql/create-table/kafka) statement that reads
+from the source. For the full catalog of formats, envelopes, and exposed
+metadata, see [CREATE TABLE: Kafka source table](/sql/create-table/kafka/).
+
+> **Note:** The same syntax, supported formats and features can be used to connect to a
+> [Redpanda](/integrations/redpanda/) broker.
+
+## Prerequisites
+
+To create a source from Kafka/Redpanda broker, you first need to [create a
+connection](/sql/create-connection/#kafka). Once created, a connection is
+**reusable** across multiple `CREATE SOURCE` and `CREATE SINK` statements.
+
+## Syntax
+
+The `CREATE SOURCE` statement connects to a Kafka/Redpanda topic.
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM KAFKA CONNECTION <connection_name> (
+  TOPIC '<topic>'
+  [, GROUP ID PREFIX '<group_id_prefix>']
+  [, START OFFSET ( <partition_offset> [, ...] ) ]
+  [, START TIMESTAMP <timestamp> ]
+)
+[EXPOSE PROGRESS AS <progress_subsource_name>]
+[WITH ( <with_option> [, ...] )];
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<src_name>` | The name for the source.  |
+| **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
+| `<connection_name>` | The name of the Kafka connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection) documentation page.  |
+| `'<topic>'` | The Kafka topic you want to subscribe to.  |
+| **GROUP ID PREFIX** `<group_id_prefix>` | Optional. The prefix of the consumer group ID to use. See [Monitoring consumer lag](#monitoring-consumer-lag).<br>Default: `materialize-{REGION-ID}-{CONNECTION-ID}-{SOURCE_ID}`  |
+| **START OFFSET** (`<partition_offset>` [, ...]) | Optional. Read partitions from the specified offset. You cannot update the offsets once a source has been created; you will need to recreate the source. Offset values must be zero or positive integers. See [Setting start offsets](#setting-start-offsets) for details.  |
+| **START TIMESTAMP** `<timestamp>` | Optional. Use the specified value to set `START OFFSET` based on the Kafka timestamp. Negative values will be interpreted as relative to the current system time in milliseconds (e.g. `-1000` means 1000 ms ago). See [Time-based offsets](#time-based-offsets) for details.  |
+| **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. See [Monitoring source progress](#monitoring-source-progress) for details.  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+
+## Details
+
+### Ingesting data
+
+After the source is created, each [`CREATE TABLE ... FROM
+SOURCE`](/sql/create-table/kafka/) statement creates a table that decodes the
+topic and starts ingesting data. You can create multiple tables from the same
+source, each with its own format and envelope.
+
+### Handling schema changes
+
+Because each table pins its own reader schema when it is created, you can pick up
+a [compatible upstream schema
+change](https://avro.apache.org/docs/++version++/specification/#schema-resolution)
+without downtime: create a new table that reads the evolved schema, recreate the
+downstream objects, and swap them into place. See [Handle upstream schema changes
+with zero downtime](/ingest-data/kafka/source-versioning/) for the full
+procedure.
+
+## Features
+
+### Setting start offsets
+
+To start consuming a Kafka stream from a specific offset, you can use the `START
+OFFSET` option.
+
+```mzsql
+CREATE SOURCE kafka_offset
+  FROM KAFKA CONNECTION kafka_connection (
+    TOPIC 'data',
+    -- Start reading from the earliest offset in the first partition,
+    -- the second partition at 10, and the third partition at 100.
+    START OFFSET (0, 10, 100)
+  );
+```
+
+Note that:
+
+- If fewer offsets than partitions are provided, the remaining partitions will
+  start at offset 0. This is true if you provide `START OFFSET (1)` or `START
+  OFFSET (1, ...)`.
+
+- Providing more offsets than partitions is not supported.
+
+#### Time-based offsets
+
+It's also possible to set a start offset based on Kafka timestamps, using the
+`START TIMESTAMP` option. This approach sets the start offset for each
+available partition based on the Kafka timestamp and the source behaves as if
+`START OFFSET` was provided directly.
+
+It's important to note that `START TIMESTAMP` is a property of the source: it
+will be calculated _once_ at the time the `CREATE SOURCE` statement is issued.
+This means that the computed start offsets will be the **same** for all views
+depending on the source and **stable** across restarts.
+
+If you need to limit the amount of data maintained as state after source
+creation, consider using [temporal filters](/sql/patterns/temporal-filters/)
+instead.
+
+### Monitoring source progress
+
+By default, Kafka sources expose progress metadata as a subsource that you can
+use to monitor source **ingestion progress**. The name of the progress
+subsource can be specified when creating a source using the `EXPOSE PROGRESS
+AS` clause; otherwise, it will be named `<src_name>_progress`.
+
+The following metadata is available for each source as a progress subsource:
+
+Field          | Type                                     | Meaning
+---------------|------------------------------------------|--------
+`partition`    | `numrange`                               | The upstream Kafka partition.
+`offset`       | [`uint8`](/sql/types/uint/#uint8-info)   | The greatest offset consumed from each upstream Kafka partition.
+
+And can be queried using:
+
+```mzsql
+SELECT
+  partition, "offset"
+FROM
+  (
+    SELECT
+      -- Take the upper of the range, which is null for non-partition rows
+      -- Cast partition to u64, which is more ergonomic
+      upper(partition)::uint8 AS partition, "offset"
+    FROM
+      <src_name>_progress
+  )
+WHERE
+  -- Remove all non-partition rows
+  partition IS NOT NULL;
+```
+
+As long as any offset continues increasing, Materialize is consuming data from
+the upstream Kafka broker. For more details on monitoring source ingestion
+progress and debugging related issues, see [Troubleshooting](/ops/troubleshooting/).
+
+### Monitoring consumer lag
+
+To support Kafka tools that monitor consumer lag, Kafka sources commit offsets
+once the messages up through that offset have been durably recorded in
+Materialize's storage layer.
+
+However, rather than relying on committed offsets, Materialize suggests using
+our native [progress monitoring](#monitoring-source-progress), which contains
+more up-to-date information.
+
+> **Note:** Some Kafka monitoring tools may indicate that Materialize's consumer groups have
+> no active members. This is **not a cause for concern**.
+> Materialize does not participate in the consumer group protocol nor does it
+> recover on restart by reading the committed offsets. The committed offsets are
+> provided solely for the benefit of Kafka monitoring tools.
+
+Committed offsets are associated with a consumer group specific to the source.
+The ID of the consumer group consists of the prefix configured with the [`GROUP
+ID PREFIX` option](#syntax) followed by a Materialize-generated
+suffix.
+
+You should not make assumptions about the number of consumer groups that
+Materialize will use to consume from a given source. The only guarantee is that
+the ID of each consumer group will begin with the configured prefix.
+
+The consumer group ID prefix for each Kafka source in the system is available in
+the `group_id_prefix` column of the [`mz_kafka_sources`] table. To look up the
+`group_id_prefix` for a source by name, use:
+
+```mzsql
+SELECT group_id_prefix
+FROM mz_internal.mz_kafka_sources ks
+JOIN mz_sources s ON s.id = ks.id
+WHERE s.name = '<src_name>'
+```
+
+For spilling to disk, see the [Features section of the Kafka/Redpanda reference
+page](/sql/create-source/kafka/#spilling-to-disk). This feature is configured on
+the `CREATE SOURCE` statement and behaves the same regardless of syntax.
+
+## Examples
+
+### Prerequisite: Creating a connection
+
+A connection describes how to connect and authenticate to an external system you
+want Materialize to read data from.
+
+Once created, a connection is **reusable** across multiple `CREATE SOURCE`
+statements. For more details on creating connections, check the
+[`CREATE CONNECTION`](/sql/create-connection) documentation page.
+
+#### Broker
+
+**SSL:**
+```mzsql
+CREATE SECRET kafka_ssl_key AS '<BROKER_SSL_KEY>';
+CREATE SECRET kafka_ssl_crt AS '<BROKER_SSL_CRT>';
+
+CREATE CONNECTION kafka_connection TO KAFKA (
+    BROKER 'unique-jellyfish-0000.us-east-1.aws.confluent.cloud:9093',
+    SSL KEY = SECRET kafka_ssl_key,
+    SSL CERTIFICATE = SECRET kafka_ssl_crt
+);
+```
+
+**SASL:**
+
+```mzsql
+CREATE SECRET kafka_password AS '<BROKER_PASSWORD>';
+
+CREATE CONNECTION kafka_connection TO KAFKA (
+    BROKER 'unique-jellyfish-0000.us-east-1.aws.confluent.cloud:9092',
+    SASL MECHANISMS = 'SCRAM-SHA-256',
+    SASL USERNAME = 'foo',
+    SASL PASSWORD = SECRET kafka_password
+);
+```
+
+If your Kafka broker is not exposed to the public internet, you can [tunnel the connection](/sql/create-connection/#network-security-connections)
+through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host:
+
+**AWS PrivateLink (Materialize Cloud):**
+
+> **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
+
+```mzsql
+CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
+    SERVICE NAME 'com.amazonaws.vpce.us-east-1.vpce-svc-0e123abc123198abc',
+    AVAILABILITY ZONES ('use1-az1', 'use1-az4')
+);
+```
+
+```mzsql
+CREATE CONNECTION kafka_connection TO KAFKA (
+    BROKERS (
+        'broker1:9092' USING AWS PRIVATELINK privatelink_svc,
+        'broker2:9092' USING AWS PRIVATELINK privatelink_svc (PORT 9093)
+    )
+);
+```
+
+For step-by-step instructions on creating AWS PrivateLink connections and
+configuring an AWS PrivateLink service to accept connections from Materialize,
+check [this guide](/ops/network-security/privatelink/).
+
+**SSH tunnel:**
+
+```mzsql
+CREATE CONNECTION ssh_connection TO SSH TUNNEL (
+    HOST '<SSH_BASTION_HOST>',
+    USER '<SSH_BASTION_USER>',
+    PORT <SSH_BASTION_PORT>
+);
+```
+
+```mzsql
+CREATE CONNECTION kafka_connection TO KAFKA (
+BROKERS (
+    'broker1:9092' USING SSH TUNNEL ssh_connection,
+    'broker2:9092' USING SSH TUNNEL ssh_connection
+    )
+);
+```
+
+For step-by-step instructions on creating SSH tunnel connections and configuring
+an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
+
+#### Confluent Schema Registry
+
+**SSL:**
+```mzsql
+CREATE SECRET csr_ssl_crt AS '<CSR_SSL_CRT>';
+CREATE SECRET csr_ssl_key AS '<CSR_SSL_KEY>';
+CREATE SECRET csr_password AS '<CSR_PASSWORD>';
+
+CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
+    URL 'https://unique-jellyfish-0000.us-east-1.aws.confluent.cloud:9093',
+    SSL KEY = SECRET csr_ssl_key,
+    SSL CERTIFICATE = SECRET csr_ssl_crt,
+    USERNAME = 'foo',
+    PASSWORD = SECRET csr_password
+);
+```
+
+**Basic HTTP Authentication:**
+```mzsql
+CREATE SECRET IF NOT EXISTS csr_username AS '<CSR_USERNAME>';
+CREATE SECRET IF NOT EXISTS csr_password AS '<CSR_PASSWORD>';
+
+CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
+  URL '<CONFLUENT_REGISTRY_URL>',
+  USERNAME = SECRET csr_username,
+  PASSWORD = SECRET csr_password
+);
+```
+
+If your Confluent Schema Registry server is not exposed to the public internet,
+you can [tunnel the connection](/sql/create-connection/#network-security-connections)
+through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host:
+
+**AWS PrivateLink (Materialize Cloud):**
+
+> **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
+
+```mzsql
+CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
+    SERVICE NAME 'com.amazonaws.vpce.us-east-1.vpce-svc-0e123abc123198abc',
+    AVAILABILITY ZONES ('use1-az1', 'use1-az4')
+);
+```
+
+```mzsql
+CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
+    URL 'http://my-confluent-schema-registry:8081',
+    AWS PRIVATELINK privatelink_svc
+);
+```
+
+For step-by-step instructions on creating AWS PrivateLink connections and
+configuring an AWS PrivateLink service to accept connections from Materialize,
+check [this guide](/ops/network-security/privatelink/).
+
+**SSH tunnel:**
+```mzsql
+CREATE CONNECTION ssh_connection TO SSH TUNNEL (
+    HOST '<SSH_BASTION_HOST>',
+    USER '<SSH_BASTION_USER>',
+    PORT <SSH_BASTION_PORT>
+);
+```
+
+```mzsql
+CREATE CONNECTION csr_connection TO CONFLUENT SCHEMA REGISTRY (
+    URL 'http://my-confluent-schema-registry:8081',
+    SSH TUNNEL ssh_connection
+);
+```
+
+For step-by-step instructions on creating SSH tunnel connections and configuring
+an SSH bastion server to accept connections from Materialize, check [this guide](/ops/network-security/ssh-tunnel/).
+
+#### AWS Glue Schema Registry
+
+An [AWS Glue Schema Registry connection](/sql/create-connection/#aws-glue-schema-registry)
+authenticates through a separate [AWS connection](/sql/create-connection/#aws),
+which supplies the credentials and region:
+
+```mzsql
+CREATE CONNECTION aws_connection TO AWS (
+    ASSUME ROLE ARN = 'arn:aws:iam::123456789000:role/MaterializeGlue'
+);
+
+CREATE CONNECTION glue_connection TO AWS GLUE SCHEMA REGISTRY (
+    AWS CONNECTION = aws_connection,
+    REGISTRY = 'default-registry'
+);
+```
+
+The AWS connection must be allowed to read schemas from the registry. See
+[Permissions](/sql/create-connection/#glue-permissions) for the required IAM
+actions.
+
+### Create a source and table
+
+```mzsql
+CREATE SOURCE orders_src
+  FROM KAFKA CONNECTION kafka_connection (TOPIC 'orders');
+
+CREATE TABLE orders
+  FROM SOURCE orders_src
+  FORMAT AVRO USING CONFLUENT SCHEMA REGISTRY CONNECTION csr_connection
+  ENVELOPE UPSERT;
+```
+
+For connection setup, required Kafka ACLs, and worked examples for each format,
+see the [Kafka/Redpanda reference page](/sql/create-source/kafka/).
+
+## Related pages
+
+- [`CREATE TABLE`](/sql/create-table/)
+- [`CREATE SECRET`](/sql/create-secret)
+- [`CREATE CONNECTION`](/sql/create-connection)
+- [CREATE SOURCE: Kafka/Redpanda (Legacy Syntax)](/sql/create-source/kafka/)
+- [Handle upstream schema changes with zero downtime](/ingest-data/kafka/source-versioning/)
+
+<!-- mz-docs page: sql/create-source/load-generator -->
+
+# Appendix: Load generator
+Using Materialize's built-in load generators
+[`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
+
+Load generator sources produce synthetic data for use in demos and performance
+tests.
+
+## Syntax
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM LOAD GENERATOR <generator_type> [
+  (
+    [TICK INTERVAL <tick_interval>]
+    [, AS OF <tick>]
+    [, UP TO <tick>]
+    [, SCALE FACTOR <scale_factor>]
+    [, MAX CARDINALITY <max_cardinality>]
+    [, KEYS <keys>]
+    [, SNAPSHOT ROUNDS <snapshot_rounds>]
+    [, TRANSACTIONAL SNAPSHOT <transactional_snapshot>]
+    [, VALUE SIZE <value_size>]
+    [, SEED <seed>]
+    [, PARTITIONS <partitions>]
+    [, BATCH SIZE <batch_size>]
+  )
+]
+[EXPOSE PROGRESS AS <progress_subsource_name>]
+[WITH ( <with_option> [, ...] )];
+
+CREATE TABLE [IF NOT EXISTS] <table_name>
+FROM SOURCE <src_name> [ (REFERENCE <reference>) ];
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<src_name>` | The name for the source.  |
+| **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
+| **FROM LOAD GENERATOR** `<generator_type>` | The type of load generator to use. Valid generator types:  \| Generator \| Description \| \|-----------\|-------------\| \| `AUCTION` \| Use the [auction](#auction) load generator. \| \| `MARKETING` \| Use the [marketing](#marketing) load generator. \| \| `TPCH` \| Use the [tpch](#tpch) load generator. \| \| `KEY VALUE` \| Use the key-value load generator. \|  |
+| **TICK INTERVAL** `<tick_interval>` | Optional. The interval at which the next datum should be emitted. Defaults to one second.  |
+| **AS OF** `<tick>` | Optional. {{< warn-if-unreleased-inline "v0.101" >}} The tick at which to start producing data. Defaults to 0.  |
+| **UP TO** `<tick>` | Optional. {{< warn-if-unreleased-inline "v0.101" >}} The tick before which to stop producing data. Defaults to infinite.  |
+| **SCALE FACTOR** `<scale_factor>` | Optional. The scale factor for the `TPCH` generator. Defaults to `0.01` (~ 10MB).  |
+| **MAX CARDINALITY** `<max_cardinality>` | Optional. The maximum cardinality for the generator.  |
+| **KEYS** `<keys>` | Optional. The number of keys for the generator.  |
+| **SNAPSHOT ROUNDS** `<snapshot_rounds>` | Optional. The number of snapshot rounds for the generator.  |
+| **TRANSACTIONAL SNAPSHOT** `<transactional_snapshot>` | Optional. Whether to use transactional snapshots.  |
+| **VALUE SIZE** `<value_size>` | Optional. The size of values for the generator.  |
+| **SEED** `<seed>` | Optional. The seed for random number generation.  |
+| **PARTITIONS** `<partitions>` | Optional. The number of partitions for the generator.  |
+| **BATCH SIZE** `<batch_size>` | Optional. The batch size for the generator.  |
+| **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress subsource for the source. If this is not specified, the subsource will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+| `<table_name>` | The name of the table to create for a relation exposed by the source. Use [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/) to ingest a relation. You can create multiple tables from the same source relation.  |
+| **(REFERENCE `<reference>`)** | The relation of the load generator source to ingest into the table (e.g. `bids`, `customer`). Required for multi-output generators (`AUCTION`, `MARKETING`, `TPCH`). Optional for the single-output `KEY VALUE` generator.  |
+
+## Description
+
+Materialize has several built-in load generators, which provide a quick way to
+get up and running with no external dependencies before plugging in your own
+data sources. If you would like to see an additional load generator, please
+submit a [feature request].
+
+### Auction
+
+The auction load generator simulates an auction house, where users are bidding
+on an ongoing series of auctions. The auction source exposes the following
+relations, which you can ingest using [`CREATE TABLE ... FROM
+SOURCE`](/sql/create-table/):
+
+  * `organizations` describes the organizations known to the auction
+    house.
+
+    Field | Type       | Description
+    ------|------------|------------
+    id    | [`bigint`] | A unique identifier for the organization.
+    name  | [`text`]   | The organization's name.
+
+  * `users` describes the users that belong to each organization.
+
+    Field     | Type       | Description
+    ----------|------------|------------
+    `id`      | [`bigint`] | A unique identifier for the user.
+    `org_id`  | [`bigint`] | The identifier of the organization to which the user belongs. References `organizations.id`.
+    `name`    | [`text`]   | The user's name.
+
+  * `accounts` describes the account associated with each organization.
+
+    Field     | Type       | Description
+    ----------|------------|------------
+    `id`      | [`bigint`] | A unique identifier for the account.
+    `org_id`  | [`bigint`] | The identifier of the organization to which the account belongs. References `organizations.id`.
+    `balance` | [`bigint`] | The balance of the account in dollars.
+
+  * `auctions` describes all past and ongoing auctions.
+
+    Field      | Type                         | Description
+    -----------|------------------------------|------------
+    `id`       | [`bigint`]                   | A unique identifier for the auction.
+    `seller`   | [`bigint`]                   | The identifier of the user selling the item. References `users.id`.
+    `item`     | [`text`]                     | The name of the item being sold.
+    `end_time` | [`timestamp with time zone`] | The time at which the auction closes.
+
+  * `bids` describes the bids placed in each auction.
+
+    Field        | Type                         | Description
+    -------------|------------------------------|------------
+    `id`         | [`bigint`]                   | A unique identifier for the bid.
+    `buyer`      | [`bigint`]                   | The identifier vof the user placing the bid. References `users.id`.
+    `auction_id` | [`bigint`]                   | The identifier of the auction in which the bid is placed. References `auctions.id`.
+    `amount`     | [`bigint`]                   | The bid amount in dollars.
+    `bid_time`   | [`timestamp with time zone`] | The time at which the bid was placed.
+
+The organizations, users, and accounts are fixed at the time the source
+is created. Each tick interval, either a new auction is started, or a new bid
+is placed in the currently ongoing auction.
+
+### Marketing
+
+The marketing load generator simulates a marketing organization that is using a
+machine learning model to send coupons to potential leads. The marketing source
+exposes the following relations, which you can ingest using [`CREATE TABLE ...
+FROM SOURCE`](/sql/create-table/):
+
+  * `customers` describes the customers that the marketing team may target.
+
+    Field     | Type       | Description
+    ----------|------------|------------
+    `id`      | [`bigint`] | A unique identifier for the customer.
+    `email`   | [`text`]   | The customer's email.
+    `income`  | [`bigint`] | The customer's income in pennies.
+
+  * `impressions` describes online ads that have been seen by a customer.
+
+    Field             | Type                         | Description
+    ------------------|------------------------------|------------
+    `id`              | [`bigint`]                   | A unique identifier for the impression.
+    `customer_id`     | [`bigint`]                   | The identifier of the customer that saw the ad. References `customers.id`.
+    `impression_time` | [`timestamp with time zone`] | The time at which the ad was seen.
+
+  * `clicks` describes clicks of ads.
+
+    Field             | Type                         | Description
+    ------------------|------------------------------|------------
+    `impression_id`   | [`bigint`]                   | The identifier of the impression that was clicked. References `impressions.id`.
+    `click_time`      | [`timestamp with time zone`] | The time at which the impression was clicked.
+
+  * `leads` describes a potential lead for a purchase.
+
+    Field               | Type                         | Description
+    --------------------|------------------------------|------------
+    `id`                | [`bigint`]                   | A unique identifier for the lead.
+    `customer_id`       | [`bigint`]                   | The identifier of the customer we'd like to convert. References `customers.id`.
+    `created_at`        | [`timestamp with time zone`] | The time at which the lead was created.
+    `converted_at`      | [`timestamp with time zone`] | The time at which the lead was converted.
+    `conversion_amount` | [`bigint`]                   | The amount the lead converted for in pennies.
+
+  * `coupons` describes coupons given to leads.
+
+    Field               | Type                         | Description
+    --------------------|------------------------------|------------
+    `id`                | [`bigint`]                   | A unique identifier for the coupon.
+    `lead_id`           | [`bigint`]                   | The identifier of the lead we're attempting to convert. References `leads.id`.
+    `created_at`        | [`timestamp with time zone`] | The time at which the coupon was created.
+    `amount`            | [`bigint`]                   | The amount the coupon is for in pennies.
+
+  * `conversion_predictions` describes the predictions made by a highly sophisticated machine learning model.
+
+    Field               | Type                         | Description
+    --------------------|------------------------------|------------
+    `lead_id`           | [`bigint`]                   | The identifier of the lead we're attempting to convert. References `leads.id`.
+    `experiment_bucket`| [`text`]                     | Whether the lead is a control or experiment.
+    `created_at`        | [`timestamp with time zone`] | The time at which the prediction was made.
+    `score`             | [`numeric`]                  | The predicted likelihood the lead will convert.
+
+### TPCH
+
+The TPCH load generator implements the [TPC-H benchmark specification](https://www.tpc.org/tpch/default5.asp).
+The TPCH source exposes the standard TPC-H relations (`customer`, `lineitem`,
+`nation`, `orders`, `part`, `partsupp`, `region`, `supplier`), which you can
+ingest using [`CREATE TABLE ... FROM SOURCE`](/sql/create-table/).
+If `TICK INTERVAL` is specified, after the initial data load, an order and its lineitems will be changed at this interval.
+If not specified, the dataset will not change over time.
+
+### Monitoring source progress
+
+By default, load generator sources expose progress metadata as a subsource that
+you can use to monitor source **ingestion progress**. The name of the progress
+subsource can be specified when creating a source using the `EXPOSE PROGRESS
+AS` clause; otherwise, it will be named `<src_name>_progress`.
+
+The following metadata is available for each source as a progress subsource:
+
+Field          | Type        | Meaning
+---------------|-------------|--------
+`offset`       | [`uint8`]   | The minimum offset for which updates to this sources are still undetermined.
+
+And can be queried using:
+
+```mzsql
+SELECT "offset"
+FROM <src_name>_progress;
+```
+
+As long as the offset continues increasing, Materialize is generating data. For
+more details on monitoring source ingestion progress and debugging related
+issues, see [Troubleshooting](/ops/troubleshooting/).
+
+## Ingesting data
+
+Once a load generator source is created, use [`CREATE TABLE FROM
+SOURCE`](/sql/create-table/) to create a table for each relation described
+above that you want to ingest. For example, assuming a TPCH source named
+`tpch`:
+
+```mzsql
+CREATE TABLE orders FROM SOURCE tpch (REFERENCE orders);
+```
+
+For **multi-output generators** (`AUCTION`, `MARKETING`, `TPCH`), the
+`REFERENCE` clause is required: specify one of the table names listed above
+(e.g. `bids`, `customers`, `lineitem`). Omitting `REFERENCE` results in an
+error, since Materialize cannot determine which table you're referring to.
+
+Materialize's only single-output generator, `KEY VALUE`
+<a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
+, does not require `REFERENCE`, since there is
+only one table available:
+
+```mzsql
+CREATE TABLE kv_tbl FROM SOURCE kv_gen;
+```
+
+You can create multiple tables that reference the same load generator table.
+
+> **Note:** `TEXT COLUMNS` and `EXCLUDE COLUMNS` are not supported for load generator
+> tables. If specified, they are silently ignored.
+
+> **Note:** Load generator tables have a fixed schema defined by Materialize. You cannot
+> modify the schema.
+
+## Examples
+
+### Creating an auction load generator
+
+To create a load generator source that simulates an auction house and emits new
+data every second, then create tables for its relations:
+
+```mzsql
+CREATE SOURCE auction_house
+  FROM LOAD GENERATOR AUCTION
+  (TICK INTERVAL '1s');
+
+BEGIN;
+CREATE TABLE organizations FROM SOURCE auction_house (REFERENCE organizations);
+CREATE TABLE users FROM SOURCE auction_house (REFERENCE users);
+CREATE TABLE accounts FROM SOURCE auction_house (REFERENCE accounts);
+CREATE TABLE auctions FROM SOURCE auction_house (REFERENCE auctions);
+CREATE TABLE bids FROM SOURCE auction_house (REFERENCE bids);
+COMMIT;
+```
+
+To display the created source:
+
+```mzsql
+SHOW SOURCES;
+```
+```nofmt
+     name      |      type
+---------------+----------------
+ auction_house | load-generator
+```
+
+To display the created tables:
+
+```mzsql
+SHOW TABLES;
+```
+```nofmt
+     name
+---------------
+ accounts
+ auctions
+ bids
+ organizations
+ users
+```
+
+To examine the simulated bids:
+
+```mzsql
+SELECT * from bids;
+```
+```nofmt
+ id | buyer | auction_id | amount |          bid_time
+----+-------+------------+--------+----------------------------
+ 10 |  3844 |          1 |     59 | 2022-09-16 23:24:07.332+00
+ 11 |  1861 |          1 |     40 | 2022-09-16 23:24:08.332+00
+ 12 |  3338 |          1 |     97 | 2022-09-16 23:24:09.332+00
+```
+
+### Creating a marketing load generator
+
+To create a load generator source that simulates an online marketing campaign,
+then create tables for its relations:
+
+```mzsql
+CREATE SOURCE marketing
+  FROM LOAD GENERATOR MARKETING;
+
+BEGIN;
+CREATE TABLE customers FROM SOURCE marketing (REFERENCE customers);
+CREATE TABLE impressions FROM SOURCE marketing (REFERENCE impressions);
+CREATE TABLE clicks FROM SOURCE marketing (REFERENCE clicks);
+CREATE TABLE leads FROM SOURCE marketing (REFERENCE leads);
+CREATE TABLE coupons FROM SOURCE marketing (REFERENCE coupons);
+CREATE TABLE conversion_predictions FROM SOURCE marketing (REFERENCE conversion_predictions);
+COMMIT;
+```
+
+To display the created source:
+
+```mzsql
+SHOW SOURCES;
+```
+
+```nofmt
+   name    |      type
+-----------+---------------
+ marketing | load-generator
+```
+
+To display the created tables:
+
+```mzsql
+SHOW TABLES;
+```
+
+```nofmt
+          name
+------------------------
+ clicks
+ conversion_predictions
+ coupons
+ customers
+ impressions
+ leads
+```
+
+To find all impressions and clicks associated with a campaign over the last 30 days:
+
+```mzsql
+WITH
+    click_rollup AS
+    (
+        SELECT impression_id AS id, count(*) AS clicks
+        FROM clicks
+        WHERE click_time - INTERVAL '30' DAY <= mz_now()
+        GROUP BY impression_id
+    ),
+    impression_rollup AS
+    (
+        SELECT id, campaign_id, count(*) AS impressions
+        FROM impressions
+        WHERE impression_time - INTERVAL '30' DAY <= mz_now()
+        GROUP BY id, campaign_id
+    )
+SELECT campaign_id, sum(impressions) AS impressions, sum(clicks) AS clicks
+FROM impression_rollup LEFT JOIN click_rollup USING(id)
+GROUP BY campaign_id;
+```
+
+```nofmt
+ campaign_id | impressions | clicks
+-------------+-------------+--------
+           0 |         350 |     33
+           1 |         325 |     28
+           2 |         319 |     24
+           3 |         315 |     38
+           4 |         305 |     28
+           5 |         354 |     31
+           6 |         346 |     25
+           7 |         337 |     36
+           8 |         329 |     38
+           9 |         305 |     24
+          10 |         345 |     27
+          11 |         323 |     30
+          12 |         320 |     29
+          13 |         331 |     27
+          14 |         310 |     22
+          15 |         324 |     28
+          16 |         315 |     32
+          17 |         329 |     36
+          18 |         329 |     28
+```
+
+### Creating a TPCH load generator
+
+To create the load generator source, then create tables for its relations:
+
+```mzsql
+CREATE SOURCE tpch
+  FROM LOAD GENERATOR TPCH (SCALE FACTOR 1);
+
+BEGIN;
+CREATE TABLE customer FROM SOURCE tpch (REFERENCE customer);
+CREATE TABLE lineitem FROM SOURCE tpch (REFERENCE lineitem);
+CREATE TABLE nation FROM SOURCE tpch (REFERENCE nation);
+CREATE TABLE orders FROM SOURCE tpch (REFERENCE orders);
+CREATE TABLE part FROM SOURCE tpch (REFERENCE part);
+CREATE TABLE partsupp FROM SOURCE tpch (REFERENCE partsupp);
+CREATE TABLE region FROM SOURCE tpch (REFERENCE region);
+CREATE TABLE supplier FROM SOURCE tpch (REFERENCE supplier);
+COMMIT;
+```
+
+To display the created source:
+
+```mzsql
+SHOW SOURCES;
+```
+```nofmt
+ name |      type
+------+---------------
+ tpch | load-generator
+```
+
+To display the created tables:
+
+```mzsql
+SHOW TABLES;
+```
+```nofmt
+   name
+----------
+ customer
+ lineitem
+ nation
+ orders
+ part
+ partsupp
+ region
+ supplier
+```
+
+To run the Pricing Summary Report Query (Q1), which reports the amount of
+billed, shipped, and returned items:
+
+```mzsql
+SELECT
+    l_returnflag,
+    l_linestatus,
+    sum(l_quantity) AS sum_qty,
+    sum(l_extendedprice) AS sum_base_price,
+    sum(l_extendedprice * (1 - l_discount)) AS sum_disc_price,
+    sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) AS sum_charge,
+    avg(l_quantity) AS avg_qty,
+    avg(l_extendedprice) AS avg_price,
+    avg(l_discount) AS avg_disc,
+    count(*) AS count_order
+FROM
+    lineitem
+WHERE
+    l_shipdate <= date '1998-12-01' - interval '90' day
+GROUP BY
+    l_returnflag,
+    l_linestatus
+ORDER BY
+    l_returnflag,
+    l_linestatus;
+```
+```nofmt
+ l_returnflag | l_linestatus | sum_qty  | sum_base_price | sum_disc_price  |    sum_charge     |      avg_qty       |     avg_price      |      avg_disc       | count_order
+--------------+--------------+----------+----------------+-----------------+-------------------+--------------------+--------------------+---------------------+-------------
+ A            | F            | 37772997 |    56604341792 |  54338346989.17 |  57053313118.2657 | 25.490380624798817 | 38198.351517998075 | 0.04003729114831228 |     1481853
+ N            | F            |   986796 |     1477585066 |   1418531782.89 |   1489171757.0798 | 25.463731840115603 |  38128.27564317601 | 0.04007431682708436 |       38753
+ N            | O            | 74281600 |   111337230039 | 106883023012.04 | 112227399730.9018 |  25.49430183051871 | 38212.221432873834 | 0.03999775539657235 |     2913655
+ R            | F            | 37770949 |    56610551077 |   54347734573.7 |  57066196254.4557 | 25.496431466814634 |  38213.68205054471 | 0.03997848687172654 |     1481421
+```
+
+### Ingesting a subset of a load generator source's relations
+
+Creating a load generator source does not ingest any data on its own. To ingest
+only some of a source's relations, create tables for just the ones you want:
+
+```mzsql
+CREATE SOURCE tpch
+  FROM LOAD GENERATOR TPCH (SCALE FACTOR 1);
+
+BEGIN;
+CREATE TABLE orders FROM SOURCE tpch (REFERENCE orders);
+CREATE TABLE lineitem FROM SOURCE tpch (REFERENCE lineitem);
+COMMIT;
+```
+
+Unlike the [previous example](#creating-a-tpch-load-generator), only the
+`orders` and `lineitem` tables are created; the other TPCH relations are not
+ingested unless you also create tables for them.
+
+## Related pages
+
+- [`CREATE SOURCE`](../)
+
+[`bigint`]: /sql/types/bigint
+[`numeric`]: /sql/types/numeric
+[`text`]: /sql/types/text
+[`bytea`]: /sql/types/bytea
+[`interval`]: /sql/types/interval
+[`uint8`]: /sql/types/uint/#uint8-info
+[`timestamp with time zone`]: /sql/types/timestamp
+[feature request]: https://github.com/MaterializeInc/materialize/discussions/new?category=feature-requests
+
+<!-- mz-docs page: sql/create-source/mysql -->
+
+# CREATE SOURCE: MySQL (Legacy syntax)
+Connecting Materialize to a MySQL database for Change Data Capture (CDC).
+> **Disambiguation:** This page reflects the legacy syntax, which requires downtime to handle upstream DDL changes. For the new syntax which can handle adding or dropping columns to the upstream tables without downtime, see the [new reference page](/sql/create-source/mysql-v2).
+
+Creates a new source from MySQL. Materialize supports creating sources from
+MySQL (8.0.1+).
+
+To connect to a MySQL database, you first need to update its configuration to
+enable [GTID-based binary log (binlog) replication](#change-data-capture), and
+then [create a connection](#creating-a-connection) in Materialize that specifies
+access and authentication parameters.
+
+> **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
+
+## Syntax
+
+> **Note:** Although `schema` and `database` are [synonyms in MySQL](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_schema),
+> the MySQL source documentation and syntax **standardize on `schema`** as the
+> preferred keyword.
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM MYSQL CONNECTION <connection_name> [
+  (
+    [TEXT COLUMNS ( <col1> [, ...] ) ]
+    [, EXCLUDE COLUMNS ( <col1> [, ...] ) ]
+  )
+]
+<FOR ALL TABLES | FOR SCHEMAS ( <schema1> [, ...] ) | FOR TABLES ( <table1> [AS <subsrc_name>] [, ...] )>
+[EXPOSE PROGRESS AS <progress_subsource_name>]
+[WITH ( <with_option> [, ...] )]
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<src_name>` | The name for the source.  |
+| **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
+| **CONNECTION** `<connection_name>` | The name of the MySQL connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#mysql) documentation page.  |
+| **TEXT COLUMNS** ( `<col1>` [, ...] ) | Optional. Decode data as `text` for specific columns that contain MySQL types that are [unsupported in Materialize](#supported-types).  |
+| **EXCLUDE COLUMNS** ( `<col1>` [, ...] ) | Optional. Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.  |
+| **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables in all schemas upstream. The [`mysql` system schema](https://dev.mysql.com/doc/refman/8.3/en/system-schema.html) is ignored. \| \| `SCHEMAS ( <schema1> [, ...] )` \| Create subsources for specific schemas upstream. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables upstream. Requires fully-qualified table names (`<schema1>.<table1>`). \|  |
+| **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+
+### `CONNECTION` options
+
+| Field             | Value                           | Description                                                                                                                  |
+| ----------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `EXCLUDE COLUMNS` | A list of fully-qualified names | Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.          |
+| `TEXT COLUMNS`    | A list of fully-qualified names | Decode data as `text` for specific columns that contain MySQL types that are [unsupported in Materialize](#supported-types). |
+
+## Features
+
+### Change data capture
+
+> **Note:** For step-by-step instructions on enabling GTID-based binlog replication for your
+> MySQL service, see the integration guides:
+> [Amazon RDS](/ingest-data/mysql/amazon-rds/),
+> [Amazon Aurora](/ingest-data/mysql/amazon-aurora/),
+> [Azure DB](/ingest-data/mysql/azure-db/),
+> [Google Cloud SQL](/ingest-data/mysql/google-cloud-sql/),
+> [Self-hosted](/ingest-data/mysql/self-hosted/).
+
+The source uses MySQL's binlog replication protocol to **continually ingest
+changes** resulting from `INSERT`, `UPDATE` and `DELETE` operations in the
+upstream database. This process is known as _change data capture_.
+
+The replication method used is based on [global transaction identifiers (GTIDs)](https://dev.mysql.com/doc/refman/8.0/en/replication-gtids.html),
+and guarantees **transactional consistency** — any operation inside a MySQL
+transaction is assigned the same timestamp in Materialize, which means that the
+source will never show partial results based on partially replicated
+transactions.
+
+Before creating a source in Materialize, you **must** configure the upstream
+MySQL database for GTID-based binlog replication. Ensure the upstream MySQL
+database has been configured for GTID-based binlog replication:
+
+<table>
+<thead>
+<tr>
+
+<th>MySQL Configuration</th>
+
+<th>Value</th>
+
+<th>Notes</th>
+
+</tr>
+</thead>
+<tbody>
+
+<tr>
+
+<td>
+<code>log_bin</code>
+</td>
+
+<td>
+<code>ON</code>
+</td>
+
+<td>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>binlog_row_image</code>
+</td>
+
+<td>
+<code>FULL</code>
+</td>
+
+<td>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>binlog_row_metadata</code>
+</td>
+
+<td>
+<code>FULL</code>
+</td>
+
+<td>
+<ul>
+<li><strong>Required</strong> to use <a href="/sql/create-source/mysql-v2/" ><code>CREATE SOURCE</code> (New
+syntax)</a>.</li>
+<li>Highly recommended for use with the <a href="/sql/create-source/mysql/" ><code>CREATE SOURCE</code> (Legacy
+syntax)</a>.</li>
+</ul>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>binlog_format</code>
+</td>
+
+<td>
+<code>ROW</code>
+</td>
+
+<td>
+<a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>gtid_mode</code>
+</td>
+
+<td>
+<code>ON</code>
+</td>
+
+<td>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>enforce_gtid_consistency</code>
+</td>
+
+<td>
+<code>ON</code>
+</td>
+
+<td>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>replica_preserve_commit_order</code>
+</td>
+
+<td>
+<code>ON</code>
+</td>
+
+<td>
+Only required when connecting Materialize to a read-replica.
+</td>
+
+</tr>
+
+</tbody>
+</table>
+
+If you're running MySQL using a managed service, additional configuration
+changes might be required. For step-by-step instructions on enabling GTID-based
+binlog replication for your MySQL service, see the integration guides.
+
+#### Binlog retention
+
+> **Warning:** If Materialize tries to resume replication and finds GTID gaps due to missing
+> binlog files, the source enters an errored state and you have to drop and
+> recreate it.
+
+By default, MySQL retains binlog files for **30 days** (i.e., 2592000 seconds)
+before automatically removing them. This is configurable via the
+[`binlog_expire_logs_seconds`](https://dev.mysql.com/doc/mysql-replication-excerpt/8.0/en/replication-options-binary-log.html#sysvar_binlog_expire_logs_seconds)
+system variable. We recommend using the default value for this configuration in
+order to not compromise Materialize's ability to resume replication in case of
+failures or restarts.
+
+In some MySQL managed services, binlog expiration can be overriden by a
+service-specific configuration parameter. It's important that you double-check
+if such a configuration exists, and ensure it's set to the maximum interval
+available.
+
+As an example, [Amazon RDS for MySQL](/ingest-data/mysql/amazon-rds/) has its
+own configuration parameter for binlog retention ([`binlog retention hours`](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/mysql-stored-proc-configuring.html#mysql_rds_set_configuration-usage-notes.binlog-retention-hours))
+that overrides `binlog_expire_logs_seconds` and is set to `NULL` by default.
+
+#### Creating a source
+
+Materialize ingests the raw replication stream data for all (or a specific set
+of) tables in your upstream MySQL database.
+
+```mzsql
+CREATE SOURCE mz_source
+  FROM MYSQL CONNECTION mysql_connection
+  FOR ALL TABLES;
+```
+
+When you define a source, Materialize will automatically:
+
+1. Create a **subsource** for each original table upstream, and perform an
+   initial, snapshot-based sync of the tables before it starts ingesting change
+   events.
+
+    ```mzsql
+    SHOW SOURCES;
+    ```
+
+    ```nofmt
+             name         |   type    |  cluster  |
+    ----------------------+-----------+------------
+     mz_source            | mysql     |
+     mz_source_progress   | progress  |
+     table_1              | subsource |
+     table_2              | subsource |
+    ```
+
+1. Incrementally update any materialized or indexed views that depend on the
+   source as change events stream in, as a result of `INSERT`, `UPDATE` and
+   `DELETE` operations in the upstream MySQL database.
+
+##### MySQL schemas
+
+`CREATE SOURCE` will attempt to create each upstream table in the same schema as
+the source. This may lead to naming collisions if, for example, you are
+replicating `schema1.table_1` and `schema2.table_1`. Use the `FOR TABLES`
+clause to provide aliases for each upstream table, in such cases, or to specify
+an alternative destination schema in Materialize.
+
+```mzsql
+CREATE SOURCE mz_source
+  FROM MYSQL CONNECTION mysql_connection
+  FOR TABLES (schema1.table_1 AS s1_table_1, schema2.table_1 AS s2_table_1);
+```
+
+### Monitoring source progress
+
+[//]: # "TODO(morsapaes) Replace this section with guidance using the new
+progress metrics in mz_source_statistics + console monitoring, when available
+(also for PostgreSQL)."
+
+By default, MySQL sources expose progress metadata as a subsource that you
+can use to monitor source **ingestion progress**. The name of the progress
+subsource can be specified when creating a source using the `EXPOSE PROGRESS
+AS` clause; otherwise, it will be named `<src_name>_progress`.
+
+The following metadata is available for each source as a progress subsource:
+
+| Field             | Type                                   | Details                                                                                          |
+| ----------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `source_id_lower` | [`uuid`](/sql/types/uuid/)             | The lower-bound GTID `source_id` of the GTIDs covered by this range.                             |
+| `source_id_upper` | [`uuid`](/sql/types/uuid/)             | The upper-bound GTID `source_id` of the GTIDs covered by this range.                             |
+| `transaction_id`  | [`uint8`](/sql/types/uint/#uint8-info) | The `transaction_id` of the next GTID possible from the GTID `source_id`s covered by this range. |
+
+And can be queried using:
+
+```mzsql
+SELECT transaction_id
+FROM <src_name>_progress;
+```
+
+Progress metadata is represented as a [GTID set](https://dev.mysql.com/doc/refman/8.0/en/replication-gtids-concepts.html)
+of future possible GTIDs, which is similar to the [`gtid_executed`](https://dev.mysql.com/doc/refman/8.0/en/replication-options-gtids.html#sysvar_gtid_executed)
+system variable on a MySQL replica. The reported `transaction_id` should
+increase as Materialize consumes **new** binlog records from the upstream MySQL
+database. For more details on monitoring source ingestion progress and
+debugging related issues, see [Troubleshooting](/ops/troubleshooting/).
+
+## Known limitations
+
+### Supported types
+
+<p>Materialize natively supports the following MySQL types:</p>
+<ul style="column-count: 3"><li><code>bigint</code></li><li><code>binary</code></li><li><code>bit</code></li><li><code>blob</code></li><li><code>boolean</code></li><li><code>char</code></li><li><code>date</code></li><li><code>datetime</code></li><li><code>decimal</code></li><li><code>double</code></li><li><code>float</code></li><li><code>int</code></li><li><code>json</code></li><li><code>longblob</code></li><li><code>longtext</code></li><li><code>mediumblob</code></li><li><code>mediumint</code></li><li><code>mediumtext</code></li><li><code>numeric</code></li><li><code>real</code></li><li><code>smallint</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>tinyblob</code></li><li><code>tinyint</code></li><li><code>tinytext</code></li><li><code>varbinary</code></li><li><code>varchar</code></li></ul>
+
+When replicating tables that contain the **unsupported [data
+types](/sql/types/)**, you can:
+
+- Use [`TEXT COLUMNS`
+  option](/sql/create-source/mysql/#handling-unsupported-types) for the
+  following unsupported  MySQL types:
+
+  - `enum`
+  - `year`
+
+  The specified columns will be treated as `text` and will not offer the
+  expected MySQL type features.
+
+- Use the [`EXCLUDE COLUMNS`](/sql/create-source/mysql/#excluding-columns)
+option to exclude any columns that contain unsupported data types.
+
+#### Zero values for `date`, `datetime`, and `timestamp`
+
+MySQL allows the special "zero" values `0000-00-00`, `0000-00-00
+00:00:00` in `date`, `datetime`, and `timestamp` columns when the server
+`sql_mode` does not include `NO_ZERO_DATE` or `NO_ZERO_IN_DATE`. These
+values are not representable in Materialize's corresponding native types,
+so they will cause ingestion to fail for the affected column.
+
+To ingest columns that contain zero values, use [`TEXT
+COLUMNS`](/sql/create-source/mysql/#handling-unsupported-types) to
+decode the affected columns as `text`. The zero values for `date`,
+`datetime`, `timestamp`, and `year` are preserved verbatim as strings
+(e.g. `"0000-00-00 00:00:00"`, `"0000"`).
+
+### Modifying an existing source
+
+When you add a new subsource to an existing source ([`ALTER SOURCE ... ADD
+SUBSOURCE ...`](/sql/alter-source/)), Materialize starts the snapshotting
+process for the new subsource. During this snapshotting, the data ingestion for
+the existing subsources for the same source is temporarily blocked. As such, if
+possible, you can resize the cluster to speed up the snapshotting process and
+once the process finishes, resize the cluster for steady-state.
+
+## Handling upstream operations
+
+This section describes how changes to upstream tables that Materialize ingests
+affect the corresponding Materialize tables.
+
+### Adding a column
+
+When you add a new column to your upstream table, Materialize continues to
+ingest only the existing columns.
+
+To incorporate the new column:
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/mysql-v2/) syntax, create a new table from
+the source. See [Handle upstream column addition](/ingest-data/mysql/source-versioning/#handle-upstream-column-addition).
+
+- If using the legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/mysql/) syntax that creates subsources, use [`DROP
+SOURCE`](/sql/drop-source/) to drop the affected subsource, and then add the
+table back to the source using [`ALTER SOURCE ... ADD
+SUBSOURCE`](/sql/alter-source/). The re-added subsource includes the new column.
+
+### Dropping a column
+
+Dropping columns that Materialize does not ingest (for example, columns added
+after the source was created, or columns that are excluded) is supported. As
+these columns were never ingested, you can drop them without issue.
+
+If your Materialize source ingests a column, dropping that column from your
+upstream table puts the affected table into an error state.
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/mysql-v2/) syntax, you can safely drop a
+column by first ignoring it in Materialize. See [Handle upstream column
+drop](/ingest-data/mysql/source-versioning/#handle-upstream-column-drop).
+
+- If using legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/mysql/) syntax, use [`DROP SOURCE`](/sql/drop-source/) to drop the affected
+subsource, and then add the table back to the source using [`ALTER
+SOURCE ... ADD SUBSOURCE`](/sql/alter-source/).
+
+### Changing constraints
+
+Materialize ignores the following constraint changes: foreign
+key and `CHECK`.
+As such, you can add or drop them without affecting ingestion.
+
+Materialize also ignores `NOT NULL`, `UNIQUE`, and `PRIMARY KEY` constraints that
+are added after the Materialize table is created (that is, the table was created
+without them). Adding such a constraint, and later dropping it, does not affect
+ingestion.
+
+Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
+the table was created puts the affected table into an error state.
+
+### Changing a column's data type
+
+Changing an ingested column's data type upstream so that it maps to a different
+Materialize type than before puts the affected Materialize table into an
+error state. Ingestion for that table stops, and you must drop and recreate the
+table in Materialize to resume ingestion.
+
+Changing an ingested column's upstream data type so that it continues to map to
+the same Materialize type does not interrupt ingestion. For example, changing
+`tinyint` to `smallint`, changing within the
+`text`/`tinytext`/`mediumtext`/`longtext` family, and adjusting `bit(n)`
+precision are all safe.
+
+Appending new values to the **end** of an existing enum does not put the table
+into an error state. However, the newly-added values are not recognized, so rows
+that use them fail to decode until you drop and recreate the table. Existing
+enum values remain recognized, and rows that use them continue to decode
+successfully.
+
+Any other enum change puts the affected Materialize table into an
+error state, including inserting a value before the end, reordering or renaming
+values, and removing values.
+
+### Renaming a column
+
+Renaming a column that Materialize ingests puts the affected table into an error
+state. Ingestion for that table stops, and you must drop and recreate the table
+in Materialize to resume ingestion.
+
+### Table-level operations
+
+The following upstream operations put the affected table into an error state.
+Ingestion for that table stops, and you must drop and recreate the affected
+table in Materialize to resume:
+
+- Dropping a table (`DROP TABLE`).
+- Renaming a table or moving it to a different schema.
+- Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
+
+## Examples
+
+> **Important:** Before creating a MySQL source, you must enable GTID-based binlog replication in the
+> upstream database. For step-by-step instructions, see the integration guide for
+> your MySQL service: [Amazon RDS](/ingest-data/mysql/amazon-rds/),
+> [Amazon Aurora](/ingest-data/mysql/amazon-aurora/),
+> [Azure DB](/ingest-data/mysql/azure-db/),
+> [Google Cloud SQL](/ingest-data/mysql/google-cloud-sql/),
+> [Self-hosted](/ingest-data/mysql/self-hosted/).
+
+### Creating a connection
+
+A connection describes how to connect and authenticate to an external system you
+want Materialize to read data from.
+
+Once created, a connection is **reusable** across multiple `CREATE SOURCE`
+statements. For more details on creating connections, check the
+[`CREATE CONNECTION`](/sql/create-connection/#mysql) documentation page.
+
+```mzsql
+CREATE SECRET mysqlpass AS '<MYSQL_PASSWORD>';
+
+CREATE CONNECTION mysql_connection TO MYSQL (
+    HOST 'instance.foo000.us-west-1.rds.amazonaws.com',
+    PORT 3306,
+    USER 'materialize',
+    PASSWORD SECRET mysqlpass
+);
+```
+
+If your MySQL server is not exposed to the public internet, you can [tunnel the
+connection](/sql/create-connection/#network-security-connections) through an AWS
+PrivateLink service (Materialize Cloud) or an SSH bastion host SSH bastion host.
+
+**AWS PrivateLink (Materialize Cloud):**
+
+> **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
+
+```mzsql
+CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
+   SERVICE NAME 'com.amazonaws.vpce.us-east-1.vpce-svc-0e123abc123198abc',
+   AVAILABILITY ZONES ('use1-az1', 'use1-az4')
+);
+
+CREATE CONNECTION mysql_connection TO MYSQL (
+    HOST 'instance.foo000.us-west-1.rds.amazonaws.com',
+    PORT 3306,
+    USER 'root',
+    PASSWORD SECRET mysqlpass,
+    AWS PRIVATELINK privatelink_svc
+);
+```
+
+For step-by-step instructions on creating AWS PrivateLink connections and
+configuring an AWS PrivateLink service to accept connections from Materialize,
+check [this guide](/ops/network-security/privatelink/).
+
+**SSH tunnel:**
+
+```mzsql
+CREATE CONNECTION ssh_connection TO SSH TUNNEL (
+    HOST 'bastion-host',
+    PORT 22,
+    USER 'materialize'
+);
+```
+
+```mzsql
+CREATE CONNECTION mysql_connection TO MYSQL (
+    HOST 'instance.foo000.us-west-1.rds.amazonaws.com',
+    SSH TUNNEL ssh_connection
+);
+```
+
+For step-by-step instructions on creating SSH tunnel connections and configuring
+an SSH bastion server to accept connections from Materialize, check
+[this guide](/ops/network-security/ssh-tunnel/).
+
+### Creating a source {#create-source-example}
+
+_Create subsources for all tables in MySQL_
+
+```mzsql
+CREATE SOURCE mz_source
+    FROM MYSQL CONNECTION mysql_connection
+    FOR ALL TABLES;
+```
+
+_Create subsources for all tables from specific schemas in MySQL_
+
+```mzsql
+CREATE SOURCE mz_source
+  FROM MYSQL CONNECTION mysql_connection
+  FOR SCHEMAS (mydb, project);
+```
+
+_Create subsources for specific tables in MySQL_
+
+```mzsql
+CREATE SOURCE mz_source
+  FROM MYSQL CONNECTION mysql_connection
+  FOR TABLES (mydb.table_1, mydb.table_2 AS alias_table_2);
+```
+
+#### Handling unsupported types
+
+If you're replicating tables that use [data types unsupported](#supported-types)
+by Materialize, use the `TEXT COLUMNS` option to decode data as `text` for the
+affected columns. `TEXT COLUMNS` should also be used for columns that contain
+MySQL zero-value `DATE`, `DATETIME`, or `TIMESTAMP` data.
+
+This option expects the upstream fully-qualified names of the
+replicated table and column (i.e. as defined in your MySQL database).
+
+```mzsql
+CREATE SOURCE mz_source
+  FROM MYSQL CONNECTION mysql_connection (
+    TEXT COLUMNS (mydb.table_1.column_of_unsupported_type)
+  )
+  FOR ALL TABLES;
+```
+
+#### Excluding columns
+
+MySQL doesn't provide a way to filter out columns from the replication stream.
+To exclude specific upstream columns from being ingested, use the `EXCLUDE
+COLUMNS` option.
+
+```mzsql
+CREATE SOURCE mz_source
+  FROM MYSQL CONNECTION mysql_connection (
+    EXCLUDE COLUMNS (mydb.table_1.column_to_ignore)
+  )
+  FOR ALL TABLES;
+```
+
+### Handling errors and schema changes
+
+> **Note:** Work to more smoothly support ddl changes to upstream tables is currently in
+> progress. The work introduces the ability to re-ingest the same upstream table
+> under a new schema and switch over without downtime.
+
+To handle upstream [schema changes](#handling-upstream-operations) or errored subsources, use
+the [`DROP SOURCE`](/sql/alter-source/#context) syntax to drop the affected
+subsource, and then [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to add
+the subsource back to the source.
+
+```mzsql
+-- List all subsources in mz_source
+SHOW SUBSOURCES ON mz_source;
+
+-- Get rid of an outdated or errored subsource
+DROP SOURCE table_1;
+
+-- Start ingesting the table with the updated schema or fix
+ALTER SOURCE mz_source ADD SUBSOURCE table_1;
+```
+
+## Related pages
+
+- [`CREATE SECRET`](/sql/create-secret)
+- [`CREATE CONNECTION`](/sql/create-connection)
+- [`CREATE SOURCE`](../)
+- MySQL integration guides:
+    - [Amazon RDS](/ingest-data/mysql/amazon-rds/)
+    - [Amazon Aurora](/ingest-data/mysql/amazon-aurora/)
+    - [Azure DB](/ingest-data/mysql/azure-db/)
+    - [Google Cloud SQL](/ingest-data/mysql/google-cloud-sql/)
+    - [Self-hosted](/ingest-data/mysql/self-hosted/)
+
+<!-- mz-docs page: sql/create-source/mysql-v2 -->
+
+# CREATE SOURCE: MySQL (New Syntax)
+Connecting Materialize to a MySQL database for Change Data Capture (CDC).
+> **Disambiguation:** This page reflects the new syntax which allows Materialize to handle upstream DDL changes, specifically adding or dropping columns, without downtime. For the deprecated syntax, see the [old reference page](/sql/create-source/mysql/).
+
+Creates a new source from MySQL.  Materialize
+supports creating sources from MySQL version 8.0.1&#43;.  Once a new source is created, you can <a href="/sql/create-table/mysql/" ><code>CREATE TABLE FROM SOURCE</code></a>
+to create the corresponding tables in Materialize and start the data ingestion
+process.
+
+## Prerequisites
+
+To create a source from MySQL(8.0.1+), you must first:
+- **Configure upstream MySQL instance**
+  - Enable [GTID-based binary log(binlog)
+    replication](#change-data-capture). You **must** set
+    [`binlog_row_metadata=FULL`](#change-data-capture) to use the new
+    `CREATE SOURCE` syntax.
+  - Create a replication user and password for Materialize to use to
+    connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your MySQL instance.
+- **Create a connection to MySQL in Materialize**
+  - The [connection setup](/sql/create-connection/#mysql) depends on the
+    network security configuration.
+
+## Syntax
+
+To create a source from an external MySQL database:
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <source_name>
+[IN CLUSTER <cluster_name>]
+FROM MYSQL CONNECTION <connection_name>
+[WITH ( <with_option> [, ...] )]
+;
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| **IF NOT EXISTS** | *Optional.* If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| `<source_name>` | The name of the source to create. Names for sources must follow the [naming guidelines](/sql/identifiers/#naming-restrictions).  |
+| **IN CLUSTER** `<cluster_name>` | *Optional.* The [cluster](/sql/create-cluster) to maintain this source. Otherwise, the source will be created in the active cluster.  {{< tip >}} If possible, use a cluster dedicated just for sources. See also [Operational guidelines](/clusters/operational-guidelines/#sources). {{< /tip >}}  |
+| `<connection_name>` | The name of the MySQL connection to use for the source. For details on creating connections, see [`CREATE CONNECTION`](/sql/create-connection/#mysql).  A connection is **reusable** across multiple `CREATE SOURCE` statements.  To start ingesting data, create a [`CREATE TABLE FROM SOURCE`](/sql/create-table/) statement for each upstream table to replicate.  |
+| **WITH** (`<with_option>` [, ...]) | *Optional.* The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+
+## Ingesting data
+
+After a source is created, you can create tables from the source referencing
+upstream MySQL tables that have [GTID-based binlog replication
+enabled](#change-data-capture) (Note: `binlog_row_metadata=FULL` is required to
+use the new syntax). You can create multiple tables that reference the same
+upstream table. See [`CREATE TABLE FROM SOURCE`](/sql/create-table/) for
+details.
+
+### Handling table schema changes
+
+The use of `CREATE SOURCE` with the new [`CREATE TABLE FROM
+SOURCE`](/sql/create-table/) allows for the handling of certain upstream schema
+changes, specifically adding or dropping columns in the upstream tables, without
+downtime.
+
+See [Handle upstream schema
+changes](/ingest-data/mysql/source-versioning/) for details.
+
+See also [Handling upstream operations](#handling-upstream-operations) for
+additional upstream operation considerations.
+
+### Supported types
+
+With the new syntax, after a MySQL source is created, you [`CREATE TABLE FROM
+SOURCE`](/sql/create-table/) to create a corresponding table in Materialize and
+start ingesting data.
+
+<p>Materialize natively supports the following MySQL types:</p>
+<ul style="column-count: 3"><li><code>bigint</code></li><li><code>binary</code></li><li><code>bit</code></li><li><code>blob</code></li><li><code>boolean</code></li><li><code>char</code></li><li><code>date</code></li><li><code>datetime</code></li><li><code>decimal</code></li><li><code>double</code></li><li><code>float</code></li><li><code>int</code></li><li><code>json</code></li><li><code>longblob</code></li><li><code>longtext</code></li><li><code>mediumblob</code></li><li><code>mediumint</code></li><li><code>mediumtext</code></li><li><code>numeric</code></li><li><code>real</code></li><li><code>smallint</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>tinyblob</code></li><li><code>tinyint</code></li><li><code>tinytext</code></li><li><code>varbinary</code></li><li><code>varchar</code></li></ul>
+
+When replicating tables that contain the **unsupported [data
+types](/sql/types/)**, you can:
+
+- Use [`TEXT COLUMNS`
+  option](/sql/create-source/mysql/#handling-unsupported-types) for the
+  following unsupported  MySQL types:
+
+  - `enum`
+  - `year`
+
+  The specified columns will be treated as `text` and will not offer the
+  expected MySQL type features.
+
+- Use the [`EXCLUDE COLUMNS`](/sql/create-source/mysql/#excluding-columns)
+option to exclude any columns that contain unsupported data types.
+
+#### Zero values for `date`, `datetime`, and `timestamp`
+
+MySQL allows the special "zero" values `0000-00-00`, `0000-00-00
+00:00:00` in `date`, `datetime`, and `timestamp` columns when the server
+`sql_mode` does not include `NO_ZERO_DATE` or `NO_ZERO_IN_DATE`. These
+values are not representable in Materialize's corresponding native types,
+so they will cause ingestion to fail for the affected column.
+
+To ingest columns that contain zero values, use [`TEXT
+COLUMNS`](/sql/create-source/mysql/#handling-unsupported-types) to
+decode the affected columns as `text`. The zero values for `date`,
+`datetime`, `timestamp`, and `year` are preserved verbatim as strings
+(e.g. `"0000-00-00 00:00:00"`, `"0000"`).
+
+For more information, including strategies for handling unsupported types,
+see [`CREATE TABLE FROM SOURCE`](/sql/create-table/).
+
+### Change data capture
+
+> **Note:** For step-by-step instructions on enabling GTID-based binlog replication for your
+> MySQL service, see the integration guides:
+> - [Amazon Aurora for MySQL](/ingest-data/mysql/amazon-aurora/)
+> - [Amazon RDS for MySQL](/ingest-data/mysql/amazon-rds/)
+> - [Azure DB for MySQL](/ingest-data/mysql/azure-db/)
+> - [Google Cloud SQL for MySQL](/ingest-data/mysql/google-cloud-sql/)
+> - [Self-hosted MySQL](/ingest-data/mysql/self-hosted/)
+
+The source uses MySQL's binlog replication protocol to **continually ingest
+changes** resulting from `INSERT`, `UPDATE` and `DELETE` operations in the
+upstream database. This process is known as _change data capture_.
+
+The replication method used is based on [global transaction identifiers
+(GTIDs)](https://dev.mysql.com/doc/refman/8.0/en/replication-gtids.html), and
+guarantees **transactional consistency** — any operation inside a MySQL
+transaction is assigned the same timestamp in Materialize, which means that the
+source will never show partial results based on partially replicated
+transactions.
+
+Before creating a source in Materialize, you **must** configure the upstream
+MySQL database for GTID-based binlog replication:
+
+<table>
+<thead>
+<tr>
+
+<th>MySQL Configuration</th>
+
+<th>Value</th>
+
+<th>Notes</th>
+
+</tr>
+</thead>
+<tbody>
+
+<tr>
+
+<td>
+<code>log_bin</code>
+</td>
+
+<td>
+<code>ON</code>
+</td>
+
+<td>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>binlog_row_image</code>
+</td>
+
+<td>
+<code>FULL</code>
+</td>
+
+<td>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>binlog_row_metadata</code>
+</td>
+
+<td>
+<code>FULL</code>
+</td>
+
+<td>
+<ul>
+<li><strong>Required</strong> to use <a href="/sql/create-source/mysql-v2/" ><code>CREATE SOURCE</code> (New
+syntax)</a>.</li>
+<li>Highly recommended for use with the <a href="/sql/create-source/mysql/" ><code>CREATE SOURCE</code> (Legacy
+syntax)</a>.</li>
+</ul>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>binlog_format</code>
+</td>
+
+<td>
+<code>ROW</code>
+</td>
+
+<td>
+<a href="https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html#sysvar_binlog_format" >Deprecated as of MySQL 8.0.34</a>. Newer versions of MySQL default to row-based logging.
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>gtid_mode</code>
+</td>
+
+<td>
+<code>ON</code>
+</td>
+
+<td>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>enforce_gtid_consistency</code>
+</td>
+
+<td>
+<code>ON</code>
+</td>
+
+<td>
+
+</td>
+
+</tr>
+
+<tr>
+
+<td>
+<code>replica_preserve_commit_order</code>
+</td>
+
+<td>
+<code>ON</code>
+</td>
+
+<td>
+Only required when connecting Materialize to a read-replica.
+</td>
+
+</tr>
+
+</tbody>
+</table>
+
+> **Tip:** For `binlog_row_metadata`, using `SET GLOBAL binlog_row_metadata = FULL;` does
+> not persist across MySQL server restarts. To make
+> the setting durable, use `SET PERSIST` (MySQL 8.0.11+) or set
+> `binlog_row_metadata=FULL` in the server's configuration file. On managed
+> services, set the variable through the service's parameter configuration
+> instead.
+
+If you're running MySQL using a managed service, additional configuration
+changes might be required. To enable GTID-based binlog replication for your
+MySQL service, see the integration guides.
+
+#### Binlog retention
+
+> **Warning:** If Materialize tries to resume replication and finds GTID gaps due to missing
+> binlog files, the source enters an errored state and you have to drop and
+> recreate it.
+
+By default, MySQL retains binlog files for **30 days** (i.e., 2592000 seconds)
+before automatically removing them. This is configurable via the
+[`binlog_expire_logs_seconds`](https://dev.mysql.com/doc/mysql-replication-excerpt/8.0/en/replication-options-binary-log.html#sysvar_binlog_expire_logs_seconds)
+system variable. We recommend using the default value for this configuration in
+order to not compromise Materialize's ability to resume replication in case of
+failures or restarts.
+
+In some MySQL managed services, binlog expiration can be overridden by a
+service-specific configuration parameter. It's important that you double-check
+if such a configuration exists, and ensure it's set to the maximum interval
+available.
+
+As an example, [Amazon RDS for MySQL](/ingest-data/mysql/amazon-rds/) has its
+own configuration parameter for binlog retention ([`binlog retention hours`](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/mysql-stored-proc-configuring.html#mysql_rds_set_configuration-usage-notes.binlog-retention-hours))
+that overrides `binlog_expire_logs_seconds` and is set to `NULL` by default.
+
+### Monitoring source progress
+
+By default, MySQL sources expose progress metadata as a subsource that you can
+use to monitor source **ingestion progress**. The name of the progress subsource
+can be specified when creating a source using the `EXPOSE PROGRESS AS` clause;
+otherwise, it will be named `<src_name>_progress`.
+
+The following metadata is available for each source as a progress subsource:
+
+| Field             | Type                                   | Details                                                                                          |
+| ----------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `source_id_lower` | [`uuid`](/sql/types/uuid/)             | The lower-bound GTID `source_id` of the GTIDs covered by this range.                             |
+| `source_id_upper` | [`uuid`](/sql/types/uuid/)             | The upper-bound GTID `source_id` of the GTIDs covered by this range.                             |
+| `transaction_id`  | [`uint8`](/sql/types/uint/#uint8-info) | The `transaction_id` of the next GTID possible from the GTID `source_id`s covered by this range. |
+
+And can be queried using:
+
+```mzsql
+SELECT transaction_id
+FROM <src_name>_progress;
+```
+
+Progress metadata is represented as a [GTID set](https://dev.mysql.com/doc/refman/8.0/en/replication-gtids-concepts.html)
+of future possible GTIDs, which is similar to the
+[`gtid_executed`](https://dev.mysql.com/doc/refman/8.0/en/replication-options-gtids.html#sysvar_gtid_executed)
+system variable on a MySQL replica. The reported `transaction_id` should
+increase as Materialize consumes **new** binlog records from the upstream MySQL
+database. For more information, see [Troubleshooting](/ops/troubleshooting/).
+
+## Handling upstream operations
+
+This section describes how changes to upstream tables that Materialize ingests
+affect the corresponding Materialize tables.
+
+### Adding a column
+
+When you add a new column to your upstream table, Materialize continues to
+ingest only the existing columns.
+
+To incorporate the new column:
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/mysql-v2/) syntax, create a new table from
+the source. See [Handle upstream column addition](/ingest-data/mysql/source-versioning/#handle-upstream-column-addition).
+
+- If using the legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/mysql/) syntax that creates subsources, use [`DROP
+SOURCE`](/sql/drop-source/) to drop the affected subsource, and then add the
+table back to the source using [`ALTER SOURCE ... ADD
+SUBSOURCE`](/sql/alter-source/). The re-added subsource includes the new column.
+
+### Dropping a column
+
+Dropping columns that Materialize does not ingest (for example, columns added
+after the source was created, or columns that are excluded) is supported. As
+these columns were never ingested, you can drop them without issue.
+
+If your Materialize source ingests a column, dropping that column from your
+upstream table puts the affected table into an error state.
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/mysql-v2/) syntax, you can safely drop a
+column by first ignoring it in Materialize. See [Handle upstream column
+drop](/ingest-data/mysql/source-versioning/#handle-upstream-column-drop).
+
+- If using legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/mysql/) syntax, use [`DROP SOURCE`](/sql/drop-source/) to drop the affected
+subsource, and then add the table back to the source using [`ALTER
+SOURCE ... ADD SUBSOURCE`](/sql/alter-source/).
+
+### Changing constraints
+
+Materialize ignores the following constraint changes: foreign
+key and `CHECK`.
+As such, you can add or drop them without affecting ingestion.
+
+Materialize also ignores `NOT NULL`, `UNIQUE`, and `PRIMARY KEY` constraints that
+are added after the Materialize table is created (that is, the table was created
+without them). Adding such a constraint, and later dropping it, does not affect
+ingestion.
+
+Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
+the table was created puts the affected table into an error state.
+
+### Changing a column's data type
+
+Changing an ingested column's data type upstream so that it maps to a different
+Materialize type than before puts the affected Materialize table into an
+error state. Ingestion for that table stops, and you must drop and recreate the
+table in Materialize to resume ingestion.
+
+Changing an ingested column's upstream data type so that it continues to map to
+the same Materialize type does not interrupt ingestion. For example, changing
+`tinyint` to `smallint`, changing within the
+`text`/`tinytext`/`mediumtext`/`longtext` family, and adjusting `bit(n)`
+precision are all safe.
+
+Appending new values to the **end** of an existing enum does not put the table
+into an error state. However, the newly-added values are not recognized, so rows
+that use them fail to decode until you drop and recreate the table. Existing
+enum values remain recognized, and rows that use them continue to decode
+successfully.
+
+Any other enum change puts the affected Materialize table into an
+error state, including inserting a value before the end, reordering or renaming
+values, and removing values.
+
+### Renaming a column
+
+Renaming a column that Materialize ingests puts the affected table into an error
+state. Ingestion for that table stops, and you must drop and recreate the table
+in Materialize to resume ingestion.
+
+### Table-level operations
+
+The following upstream operations put the affected table into an error state.
+Ingestion for that table stops, and you must drop and recreate the affected
+table in Materialize to resume:
+
+- Dropping a table (`DROP TABLE`).
+- Renaming a table or moving it to a different schema.
+- Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
+
+## Example
+
+> **Important:** Before creating a MySQL source, you must enable [GTID-based binary log (binlog)
+> replication](#change-data-capture), including setting
+> [`binlog_row_metadata=FULL`](#change-data-capture) to use the new syntax.
+
+### Prerequisites
+
+To create a source from MySQL(8.0.1+), you must first:
+- **Configure upstream MySQL instance**
+  - Enable [GTID-based binary log(binlog)
+    replication](#change-data-capture). You **must** set
+    [`binlog_row_metadata=FULL`](#change-data-capture) to use the new
+    `CREATE SOURCE` syntax.
+  - Create a replication user and password for Materialize to use to
+    connect.
+- **Configure network security**
+  - Ensure Materialize can connect to your MySQL instance.
+- **Create a connection to MySQL in Materialize**
+  - The [connection setup](/sql/create-connection/#mysql) depends on the
+    network security configuration.
+
+For details, see the [MySQL integration
+guides](/ingest-data/mysql/#integration-guides).
+
+### Create a source
+
+Once you have configured the upstream MySQL, network security, and created
+the [connection to MySQL](/sql/create-connection/#mysql), you can create
+the source. In this example, assume the connection you created is named
+`mysql_connection`.
+```mzsql
+CREATE SOURCE mysql_source
+FROM MYSQL CONNECTION mysql_connection;
+
+```
+
+After a source is created, you can [create a table from the
+source](/sql/create-table/), referencing specific upstream table(s). Use a
+[DDL transaction block](/sql/begin/#ddl-only-transactions) to create
+multiple tables from the same source.
+```mzsql
+BEGIN;
+CREATE TABLE items
+FROM SOURCE mysql_source (REFERENCE mydb.items);
+
+CREATE TABLE orders
+FROM SOURCE mysql_source (REFERENCE mydb.orders);
+COMMIT;
+
+```
+
+## Related pages
+
+- [`CREATE TABLE`](/sql/create-table/)
+- [`CREATE SECRET`](/sql/create-secret)
+- [`CREATE CONNECTION`](/sql/create-connection)
+- [`CREATE SOURCE`](../)
+- [MySQL integration guides](/ingest-data/mysql/#integration-guides)
+
+<!-- mz-docs page: sql/create-source/postgres -->
+
+# CREATE SOURCE: PostgreSQL (Legacy Syntax)
+Connecting Materialize to a PostgreSQL database for Change Data Capture (CDC).
+> **Disambiguation:** This page reflects the legacy syntax, which requires downtime to handle upstream DDL changes. For the new syntax which can handle adding or dropping columns to the upstream tables without downtime, see the [new reference page](/sql/create-source/postgres-v2).
+
+[`CREATE SOURCE`](/sql/create-source/) connects Materialize to an external system you want to read data from, and provides details about how to decode and interpret that data.
+
+Materialize supports PostgreSQL (11+) as a data source. PostgreSQL 16+ is
+required for connecting Materialize to a physical replica. To connect to a
+PostgreSQL instance, you first need to [create a connection](#creating-a-connection)
+that specifies access and authentication parameters.
+Once created, a connection is **reusable** across multiple `CREATE SOURCE`
+statements.
+
+> **Warning:** Before creating a PostgreSQL source, you must set up logical replication in the
+> upstream database. For step-by-step instructions, see the integration guide for
+> your PostgreSQL service: [AlloyDB](/ingest-data/postgres-alloydb/),
+> [Amazon RDS](/ingest-data/postgres-amazon-rds/),
+> [Amazon Aurora](/ingest-data/postgres-amazon-aurora/),
+> [Azure DB](/ingest-data/postgres-azure-db/),
+> [Google Cloud SQL](/ingest-data/postgres-google-cloud-sql/),
+> [Self-hosted](/ingest-data/postgres-self-hosted/).
+
+> **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
+
+## Syntax
+
+```mzsql
+CREATE SOURCE [IF NOT EXISTS] <src_name>
+[IN CLUSTER <cluster_name>]
+FROM POSTGRES CONNECTION <connection_name> (
+  PUBLICATION '<publication_name>'
+  [, TEXT COLUMNS ( <col1> [, ...] ) ]
+  [, EXCLUDE COLUMNS ( <col1> [, ...] ) ]
+)
+<FOR ALL TABLES | FOR SCHEMAS ( <schema1> [, ...] ) | FOR TABLES ( <table1> [AS <subsrc_name>] [, ...] )>
+[EXPOSE PROGRESS AS <progress_subsource_name>]
+[WITH ( <with_option> [, ...] )]
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<src_name>` | The name for the source.  |
+| **IF NOT EXISTS** | Optional. If specified, do not throw an error if a source with the same name already exists. Instead, issue a notice and skip the source creation.  |
+| **IN CLUSTER** `<cluster_name>` | Optional. The [cluster](/sql/create-cluster) to maintain this source.  |
+| **CONNECTION** `<connection_name>` | The name of the PostgreSQL connection to use in the source. For details on creating connections, check the [`CREATE CONNECTION`](/sql/create-connection/#postgresql) documentation page.  |
+| **PUBLICATION** `'<publication_name>'` | The PostgreSQL [publication](https://www.postgresql.org/docs/current/logical-replication-publication.html) (the replication data set containing the tables to be streamed to Materialize).  |
+| **TEXT COLUMNS** ( `<col1>` [, ...] ) | Optional. Decode data as `text` for specific columns that contain PostgreSQL types that are unsupported in Materialize.  |
+| **EXCLUDE COLUMNS** ( `<col1>` [, ...] ) | Optional. Exclude specific columns that cannot be decoded or should not be included in the subsources created in Materialize.  |
+| **FOR** `<table_schema_specification>` | Specifies which tables to create subsources for. The following `<table_schema_specification>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `ALL TABLES` \| Create subsources for all tables in the publication. \| \| `SCHEMAS ( <schema1> [, ...] )` \| Create subsources for specific schemas in the publication. \| \| `TABLES ( <table1> [AS <subsrc_name>] [, ...] )` \| Create subsources for specific tables in the publication. \|  |
+| **EXPOSE PROGRESS AS** `<progress_subsource_name>` | Optional. The name of the progress collection for the source. If this is not specified, the progress collection will be named `<src_name>_progress`. For more information, see [Monitoring source progress](#monitoring-source-progress).  |
+| **WITH** (`<with_option>` [, ...]) | Optional. The following `<with_option>`s are supported:  \| Option \| Description \| \|--------\|-------------\| \| `RETAIN HISTORY FOR <retention_period>` \| ***Private preview.** This option has known performance or stability issues and is under active development.* Duration for which Materialize retains historical data, which is useful to implement [durable subscriptions](/serve-results/durable-subscriptions/#history-retention-period). Accepts positive [interval](/sql/types/interval/) values (e.g. `'1hr'`). Default: `1s`. \| \| `TIMESTAMP INTERVAL [=] <interval>` \| The interval at which timestamps are assigned to data read from this source. Accepts positive [interval](/sql/types/interval/) values (e.g. `'500ms'`, `'1s'`). The value must be between the system parameters `min_timestamp_interval` and `max_timestamp_interval`. Default: the value of the `default_timestamp_interval` system parameter (`1s`). The interval can also be changed after creation with [`ALTER SOURCE`](/sql/alter-source/). \|  |
+
+## Features
+
+### Change data capture
+
+This source uses PostgreSQL's native replication protocol to continually ingest
+changes resulting from `INSERT`, `UPDATE` and `DELETE` operations in the
+upstream database — a process also known as _change data capture_.
+
+For this reason, you must configure the upstream PostgreSQL database to support
+logical replication before creating a source in Materialize. For step-by-step
+instructions, see the integration guide for your PostgreSQL service:
+[AlloyDB](/ingest-data/postgres-alloydb/),
+[Amazon RDS](/ingest-data/postgres-amazon-rds/),
+[Amazon Aurora](/ingest-data/postgres-amazon-aurora/),
+[Azure DB](/ingest-data/postgres-azure-db/),
+[Google Cloud SQL](/ingest-data/postgres-google-cloud-sql/),
+[Self-hosted](/ingest-data/postgres-self-hosted/).
+
+#### Creating a source
+
+To avoid creating multiple replication slots in the upstream PostgreSQL database
+and minimize the required bandwidth, Materialize ingests the raw replication
+stream data for some specific set of tables in your publication.
+
+```mzsql
+CREATE SOURCE mz_source
+  FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source')
+  FOR ALL TABLES;
+```
+
+When you define a source, Materialize will automatically:
+
+1. Create a **replication slot** in the upstream PostgreSQL database (see
+   [PostgreSQL replication slots](#postgresql-replication-slots)).
+
+    The name of the replication slot created by Materialize is prefixed with
+    `materialize_` for easy identification, and can be looked up in
+    `mz_internal.mz_postgres_sources`.
+
+    ```mzsql
+    SELECT id, replication_slot FROM mz_internal.mz_postgres_sources;
+    ```
+
+    ```
+       id   |             replication_slot
+    --------+----------------------------------------------
+     u8     | materialize_7f8a72d0bf2a4b6e9ebc4e61ba769b71
+    ```
+1. Create a **subsource** for each original table in the publication.
+
+    ```mzsql
+    SHOW SOURCES;
+    ```
+
+    ```nofmt
+             name         |   type
+    ----------------------+-----------
+     mz_source            | postgres
+     mz_source_progress   | progress
+     table_1              | subsource
+     table_2              | subsource
+    ```
+
+    And perform an initial, snapshot-based sync of the tables in the publication
+    before it starts ingesting change events.
+
+1. Incrementally update any materialized or indexed views that depend on the
+source as change events stream in, as a result of `INSERT`, `UPDATE` and
+`DELETE` operations in the upstream PostgreSQL database.
+
+##### PostgreSQL replication slots
+
+Each source ingests the raw replication stream data for all tables in the
+specified publication using **a single** replication slot. This allows you to
+minimize the performance impact on the upstream database, as well as reuse the
+same source across multiple materializations.
+
+> **Tip:** - For PostgreSQL 13+, set a reasonable value
+> for [`max_slot_wal_keep_size`](https://www.postgresql.org/docs/13/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE)
+> to limit the amount of storage used by replication slots.
+> - If you stop using Materialize, or if either the Materialize instance or
+> the PostgreSQL instance crash, delete any replication slots. You can query
+> the `mz_internal.mz_postgres_sources` table to look up the name of the
+> replication slot created for each source.
+> - If you delete all objects that depend on a source without also dropping
+> the source, the upstream replication slot remains and will continue to
+> accumulate data so that the source can resume in the future. To avoid
+> unbounded disk space usage, make sure to use [`DROP
+> SOURCE`](/sql/drop-source/) or manually delete the replication slot.
+
+##### PostgreSQL schemas
+
+`CREATE SOURCE` will attempt to create each upstream table in the same schema as
+the source. This may lead to naming collisions if, for example, you are
+replicating `schema1.table_1` and `schema2.table_1`. Use the `FOR TABLES`
+clause to provide aliases for each upstream table, in such cases, or to specify
+an alternative destination schema in Materialize.
+
+```mzsql
+CREATE SOURCE mz_source
+  FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source')
+  FOR TABLES (schema1.table_1 AS s1_table_1, schema2_table_1 AS s2_table_1);
+```
+
+### Reading from a physical standby
+
+Materialize can replicate from a PostgreSQL physical standby (read
+replica) instead of the primary, using logical decoding on the standby.
+This requires **PostgreSQL 16+** on both the primary and the standby, since
+earlier versions do not support creating logical replication slots on a
+standby.
+
+When the upstream is a standby, the replication slot is created on the
+standby and Materialize only connects to the standby. Note that slot
+creation on a standby can block until the primary emits a standby snapshot
+(a `RUNNING_XACTS` WAL record). On an idle primary, run
+[`SELECT pg_log_standby_snapshot()`](https://www.postgresql.org/docs/16/functions-admin.html#FUNCTIONS-SNAPSHOT-SYNCHRONIZATION)
+on the primary to unblock source creation.
+
+### Monitoring source progress
+
+By default, PostgreSQL sources expose progress metadata as a subsource that you
+can use to monitor source **ingestion progress**. The name of the progress
+subsource can be specified when creating a source using the `EXPOSE PROGRESS
+AS` clause; otherwise, it will be named `<src_name>_progress`.
+
+The following metadata is available for each source as a progress subsource:
+
+Field          | Type                                     | Meaning
+---------------|------------------------------------------|--------
+`lsn`          | [`uint8`](/sql/types/uint/#uint8-info)   | The last Log Sequence Number (LSN) consumed from the upstream PostgreSQL replication stream.
+
+And can be queried using:
+
+```mzsql
+SELECT lsn
+FROM <src_name>_progress;
+```
+
+The reported LSN should increase as Materialize consumes **new** WAL records
+from the upstream PostgreSQL database. For more details on monitoring source
+ingestion progress and debugging related issues, see [Troubleshooting](/ops/troubleshooting/).
+
+## Known limitations
+
+### Publication membership
+
+PostgreSQL's logical replication API does not provide a signal when users
+remove tables from publications. Because of this, Materialize relies on
+periodic checks to determine if a table has been removed from a publication,
+at which time it generates an irrevocable error, preventing any values from
+being read from the table.
+
+However, it is possible to remove a table from a publication and then re-add
+it before Materialize notices that the table was removed. In this case,
+Materialize can no longer provide any consistency guarantees about the data
+we present from the table and, unfortunately, is wholly unaware that this
+occurred.
+
+To mitigate this issue, if you need to drop and re-add a table to a
+publication, ensure that you remove the table/subsource from the source
+_before_ re-adding it using the [`DROP SOURCE`](/sql/drop-source/) command.
+
+### Supported types
+
+<p>Materialize natively supports the following PostgreSQL types (including the
+array type for each of the types):</p>
+<ul style="column-count: 3"><li><code>bool</code></li><li><code>bpchar</code></li><li><code>bytea</code></li><li><code>char</code></li><li><code>date</code></li><li><code>daterange</code></li><li><code>float4</code></li><li><code>float8</code></li><li><code>int2</code></li><li><code>int2vector</code></li><li><code>int4</code></li><li><code>int4range</code></li><li><code>int8</code></li><li><code>int8range</code></li><li><code>interval</code></li><li><code>json</code></li><li><code>jsonb</code></li><li><code>numeric</code></li><li><code>numrange</code></li><li><code>oid</code></li><li><code>text</code></li><li><code>time</code></li><li><code>timestamp</code></li><li><code>timestamptz</code></li><li><code>tsrange</code></li><li><code>tstzrange</code></li><li><code>uuid</code></li><li><code>varchar</code></li></ul>
+
+Replicating tables that contain **unsupported [data types](/sql/types/)** is
+possible via the `TEXT COLUMNS` option. The specified columns will be
+treated as `text`; i.e., will not have the expected PostgreSQL type
+features. For example:
+
+* [`enum`]: When decoded as `text`, the implicit ordering of the original
+  PostgreSQL `enum` type is not preserved; instead, Materialize will sort values
+  as `text`.
+
+* [`money`]: When decoded as `text`, resulting `text` value cannot be cast
+back to `numeric`, since PostgreSQL adds typical currency formatting to the
+output.
+
+[`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
+[`money`]: https://www.postgresql.org/docs/current/datatype-money.html
+
+### Inherited tables
+
+When using [PostgreSQL table inheritance](https://www.postgresql.org/docs/current/tutorial-inheritance.html),
+PostgreSQL serves data from `SELECT`s as if the inheriting tables' data is
+also present in the inherited table. However, both PostgreSQL's logical
+replication and `COPY` only present data written to the tables themselves,
+i.e. the inheriting data is _not_ treated as part of the inherited table.
+
+PostgreSQL sources use logical replication and `COPY` to ingest table data,
+so inheriting tables' data will only be ingested as part of the inheriting
+table, i.e. in Materialize, the data will not be returned when serving
+`SELECT`s from the inherited table.
+
+You can mimic PostgreSQL's `SELECT` behavior with inherited tables by
+creating a materialized view that unions data from the inherited and
+inheriting tables (using `UNION ALL`). However, if new tables inherit from
+the table, data from the inheriting tables will not be available in the
+view. You will need to add the inheriting tables via `ADD SUBSOURCE` and
+create a new view (materialized or non-) that unions the new table.
+
+## Handling upstream operations
+
+This section describes how changes to upstream tables that Materialize ingests
+affect the corresponding Materialize tables.
+
+### Adding a column
+
+When you add a new column to your upstream table, Materialize continues to
+ingest only the existing columns.
+
+To incorporate the new column:
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, create a new table from
+the source. See [Handle upstream column addition](/ingest-data/postgres/source-versioning/#handle-upstream-column-addition).
+
+- If using the legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/postgres/) syntax that creates subsources, use [`DROP
+SOURCE`](/sql/drop-source/) to drop the affected subsource, and then add the
+table back to the source using [`ALTER SOURCE ... ADD
+SUBSOURCE`](/sql/alter-source/). The re-added subsource includes the new column.
+
+### Dropping a column
+
+Dropping columns that Materialize does not ingest (for example, columns added
+after the source was created, or columns that are excluded) is supported. As
+these columns were never ingested, you can drop them without issue.
+
+If your Materialize source ingests a column, dropping that column from your
+upstream table puts the affected table into an error state.
+
+- If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop a
+column by first ignoring it in Materialize. See [Handle upstream column
+drop](/ingest-data/postgres/source-versioning/#handle-upstream-column-drop).
+
+- If using legacy [`CREATE SOURCE ... FOR ...`](/sql/create-source/postgres/) syntax, use [`DROP SOURCE`](/sql/drop-source/) to drop the affected
+subsource, and then add the table back to the source using [`ALTER
+SOURCE ... ADD SUBSOURCE`](/sql/alter-source/).
+
+### Changing constraints
+
+Materialize ignores the following constraint changes: foreign
+key, `CHECK`, and `EXCLUSION`.
+As such, you can add or drop them without affecting ingestion.
+
+Materialize also ignores `NOT NULL`, `UNIQUE`, and `PRIMARY KEY` constraints that
+are added after the Materialize table is created (that is, the table was created
+without them). Adding such a constraint, and later dropping it, does not affect
+ingestion.
+
+Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
+the table was created puts the affected table into an error state.
+
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
+
+### Changing a column's data type
+
+Changing an ingested column's data type upstream puts the affected
+Materialize table into an error state unless the column was ingested as `text`
+via the `TEXT COLUMNS` option. Ingestion for that table stops, and you must
+drop and recreate the table in Materialize to resume ingestion.
+
+### Renaming a column
+
+Renaming a column that Materialize ingests puts the affected table into an error
+state. Ingestion for that table stops, and you must drop and recreate the table
+in Materialize to resume ingestion.
+
+### Table-level operations
+
+The following upstream operations put the affected table into an error state.
+Ingestion for that table stops, and you must drop and recreate the affected
+table in Materialize to resume:
+
+- Dropping a table (`DROP TABLE`), or removing it from the publication (`ALTER PUBLICATION ... DROP TABLE`).
+- Renaming a table or moving it to a different schema.
+- Setting a table's replica identity to anything other than `FULL` (`ALTER TABLE ... REPLICA IDENTITY`).
+- Truncating a table (`TRUNCATE`). To clear a table without putting it into an error state, use an unqualified `DELETE FROM t;` instead.
+
+## Source failure states and recovery
+
+### Operations that do not require re-creating the source
+
+Materialize tracks a [log sequence number
+(LSN)](https://www.postgresql.org/docs/current/wal-internals.html) as it
+consumes the upstream write-ahead log (WAL), and the source's replication slot
+retains the WAL that Materialize has not yet consumed. Because the slot outlives
+the connection, routine operational events do not lose data: after a transient
+interruption the source stalls, then resumes from its committed LSN and catches
+up automatically. **No action is required** for the following operations:
+
+- Restarting or patching PostgreSQL (including OS-level restarts).
+- Restarting Materialize. The source resumes from its committed LSN and does
+  **not** re-snapshot already-ingested data.
+- Transient network interruptions between Materialize and PostgreSQL. These
+  surface as [`connection closed`](/ingest-data/postgres/connection-closed/).
+- Resizing the cluster that hosts the source, or changing its replication
+  factor. Briefly, the source may report [`replication slot ... is
+  active`](/ingest-data/postgres/replication-slot-active/) while the upstream
+  releases the slot from the previous connection.
+- The upstream database running out of disk space, once space is freed.
+
+> **Note:** Recovery after an interruption depends on the WAL that the replication slot is
+> holding still being available upstream. An interruption long enough for the slot
+> to be invalidated, or for the slot to be dropped, is not recoverable. See
+> [Replication slot invalidated](#replication-slot-invalidated) and [Replication
+> slot dropped or rewound](#replication-slot-dropped-or-rewound).
+
+> **Warning:** While a source is disconnected, the upstream WAL accumulates behind its
+> replication slot and cannot be reclaimed. A long outage, an undersized source
+> cluster, or a source cluster stuck in a restart loop can therefore consume
+> significant upstream disk. Monitor `restart_lsn` in
+> [`pg_replication_slots`](https://www.postgresql.org/docs/current/view-pg-replication-slots.html)
+> during planned maintenance.
+
+### Operations that require re-creating the source
+
+A smaller set of events breaks LSN continuity or destroys the replication slot.
+When this happens, Materialize cannot guarantee a correct, gap-free view of your
+data. Most of these put the **entire source** into an error or permanently
+stalled state. One, [restoring from a volume or disk
+snapshot](#restoring-from-a-volume-or-disk-snapshot), cannot be detected at all,
+so the source keeps running on diverged data. Every event in this section
+requires **re-creating** the source. Upstream changes to an individual table's
+schema are handled separately, and do not error the entire source.
+
+In each case below, the remediation is to drop and re-create the source:
+
+```mzsql
+DROP SOURCE mz_source CASCADE;
+
+CREATE SOURCE mz_source
+  FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source');
+
+-- Re-create the tables you were ingesting.
+CREATE TABLE table_1 FROM SOURCE mz_source (REFERENCE public.table_1);
+```
+
+If you are using the legacy `CREATE SOURCE ... FOR TABLES` syntax, re-create the
+source with the same `FOR TABLES` list instead of adding tables separately.
+
+Because a re-created source snapshots from the current state of the upstream
+database, any changes it missed while it was in an error state are reflected in
+the snapshot rather than replayed as individual updates.
+
+> **Warning:** `CASCADE` drops every object that depends on the source, including its tables,
+> views, materialized views, indexes, and sinks. Capture their definitions before
+> you run it, and re-create them once the new source has finished snapshotting.
+
+#### Point-in-time restore
+
+Restoring the source database from a backup, including restoring to a different
+server for disaster recovery, increments the PostgreSQL timeline and is detected
+as a discontinuity. The source fails with an error of the form:
+
+```
+unsupported action: database restored from point-in-time backup. Expected
+timeline ID 8 but got 9
+```
+
+The same error covers other events that change the timeline, such as a managed
+failover between replicas. To see the timeline a source is pinned to, query
+[`mz_internal.mz_postgres_sources`](/sql/system-catalog/mz_internal/#mz_postgres_sources):
+
+```mzsql
+SELECT s.name, p.replication_slot, p.timeline_id
+FROM mz_internal.mz_postgres_sources p
+JOIN mz_catalog.mz_sources s ON s.id = p.id;
+```
+
+If your upstream fails over between replicas as part of routine maintenance, see
+[High-availability failovers](#high-availability-failovers).
+
+#### Restoring from a volume or disk snapshot
+
+Restoring the upstream data directory from a crash-consistent volume or disk
+snapshot rolls the database back, but preserves the timeline ID and the
+replication slot. Materialize cannot detect this kind of restore. The source
+keeps running without an error, but its contents diverge from upstream. This can
+surface later as incorrect results, or as negative-accumulation errors in
+queries such as `Non-positive multiplicity`.
+
+> **Warning:** After any restore of this kind, drop and re-create the source even if it reports
+> as `running`. Do not wait for the source to enter an error state, because it
+> will not.
+
+#### Promotion of a physical replica
+
+When a source reads from a physical standby (read replica) rather than the
+primary, promoting that standby to a primary fails the source with:
+
+```
+unsupported action: upstream physical replica status changed (e.g. a physical
+replica was promoted to a primary). Expected pg_is_in_recovery()=true but got
+false
+```
+
+Materialize detects the promotion while the replication stream is live, without
+waiting for a restart. Re-create the source against the promoted node.
+
+#### Replication slot invalidated
+
+PostgreSQL invalidates a replication slot once the WAL it holds exceeds
+[`max_slot_wal_keep_size`](https://www.postgresql.org/docs/current/runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE).
+This protects the upstream from running out of disk, at the cost of ending
+replication. The source fails with:
+
+```
+replication slot has been invalidated because it exceeded the maximum reserved
+size
+```
+
+To avoid this, size the source cluster so that it keeps up with the upstream
+write rate, and set `max_slot_wal_keep_size` high enough to cover your longest
+expected outage. Some hosted PostgreSQL services set this value for you and do
+not allow it to be raised.
+
+#### Replication slot dropped or rewound
+
+If the slot Materialize is using is dropped upstream, or the upstream is rebuilt
+from a base backup (which does not carry replication slots), a new slot starts
+at the current LSN, past the point the source needs to resume from. The source
+stalls with:
+
+```
+slot overcompacted. Requested LSN ... but only LSNs >= ... are available
+```
+
+For diagnosis steps, see [Slot
+overcompacted](/ingest-data/postgres/slot-overcompacted/). PostgreSQL refuses to
+drop a slot that is in use, so this generally happens only while the source is
+paused or disconnected.
+
+Not every rewind is caught this way. A rewind that leaves the slot able to serve
+the LSN the source asks for, such as [restoring from a volume or disk
+snapshot](#restoring-from-a-volume-or-disk-snapshot), raises no error at all.
+
+#### Dropping the publication
+
+Running `DROP PUBLICATION` upstream stalls the source, and all of its tables,
+with:
+
+```
+publication "mz_source" does not exist
+```
+
+Re-create the publication upstream, then re-create the source.
+
+#### Major version upgrades
+
+A PostgreSQL major version upgrade rewrites the on-disk format and does not
+preserve the replication slot, so there is no in-place recovery. To upgrade without a gap in your downstream views, run a second source
+against the upgraded instance in parallel and cut over once it has hydrated. See
+[Upgrade the major version of your PostgreSQL
+source](/ingest-data/postgres/major-version-upgrade/).
+
+### High-availability failovers
+
+Some managed PostgreSQL services increment the timeline during routine
+high-availability operations, such as maintenance, a machine-tier change, or an
+automatic failover between replicas. Materialize cannot distinguish these from a
+genuine restore, so by default they fail the source with the [`Expected timeline
+ID`](#point-in-time-restore) error.
+
+On self-managed Materialize, where the upstream service guarantees that a
+failover is a contiguous fork of the WAL with no data loss, you can disable
+timeline validation with the
+[`pg_source_validate_timeline`](/sql/alter-system-set/) system parameter:
+
+```mzsql
+ALTER SYSTEM SET pg_source_validate_timeline = false;
+```
+
+This parameter is not available on Materialize Cloud. There, a
+high-availability failover that changes the timeline requires re-creating the
+source.
+
+> **Warning:** Disabling this check is a trade-off. With it off, Materialize also does **not**
+> detect a genuine [point-in-time restore](#point-in-time-restore) or any other
+> discontinuous timeline change, and silently ingesting across one can corrupt the
+> contents of the source. Only disable it when your provider documents that its
+> failovers preserve WAL continuity for logical replication subscribers, and
+> re-create the source manually after any operation that does not.
+
+## Examples
+
+> **Important:** Before creating a PostgreSQL source, you must set up logical replication in the
+> upstream database. For step-by-step instructions, see the integration guide for
+> your PostgreSQL service: [AlloyDB](/ingest-data/postgres-alloydb/),
+> [Amazon RDS](/ingest-data/postgres-amazon-rds/),
+> [Amazon Aurora](/ingest-data/postgres-amazon-aurora/),
+> [Azure DB](/ingest-data/postgres-azure-db/),
+> [Google Cloud SQL](/ingest-data/postgres-google-cloud-sql/),
+> [Self-hosted](/ingest-data/postgres-self-hosted/).
+
+### Creating a connection
+
+A connection describes how to connect and authenticate to an external system you
+want Materialize to read data from.
+
+Once created, a connection is **reusable** across multiple `CREATE SOURCE`
+statements. For more details on creating connections, check the
+[`CREATE CONNECTION`](/sql/create-connection/#postgresql) documentation page.
+
+```mzsql
+CREATE SECRET pgpass AS '<POSTGRES_PASSWORD>';
+
+CREATE CONNECTION pg_connection TO POSTGRES (
+    HOST 'instance.foo000.us-west-1.rds.amazonaws.com',
+    PORT 5432,
+    USER 'postgres',
+    PASSWORD SECRET pgpass,
+    SSL MODE 'require',
+    DATABASE 'postgres'
+);
+```
+
+If your PostgreSQL server is not exposed to the public internet, you can
+[tunnel the connection](/sql/create-connection/#network-security-connections)
+through an AWS PrivateLink service (Materialize Cloud) or an SSH bastion host.
+
+**AWS PrivateLink:**
+
+> **Note:** Connections using AWS PrivateLink is for Materialize Cloud only.
+
+```mzsql
+CREATE CONNECTION privatelink_svc TO AWS PRIVATELINK (
+    SERVICE NAME 'com.amazonaws.vpce.us-east-1.vpce-svc-0e123abc123198abc',
+    AVAILABILITY ZONES ('use1-az1', 'use1-az4')
+);
+```
+
+```mzsql
+CREATE SECRET pgpass AS '<POSTGRES_PASSWORD>';
+
+CREATE CONNECTION pg_connection TO POSTGRES (
+    HOST 'instance.foo000.us-west-1.rds.amazonaws.com',
+    PORT 5432,
+    USER 'postgres',
+    PASSWORD SECRET pgpass,
+    AWS PRIVATELINK privatelink_svc,
+    DATABASE 'postgres'
+);
+```
+
+For step-by-step instructions on creating AWS PrivateLink connections and
+configuring an AWS PrivateLink service to accept connections from Materialize,
+check [this guide](/ops/network-security/privatelink/).
+
+**SSH tunnel:**
+```mzsql
+CREATE CONNECTION ssh_connection TO SSH TUNNEL (
+    HOST 'bastion-host',
+    PORT 22,
+    USER 'materialize',
+);
+```
+
+```mzsql
+CREATE CONNECTION pg_connection TO POSTGRES (
+    HOST 'instance.foo000.us-west-1.rds.amazonaws.com',
+    PORT 5432,
+    SSH TUNNEL ssh_connection,
+    DATABASE 'postgres'
+);
+```
+
+For step-by-step instructions on creating SSH tunnel connections and configuring
+an SSH bastion server to accept connections from Materialize, check
+[this guide](/ops/network-security/ssh-tunnel/).
+
+### Creating a source {#create-source-example}
+
+_Create subsources for all tables included in the PostgreSQL publication_
+
+```mzsql
+CREATE SOURCE mz_source
+    FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source')
+    FOR ALL TABLES;
+```
+
+_Create subsources for all tables from specific schemas included in the
+ PostgreSQL publication_
+
+```mzsql
+CREATE SOURCE mz_source
+  FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source')
+  FOR SCHEMAS (public, project);
+```
+
+_Create subsources for specific tables included in the PostgreSQL publication_
+
+```mzsql
+CREATE SOURCE mz_source
+  FROM POSTGRES CONNECTION pg_connection (PUBLICATION 'mz_source')
+  FOR TABLES (table_1, table_2 AS alias_table_2);
+```
+
+#### Handling unsupported types
+
+If the publication contains tables that use [data types](/sql/types/)
+unsupported by Materialize, use the `TEXT COLUMNS` option to decode data as
+`text` for the affected columns. This option expects the upstream names of the
+replicated table and column (i.e. as defined in your PostgreSQL database).
+
+```mzsql
+CREATE SOURCE mz_source
+  FROM POSTGRES CONNECTION pg_connection (
+    PUBLICATION 'mz_source',
+    TEXT COLUMNS (upstream_table_name.column_of_unsupported_type)
+  ) FOR ALL TABLES;
+```
+
+### Handling errors and schema changes
+
+> **Note:** Work to more smoothly support ddl changes to upstream tables is currently in
+> progress. The work introduces the ability to re-ingest the same upstream table
+> under a new schema and switch over without downtime.
+
+To handle upstream [schema changes](#handling-upstream-operations) or errored subsources, use
+the [`DROP SOURCE`](/sql/alter-source/#context) syntax to drop the affected
+subsource, and then [`ALTER SOURCE...ADD SUBSOURCE`](/sql/alter-source/) to add
+the subsource back to the source.
+
+```mzsql
+-- List all subsources in mz_source
+SHOW SUBSOURCES ON mz_source;
+
+-- Get rid of an outdated or errored subsource
+DROP SOURCE table_1;
+
+-- Start ingesting the table with the updated schema or fix
+ALTER SOURCE mz_source ADD SUBSOURCE table_1;
+```
+#### Adding subsources
+
+When adding subsources to a PostgreSQL source, Materialize opens a temporary
+replication slot to snapshot the new subsources' current states. After
+completing the snapshot, the table will be kept up-to-date, like all other
+tables in the publication.
+
+#### Dropping subsources
+
+Dropping a subsource prevents Materialize from ingesting any data from it, in
+addition to dropping any state that Materialize previously had for the table.
+
+## Related pages
+
+- [`CREATE SECRET`](/sql/create-secret)
+- [`CREATE CONNECTION`](/sql/create-connection)
+- [`CREATE SOURCE`](../)
+- PostgreSQL integration guides:
+  - [AlloyDB](/ingest-data/postgres-alloydb/)
+  - [Amazon RDS](/ingest-data/postgres-amazon-rds/)
+  - [Amazon Aurora](/ingest-data/postgres-amazon-aurora/)
+  - [Azure DB](/ingest-data/postgres-azure-db/)
+  - [Google Cloud SQL](/ingest-data/postgres-google-cloud-sql/)
+  - [Self-hosted](/ingest-data/postgres-self-hosted/)
+
+[`enum`]: https://www.postgresql.org/docs/current/datatype-enum.html
+[`money`]: https://www.postgresql.org/docs/current/datatype-money.html
+
