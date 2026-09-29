@@ -371,16 +371,16 @@ and support the MCP `initialize`, `tools/list`, and `tools/call` methods.
 
 ```shell
 sudo echo "Preparing to extract mz-debug..."
-curl -L "https://binaries.materialize.com/mz-debug-latest-arm64-apple-darwin.tar.gz" \
-| sudo tar -xzC /usr/local --strip-components=1
+curl -L -o mz-debug.tar.gz "https://binaries.materialize.com/mz-debug-latest-arm64-apple-darwin.tar.gz"
+sudo tar -xzf mz-debug.tar.gz -C /usr/local --strip-components=1
 ```
 
 **Linux:**
 ```shell
 ARCH=$(uname -m)
 sudo echo "Preparing to extract mz-debug..."
-curl -L "https://binaries.materialize.com/mz-debug-latest-$ARCH-unknown-linux-gnu.tar.gz" \
-| sudo tar -xzC /usr/local --strip-components=1
+curl -L -o mz-debug.tar.gz "https://binaries.materialize.com/mz-debug-latest-$ARCH-unknown-linux-gnu.tar.gz"
+sudo tar -xzf mz-debug.tar.gz -C /usr/local --strip-components=1
 
 ### Get version and help
 

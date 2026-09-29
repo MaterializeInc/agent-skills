@@ -25,8 +25,8 @@ Alternatively, download the latest release for your platform:
 ```shell
 ARCH=$(uname -m)
 sudo -v
-curl -L "https://binaries.materialize.com/mz-deploy-latest-$ARCH-apple-darwin.tar.gz" \
-| sudo tar -xzC /usr/local --strip-components=1
+curl -L -o mz-deploy.tar.gz "https://binaries.materialize.com/mz-deploy-latest-$ARCH-apple-darwin.tar.gz"
+sudo tar -xzf mz-deploy.tar.gz -C /usr/local --strip-components=1
 ```
 
 **Linux:**
@@ -34,8 +34,8 @@ curl -L "https://binaries.materialize.com/mz-deploy-latest-$ARCH-apple-darwin.ta
 ```shell
 ARCH=$(uname -m)
 sudo -v
-curl -L "https://binaries.materialize.com/mz-deploy-latest-$ARCH-unknown-linux-gnu.tar.gz" \
-| sudo tar -xzC /usr/local --strip-components=1
+curl -L -o mz-deploy.tar.gz "https://binaries.materialize.com/mz-deploy-latest-$ARCH-unknown-linux-gnu.tar.gz"
+sudo tar -xzf mz-deploy.tar.gz -C /usr/local --strip-components=1
 ```
 
 Verify the installation:
