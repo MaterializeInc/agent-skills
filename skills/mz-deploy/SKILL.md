@@ -51,7 +51,7 @@ verbose debugging, `-q` to suppress informational output.
 
 ```
 project.toml              # project config: mz_version, dependencies, per-profile settings
-profiles.toml             # connection profiles (also resolved from ~/.mz)
+profiles.toml             # connection profiles (also resolved from <MZ_PROFILES_HOME>)
 .mzprofile                # gitignored per-checkout default profile
 types.lock                # cached schemas of external dependencies, for offline type checking
 target/                   # gitignored local build cache (safe to delete; see `clean`)
@@ -173,7 +173,7 @@ developing, and monitoring.
 ## Profiles and Per-Profile Configuration
 
 A profile is a named connection target in `profiles.toml`, resolved from
-`--profiles-dir`, then `MZ_DEPLOY_PROFILES_DIR`, then `~/.mz`. The **active**
+`--profiles-dir`, then `<MZ_DEPLOY_PROFILES_DIR>`, then `<MZ_PROFILES_HOME>`. The **active**
 profile resolves from `--profile`, then `MZ_DEPLOY_PROFILE`, then the
 gitignored `.mzprofile` in the project root (written by `mz-deploy profile
 set`). A built-in `emulator` profile always exists, so a local Materialize

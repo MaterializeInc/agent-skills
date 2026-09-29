@@ -1090,7 +1090,7 @@ username = "materialize"
 [staging]
 host = "staging.example.com"
 username = "deploy_bot"
-password = "${STAGING_PASSWORD}"
+password = "<STAGING_PASSWORD>"
 
 [production]
 host = "production.example.com"
@@ -1137,7 +1137,7 @@ You can also override the password for any profile with the environment variable
 precedence over the value in `profiles.toml`.
 
 ```bash
-export MZ_PROFILE_STAGING_PASSWORD="my-secret"
+export <MZ_PROFILE_STAGING_PASSWORD>="my-secret"
 ```
 
 ## Profile suffixes

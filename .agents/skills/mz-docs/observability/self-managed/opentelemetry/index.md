@@ -284,7 +284,7 @@ you create.
    ```bash
    kubectl create secret generic mzmon-alloy-gateway-env \
      --namespace monitoring \
-     --from-literal=GATEWAY_OTEL_DEST_BEARER_TOKEN='<your-token>'
+     --from-literal=<GATEWAY_OTEL_DEST_BEARER_TOKEN>='<your-token>'
    ```
 
    | Auth type | Secret keys |

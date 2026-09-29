@@ -271,7 +271,7 @@ Secret you create.
    ```bash
    kubectl create secret generic mzmon-alloy-gateway-env \
      --namespace monitoring \
-     --from-literal=GATEWAY_OTEL_DEST_DATADOG_API_KEY='<your-datadog-api-key>'
+     --from-literal=<GATEWAY_OTEL_DEST_DATADOG_API_KEY>='<your-datadog-api-key>'
    ```
 
    > **Warning:** The Secret name must match the release, so with the default

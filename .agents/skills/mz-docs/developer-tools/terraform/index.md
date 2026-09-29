@@ -144,7 +144,7 @@ To avoid checking secrets into source control, use environment variables for aut
 The provider automatically reads the `MZ_PASSWORD` environment variable:
 
 ```shell
-export MZ_PASSWORD=<app_password>
+export <MZ_PASSWORD>=<app_password>
 ```
 
 ```hcl
@@ -233,7 +233,7 @@ To avoid checking secrets into source control, use environment variables for aut
 The provider automatically reads configuration from `MZ_*` environment variables:
 
 ```shell
-export MZ_PASSWORD=<password>
+export <MZ_PASSWORD>=<password>
 export MZ_HOST=<host>
 ```
 

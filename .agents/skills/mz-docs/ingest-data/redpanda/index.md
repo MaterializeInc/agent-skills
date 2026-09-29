@@ -161,7 +161,7 @@ in a region supported by Materialize: `us-east-1`,`us-west-2`, or `eu-west-1`.
     PUBLIC_API_ENDPOINT="https://api.cloud.redpanda.com"
     REGION=US-EAST-1
     CLOUD_CLIENT_ID="<your-redpanda-client-id>"
-    CLOUD_CLIENT_SECRET="<your-redpanda-client-secret>"
+    <CLOUD_CLIENT_SECRET>="<your-redpanda-client-secret>"
     CLUSTER_ID="<your-redpanda-cluster-id>"
 
     <AUTH_TOKEN>=$(
@@ -169,7 +169,7 @@ in a region supported by Materialize: `us-east-1`,`us-west-2`, or `eu-west-1`.
              -H 'content-type: application/x-www-form-urlencoded' \
              -d grant_type=client_credentials \
              -d client_id=$CLOUD_CLIENT_ID \
-             -d client_secret=$CLOUD_CLIENT_SECRET \
+             -d client_secret=<CLOUD_CLIENT_SECRET> \
              -d audience=cloudv2-production.redpanda.cloud | jq .access_token | sed 's/"//g'
     )
 
@@ -232,7 +232,7 @@ principal:
     PUBLIC_API_ENDPOINT="https://api.cloud.redpanda.com"
     REGION=US-EAST-1
     CLOUD_CLIENT_ID="<your-redpanda-client-id>"
-    CLOUD_CLIENT_SECRET="<your-redpanda-client-secret>"
+    <CLOUD_CLIENT_SECRET>="<your-redpanda-client-secret>"
     CLUSTER_ID="<your-redpanda-cluster-id>"
 
     MATERIALIZE_CONNECTION_ARN="<arn-created-for-materialize-aws-privatelink-connection>"
@@ -242,7 +242,7 @@ principal:
            -H 'content-type: application/x-www-form-urlencoded' \
            -d grant_type=client_credentials \
            -d client_id=$CLOUD_CLIENT_ID \
-           -d client_secret=$CLOUD_CLIENT_SECRET \
+           -d client_secret=<CLOUD_CLIENT_SECRET> \
            -d audience=cloudv2-production.redpanda.cloud | jq .access_token | sed 's/"//g'
     )
 

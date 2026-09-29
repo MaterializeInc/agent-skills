@@ -142,7 +142,7 @@ wins over anything the modules compute.
    kubectl create secret generic mzmon-alloy-gateway-env \
      --namespace monitoring \
      --from-literal=GATEWAY_PROMETHEUS_DEST_USERNAME='<user>' \
-     --from-literal=GATEWAY_PROMETHEUS_DEST_PASSWORD='<password>'
+     --from-literal=<GATEWAY_PROMETHEUS_DEST_PASSWORD>='<password>'
    ```
 
    | Auth type | Secret keys |

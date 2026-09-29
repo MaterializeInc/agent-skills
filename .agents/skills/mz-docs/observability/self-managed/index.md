@@ -367,7 +367,7 @@ Secret you create.
    ```bash
    kubectl create secret generic mzmon-alloy-gateway-env \
      --namespace monitoring \
-     --from-literal=GATEWAY_OTEL_DEST_DATADOG_API_KEY='<your-datadog-api-key>'
+     --from-literal=<GATEWAY_OTEL_DEST_DATADOG_API_KEY>='<your-datadog-api-key>'
    ```
 
    > **Warning:** The Secret name must match the release, so with the default
@@ -1235,7 +1235,7 @@ you create.
    ```bash
    kubectl create secret generic mzmon-alloy-gateway-env \
      --namespace monitoring \
-     --from-literal=GATEWAY_OTEL_DEST_HONEYCOMB_API_KEY='<your-honeycomb-api-key>'
+     --from-literal=<GATEWAY_OTEL_DEST_HONEYCOMB_API_KEY>='<your-honeycomb-api-key>'
    ```
 
 The chart validates the header shape at render time: an empty header list, a
@@ -1816,7 +1816,7 @@ you create.
    ```bash
    kubectl create secret generic mzmon-alloy-gateway-env \
      --namespace monitoring \
-     --from-literal=GATEWAY_OTEL_DEST_BEARER_TOKEN='<your-token>'
+     --from-literal=<GATEWAY_OTEL_DEST_BEARER_TOKEN>='<your-token>'
    ```
 
    | Auth type | Secret keys |
@@ -1988,7 +1988,7 @@ wins over anything the modules compute.
    kubectl create secret generic mzmon-alloy-gateway-env \
      --namespace monitoring \
      --from-literal=GATEWAY_PROMETHEUS_DEST_USERNAME='<user>' \
-     --from-literal=GATEWAY_PROMETHEUS_DEST_PASSWORD='<password>'
+     --from-literal=<GATEWAY_PROMETHEUS_DEST_PASSWORD>='<password>'
    ```
 
    | Auth type | Secret keys |

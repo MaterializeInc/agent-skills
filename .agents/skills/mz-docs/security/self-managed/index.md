@@ -943,7 +943,7 @@ Clicking "Connect" in the Materialize Console will provide you with an ID token 
 Use the ID token as your password:
 
 ```shell
-PGPASSWORD="<your-id-token>" \
+<PGPASSWORD>="<your-id-token>" \
 psql -h <materialize-host> -p 6875 -U <username> materialize
 ```
 
@@ -1137,7 +1137,7 @@ password.
 1. Connect using the password directly:
 
     ```shell
-    PGPASSWORD="a-strong-password" \
+    <PGPASSWORD>="a-strong-password" \
     psql -h <materialize-host> -p 6875 -U svc-dbt materialize
     ```
 
@@ -1193,7 +1193,7 @@ username and password to obtain an ID token.
 1. Extract the `id_token` from the JSON response and use it to connect:
 
    ```shell
-   PGPASSWORD="<id-token>" \
+   <PGPASSWORD>="<id-token>" \
    psql -h <materialize-host> -p 6875 -U svc-materialize@your-org.com materialize
    ```
 
@@ -1241,7 +1241,7 @@ username and password to obtain an ID token.
 1. Extract the `id_token` from the JSON response and use it to connect:
 
    ```shell
-   PGPASSWORD="<id-token>" \
+   <PGPASSWORD>="<id-token>" \
    psql -h <materialize-host> -p 6875 -U svc-materialize@your-org.com materialize
    ```
 
@@ -1269,7 +1269,7 @@ username and password to obtain an ID token.
 1. Extract the `id_token` from the JSON response and use it to connect:
 
    ```shell
-   PGPASSWORD="<id-token>" \
+   <PGPASSWORD>="<id-token>" \
    psql -h <materialize-host> -p 6875 -U svc-materialize@your-org.com materialize
    ```
 
@@ -1373,7 +1373,7 @@ for automated systems that do not have a user context.
 1. Extract the `access_token` from the JSON response and use it to connect:
 
    ```shell
-   PGPASSWORD="<access-token>" \
+   <PGPASSWORD>="<access-token>" \
    psql -h <materialize-host> -p 6875 -U <service-account-name> materialize
    ```
 
@@ -1421,7 +1421,7 @@ for automated systems that do not have a user context.
 1. Extract the `access_token` from the JSON response and use it to connect:
 
    ```shell
-   PGPASSWORD="<access-token>" \
+   <PGPASSWORD>="<access-token>" \
    psql -h <materialize-host> -p 6875 -U <service-account-name> materialize
    ```
 
@@ -1458,7 +1458,7 @@ for automated systems that do not have a user context.
 1. Extract the `access_token` from the JSON response and use it to connect:
 
    ```shell
-   PGPASSWORD="<access-token>" \
+   <PGPASSWORD>="<access-token>" \
    psql -h <materialize-host> -p 6875 -U <service-account-name> materialize
    ```
 

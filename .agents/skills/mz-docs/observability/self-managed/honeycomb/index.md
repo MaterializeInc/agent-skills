@@ -303,7 +303,7 @@ you create.
    ```bash
    kubectl create secret generic mzmon-alloy-gateway-env \
      --namespace monitoring \
-     --from-literal=GATEWAY_OTEL_DEST_HONEYCOMB_API_KEY='<your-honeycomb-api-key>'
+     --from-literal=<GATEWAY_OTEL_DEST_HONEYCOMB_API_KEY>='<your-honeycomb-api-key>'
    ```
 
 The chart validates the header shape at render time: an empty header list, a
