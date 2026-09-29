@@ -167,8 +167,8 @@ In the cloud environment settings, set the **Setup script** field to:
 #!/bin/bash
 set -euo pipefail
 ARCH=$(uname -m)
-curl -L "https://binaries.materialize.com/mz-deploy-latest-$ARCH-unknown-linux-gnu.tar.gz" \
-| tar -xzC /usr/local --strip-components=1
+curl -L -o mz-deploy.tar.gz "https://binaries.materialize.com/mz-deploy-latest-$ARCH-unknown-linux-gnu.tar.gz"
+tar -xzf mz-deploy.tar.gz -C /usr/local --strip-components=1
 ```
 
 The sandbox runs Ubuntu on Linux, so this always uses the `unknown-linux-gnu`
@@ -629,8 +629,8 @@ Alternatively, download the latest release for your platform:
 ```shell
 ARCH=$(uname -m)
 sudo -v
-curl -L "https://binaries.materialize.com/mz-deploy-latest-$ARCH-apple-darwin.tar.gz" \
-| sudo tar -xzC /usr/local --strip-components=1
+curl -L -o mz-deploy.tar.gz "https://binaries.materialize.com/mz-deploy-latest-$ARCH-apple-darwin.tar.gz"
+sudo tar -xzf mz-deploy.tar.gz -C /usr/local --strip-components=1
 ```
 
 **Linux:**
@@ -638,8 +638,8 @@ curl -L "https://binaries.materialize.com/mz-deploy-latest-$ARCH-apple-darwin.ta
 ```shell
 ARCH=$(uname -m)
 sudo -v
-curl -L "https://binaries.materialize.com/mz-deploy-latest-$ARCH-unknown-linux-gnu.tar.gz" \
-| sudo tar -xzC /usr/local --strip-components=1
+curl -L -o mz-deploy.tar.gz "https://binaries.materialize.com/mz-deploy-latest-$ARCH-unknown-linux-gnu.tar.gz"
+sudo tar -xzf mz-deploy.tar.gz -C /usr/local --strip-components=1
 ```
 
 Verify the installation:

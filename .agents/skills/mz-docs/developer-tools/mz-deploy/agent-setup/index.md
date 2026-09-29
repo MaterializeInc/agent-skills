@@ -71,8 +71,8 @@ In the cloud environment settings, set the **Setup script** field to:
 #!/bin/bash
 set -euo pipefail
 ARCH=$(uname -m)
-curl -L "https://binaries.materialize.com/mz-deploy-latest-$ARCH-unknown-linux-gnu.tar.gz" \
-| tar -xzC /usr/local --strip-components=1
+curl -L -o mz-deploy.tar.gz "https://binaries.materialize.com/mz-deploy-latest-$ARCH-unknown-linux-gnu.tar.gz"
+tar -xzf mz-deploy.tar.gz -C /usr/local --strip-components=1
 ```
 
 The sandbox runs Ubuntu on Linux, so this always uses the `unknown-linux-gnu`
