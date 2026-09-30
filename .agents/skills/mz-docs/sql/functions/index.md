@@ -53,6 +53,8 @@ Aggregate values (including nulls) as an array [(docs)](/sql/functions/array_agg
 <p>Average of <code>T</code>&rsquo;s values.</p>
 <p>Returns <code>numeric</code> if <code>x</code> is <code>int</code>, <code>double</code> if <code>x</code> is <code>real</code>, else returns
 same type as <code>x</code>.</p>
+<p>For <code>real</code> and <code>double precision</code> inputs, see <a href="../types/float/#aggregate-precision" >aggregate
+precision</a>.</p>
 #### `bool_and(x: T) -> T`
 
 <em>NULL</em> if all values of <code>x</code> are <em>NULL</em>, otherwise true if all values of <code>x</code> are true, otherwise false.#### `bool_or(x: T) -> T`
@@ -89,6 +91,8 @@ Concatenates the non-null input values into text. Each value after the first is 
 <p>Sum of <code>T</code>&rsquo;s values</p>
 <p>Returns <code>bigint</code> if <code>x</code> is <code>int</code> or <code>smallint</code>, <code>numeric</code> if <code>x</code> is <code>bigint</code> or <code>uint8</code>,
 <code>uint8</code> if <code>x</code> is <code>uint4</code> or <code>uint2</code>, else returns same type as <code>x</code>.</p>
+<p>For <code>real</code> and <code>double precision</code> inputs, see <a href="../types/float/#aggregate-precision" >aggregate
+precision</a>.</p>
 #### `variance(x: T) -> U`
 
 <p>Historical alias for <code>var_samp</code>. <em>(imprecise)</em></p>
