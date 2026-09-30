@@ -175,7 +175,7 @@ changing. Put the recursion in a view and index it.
 
 ```sql
 CREATE VIEW user_access AS
-WITH MUTUALLY RECURSIVE (ERROR AT RECURSION LIMIT 100)
+WITH MUTUALLY RECURSIVE
     effective(group_id text, doc_id text, level text) AS (
         SELECT group_id, doc_id, level FROM permissions
         UNION
@@ -197,9 +197,12 @@ The `CREATE INDEX` is what makes this a maintained dataflow. A plain
 expansion is computed once and kept up to date as `groups`, `memberships` and
 `permissions` change
 ([hierarchies.md#a-maintained-closure-table](hierarchies.md#a-maintained-closure-table)).
-`ERROR AT RECURSION LIMIT 100` is the guardrail every maintained recursive view
-needs: without it a bad group graph leaves a view that installs, never
-hydrates, and spins a dataflow until it is dropped
+The binding carries no counter, so a loop in the group graph costs nothing:
+`UNION` folds the re-derived triples and the view converges
+([Multiple parents and cycles](#multiple-parents-and-cycles)). No recursion
+limit is needed for that. As a safeguard against a later edit that adds a
+counter or a `UNION ALL`, `ERROR AT RECURSION LIMIT` above the deepest group
+chain is the option that fires on this shape
 ([semantics.md#recursion-limits](semantics.md#recursion-limits)).
 
 ```sql
@@ -386,9 +389,9 @@ implementations do.
   row from the answer; it does not stop inheritance. The deny stops inheritance
   because it is an explicit row and the in-binding `NOT EXISTS` treats it as an
   override. Drop either half and descendants of the denied group get access.
-- No recursion limit on the maintained view. One group cycle plus any counter
-  column and the view installs, never hydrates, and holds a dataflow until it
-  is dropped.
+- A counter or path column added to `effective`. One group cycle and the view
+  installs, never hydrates, and holds a dataflow until it is dropped; the
+  counter-free shape converges on the same data.
 - Confusing the point check with the expansion. "Can u1 read doc1" is one index
   lookup. "Everything u1 can read" is the full `(user, doc)` product in the
   worst case, and the index holds all of it whether or not anyone asks for it.

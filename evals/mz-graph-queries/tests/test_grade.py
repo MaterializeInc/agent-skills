@@ -86,8 +86,7 @@ class TimeoutFallback(unittest.TestCase):
 class ExistsFromCatalog(unittest.TestCase):
     """A view that is in the catalog but answers the wrong column list is a
     wrong answer, not a missing view. The grader used to read "column ... does
-    not exist" as "view missing", which undercounts `exists`, the denominator
-    of the guardrail component in Axis 3."""
+    not exist" as "view missing", which undercounts `exists`."""
 
     def grade_one(self, task, error_line, definition):
         f = fx.eval_fixture(1, 20)
@@ -122,10 +121,10 @@ class ExistsFromCatalog(unittest.TestCase):
 
 
 class RecursiveDenominator(unittest.TestCase):
-    """Axis 3 divides the guardrail count by `recursive`, not by `exists`: an
-    answer written without WITH MUTUALLY RECURSIVE has no recursion to limit
-    and must not drag the component down. t06 and t05 were answered
-    non-recursively by a real bare cell."""
+    """`recursive` and `guardrail` are recorded per view and in the summary:
+    an answer written without WITH MUTUALLY RECURSIVE has no recursion to limit
+    and is counted in neither. t06 and t05 were answered non-recursively by a
+    real bare cell. Neither count is scored since 2026-09-30."""
 
     def grade_one(self, task, definition):
         f = fx.eval_fixture(1, 20)

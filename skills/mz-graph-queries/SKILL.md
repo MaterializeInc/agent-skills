@@ -98,7 +98,7 @@ loop and computed once. The canonical shape:
 <!-- verify: skip -->
 
 ```sql
-WITH MUTUALLY RECURSIVE (RETURN AT RECURSION LIMIT 1000)
+WITH MUTUALLY RECURSIVE
     -- non-recursive prep (symmetrize, filter, type) is hoisted out of the loop
     edges(src text, dst text) AS (
         SELECT src, dst FROM base_edges
@@ -118,13 +118,11 @@ WITH MUTUALLY RECURSIVE (RETURN AT RECURSION LIMIT 1000)
     )
 -- payload joins and display filters live in the body
 SELECT r.node, r.value, n.name
-FROM result r JOIN nodes n ON n.id = r.node
-WHERE r.value < 1000; -- rejects state that ran to the recursion limit
+FROM result r JOIN nodes n ON n.id = r.node;
 ```
 
 That skeleton names tables outside the bundled fixture, so it is marked
-`verify: skip`; every other block is checked against recorded output. `result`
-is reduce-topped, so its guard is `RETURN AT` plus that body check, per Step 4.
+`verify: skip`; every other block is checked against recorded output.
 
 ## Step 3: Prove termination
 
@@ -146,37 +144,45 @@ Before running it, state which of these holds
 "Nothing changed" counts multiplicities, not distinct rows: a `UNION ALL`
 carry-forward branch re-adds rows the binding holds, so the loop never stops.
 
-## Step 4: Guard and verify
+## Step 4: Verify
 
-Every maintained recursive view ships a limit; what tops the binding decides
-which one and what it proves ([semantics.md#recursion-limits](references/semantics.md#recursion-limits)):
+Step the binding with `RETURN AT RECURSION LIMIT 1`, `2`, `3` and watch it grow
+toward the answer; a binding still changing past the iteration count Step 3
+predicted has a logic error, not a data problem
+([semantics.md#recursion-limits](references/semantics.md#recursion-limits)).
+For a maintained view, insert an edge and confirm the answer moves, then delete
+it and confirm it moves back.
 
-- **`UNION`-topped**: `ERROR AT RECURSION LIMIT n`, with n well above the
-  expected graph diameter. Every change it can make is a row change, so the
-  limit fires.
-- **Reduce- or TopK-topped** (`min`, `max`, `sum`, `DISTINCT ON`): `ERROR AT`
-  goes silent once the key set settles and only the values keep moving. Ship
-  `RETURN AT RECURSION LIMIT n` anyway, n above the expected iteration count: it
-  bounds runtime. Correctness is then a check on the returned state rejecting a
-  value at or near the limit, plus a standing audit of whatever the floor rests
-  on ([reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag)).
+Recursion limits are optional, and the default is none: a binding that
+converges stops on its own, cycles in the data included, and needs nothing
+added. The two options are tools for when you are not yet sure of your logic
+([semantics.md#recursion-limits](references/semantics.md#recursion-limits)):
 
-When a block mixes shapes, the recursive binding's top governs the choice: the
-limit is per block ([semantics.md#recursion-limits](references/semantics.md#recursion-limits)),
-and a non-recursive prep binding is hoisted out of the loop anyway
-([semantics.md#what-the-optimizer-will-not-do](references/semantics.md#what-the-optimizer-will-not-do)).
+- **`RETURN AT RECURSION LIMIT n`** is the development tool. It hands back the
+  state after n iterations, which is how to step a binding or look inside one
+  that never settles. It is also the right option for fixed-iteration numeric
+  methods, where n defines the answer.
+- **`ERROR AT RECURSION LIMIT n`** is the safeguard, for a maintained view
+  whose termination argument you do not fully trust yet, or where a runaway
+  dataflow would cost more than a loud failure. Set n well above the iteration
+  count you expect, so it never fires on correct data. It notices row changes,
+  not value changes: it fires on a `UNION`-topped binding and goes quiet on a
+  reduce- or TopK-topped one (`min`, `max`, `sum`, `DISTINCT ON`) once the key
+  set settles, so on those shapes the check is the convergence argument plus an
+  audit of the data it rests on
+  ([reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag)).
 
-A limited recursion over cyclic data is not a safe fallback. A materialized view
-of that shape installs, hydrates, reports `hydrated = t`, and serves iteration-n
-counters that look like answers; only the unlimited form fails visibly, by never
-hydrating ([reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag)).
-That is why the reduce-topped guard is a limit *and* a check: the limit bounds
-runtime, the check on the returned state keeps iteration-n state out of answers.
+A limit does not make a wrong recursion right. A limited recursion over data
+its logic cannot handle installs, hydrates, reports `hydrated = t`, and serves
+iteration-n counters that look like answers
+([reachability.md#topological-level-on-a-dag](references/reachability.md#topological-level-on-a-dag)).
+The convergence argument in Step 3 is what makes the answer correct; a limit
+only bounds how long a wrong one runs. The limit is per block, so a
+non-recursive prep binding in the same block is covered by it and hoisted out
+of the loop regardless.
 
-Then verify. Step the binding with `RETURN AT RECURSION LIMIT 1`, `2`, `3` and
-watch it grow. For a maintained view, insert an edge and confirm the answer
-moves, then delete it and confirm it moves back. The three typing errors that
-surface before the recursion runs ([semantics.md#column-types](references/semantics.md#column-types)):
+The three typing errors that surface before the recursion runs
+([semantics.md#column-types](references/semantics.md#column-types)):
 
 | Error or symptom | Cause | Fix |
 |---|---|---|
@@ -206,8 +212,9 @@ one-shot with `RETURN AT RECURSION LIMIT` or outside the database.
 
 - An outer `With` above the recursive node is the hoist: those reads happen
   once, not per iteration.
-- `With Mutually Recursive` wraps one `cte [recursion_limit=N] lN =` block per
-  binding. The limit is per block, rendered on every binding's cte.
+- `With Mutually Recursive` wraps one `cte lN =` block per binding. A limit,
+  when one is set, renders as `[recursion_limit=N]` on every binding's cte,
+  because it is per block.
 - A `Stream lN` inside `cte lN` is the back edge.
 - A `Distinct GroupAggregate` is where `UNION` planned its deduplication, the
   operator that makes the fixpoint reachable.

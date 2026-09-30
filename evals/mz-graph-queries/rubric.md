@@ -42,24 +42,19 @@ correct as the input changes, not whether a wrong answer stays wrong. The
 worksheet records a skipped mutation as `skipped: view missing` or
 `skipped: initial read timed out`; both count as zero.
 
-## Axis 3: convergence and guardrails (0.75)
+## Axis 3: convergence (0.75)
 
-| component | weight | rule |
-|---|---|---|
-| convergence | 0.5 | 0.5 if `timed_out` is 0, otherwise 0 |
-| guardrail | 0.25 | `0.25 * guardrail / recursive`, and 0 when `recursive` is 0 |
+0.75 if `timed_out` is 0, otherwise 0.
 
-`guardrail` counts views whose definition contains `RECURSION LIMIT`. Not every
-one of the fourteen answers has to be recursive: the first bare cell answered
-t06 with three explicit joins and t05 with a body aggregate over t04, both
-legitimately non-recursive, and a run must not be marked down for the views that
-have no recursion to limit. The denominator is therefore `recursive`, the number
-of existing views whose definition contains `MUTUALLY RECURSIVE`; with all
-fourteen answers recursive it is 14, and when no answer is recursive the
-component is 0. A run that ships no limit on any recursive view scores 0 on this
-component even if every answer is correct. Read the component next to `exists`
-and `recursive`: a run that created three views, all recursive and all limited,
-takes the full 0.25 while scoring near zero on Axes 1 and 2.
+`recursive` counts existing views whose definition contains `MUTUALLY
+RECURSIVE`, and `guardrail` those whose definition contains `RECURSION LIMIT`.
+Neither is scored. Until 2026-09-30 this axis awarded 0.25 for
+`guardrail / recursive`; the skill now presents a recursion limit as optional,
+a development aid or a safeguard for unproven logic, so rewarding its presence
+would grade against the skill. Both counts stay in the summary and on the
+worksheet as a behavioral signal: read them to see whether a cell reached for
+limits, and on which shapes, not to score it. Rows recorded before 2026-09-30
+were scored under the old rule and say so.
 
 ## Axis 4: maintainability (0.75, manual)
 

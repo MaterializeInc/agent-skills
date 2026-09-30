@@ -122,10 +122,11 @@ named. Two of them look like defects worth reporting upstream.
    A binding topped by a reduce or a TopK raises while it is still adding or
    removing rows, then goes silent once only its values keep changing, and
    returns the iteration-n state with no error. This affects exactly the shapes
-   that most need a guardrail: min-label propagation, shortest paths with `min`
-   inside, and rollups with `sum` or `max` inside. The skill therefore splits
-   the guard by shape: `ERROR AT` for `UNION`-topped traversals, `RETURN AT`
-   plus a check on the returned state for reduce-topped ones
+   on which a safeguard is most often reached for: min-label propagation,
+   shortest paths with `min` inside, and rollups with `sum` or `max` inside.
+   The skill therefore presents `ERROR AT` as a safeguard that fires on
+   `UNION`-topped shapes and goes quiet on reduce-topped ones, whose
+   correctness rests on the convergence argument and a data audit
    (`references/semantics.md`, Recursion limits). **Probable bug; worth
    reporting upstream.**
 2. **A limited recursion over cyclic data hydrates and serves.** A materialized
@@ -171,13 +172,13 @@ after a Materialize upgrade.
   `shortest-paths.md`, and the threshold and trim blocks in `components.md`.
   Every one of those recordings exists because the limit did not fire. If a
   future version makes `ERROR AT` value-aware, these blocks start erroring, the
-  verifier goes red, and the guard advice in `SKILL.md` Step 4 and in
+  verifier goes red, and the limit advice in `SKILL.md` Step 4 and in
   `semantics.md` needs rewriting rather than re-recording.
 
 ## The evaluation
 
-Two Sonnet cells are run and recorded; the results table is in
-`evals/mz-graph-queries/README.md` and the Opus cells are pending.
+Four Sonnet cells are run and recorded, two per skill revision; the results
+table is in `evals/mz-graph-queries/README.md` and the Opus cells are pending.
 
 One graded run is a single authoring round against the eval-scale fixture. The
 agent gets about fourteen prompts, one per family and one per planted trap:
@@ -192,11 +193,12 @@ correct after a mutation.
 Grading is automatic where it can be. `grade.py` diffs the agent's views
 against independent Python answer keys in `reference.py`, applies each task's
 mutation script, re-diffs, records which reads did not finish inside its
-60-second timeout, and reads the guardrail out of the view definition. Of the
-five axes in `rubric.md`, three are computed from that output: initial
-correctness, post-mutation correctness, convergence and guardrails. The other
-two are read by hand from the agent's report and the view definitions,
-maintainability and explanation.
+60-second timeout, and notes whether each view definition is recursive and
+whether it carries a recursion limit. Of the five axes in `rubric.md`, three
+are computed from that output: initial correctness, post-mutation correctness,
+and convergence. The other two are read by hand from the agent's report and the
+view definitions, maintainability and explanation. The limit column is
+recorded but not scored, since the skill presents a limit as optional.
 
 Clean-room rules carry over from `evals/mz-optimize-memory`: the agent's only
 route to the database is a generated `psql` wrapper pinned to the run's schema,
@@ -208,6 +210,8 @@ one model under one condition, run by `run_cleanroom.sh`, and cells are run one
 at a time.
 
 ## Changes from graded runs
+
+### 2026-09-03: the first two cells
 
 The first two graded cells, `sb` and `ss` (Sonnet bare and Sonnet with the
 skill, seed 1, scale 100, 2026-09-03), plus a usability pass on the small
@@ -226,9 +230,10 @@ binding and validates the road weights instead. That is the reference file read
 correctly, and it contradicts Step 4, which asks for `RETURN AT RECURSION LIMIT`
 on exactly those bindings. Both places now say the same thing: the limit stays
 on the view as a runtime bound, and the data audit is what covers correctness.
-Step 4 now opens with "Every maintained recursive view ships a limit" so the
-rule is not conditional within that scope, and the two pitfall passages say to
-keep the limit rather than to replace it.
+Step 4 then opened with "Every maintained recursive view ships a limit" so the
+rule was not conditional within that scope, and the two pitfall passages said
+to keep the limit rather than to replace it. That rule was withdrawn on
+2026-09-30; see the next section.
 
 The same finding has a second half, which the same edit addresses. Of the seven
 views the skill cell did guard, one carries the wrong guard: t03's `team`
@@ -238,7 +243,8 @@ six guarded views are `UNION`-topped closures where `ERROR AT` is right. So the
 cell did not miss the guard rule so much as apply the `ERROR AT`/`RETURN AT`
 split in only one direction: it dropped the guard where the reference file said
 the limit proves nothing, and reached for `ERROR AT` by default where it kept
-one. Step 4 now states the choice as which limit rather than whether.
+one. Step 4 was changed to state the choice as which limit rather than whether;
+the 2026-09-30 revision makes it whether again, with the answer usually no.
 
 **Distance and route in one answer. (`references/shortest-paths.md`, witness
 path.)** The usability pass answered "the shortest route from A to E, with the
@@ -259,6 +265,43 @@ to limit. It changed no score in the two recorded cells. `grade.py` now reports
 `MUTUALLY RECURSIVE`, the worksheet carries it as a column, and the denominator
 is that count. The two recorded rows in `evals/mz-graph-queries/README.md` were
 scored under the old rule and say so.
+
+### 2026-09-30: limits are optional
+
+The skill's owner reviewed the 2026-09-03 revision and rejected its premise.
+Materialize evaluates a fixpoint, so a well-formed recursion converges on
+cyclic data without help, and a limit is not something a maintained view has to
+carry. A recursion limit is a development aid, for stepping a binding with
+`RETURN AT` or making a divergence visible with `ERROR AT`, and at most an
+optional production safeguard for logic whose termination argument is not yet
+trusted. Framing cycles as the hazard and the limit as the defense taught the
+wrong lesson: the hazard is a binding whose logic does not converge, a counter
+carried through a `UNION` or a `UNION ALL` carry-forward, and the fix is the
+logic.
+
+The revision touches every file. `SKILL.md` Step 4 is now "Verify": stepping
+with `RETURN AT` comes first, and the limits are introduced as optional tools
+with their row-versus-value behavior kept, since it decides which one to reach
+for when you do want one. The canonical skeleton lost its limit and body
+filter. `semantics.md`'s recursion-limits section opens with "a binding that
+converges needs none". Every maintained-view example whose limit was not the
+point lost it: `employee_closure`, `live_reach`, `scc_closure`, `scc_trim`,
+`user_access`, and the `edges` traversal in `context-graphs.md`. Blocks whose
+limit fires in the recorded output keep it, because the error is the claim.
+The passages that said "put `ERROR AT` on any maintained X" now name the
+converging shape or the standing data audit first and the limit as the
+optional safeguard. The migration table's `MAXRECURSION` row translates to
+nothing by default. The verifier passed unchanged after the edit: removing a
+limit that never fired changes no recorded output.
+
+The eval rubric changed with it. Axis 3's guardrail component rewarded the
+presence of `RECURSION LIMIT` in a view definition, which is the behavior the
+skill no longer asks for, so Axis 3 is now convergence alone at 0.75.
+`grade.py` still records `recursive` and `guardrail` per view and on the
+worksheet, unscored, so a cell's appetite for limits stays visible. The
+2026-09-03 rows in the eval README were scored under the old axis and are not
+comparable to the 2026-09-30 rows on Axis 3; both Sonnet cells were re-run
+against the revised skill and rubric.
 
 One thing the runs showed that was *not* folded back, recorded here so the next
 round does not rediscover it:
@@ -286,5 +329,5 @@ round does not rediscover it:
    before baking it in; agents' reports rest on false observations often
    enough to matter.
 5. Re-verify the version-sensitive recordings above against the Materialize
-   version you are on, and check that the guard advice still matches what the
+   version you are on, and check that the limit advice still matches what the
    limits actually do.

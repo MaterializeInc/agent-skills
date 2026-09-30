@@ -90,8 +90,8 @@ def grade(schema: str, f: fx.Fixture, cluster: str, out_dir: Path) -> dict:
             if n is not None:
                 rec["initial_ok"] = n == len(t.reference(f))
                 rec["partial"] = "count-only"
-        # `recursive` is the guardrail denominator: an answer written without
-        # WITH MUTUALLY RECURSIVE has no recursion to limit and is not counted.
+        # `recursive` and `guardrail` are recorded, not scored (rubric.md, Axis 3):
+        # they show whether the agent reached for a limit and on which shapes.
         rec["recursive"] = None if d is None else ("MUTUALLY RECURSIVE" in d.upper())
         rec["guardrail"] = None if d is None else ("RECURSION LIMIT" in d.upper())
         results[t.id] = rec

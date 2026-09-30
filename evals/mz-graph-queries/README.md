@@ -149,12 +149,13 @@ python3 grade.py --schema gq_ss_s1 --seed 1 --scale 100 --out $EVAL_BENCH_ROOT/g
 `grade.py` writes `results.json` (a `summary` block plus a record per task) and
 `worksheet.md` (one row per task) into the run's private directory. The five
 axes of `rubric.md` weigh 2.0 (initial correctness), 1.0 (correctness after
-mutation), 0.75 (convergence and guardrails), 0.75 (maintainability) and 0.5
+mutation), 0.75 (convergence), 0.75 (maintainability) and 0.5
 (explanation), summing to 5.0. Axes 1 to 3 are computed from the summary keys `initial_ok`,
-`post_mutation_ok`, `mutations`, `timed_out`, `guardrail`, `recursive`, and
-`exists`. The guardrail component divides by `recursive`, the number of existing
-views whose definition contains `MUTUALLY RECURSIVE`, not by `exists`: an answer
-written without recursion has no recursion to limit. Axes 4
+`post_mutation_ok`, `mutations`, `timed_out`, and `exists`. The summary also
+carries `recursive`, the number of existing views whose definition contains
+`MUTUALLY RECURSIVE`, and `guardrail`, the number that contain `RECURSION
+LIMIT`; since 2026-09-30 neither is scored, because the skill presents a limit
+as optional, and they are recorded as a behavioral signal. Axes 4
 (maintainability) and 5 (explanation) are manual and read the agent's
 `report.md`, the transcript, and the view definitions in the run schema.
 

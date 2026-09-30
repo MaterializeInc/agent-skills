@@ -68,8 +68,9 @@ too low does not fail; it returns a partial labelling as if it were the answer.
 The 0.3-threshold block below, run with `ERROR AT RECURSION LIMIT 2`, returns
 c6 labelled c5 and raises nothing, because iteration 3 changes only a value.
 The limit is not what protects this shape, which cannot diverge, because a
-value that only descends toward a floor has nowhere to go. Keep it as a runtime
-bound, and read the propagation argument above as the correctness case.
+value that only descends toward a floor has nowhere to go. The propagation
+argument above is the correctness case; a limit, if you add one, is only a
+runtime bound.
 
 Four choices carry the whole pattern.
 
@@ -229,7 +230,7 @@ it is a self-join:
 
 ```sql
 CREATE VIEW scc_closure AS
-WITH MUTUALLY RECURSIVE (ERROR AT RECURSION LIMIT 100)
+WITH MUTUALLY RECURSIVE
     reach(src text, dst text) AS (
         SELECT src, dst FROM transfers
         UNION
@@ -259,8 +260,8 @@ does not depend on the graph being acyclic
 pairs are drawn from a finite set, `UNION` makes a re-derived pair a no-op, and
 the relation only grows. Everything after the binding runs once at the fixpoint.
 Because the top of the binding is a `UNION` and not a reduce, every change it
-can make is a row change, so `ERROR AT RECURSION LIMIT 100` here is a real
-guardrail rather than a decoration
+can make is a row change, so if you want a safeguard on this view,
+`ERROR AT RECURSION LIMIT` is one that actually fires
 ([semantics.md#recursion-limits](semantics.md#recursion-limits)).
 
 Three details in the body are load-bearing. The `LEFT JOIN` keeps accounts with
@@ -293,7 +294,7 @@ its endpoints agree on both labels.
 
 ```sql
 CREATE VIEW scc_trim AS
-WITH MUTUALLY RECURSIVE (ERROR AT RECURSION LIMIT 100)
+WITH MUTUALLY RECURSIVE
     intra(src text, dst text) AS (
         SELECT src, dst FROM transfers
         EXCEPT ALL
@@ -405,14 +406,14 @@ intra-component edges on a finite edge set instead of oscillating. Each nested
 block converges by the min-label argument of the first section. On this fixture
 the outer loop reaches its fixpoint in two rounds.
 
-The outer `ERROR AT RECURSION LIMIT 100` is not a check on that answer. It
+A recursion limit on the outer block would not check that answer. `ERROR AT`
 raises while rows are still being added, which on this shape is the first
 iteration only, and it goes quiet after that even while `intra` is still losing
 edges. The diamond shows it: its fixpoint takes three rounds, limit 1 raises,
 and limit 2 returns m1 and m2 both labelled d1, an unconverged partition, with
-no error. Keep the limit, set it far above the graph's diameter, and read it as
-a stop on a runaway dataflow rather than as a signal that the labels are
-finished. The convergence argument above is what says that.
+no error. The convergence argument above is what says the labels are finished;
+a limit, if you add one far above the graph's diameter, is a stop on a runaway
+dataflow and nothing more.
 
 The two forms agree on every account:
 
@@ -482,12 +483,12 @@ in a procedural language, or pulls the edges out to a graph library.
   ([semantics.md#recursion-limits](semantics.md#recursion-limits)). Set it too
   low and it returns a half-propagated labelling in silence rather than
   raising: the 0.3-threshold block at limit 2 comes back with c6 labelled c5.
-  The propagation cannot diverge, but the limit is not what is protecting you:
-  keep it as a runtime bound and read the propagation argument as the
-  correctness case. A block whose only recursion is a label propagation
-  inherits this. `scc_trim`'s outer limit inherits it too, because its
-  recursive bindings' row sets settle in the first round while the labels keep
-  changing, so that limit has no row change to notice either. The closure block
+  The propagation cannot diverge, and the limit is not what is protecting you:
+  the propagation argument is the correctness case, and a limit is at most a
+  runtime bound. A block whose only recursion is a label propagation
+  inherits this. A limit on `scc_trim`'s outer block inherits it too, because
+  its recursive bindings' row sets settle in the first round while the labels
+  keep changing, so that limit has no row change to notice either. The closure block
   is the one whose limit does raise on every unconverged iteration, because its
   single binding is topped by a `UNION`.
 - The closure form on a dense graph. `reach` approaches the square of the node

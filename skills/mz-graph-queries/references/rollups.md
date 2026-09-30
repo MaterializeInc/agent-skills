@@ -204,9 +204,12 @@ SELECT part_id, sum(qty) AS qty FROM needed GROUP BY part_id;
 ```
 
 `ERROR:  Evaluation error: Recursive query exceeded the recursion limit 20.`
-Put `ERROR AT RECURSION LIMIT` on any maintained explosion, set well above the
-deepest assembly you expect; without it the view installs, never hydrates, and
-holds a dataflow until it is dropped
+Maintained over a BOM that can contain a loop, this shape installs, never
+hydrates, and holds a dataflow until it is dropped. The counter-free cycle
+audit in [hierarchies.md](hierarchies.md#cycles-in-a-tree) is the standing
+check for that data; `ERROR AT RECURSION LIMIT`, set well above the deepest
+assembly you expect, is the optional safeguard that turns the runaway into
+this error instead
 ([semantics.md#recursion-limits](semantics.md#recursion-limits)).
 
 Standard SQL brings this one almost unchanged: `WITH RECURSIVE needed AS
@@ -214,7 +217,7 @@ Standard SQL brings this one almost unchanged: `WITH RECURSIVE needed AS
 b.child_id, n.qty * b.qty FROM needed n JOIN bom b ON b.parent_id =
 n.part_id)`. It is the textbook Postgres BOM query, it is linear and monotone,
 and it keeps its `UNION ALL`. What changes is the header, the declared column
-types, moving the seed filter inside the binding, and the recursion limit.
+types, and moving the seed filter inside the binding.
 
 ## The same with the aggregate inside
 
@@ -246,9 +249,9 @@ in a wide BOM while the number of parts does not. It converges because a part's
 row is final one iteration after all of its parents' rows are, and the DAG has
 finitely many levels.
 
-The guardrail from the previous section does not transfer, and this is worth
-knowing before relying on it. `ERROR AT RECURSION LIMIT` tracks changes to
-the row set and not to values, so a binding topped by a reduce
+If you reach for a limit as a safeguard, know that `ERROR AT RECURSION LIMIT`
+does not transfer to this shape. It tracks changes to the row set and not to
+values, so a binding topped by a reduce
 raises only while it is still adding or removing rows. Once its keys have
 settled and only the quantities keep climbing, the limit goes quiet and the
 block behaves like `RETURN AT RECURSION LIMIT`, handing back whatever state it
@@ -278,10 +281,9 @@ answers; they are the running totals at iteration 20, and they get bigger if
 the limit does. Parts 2 and 3 are both present after the first laps, so from
 then on nothing about the row set changes and there is nothing left for the
 limit to notice. The `needed` form over the same data errors, because there
-every lap adds a row. So for an aggregate-inside explosion, leave the limit on
-for the runtime bound, but do not treat it as the safety net: what stands next
-to it is a cycle check. The
-counter-free closure audit in
+every lap adds a row. So for an aggregate-inside explosion a limit is at most
+a runtime bound, never the safety net. The check that fits the shape is a
+cycle audit: the counter-free closure audit in
 [hierarchies.md](hierarchies.md#cycles-in-a-tree) works on `bom` with
 `parent_id` and `child_id` in place of `manager_id` and `id`, and it converges
 on cyclic input, so it can alarm on exactly the data that would corrupt this
@@ -398,7 +400,8 @@ plus a cycle audit is the safer default in both.
   limit notices row changes, not value changes, so it stops firing
   once the keys have settled: `needed_agg` over self-containing data returns
   iteration-20 numbers with no error, where the row-adding `needed` form raises.
-  Guard aggregate rollups with a standing cycle audit as well as a limit.
+  Over data that can loop, the check for an aggregate rollup is a standing
+  cycle audit, not a limit.
 - A plain `sum` where the rollup is signed. A chart of accounts with contra
   accounts, or an inventory with returns, signs the node's own amount inside
   the binding and adds the children's totals unchanged: `e.amount * e.sign +
@@ -408,7 +411,7 @@ plus a cycle audit is the safer default in both.
   amount, and flipping signs after the recursion has the same effect.
 - `UNION` over a quantity-carrying binding. Two paths that happen to derive the
   same `(part_id, qty)` pair collapse into one and the total silently drops.
-  Quantity rollups need `UNION ALL` and a cycle guard, never `UNION`.
+  Quantity rollups need `UNION ALL` and DAG-shaped data, never `UNION`.
 - Carrying `name`, `unit_cost` or other payload through the loop. Recurse on
   ids and quantities and join the descriptions back in the body, as the kit
   cost block does.

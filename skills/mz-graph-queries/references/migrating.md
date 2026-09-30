@@ -24,7 +24,7 @@ apart.
 | `WITH RECURSIVE name AS (anchor UNION ALL recursive)` | `WITH MUTUALLY RECURSIVE name(col type, ...) AS (anchor UNION recursive)` |
 | `UNION ALL` between the two terms | `UNION`, unless every row derives exactly once |
 | No column type declaration | A declared name and type per column, mandatory ([semantics.md#column-types](semantics.md#column-types)) |
-| `OPTION (MAXRECURSION n)` (SQL Server), `cte_max_recursion_depth` (MySQL), BigQuery's 500-iteration cap | `ERROR AT RECURSION LIMIT n` when the binding is topped by a `UNION`; `RETURN AT RECURSION LIMIT n` plus a check on the result when it is topped by a reduce ([semantics.md#recursion-limits](semantics.md#recursion-limits)) |
+| `OPTION (MAXRECURSION n)` (SQL Server), `cte_max_recursion_depth` (MySQL), BigQuery's 500-iteration cap | Nothing by default; the loop stops at the fixpoint. `ERROR AT RECURSION LIMIT n` as an optional safeguard while the shape is unproven, `RETURN AT RECURSION LIMIT n` to step or inspect it ([semantics.md#recursion-limits](semantics.md#recursion-limits)) |
 | `CYCLE col SET is_cycle USING path`, a hand-rolled `path \|\| id` with `NOT id = ANY(path)`, Oracle's `NOCYCLE` | Nothing, when the binding carries no counter. `min(depth)` inside the binding when a depth is wanted |
 | `WHERE depth < k` written as a cycle guard | Drop it |
 | `WHERE depth < k` written as a real hop bound | Keep it, inside the binding |
@@ -40,10 +40,12 @@ apart.
 | Enumerate every path, then `MIN`, `MAX` or `SUM` in the outer query | The same aggregate inside the binding, recursing from the reduced relation |
 
 Two things in that table are absences rather than translations. There is no
-default recursion limit here, so a query that relied on SQL Server's implicit
-100, MySQL's 1000 or BigQuery's 500 to stop is a query that now runs until it
-is cancelled; write the limit yourself. And there is no `RECURSIVE` keyword at
-all, which is the subject of the next section.
+default recursion limit here, and a query that converges needs none. A query
+that relied on SQL Server's implicit 100, MySQL's 1000 or BigQuery's 500 to
+stop was not converging, and here it runs until it is cancelled: fix the shape,
+and add `ERROR AT RECURSION LIMIT` as a safeguard while you are still proving
+it. And there is no `RECURSIVE` keyword at all, which is the subject of the
+next section.
 
 ## Anchor and recursive member
 
@@ -272,17 +274,20 @@ does. Note also that the list form has no separator: the classic
 `SYS_CONNECT_BY_PATH` bug, where a name containing the separator character
 makes the string sort disagree with the tree order, cannot happen.
 
-**`NOCYCLE` translates to nothing, and this particular block still needs a
-guard.** Elsewhere in this skill the answer to a cycle clause is "carry no
+**`NOCYCLE` translates to nothing, and this particular block is not
+cycle-safe.** Elsewhere in this skill the answer to a cycle clause is "carry no
 counter and `UNION` handles it". That answer does not apply here, because this
 binding carries both a `depth` and a `path`. On a manager pointer that closes a
 loop, every lap produces a new depth and a longer path, which are new rows that
 `UNION` cannot fold away, and the recursion never converges
-([hierarchies.md#cycles-in-a-tree](hierarchies.md#cycles-in-a-tree)). Put
-`ERROR AT RECURSION LIMIT` on this shape whenever the data is not guaranteed to
-be a tree. It works here: the binding is topped by a `UNION`, so every change it
-can make is a row change and the limit always raises
-([semantics.md#recursion-limits](semantics.md#recursion-limits)). Where the
+([hierarchies.md#cycles-in-a-tree](hierarchies.md#cycles-in-a-tree)). Where the
+data is not guaranteed to be a tree, the converging translation drops the path
+and aggregates the depth with `min`
+([reachability.md#within-k-hops](reachability.md#within-k-hops)). Where the
+path has to stay, `ERROR AT RECURSION LIMIT` is a safeguard that does fire on
+this shape: the binding is topped by a `UNION`, so every change it can make is
+a row change ([semantics.md#recursion-limits](semantics.md#recursion-limits)).
+Where the
 question is only "which nodes are on a loop", the counter-free audit in
 [reachability.md#cycle-membership](reachability.md#cycle-membership) is the
 translation of `CONNECT_BY_ISCYCLE`, and it converges on exactly the data that
@@ -544,10 +549,12 @@ per-level has to come from a column you carry.
 - Assuming `LEVEL` and a `depth` column agree. Oracle's `LEVEL` starts at 1 and
   the `levels` pattern in this skill starts at 0. Pick one and say which in the
   column name.
-- Porting an Oracle query with `NOCYCLE` and no recursion limit. `NOCYCLE`
-  stopped the walk; nothing here does, and a binding carrying a depth or a path
-  diverges on the first loop in the data
+- Porting an Oracle query with `NOCYCLE` and keeping its depth and path
+  columns as they are. `NOCYCLE` stopped the walk; nothing here does, and a
+  binding carrying a depth or a path diverges on the first loop in the data
   ([hierarchies.md#cycles-in-a-tree](hierarchies.md#cycles-in-a-tree)).
+  Aggregate the depth and drop the path, or add `ERROR AT RECURSION LIMIT` as a
+  safeguard while the shape stays.
 - Dropping an `ORDER BY` from the recursive term without checking for a
   `LIMIT`. A bare one is inert, because SQLite's queue order has no counterpart
   in a fixpoint; order the body instead. `ORDER BY ... LIMIT` is a different

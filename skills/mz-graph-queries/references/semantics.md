@@ -194,23 +194,36 @@ never enters the message, so read it as a branch problem and put an explicit
 
 ## Recursion limits
 
-There is no default recursion limit. A binding that does not converge runs
-until the statement is cancelled or, for a maintained view, forever.
+There is no default recursion limit, and a binding that converges needs none:
+the loop stops on its own when an iteration changes nothing, cycles in the
+data included. A binding that does not converge runs until the statement is
+cancelled or, for a maintained view, forever. The two limit options are tools
+for the time before you are sure which of those you have written.
 
 | Option | Behavior at iteration n |
 |---|---|
 | `ERROR AT RECURSION LIMIT n` | Errors if iteration n still changed something |
 | `RETURN AT RECURSION LIMIT n` | Returns the state after n iterations |
 
-`ERROR AT RECURSION LIMIT` tracks changes to the row set, not to values, and
-the difference is observable. A binding topped by a reduce or a TopK
-raises while it is still adding or removing rows, then goes silent once only
-its values keep changing, returning the iteration-n state instead
+`RETURN AT RECURSION LIMIT` is the development tool. It hands back the state
+after n iterations, which is how to step a binding with limits 1, 2, 3 and
+watch it grow toward the answer, and how to look inside one that never
+settles. It is also the right option for fixed-iteration numeric methods where
+the iteration count is the answer's definition.
+
+`ERROR AT RECURSION LIMIT` is the safeguard, for a binding whose termination
+argument you have not finished, or for a maintained view where a runaway
+dataflow would cost more than a loud failure. Set n well above the iteration
+count you expect, so it never fires on correct data. It tracks changes to the
+row set, not to values, and the difference is observable. A binding topped by
+a reduce or a TopK raises while it is still adding or removing rows, then goes
+silent once only its values keep changing, returning the iteration-n state
+instead
 ([rollups.md#the-same-with-the-aggregate-inside](rollups.md#the-same-with-the-aggregate-inside)).
-For such a shape the guardrail is `RETURN AT RECURSION LIMIT` plus a check on
-the returned state, or a `UNION`-topped shape, whose every change is a row
-change and which therefore always raises. The rest of this section describes
-that ordinary case.
+A `UNION`-topped binding's every change is a row change, so on that shape the
+safeguard always fires. On a reduce-topped shape the correctness case is the
+convergence argument plus an audit of the data it rests on, and a limit is at
+most a runtime bound.
 
 ```sql
 WITH MUTUALLY RECURSIVE (RETURN AT RECURSION LIMIT 3)
@@ -232,17 +245,12 @@ installs successfully. It simply never hydrates: `mz_internal.mz_hydration_statu
 reports `hydrated = f` for it indefinitely, and its dataflow keeps iterating on
 the cluster until the view is dropped.
 
-Guard every maintained recursive view, and take the guard from the shape of the
-binding. A `UNION`-topped binding takes `ERROR AT RECURSION LIMIT`, with the
-limit well above the expected graph diameter: every change such a binding can
-make is a row change, so the limit fires and turns a silent never-hydrating
-dataflow into a loud failure. A reduce- or TopK-topped binding takes `RETURN AT
-RECURSION LIMIT`, with the limit above the expected iteration count, plus a
-check on the returned state that rejects it when it looks like an unfinished
-iteration; `ERROR AT` on that shape goes quiet exactly when the values are the
-thing still moving. `RETURN AT RECURSION LIMIT` is also the debugging tool, and
-the right option for fixed-iteration numeric methods where the iteration count
-is the answer's definition.
+A limit does not make a wrong recursion right. A limited recursion over data
+its logic cannot handle installs, hydrates, reports `hydrated = t`, and serves
+iteration-n state that looks like an answer
+([reachability.md#topological-level-on-a-dag](reachability.md#topological-level-on-a-dag)).
+The convergence argument is what makes the answer correct; a limit only bounds
+how long a wrong one runs, and how loudly.
 
 ## What the optimizer will not do
 
@@ -275,8 +283,9 @@ The plan has an outer `With` holding the non-recursive read of `transfers` as
 `cte l0`, then a `With Mutually Recursive` node, then `Return`. That outer
 `With` is the hoist: the base table read happens once, not per iteration.
 Inside the recursive node each recursive binding is one
-`cte [recursion_limit=100] lN =` block; the block's single limit is rendered on
-every binding's cte, so seeing it repeated does not mean it is per binding. A
+`cte [recursion_limit=100] lN =` block; the limit this query set is rendered on
+every binding's cte, so seeing it repeated does not mean it is per binding, and
+a block with no limit renders as a bare `cte lN =`. A
 `Stream l1` appearing inside `cte l1` is the back edge. The `Distinct
 GroupAggregate` is where `UNION` planned its deduplication, and it is the
 operator that makes the fixpoint reachable. The `Arrange (#1{dst})` over
@@ -344,16 +353,17 @@ Postgres and SQL Server users reach for `WITH RECURSIVE ... UNION ALL` with a
 seed branch and a single self-reference, then filter in the outer query. In
 Materialize, drop the `RECURSIVE` keyword for `MUTUALLY RECURSIVE`, declare the
 column types, change `UNION ALL` to `UNION` unless every row derives once, move
-the outer filter inside the binding because it will not be pushed down, and add
-a recursion limit.
+the outer filter inside the binding because it will not be pushed down.
 
 ## Pitfalls
 
 - `UNION ALL` in a recursive binding that re-adds rows it already holds. The
   distinct answer looks right under `RETURN AT RECURSION LIMIT` and the query
   still never converges. Count with `count(*)` per key to see it.
-- No recursion limit on a maintained view. It installs, never hydrates, and
-  keeps its dataflow on the cluster until dropped. Nothing errors.
+- A maintained view whose convergence argument was never written. If it does
+  not converge it installs, never hydrates, and keeps its dataflow on the
+  cluster until dropped, and nothing errors. `ERROR AT RECURSION LIMIT` is the
+  safeguard that turns that into an error while the argument is unproven.
 - Assuming a cycle in the data is what makes a recursion diverge. Multiset
   growth diverges on an acyclic graph too, and `UNION` converges on a cyclic
   one.

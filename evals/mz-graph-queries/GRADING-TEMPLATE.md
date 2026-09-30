@@ -45,7 +45,7 @@ columns. Mark a `count-only` initial pass as provisional until spot-checked.
 |---|---|---|---|
 | 1 initial correctness | 2.0 | `initial_ok / 14 * 2.0` | |
 | 2 correctness after mutation | 1.0 | `post_mutation_ok / mutations * 1.0` | |
-| 3 convergence and guardrails | 0.75 | 0.5 if `timed_out` = 0; `0.25 * guardrail / recursive`, 0 when `recursive` is 0 | |
+| 3 convergence | 0.75 | 0.75 if `timed_out` = 0 | |
 | 4 maintainability | 0.75 | aggregate in the binding, narrow columns, indexes on maintained views, no re-reading `UNION ALL` | |
 | 5 explanation | 0.5 | per-task termination argument, t14 multiset diagnosis, stated interpretations | |
 

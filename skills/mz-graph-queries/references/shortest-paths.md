@@ -205,13 +205,14 @@ against this exact block, it raises at 2 and 3, the iterations in
 which a new city first appears, and stops raising from 4 onward, once every
 city is present and only the numbers are still falling. A shortest-path binding
 reaches all its keys early and then spends the rest of the loop lowering
-values, so the guardrail goes quiet at exactly the point it would have to
-speak. Check the
-weights instead, with a standing `SELECT count(*) FROM roads WHERE km <= 0`.
-That is what changes: the limit stops being the correctness check, not the
-limit. Keep `RETURN AT RECURSION LIMIT n` on the view, with n above the
-iteration count you expect, because it still bounds runtime and turns a runaway
-into a bad answer you can see rather than a dataflow that never hydrates.
+values, so a limit goes quiet at exactly the point it would have to speak.
+Check the weights instead, with a standing
+`SELECT count(*) FROM roads WHERE km <= 0`: positive weights are the
+convergence argument, and that audit is what verifies it. If you want a
+backstop on the view as well, `RETURN AT RECURSION LIMIT n` with n above the
+iteration count you expect bounds runtime and turns a runaway into a bad answer
+you can see rather than a dataflow that never hydrates. It does not make the
+answer right.
 
 Standard SQL brings one of two things, and neither is a query. The first is
 Dijkstra in a procedural language, a priority queue in PL/pgSQL or a stored
@@ -408,8 +409,7 @@ has to be a deliberate choice rather than a habit.
   raising once the set of keys has settled, which on a distance recursion is
   long before the values have
   ([semantics.md#recursion-limits](semantics.md#recursion-limits)). Validate the
-  weights for correctness, and keep the limit for the runtime bound; dropping it
-  because it cannot prove correctness leaves the view with no bound at all.
+  weights for correctness; a limit, if you add one, is only a runtime bound.
 - Answering the hop question with the distance query or the other way round. On
   this fixture the cheapest route to D takes more hops than the shortest one,
   and both answers are correct for their own question.

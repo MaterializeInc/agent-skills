@@ -243,7 +243,7 @@ Maintained, the window is what makes the closure shrink on its own:
 
 ```sql
 CREATE MATERIALIZED VIEW live_reach AS
-WITH MUTUALLY RECURSIVE (ERROR AT RECURSION LIMIT 100)
+WITH MUTUALLY RECURSIVE
     reach(dst text) AS (
         SELECT dst FROM transfers
         WHERE src = 'a1' AND mz_now() <= ts + interval '10 years'
@@ -357,9 +357,10 @@ The seed comes from `pipelines`, the node table, not from `depends_on`. A task
 that appears in no dependency row at all is still a task, and seeding from the
 node table puts it at level 0 instead of dropping it.
 
-On cyclic data this recursion has no fixpoint, and the limit does not save it.
-`level` is topped by a reduce, and the limit notices row changes and not
-value changes, so once every task has a row it stops raising while the
+On cyclic data this recursion has no fixpoint, and a recursion limit does not
+save it. `level` is topped by a reduce, and `ERROR AT RECURSION LIMIT` notices
+row changes and not value changes, so once every task has a row it stops
+raising while the
 levels climb forever
 ([rollups.md#the-same-with-the-aggregate-inside](rollups.md#the-same-with-the-aggregate-inside)).
 That is exactly the shape of a cyclic level query: the task set is small and
@@ -401,9 +402,11 @@ unlimited form behaves the way an unconverged view is supposed to, holding a
 dataflow and never returning
 ([semantics.md#recursion-limits](semantics.md#recursion-limits)).
 
-Guard it with the `on_cycle` audit above, which converges on exactly the data
-that breaks this one. For a self-check inside the query itself, use `RETURN AT
-RECURSION LIMIT` with the limit set above the number of tasks, and reject the
+The check that fits this shape is the `on_cycle` audit above, which converges
+on exactly the data that breaks this one; over a DAG the recursion needs
+nothing else. For a self-check inside the query while the data is still
+untrusted, use `RETURN AT RECURSION LIMIT` with the limit set above the number
+of tasks, and reject the
 result when any level reaches that number: no level on a DAG of n tasks can
 exceed n-1, and a cycle's counters top out at the limit minus one, so the check
 only means something when the limit is larger than n. At or below n it passes
@@ -497,7 +500,8 @@ column being followed visible in the header.
   few rounds and climbs forever after that, which is precisely the case the
   limit cannot see: materialized, it hydrates like any other view and serves
   those counters as levels, so no signal flags it. `hops` is bounded by its own
-  guard; `level` needs the `on_cycle` audit standing next to it.
+  hop guard; `level` over untrusted data wants the `on_cycle` audit standing
+  next to it.
 - Leaving the direction unstated. "Everything connected to this account" and
   "everything downstream of this model" are two queries, and on a directed
   graph they give different answers. Undirected reachability needs the edge

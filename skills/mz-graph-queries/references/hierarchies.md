@@ -70,9 +70,10 @@ It converges because each iteration takes one step up a finite chain and the
 column is safe here only because the walk terminates. A cycle in `manager_id`
 makes `distance` climb forever and the binding never converges, even under
 `UNION`, since every trip around the loop produces a row nobody has seen
-before. Put `ERROR AT RECURSION LIMIT` on any ancestor walk over data you do
-not control; the counter-carrying closure block in the Cycles section below
-is that failure.
+before. Over data you do not control, either drop the counter or aggregate it
+with `min` inside the binding, which converges on a loop
+([reachability.md#within-k-hops](reachability.md#within-k-hops)); the Cycles
+section below shows the failure and the counter-free form.
 
 Standard SQL brings the identical walk with `WITH RECURSIVE`. Nothing about the
 logic changes; only the header, the declared types, and the union operator do.
@@ -136,7 +137,7 @@ finishes.
 
 ```sql
 CREATE VIEW employee_closure AS
-WITH MUTUALLY RECURSIVE (ERROR AT RECURSION LIMIT 1000)
+WITH MUTUALLY RECURSIVE
     closure(ancestor int, descendant int, distance int) AS (
         SELECT id, id, 0 FROM employees
         UNION
@@ -157,9 +158,8 @@ distance 0 from himself, his two reports, then his two grandchildren.
 
 It converges because on a tree every `(ancestor, descendant)` pair has exactly
 one path and therefore exactly one `distance`, which is bounded by the height
-of the tree. The pair set stops growing after height-plus-one iterations. Read
-the `ERROR AT RECURSION LIMIT 1000` as a guardrail against data that is not a
-tree, not as something the recursion needs to terminate.
+of the tree. The pair set stops growing after height-plus-one iterations, and
+nothing beyond that argument is needed for the view to settle.
 
 This is the closure table from Karwin's *SQL Antipatterns*, the standard fix
 for slow parent-pointer queries, except that nothing has to maintain it.
@@ -185,12 +185,16 @@ changes between Materialize versions, so yours may differ in detail. Index the
 column your questions filter on: `ancestor` for "who is under this node", a
 second index on `descendant` for "who is above this node".
 
-`ERROR AT RECURSION LIMIT 1000` is the guardrail, and it is not optional on a
-maintained view. The `distance` column means one corrupt manager pointer that
-closes a loop makes this recursion diverge; without a limit the view installs,
-never hydrates, and keeps a dataflow spinning until it is dropped
-([semantics.md#recursion-limits](semantics.md#recursion-limits)). Set the limit
-well above the deepest chain you expect. The next section shows what it catches.
+The `distance` column is the one assumption this view makes about its data:
+it converges because the data is a tree. One corrupt manager pointer that
+closes a loop gives the same pair a new distance every lap, and the view
+installs, never hydrates, and keeps a dataflow spinning until it is dropped.
+Where the parent pointers are not under your control, keep the counter-free
+cycle audit from the next section standing next to this view, or add
+`ERROR AT RECURSION LIMIT` set well above the deepest chain you expect, as a
+safeguard that turns that runaway into a visible error
+([semantics.md#recursion-limits](semantics.md#recursion-limits)). The next
+section shows the failure.
 
 Standard SQL brings the same recursive query, usually run once to populate a
 physical `employee_closure` table, plus the triggers that keep that table
@@ -321,9 +325,10 @@ SELECT ancestor, descendant, distance FROM closure;
 
 `ERROR:  Evaluation error: Recursive query exceeded the recursion limit 20.`
 Each lap produces the same pair at a new distance, and a new distance is a new
-row that `UNION` cannot fold away. This is exactly the failure that
-`ERROR AT RECURSION LIMIT 1000` on `employee_closure` converts from a
-never-hydrating view into a visible error.
+row that `UNION` cannot fold away. This is the failure a maintained
+`employee_closure` meets on looped data, as a view that installs and never
+hydrates; with `ERROR AT RECURSION LIMIT` on the block it surfaces as this
+error instead.
 
 Audit the data with a closure that carries no counter, so it converges on
 cyclic input, and ask which nodes are their own ancestor:
@@ -353,7 +358,8 @@ Postgres 14 and later, or a manual `path` array with a
 `NOT path @> ARRAY[id]` guard before that. Materialize has neither; the
 `RECURSIVE` keyword itself is not accepted, so `WITH RECURSIVE t(id) AS ...`
 fails to parse. Use `UNION` over a counter-free binding when you only need the
-reachable set, and a recursion limit when you need to carry a counter.
+reachable set, and `min` over the counter when you need one
+([reachability.md#within-k-hops](reachability.md#within-k-hops)).
 
 ## Pitfalls
 
@@ -362,9 +368,11 @@ reachable set, and a recursion limit when you need to carry a counter.
   distinct length: with edges 1 to 2, 2 to 4 and 1 to 4, the `levels` shape
   yields both `(4, 1)` and `(4, 2)`. On a cycle it never converges at all.
   Aggregate the counter with `min` if you want one row per node.
-- No recursion limit on a maintained view that carries a counter. One bad
-  parent pointer and the view installs, never hydrates, and holds a dataflow
-  until dropped.
+- A maintained view that carries a bare counter over data you do not control.
+  One bad parent pointer and the view installs, never hydrates, and holds a
+  dataflow until dropped. Aggregate the counter, keep the cycle audit standing
+  next to it, or add `ERROR AT RECURSION LIMIT` as a safeguard if the shape
+  has to stay.
 - Orphans. A row whose `manager_id` points at a missing id is under no root, so
   seeding from `manager_id IS NULL` silently omits it and everything below it.
   Check with `SELECT count(*) FROM employees e WHERE e.manager_id IS NOT NULL

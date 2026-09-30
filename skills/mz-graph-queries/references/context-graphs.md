@@ -74,7 +74,7 @@ WHERE manager_id IS NOT NULL;
 CREATE INDEX edges_by_src ON edges (src_object, src_id);
 
 -- Every pattern in this skill then walks `edges` with the type in the key.
-WITH MUTUALLY RECURSIVE (ERROR AT RECURSION LIMIT 100)
+WITH MUTUALLY RECURSIVE
     reach(object text, id text) AS (
         SELECT dst_object, dst_id FROM edges
         WHERE src_object = 'customers' AND src_id = 'c1'
@@ -151,11 +151,12 @@ loop, so `CREATE INDEX ... ON edges (src_object, src_id)` is the main lever
 available: it indexes the static side of the join the recursion repeats
 ([semantics.md#what-the-optimizer-will-not-do](semantics.md#what-the-optimizer-will-not-do)).
 
-Put `ERROR AT RECURSION LIMIT` on anything maintained, with the limit well
-above the expected diameter. On a `UNION`-topped traversal every change is a
-row change and the guard always fires. On a binding topped by a reduce it goes
-silent once only values are changing, so guard those with
-`RETURN AT RECURSION LIMIT` plus a check on the returned state
+A recursion limit is optional. A counter-free traversal over `edges`
+converges on cyclic data, and the convergence argument of the pattern you
+route to is what makes the answer correct. Add `ERROR AT RECURSION LIMIT`
+above the expected diameter when you want a safeguard on a maintained
+traversal whose logic is still settling; it fires on a `UNION`-topped binding
+and goes quiet on a reduce-topped one once only values are changing
 ([semantics.md#recursion-limits](semantics.md#recursion-limits)).
 
 Check update locality before promoting a traversal to a maintained view.
