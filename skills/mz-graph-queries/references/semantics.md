@@ -202,8 +202,8 @@ until the statement is cancelled or, for a maintained view, forever.
 | `ERROR AT RECURSION LIMIT n` | Errors if iteration n still changed something |
 | `RETURN AT RECURSION LIMIT n` | Returns the state after n iterations |
 
-`ERROR AT RECURSION LIMIT` tracks changes to the row set, not to values, and on
-v26.38.1 the difference is observable. A binding topped by a reduce or a TopK
+`ERROR AT RECURSION LIMIT` tracks changes to the row set, not to values, and
+the difference is observable. A binding topped by a reduce or a TopK
 raises while it is still adding or removing rows, then goes silent once only
 its values keep changing, returning the iteration-n state instead
 ([rollups.md#the-same-with-the-aggregate-inside](rollups.md#the-same-with-the-aggregate-inside)).
@@ -284,9 +284,8 @@ operator that makes the fixpoint reachable. The `Arrange (#1{dst})` over
 the binding, which is the cost the back edge imposes. The final `Return`
 streams the fixpoint into the body.
 
-Plan text changes between Materialize versions; the recorded output for this
-block was produced on v26.38.1, and the operator names may differ on yours
-while the shape stays the same.
+Plan text changes between Materialize versions, so the operator names may
+differ on yours from the recorded output while the shape stays the same.
 
 One `EXPLAIN` option is unavailable here:
 
@@ -361,10 +360,10 @@ a recursion limit.
 - Untyped literals in a binding. `SELECT '1'` and a bare `SELECT NULL` both
   type as `text`, and both fail against any non-`text` declared type before
   anything runs.
-- Nesting a recursive block in a scalar subquery. On current versions a nested
+- Nesting a recursive block in a scalar subquery. A nested
   `WITH MUTUALLY RECURSIVE` belongs in derived-table position,
   `FROM (WITH MUTUALLY RECURSIVE ...) AS x`; the scalar-subquery form has been
-  observed to abort `environmentd` on v26.38.1.
+  observed to abort `environmentd`.
 - Filtering in the body instead of in the binding. The predicate is not pushed
   into the recursion, so the binding still computes everything.
 - Reading a binding defined later and expecting this iteration's value. It is

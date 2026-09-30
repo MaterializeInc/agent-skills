@@ -432,8 +432,8 @@ diameter of what is left. On a small or a nearly acyclic graph the closure form
 is both shorter and faster; on a large graph it is the one that does not fit.
 
 Both views above are plain views, so nothing runs until they are read. Adding
-`MATERIALIZED` to either one installs and hydrates on v26.38.1, nested recursive
-block included, and then maintains the labels as transfers arrive: inserting a
+`MATERIALIZED` to either one installs and hydrates, nested recursive block
+included, and then maintains the labels as transfers arrive: inserting a
 transfer from a5 back to a3 closes a larger loop, and both maintained views
 relabel a4 and a5 into a1's component.
 

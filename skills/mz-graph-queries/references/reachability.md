@@ -358,8 +358,8 @@ that appears in no dependency row at all is still a task, and seeding from the
 node table puts it at level 0 instead of dropping it.
 
 On cyclic data this recursion has no fixpoint, and the limit does not save it.
-`level` is topped by a reduce, and on v26.38.1 the limit notices row changes
-and not value changes, so once every task has a row it stops raising while the
+`level` is topped by a reduce, and the limit notices row changes and not
+value changes, so once every task has a row it stops raising while the
 levels climb forever
 ([rollups.md#the-same-with-the-aggregate-inside](rollups.md#the-same-with-the-aggregate-inside)).
 That is exactly the shape of a cyclic level query: the task set is small and
@@ -491,8 +491,8 @@ column being followed visible in the header.
   ([hierarchies.md#cycles-in-a-tree](hierarchies.md#cycles-in-a-tree)). Wrap it
   in `min` inside the binding, as the `hops` block does.
 - Trusting `ERROR AT RECURSION LIMIT` on `hops` or `level`. Both are topped by
-  a reduce, and on v26.38.1 the limit notices changes to the row set and not to
-  values, so it stops raising once every key has a row and returns the
+  a reduce, and the limit notices changes to the row set and not to values, so
+  it stops raising once every key has a row and returns the
   iteration-n state instead. A cyclic `level` settles its task set in the first
   few rounds and climbs forever after that, which is precisely the case the
   limit cannot see: materialized, it hydrates like any other view and serves

@@ -200,8 +200,8 @@ distances; they are the running totals at iteration 20, and they get more
 negative if the limit does. The limit did not miss this because the binding is
 topped by an aggregate. It missed it because it tracks changes to the row set
 and not to values
-([semantics.md#recursion-limits](semantics.md#recursion-limits)). Measured on
-v26.38.1 against this exact block, it raises at 2 and 3, the iterations in
+([semantics.md#recursion-limits](semantics.md#recursion-limits)). Measured
+against this exact block, it raises at 2 and 3, the iterations in
 which a new city first appears, and stops raising from 4 onward, once every
 city is present and only the numbers are still falling. A shortest-path binding
 reaches all its keys early and then spends the rest of the loop lowering
@@ -404,8 +404,7 @@ has to be a deliberate choice rather than a habit.
   `route` runs forever. A zero road out of the seed always loses, because `NULL`
   sorts last and the seed's own row cannot win the tie.
 - Treating `ERROR AT RECURSION LIMIT` as a correctness check on `hops`, `dist`
-  or `best`. All three are topped by a reduce or a TopK, and on v26.38.1 the
-  limit stops
+  or `best`. All three are topped by a reduce or a TopK, and the limit stops
   raising once the set of keys has settled, which on a distance recursion is
   long before the values have
   ([semantics.md#recursion-limits](semantics.md#recursion-limits)). Validate the

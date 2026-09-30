@@ -181,7 +181,7 @@ EXPLAIN SELECT descendant, distance FROM employee_closure WHERE ancestor = 2;
 The plan is `Explained Query (fast path)` over an `Index Lookup on ...
 employee_closure (using ... employee_closure_by_ancestor)` with `Lookup values:
 (2)`, which means the read is answered from the index arrangement. Plan text
-changes between Materialize versions; this was produced on v26.38.1. Index the
+changes between Materialize versions, so yours may differ in detail. Index the
 column your questions filter on: `ancestor` for "who is under this node", a
 second index on `descendant` for "who is above this node".
 

@@ -247,8 +247,8 @@ row is final one iteration after all of its parents' rows are, and the DAG has
 finitely many levels.
 
 The guardrail from the previous section does not transfer, and this is worth
-knowing before relying on it. On v26.38.1 `ERROR AT RECURSION LIMIT` tracks
-changes to the row set and not to values, so a binding topped by a reduce
+knowing before relying on it. `ERROR AT RECURSION LIMIT` tracks changes to
+the row set and not to values, so a binding topped by a reduce
 raises only while it is still adding or removing rows. Once its keys have
 settled and only the quantities keep climbing, the limit goes quiet and the
 block behaves like `RETURN AT RECURSION LIMIT`, handing back whatever state it
@@ -394,8 +394,8 @@ plus a cycle audit is the safer default in both.
   use consumes bolts; the same shape over an org chart where someone reports to
   two managers counts that person twice at the top. Pick the operator from the
   "once or per path" table before writing the recursion.
-- Trusting `ERROR AT RECURSION LIMIT` on a binding topped by a reduce. On
-  v26.38.1 the limit notices row changes, not value changes, so it stops firing
+- Trusting `ERROR AT RECURSION LIMIT` on a binding topped by a reduce. The
+  limit notices row changes, not value changes, so it stops firing
   once the keys have settled: `needed_agg` over self-containing data returns
   iteration-20 numbers with no error, where the row-adding `needed` form raises.
   Guard aggregate rollups with a standing cycle audit as well as a limit.

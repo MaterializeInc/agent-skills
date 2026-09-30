@@ -30,8 +30,8 @@ these:
   with recursive SQL", "Materialize and Advent of Code" and the AoC 2023
   solutions repo, "Exploring Social Trends on Bluesky", "Transaction Processing
   in the Data Plane"; Alexandrov, "Recursive SQL Queries in Materialize"; the
-  changelog of 2024-12-23 (permission inheritance) and the v25.2 release post
-  (loop-invariant index reads).
+  changelog of 2024-12-23 (permission inheritance) and the release post on
+  loop-invariant index reads.
 - Problem catalog: the PostgreSQL, SQL Server, MySQL, Oracle, SQLite, DuckDB
   and Db2 manuals; Celko; Karwin; Ben-Gan; Kimball; Fusionbox; Halford's
   *Graph components with DuckDB* (crediting Grust); Zanzibar (Pang et al.);
@@ -114,8 +114,8 @@ because the recorded outputs are the skill's claims.
 
 ## Behaviors measured during development
 
-All of these were measured on the Materialize emulator v26.38.1 while writing
-the reference files, and each one is stated with its evidence in the file
+All of these were measured on the Materialize emulator while writing the
+reference files, and each one is stated with its evidence in the file
 named. Two of them look like defects worth reporting upstream.
 
 1. **`ERROR AT RECURSION LIMIT` tracks changes to the row set, not to values.**
@@ -157,8 +157,9 @@ named. Two of them look like defects worth reporting upstream.
 
 ## Version-sensitive recordings
 
-Some expected outputs are properties of v26.38.1 rather than of the pattern,
-and they are the first things to check after a Materialize upgrade.
+Some expected outputs are properties of the Materialize version they were
+recorded on rather than of the pattern, and they are the first things to check
+after a Materialize upgrade.
 
 - The `EXPLAIN` recordings in `semantics.md` (Reading EXPLAIN) and
   `hierarchies.md` (the maintained closure table). Operator names and plan
