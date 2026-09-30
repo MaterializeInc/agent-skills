@@ -303,6 +303,17 @@ worksheet, unscored, so a cell's appetite for limits stays visible. The
 comparable to the 2026-09-30 rows on Axis 3; both Sonnet cells were re-run
 against the revised skill and rubric.
 
+The re-run: `sb` 4.517, `ss` 4.95, both 14/14 and 6/6 with nothing timed out.
+The skill cell shipped no recursion limit on any of its 13 recursive views, and
+its report never mentions one; on t03, the one task whose naive rollup does not
+converge on the planted manager cycle, it restricted the rollup to a leading
+`reachable` binding and said why, instead of limiting it. That is the change
+the revision was for, and it cost nothing on the correctness axes. The
+separation from the bare cell is the same as before in kind, indexes on the
+maintained views and the aggregate inside the binding, and slightly larger in
+size because the bare cell reduced over an exploded set on one more task than
+on 2026-09-03.
+
 One thing the runs showed that was *not* folded back, recorded here so the next
 round does not rediscover it:
 

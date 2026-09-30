@@ -216,13 +216,32 @@ above the grade.
 
 ## Recorded results
 
-| run | condition | seed | initial_ok | post_mutation_ok | timed_out | guardrail | axis total (/5) |
-|---|---|---|---|---|---|---|---|
-| gq_sb_s1 | sonnet, bare | 1 | 14/14 | 6/6 | 0 | 0/14 | 4.292 |
-| gq_ss_s1 | sonnet, skill | 1 | 14/14 | 6/6 | 0 | 7/14 | 4.825 |
+| run | date | skill commit | condition | seed | initial_ok | post_mutation_ok | timed_out | guardrail / recursive | axis total (/5) |
+|---|---|---|---|---|---|---|---|---|---|
+| gq_sb_s1 | 2026-09-03 | `fefc26d` | sonnet, bare | 1 | 14/14 | 6/6 | 0 | 0/14 | 4.292 (old Axis 3) |
+| gq_ss_s1 | 2026-09-03 | `fefc26d` | sonnet, skill | 1 | 14/14 | 6/6 | 0 | 7/14 | 4.825 (old Axis 3) |
+| gq_sb_s1 | 2026-09-30 | `8b714ea` | sonnet, bare | 1 | 14/14 | 6/6 | 0 | 0/13 | 4.517 |
+| gq_ss_s1 | 2026-09-30 | `8b714ea` | sonnet, skill | 1 | 14/14 | 6/6 | 0 | 0/13 | 4.95 |
 
-**Both rows were produced by the skill as of commit `fefc26d`, before the
-fold-back edits.** Commit `550a2df` (2026-09-03) changed `SKILL.md` Step 4 and
+**The 2026-09-30 rows** were run against the skill revision that makes
+recursion limits optional, under the rubric of the same date, in which Axis 3
+is convergence alone at 0.75 and the `guardrail` count is recorded but not
+scored. Both cells scored 14/14 and 6/6 again, with nothing timed out, so the
+0.433 of separation is entirely on Axes 4 and 5: the skill cell indexed the
+three maintained views and kept the aggregate inside the binding on six of
+seven eligible tasks, where the bare cell indexed nothing and reduced over an
+exploded closure on five. Neither cell shipped a recursion limit. In the bare
+cell that is the same omission as on 2026-09-03; in the skill cell the report
+argues convergence from the shape of every binding and, on t03, fixes the
+non-converging rollup by restricting it to a leading `reachable` binding
+rather than by limiting it, which is the behavior the revision asks for. The
+per-cell sheets are `GRADE.md` in `~/eval-bench-r2/<run>.private/`; the
+2026-09-03 sheets stay in `~/eval-bench/`. Both 2026-09-30 cells: scale 100,
+Claude Code 2.1.285, model `claude-sonnet-5`, preflight passed the same
+morning.
+
+**The 2026-09-03 rows were produced by the skill as of commit `fefc26d`, before
+the fold-back edits.** Commit `550a2df` (2026-09-03) changed `SKILL.md` Step 4 and
 the reduce-topped guardrail passages in `references/shortest-paths.md` and
 `references/rollups.md` in response to what these two cells showed. A later cell
 is therefore not comparable to the `guardrail` column above on equal terms: a
@@ -232,8 +251,8 @@ these two rows were scored, from `exists` to `recursive`, so their axis totals
 are on the old rule and a fresh run's total is not comparable on that component
 either. Re-run `sb` alongside any fresh `ss` before reading a delta.
 
-Both cells: 2026-09-03, scale 100, Materialize v26.38.1, Claude Code 2.1.259,
-model `claude-sonnet-5`. Neither was killed by the watchdog and neither produced
+Both 2026-09-03 cells: scale 100, Claude Code 2.1.259, model
+`claude-sonnet-5`. No cell in the table was killed by the watchdog or produced
 a `count-only` or `skipped` grade, so nothing above is provisional. The
 per-cell grading sheets are `GRADE.md` in each run's private directory; they
 record the hand re-checks behind the guardrail and index columns.
