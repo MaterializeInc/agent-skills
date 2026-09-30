@@ -28,7 +28,7 @@ it converges, and keep it cheap to maintain.
 
 ## Hand-offs
 
-- An existing recursive view lags wall-clock time: `materialize-debug-freshness`.
+- An existing recursive view lags wall-clock time: `mz-debug-freshness`.
 - A recursive view costs too much memory: `mz-optimize-memory`.
 - How to model the entities and relationships it walks: `mz-ontology-design`.
 

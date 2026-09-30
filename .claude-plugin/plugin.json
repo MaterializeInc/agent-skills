@@ -16,6 +16,7 @@
     "./skills/mz-dbt",
     "./skills/mz-debug-freshness",
     "./skills/mz-deploy",
+    "./skills/mz-graph-queries",
     "./skills/mz-ontology-design",
     "./skills/mz-optimize-memory",
     "./skills/mz-terraform-provider",
