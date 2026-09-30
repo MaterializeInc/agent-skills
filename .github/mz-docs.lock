@@ -1,7 +1,7 @@
 # Provenance of .agents/skills/mz-docs. Written by the
 # update-mz-docs-skill workflow; do not edit by hand.
 mz_ref: main
-mz_commit: c5ab29133e30f6cc3ca4d3180e1f0dcf4c386fd5
-doc_user_tree: 7f56bdfde20891d99c5bd522ab1fe4c556825e4f
+mz_commit: e3ecfb4fe0b94e415222a55b74bec01334d5d32a
+doc_user_tree: 2fd29dfd1b7ee487c6cf916b24df89d77a2126be
 gen_script_blob: 4625d4e745ccbca13b344a8bc4573c2e756341c4
 hugo_version: 0.152.2

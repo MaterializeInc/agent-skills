@@ -833,6 +833,31 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>instance_id</code></td>
     </tr>
     <tr>
+      <td><code>mz_compute_logging_records_total</code></td>
+      <td>The number of log records handed to the logging dataflow, by log.</td>
+      <td><code>log</code>, <code>worker_id</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_compute_logging_step_duration_seconds_bucket</code></td>
+      <td>The time spent in each scheduling of the logging dataflow.</td>
+      <td><code>le</code>, <code>worker_id</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_compute_logging_step_duration_seconds_count</code></td>
+      <td>The time spent in each scheduling of the logging dataflow.</td>
+      <td><code>worker_id</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_compute_logging_step_duration_seconds_sum</code></td>
+      <td>The time spent in each scheduling of the logging dataflow.</td>
+      <td><code>worker_id</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_compute_metric_sink_registration_retries_total</code></td>
+      <td>The number of times a metric sink failed to register its collector and scheduled a retry.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_compute_peek_duration_seconds_bucket</code></td>
       <td>A histogram of peek durations since restart.</td>
       <td><code>instance_id</code>, <code>le</code>, <code>result</code></td>
