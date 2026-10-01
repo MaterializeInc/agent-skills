@@ -20,4 +20,6 @@ Documentation retrieval and synthesis for Materialize.
 
 - A structured answer with explicit assumptions and (when available) citations to provided references.
 
+The skill does not bundle the docs. It fetches the current markdown rendition of each page from materialize.com.
+
 See `SKILL.md` for canonical behavior and constraints.
