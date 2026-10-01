@@ -91,6 +91,7 @@ Learn how to efficiently transform data using Materialize SQL.
 
 - **Appendix**: `security/appendix/index.md`
 - **Cloud**: `security/cloud/index.md`
+- **Patterns**: `security/patterns/index.md`
 - **Self-managed**: `security/self-managed/index.md`
 
 ### Self-Managed Deployments

@@ -16,6 +16,12 @@
 | [Authentication](/security/self-managed/authentication/) | Enable authentication |
 | [Access control](/security/self-managed/access-control/) | Reference for role-based access management (RBAC) |
 
+## Patterns
+
+| Pattern | Description |
+|---------|-------------|
+| [Protect sensitive columns](/security/patterns/protect-sensitive-columns/) | Expose a materialized view that excludes sensitive columns, and grant roles access to only that view |
+
 ## Appendix
 
 See also:
@@ -45,6 +51,14 @@ See also:
 - [Appendix: Privileges](/security/appendix/appendix-privileges/)
 - [Appendix: Privileges by commands](/security/appendix/appendix-command-privileges/)
 - [Appendix: Built-in roles](/security/appendix/appendix-built-in-roles/)
+
+---
+
+## Patterns
+
+| Pattern | Description |
+|---------|-------------|
+| [Protect sensitive columns](/security/patterns/protect-sensitive-columns/) | Expose a materialized view that excludes sensitive columns, and grant roles access to only that view |
 
 ---
 
