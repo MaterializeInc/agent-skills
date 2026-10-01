@@ -3864,6 +3864,46 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>orchestratord_reconciliation_duration_seconds_bucket</code></td>
+      <td>Time spent in one reconciliation pass.</td>
+      <td><code>controller</code>, <code>le</code>, <code>phase</code></td>
+    </tr>
+    <tr>
+      <td><code>orchestratord_reconciliation_duration_seconds_count</code></td>
+      <td>Time spent in one reconciliation pass.</td>
+      <td><code>controller</code>, <code>phase</code></td>
+    </tr>
+    <tr>
+      <td><code>orchestratord_reconciliation_duration_seconds_sum</code></td>
+      <td>Time spent in one reconciliation pass.</td>
+      <td><code>controller</code>, <code>phase</code></td>
+    </tr>
+    <tr>
+      <td><code>orchestratord_reconciliation_step_duration_seconds_bucket</code></td>
+      <td>Time spent in one reconciliation step.</td>
+      <td><code>controller</code>, <code>le</code>, <code>step</code></td>
+    </tr>
+    <tr>
+      <td><code>orchestratord_reconciliation_step_duration_seconds_count</code></td>
+      <td>Time spent in one reconciliation step.</td>
+      <td><code>controller</code>, <code>step</code></td>
+    </tr>
+    <tr>
+      <td><code>orchestratord_reconciliation_step_duration_seconds_sum</code></td>
+      <td>Time spent in one reconciliation step.</td>
+      <td><code>controller</code>, <code>step</code></td>
+    </tr>
+    <tr>
+      <td><code>orchestratord_reconciliation_steps_total</code></td>
+      <td>Count of reconciliation steps, by controller, by step, and by what the step concluded. An outcome of `abandoned` means the step did not conclude, either because an error propagated out of it or because the pass was cancelled.</td>
+      <td><code>controller</code>, <code>outcome</code>, <code>step</code></td>
+    </tr>
+    <tr>
+      <td><code>orchestratord_reconciliations_total</code></td>
+      <td>Count of reconciliation passes, by controller, by the phase of the resource&#39;s lifecycle handled, and by what the pass concluded. An outcome of `failed` means the reconciler returned an error.</td>
+      <td><code>controller</code>, <code>outcome</code>, <code>phase</code></td>
+    </tr>
+    <tr>
       <td><code>outer_join_lowering_cases</code></td>
       <td>How many times the different outer join lowering cases happened.</td>
       <td><code>case</code></td>
