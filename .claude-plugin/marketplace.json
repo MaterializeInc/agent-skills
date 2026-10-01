@@ -10,7 +10,7 @@
     {
       "name": "materialize",
       "source": "./",
-      "description": "Materialize agent skills: docs, dbt, Terraform, mz-deploy, health checks, freshness debugging, and memory tuning",
+      "description": "Materialize agent skills: docs, dbt, Terraform, mz-deploy, health checks, freshness debugging, memory tuning, and live demo data",
       "category": "database",
       "tags": ["materialize", "sql", "streaming", "skills"],
       "license": "Apache-2.0",

@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "materialize",
   "displayName": "Materialize",
-  "description": "Materialize agent skills: docs, dbt, Terraform, mz-deploy, health checks, freshness debugging, and memory tuning",
+  "description": "Materialize agent skills: docs, dbt, Terraform, mz-deploy, health checks, freshness debugging, memory tuning, and live demo data",
   "author": {
     "name": "Materialize",
     "url": "https://materialize.com/"
@@ -15,6 +15,7 @@
     "./.agents/skills/mz-health-check",
     "./skills/mz-dbt",
     "./skills/mz-debug-freshness",
+    "./skills/mz-demo-data",
     "./skills/mz-deploy",
     "./skills/mz-ontology-design",
     "./skills/mz-optimize-memory",

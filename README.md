@@ -196,6 +196,21 @@ Diagnosing why a Materialize object is behind wall-clock time, from the lag rank
 </details>
 
 <details>
+<summary><strong>mz-demo-data</strong></summary>
+
+Continuously-updating, realistic synthetic data inside a running Materialize instance, built entirely from views over `mz_now()`. No Kafka, external load generator, or seed scripts.
+
+**Use when:**
+
+- Evaluating Materialize and needing live data to try it against
+- Building a demo for a domain (auctions, ecommerce, banking, IoT, clickstream, zoo, or your own)
+- Showing that results stay consistent while the data churns underneath
+
+**Covers:** a guided path from connecting through proposing a model, allocating a byte budget, loading, and proving the result with a heartbeat and an invariant query. Everything lands in a dedicated `materialize_demo` schema, created `IF NOT EXISTS`, so loading never touches your own objects and teardown is one `DROP SCHEMA`. Each shipped domain bakes in an invariant that holds by construction, such as banking's `SUM(balance) = 0` at every timestamp. Based on [this blog post](https://github.com/frankmcsherry/blog/blob/master/posts/2024-05-19.md).
+
+</details>
+
+<details>
 <summary><strong>mz-optimize-memory</strong></summary>
 
 Reducing the memory footprint and cost of Materialize compute clusters, with every verdict backed by a measurement.
@@ -291,6 +306,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-09-29: Add mz-demo-data skill
 - 2026-09-24: Rename materialize-docs to mz-docs
 - 2026-09-24: Add a check for materialized views on clusters with no replicas to mz-health-check
 - 2026-09-24: Add the materialize plugin, bundling all skills
