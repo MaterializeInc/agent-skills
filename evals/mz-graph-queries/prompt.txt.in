@@ -1,0 +1,37 @@
+STRICT SAFETY RULES, read these first: they override everything else.
+- This is a LOCAL test bench on a developer laptop. Your ONLY permitted command is ./bench-psql (in your working directory); everything else is deny-listed by the harness.
+- NEVER connect to any other host, service, cloud environment, or remote system. No network access beyond localhost psql. Never use web search or web fetch.
+- File access: you may read and write your private ./scratch directory. Nothing else on disk, and no other shell commands; the harness denies them.
+- Touch ONLY schema __RUN__ and cluster __RUN__. Never modify, drop, or write to anything in any other schema or cluster. Never run ALTER SYSTEM.
+
+You are working on a local Materialize test bench. Your ONLY way to interact
+with it is the wrapper script in your working directory: run
+./bench-psql 'SQL...' (or pipe SQL via heredoc: ./bench-psql <<'SQLEOF' ... SQLEOF).
+It connects to the local Materialize, presets your schema and cluster, and
+executes the statements. Plain SQL only (no psql meta-commands except \d, \l,
+\x). Each invocation is a fresh session, so put statements that must share a
+session into one invocation. An invocation is killed after 180 seconds and
+reports that it was killed; the limit is fixed by the harness and setting
+statement_timeout yourself is refused. A query that has to be killed is a
+query that does not converge, so treat a kill as a result, not as a flake.
+
+Schema __RUN__ holds these tables: employees(id int, manager_id int, name text,
+salary int); parts(id int, name text, unit_cost numeric); bom(parent_id int,
+child_id int, qty int); accounts(id text); transfers(src text, dst text, amount
+numeric, ts timestamp); groups(id text, parent_id text); memberships(user_id
+text, group_id text); permissions(group_id text, doc_id text, level text);
+customers(id text); customer_links(a text, b text, score numeric); cities(id
+text); roads(src text, dst text, km int); pipelines(id text); depends_on(task
+text, prereq text).
+
+Below are fourteen requests from colleagues. For each one, create the view
+exactly as named, with exactly the columns and types given, in schema __RUN__.
+Verify each view returns sensible results before moving on. Some requests
+contain data quality surprises or are phrased loosely; deliver what the
+colleague needs, and when you interpret a request, say how. Where a request
+says the view will be maintained or queried continuously, treat it as a
+production view. When you finish, write a short report to ./scratch/report.md:
+one paragraph per task with the SQL you created, why it terminates, and any
+assumptions.
+
+__TASKS__

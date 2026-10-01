@@ -1,0 +1,5 @@
+u1	doc1	edit
+u1	doc2	edit
+u2	doc1	read
+u3	doc1	read
+u3	doc2	edit
