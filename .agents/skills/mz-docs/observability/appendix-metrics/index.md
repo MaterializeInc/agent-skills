@@ -554,6 +554,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_column_pool_direct_extent_inserts_total</code></td>
+      <td>Inserts written directly to an extent because resident admission was full.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_column_pool_eager_backs_total</code></td>
       <td>Chunks eagerly compressed to compressed-but-resident by idle spill threads; their later eviction is a pure page release.</td>
       <td></td>
