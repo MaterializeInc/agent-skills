@@ -45,7 +45,7 @@ To update, run `codex plugin marketplace upgrade materialize`.
 <details>
 <summary><strong>mz-docs</strong></summary>
 
-Materialize documentation for SQL syntax, data ingestion, concepts, and best practices.
+Materialize documentation for SQL syntax, data ingestion, concepts, and best practices. The skill fetches the current docs as markdown from materialize.com: it finds pages in [`llms.txt`](https://materialize.com/docs/llms.txt) and fetches them with WebFetch or the agent's equivalent fetch tool. It needs network access to materialize.com.
 
 **Use when:**
 
@@ -306,6 +306,7 @@ See [LICENSE](LICENSE).
 
 ## Changelog
 
+- 2026-09-30: mz-docs fetches the docs live from materialize.com instead of bundling a copy
 - 2026-09-29: Add mz-demo-data skill
 - 2026-09-24: Rename materialize-docs to mz-docs
 - 2026-09-24: Add a check for materialized views on clusters with no replicas to mz-health-check
