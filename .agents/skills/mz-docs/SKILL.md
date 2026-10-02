@@ -8,7 +8,7 @@ allowed-tools: WebFetch(domain:materialize.com)
 
 Answer Materialize questions from the current docs, not from memory. Every docs page is published as markdown.
 
-1. **Find the page in [`llms.txt`](https://materialize.com/docs/llms.txt).** It lists every page with its title, markdown URL and a one-line description. Fetch it and ask for the pages about your topic, with their URLs exactly as written. Do not guess URLs: only `https://materialize.com/docs/markdown-docs/<path>/index.md` serves markdown.
+1. **Find the page in [`llms.txt`](https://materialize.com/docs/llms.txt).** It lists every page with its title, markdown URL and a one-line description, either itself or through one `llms.txt` per docs section. Fetch it and ask for the pages about your topic, with their URLs exactly as written. If it lists section indexes instead of pages, fetch the section index that fits and ask it. Do not guess URLs: only `https://materialize.com/docs/markdown-docs/<path>/index.md` serves markdown.
 2. **Fetch the page's markdown URL** with WebFetch, or your agent's fetch tool. WebFetch returns another model's extract, not the page, so ask for the syntax, query or table you need by name and verbatim. If you have a shell, `curl -sf <url>` returns the whole page.
 3. **Do not fetch section pages.** A page is a section page when `llms.txt` lists other pages below its path: `sql/index.md` is the section page for `sql/create-source/index.md`. Section pages include the full text of every page below them and are too long to fetch whole. Fetch the pages below them instead.
 4. **Convert links before following them.** Links in the pages omit the `markdown-docs` prefix:
