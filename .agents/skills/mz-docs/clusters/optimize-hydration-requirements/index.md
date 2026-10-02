@@ -152,4 +152,4 @@ the new version to the side to avoid downtime:
 - [Durable subscriptions](/serve-results/durable-subscriptions/)
 - [Snapshotting](/fundamentals/concepts/snapshotting/)
 - [Clusters](/fundamentals/concepts/clusters/)
-- [Troubleshooting](/serve-results/troubleshooting/#hydrating-objects)
+- [Troubleshooting](/serve-results/troubleshooting/unresponsive-queries/#check-for-hydrating-objects)

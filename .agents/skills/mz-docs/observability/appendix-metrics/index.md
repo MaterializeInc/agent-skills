@@ -159,6 +159,16 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_arrangement_exert_policy_calls_total</code></td>
+      <td>Arrangement exertion policy evaluations.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_arrangement_exert_policy_grants_total</code></td>
+      <td>Arrangement exertion policy evaluations that returned effort, by reason.</td>
+      <td><code>reason</code></td>
+    </tr>
+    <tr>
       <td><code>mz_arrangement_maintenance_active_info</code></td>
       <td>Whether maintenance is currently occuring.</td>
       <td><code>worker_id</code></td>
@@ -482,6 +492,26 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_cluster_server_last_command_received</code></td>
       <td>The time (in seconds since the Unix epoch) at which the server last received data from the controller, including CTP keepalives. Used to detect controller connections that are no longer reachable.</td>
       <td><code>server_name</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_chunk_work_bytes_total</code></td>
+      <td>Uncompressed serialized bytes processed at instrumented columnar stages.</td>
+      <td><code>stage</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_chunk_work_calls_total</code></td>
+      <td>Columnar work operations, by stage.</td>
+      <td><code>stage</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_chunk_work_rows_total</code></td>
+      <td>Rows processed by columnar work, including repeated visits.</td>
+      <td><code>stage</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_column_chunk_work_size_total</code></td>
+      <td>Disjoint columnar operation row-size buckets, indexed by ceil(log2(rows)), the last bucket unbounded.</td>
+      <td><code>log2_rows</code>, <code>stage</code></td>
     </tr>
     <tr>
       <td><code>mz_column_pager_budget_configured_bytes</code></td>
