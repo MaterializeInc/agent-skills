@@ -98,6 +98,7 @@ Learn how to efficiently transform data using Materialize SQL.
 Learn about the key components and architecture of self-managed Materialize deployments.
 
 - **Appendix**: `self-managed-deployments/appendix/index.md`
+- **Configure single sign-on**: `self-managed-deployments/sso/index.md`
 - **Configuring System Parameters**: `self-managed-deployments/configuration-system-parameters/index.md`
 - **Deployment guidelines**: `self-managed-deployments/deployment-guidelines/index.md`
 - **FAQ**: `self-managed-deployments/faq/index.md`
@@ -106,8 +107,7 @@ Learn about the key components and architecture of self-managed Materialize depl
 - **Materialize Operator Configuration**: `self-managed-deployments/operator-configuration/index.md`
 - **Query History**: `self-managed-deployments/query-history/index.md`
 - **Self-managed release versions**: `self-managed-deployments/release-versions/index.md`
-- **Troubleshooting**: `self-managed-deployments/troubleshooting/index.md`
-- _(and 2 more files in this section)_
+- _(and 3 more files in this section)_
 
 ### Serve results
 Serving results from Materialize

@@ -75,7 +75,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.43.0
+  environmentdImageRef: materialize/environmentd:v26.44.1
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
   requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
@@ -92,7 +92,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.43.0
+  environmentdImageRef: materialize/environmentd:v26.44.1
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
 ```
@@ -225,14 +225,6 @@ data:
 ```
 
 ## Configure balancerd dynamic configuration
-
-  <div class="warning">
-    <strong class="gutter">Unreleased</strong>
-    This feature will be released in
-    <a href="/releases#release-notes"><strong>v26.44</strong></a>.
-    It may not be available in your region yet.
-    The release is scheduled to complete by <strong>September 30, 2026</strong>.
-  </div>
 
 To configure balancerd, use a separate ConfigMap referenced by
 `spec.balancerdConfigmapName`. This example requires Materialize Operator and a

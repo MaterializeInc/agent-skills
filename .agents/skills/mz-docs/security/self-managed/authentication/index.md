@@ -14,7 +14,7 @@ used:
 | <strong>None</strong> | Disables authentication. All users are trusted based on their claimed identity <strong>without</strong> any verification. <strong>Default</strong> |
 | <strong>SASL/SCRAM</strong> | <p>Enables:</p> <ul> <li> <p><a href="#configuring-saslscram-authentication" >SASL/SCRAM-SHA-256 authentication</a> for <strong>PostgreSQL wire protocol connections</strong>. SASL/SCRAM-SHA-256 is a challenge-response authentication mechanism that provides enhanced security compared to simple password authentication.</p> </li> <li> <p>Standard password authentication for HTTP/Web Console connections.</p> </li> </ul> <p>When enabled, users must authenticate with their password.</p> > **Tip:** When enabled, you must also set the `mz_system` user password in > `external_login_password_mz_system`. See [Configuring SASL/SCRAM > authentication](#configuring-saslscram-authentication) for details.   |
 | <strong>Password</strong> | <p>Enables <a href="#configuring-password-authentication" >password authentication</a> for users. When enabled, users must authenticate with their password.</p> > **Tip:** When enabled, you must also set the `mz_system` user password in > `external_login_password_mz_system`. See [Configuring password > authentication](#configuring-password-authentication) for details. |
-| <strong>Oidc</strong> | <p>Enables <a href="/security/self-managed/sso/" >OIDC authentication</a> using JWT tokens from an external identity provider. Users authenticate via their organization&rsquo;s identity provider (e.g., Okta, Microsoft Entra ID).</p> > **Tip:** When enabled, you must also set the `mz_system` user password in > `external_login_password_mz_system`. See [Single sign-on (SSO)](/security/self-managed/sso/) for details. |
+| <strong>Oidc</strong> | <p>Enables <a href="/self-managed-deployments/sso/oidc/" >OIDC authentication</a> using JWT tokens from an external identity provider. Users authenticate via their organization&rsquo;s identity provider (e.g., Okta, Microsoft Entra ID).</p> > **Tip:** When enabled, you must also set the `mz_system` user password in > `external_login_password_mz_system`. See [Single sign-on (SSO)](/self-managed-deployments/sso/oidc/) for details. |
 
 > **Warning:** Once enabled, ensure that the `authenticatorKind` field is set for any future version upgrades or rollouts of the Materialize CR. Having it undefined will reset `authenticationKind` to `None`.
 
@@ -73,7 +73,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.43.0
+  environmentdImageRef: materialize/environmentd:v26.44.1
   backendSecretName: materialize-backend
   authenticatorKind: Sasl
   requestRollout: 00000000-0000-0000-0000-000000000003 # Enabling auth on an existing instance requires a rollout
@@ -106,7 +106,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.43.0
+  environmentdImageRef: materialize/environmentd:v26.44.1
   backendSecretName: materialize-backend
   authenticatorKind: Sasl
 ```
@@ -159,7 +159,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.43.0
+  environmentdImageRef: materialize/environmentd:v26.44.1
   backendSecretName: materialize-backend
   authenticatorKind: Password
   requestRollout: 00000000-0000-0000-0000-000000000003 # Enabling auth on an existing instance requires a rollout
@@ -192,7 +192,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.43.0
+  environmentdImageRef: materialize/environmentd:v26.44.1
   backendSecretName: materialize-backend
   authenticatorKind: Password
 ```
@@ -205,12 +205,12 @@ OIDC (OpenID Connect) authentication allows users to authenticate using JWT
 tokens from an external identity provider such as Okta or Microsoft Entra ID.
 
 For detailed setup instructions, including identity provider configuration and
-system parameter settings, see [Single sign-on (SSO)](/security/self-managed/sso/).
+system parameter settings, see [Single sign-on (SSO)](/self-managed-deployments/sso/oidc/).
 
 ## Logging in and creating users
 
-> **Note:** With OIDC authentication, roles are [auto-provisioned](/security/self-managed/sso/#auto-provisioning-roles) when a
-> user first [logs in through SSO](/security/self-managed/sso/#step-4-verify-the-configuration).
+> **Note:** With OIDC authentication, roles are [auto-provisioned](/self-managed-deployments/sso/oidc/#auto-provisioning-roles) when a
+> user first [logs in through SSO](/self-managed-deployments/sso/oidc/#step-4-verify-the-configuration).
 
 When authentication is enabled, only the `mz_system` user is initially
 available. To create additional users:

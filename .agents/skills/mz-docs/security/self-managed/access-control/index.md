@@ -69,10 +69,10 @@ using the `external_login_password_mz_system` password, and use [`CREATE ROLE
 CREATE ROLE <user> WITH LOGIN PASSWORD '<password>';
 ```
 
-> **Note:** If you are using [OIDC authentication (SSO)](/security/self-managed/sso/), user
+> **Note:** If you are using [OIDC authentication (SSO)](/self-managed-deployments/sso/oidc/), user
 > roles are **automatically created** when a user first signs in. You do not need
 > to manually create roles for OIDC users. See
-> [Auto-provisioning roles](/security/self-managed/sso/#auto-provisioning-roles) for
+> [Auto-provisioning roles](/self-managed-deployments/sso/oidc/#auto-provisioning-roles) for
 > details.
 
 To create functional roles, login as the `mz_system` user,
@@ -269,10 +269,10 @@ using the `external_login_password_mz_system` password, and use [`CREATE ROLE
 CREATE ROLE <user> WITH LOGIN PASSWORD '<password>';
 ```
 
-> **Note:** If you are using [OIDC authentication (SSO)](/security/self-managed/sso/), user
+> **Note:** If you are using [OIDC authentication (SSO)](/self-managed-deployments/sso/oidc/), user
 > roles are **automatically created** when a user first signs in. You do not need
 > to manually create roles for OIDC users. See
-> [Auto-provisioning roles](/security/self-managed/sso/#auto-provisioning-roles) for
+> [Auto-provisioning roles](/self-managed-deployments/sso/oidc/#auto-provisioning-roles) for
 > details.
 
 > **Privilege(s) required to run the command:** - `CREATEROLE` privileges on the system. 

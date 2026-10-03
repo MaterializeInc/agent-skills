@@ -158,7 +158,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.43.0
+  environmentdImageRef: materialize/environmentd:v26.44.1
 # ... additional fields omitted for brevity
 ```
 
@@ -173,7 +173,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.43.0
+  environmentdImageRef: materialize/environmentd:v26.44.1
 # ... additional fields omitted for brevity
 ```
 
@@ -339,6 +339,34 @@ components work together:
 
 ---
 
+## Configure single sign-on
+
+> **Public Preview:** This feature is in public preview.
+
+Self-Managed Materialize supports two ways to set up single sign-on (SSO).
+Both let users sign in through your identity provider (IdP) instead of
+managing passwords in Materialize.
+
+| Option | What it supports | What you deploy |
+|---|---|---|
+| [Simple SSO (OIDC)](/self-managed-deployments/sso/oidc/) | OIDC sign-in against an OIDC-capable IdP, and group-to-role mapping if your IdP adds a groups claim | Nothing extra. You set Materialize's OIDC parameters to point at your IdP. |
+| [Advanced SSO (OIDC, SAML and SCIM)](/self-managed-deployments/sso/advanced/) | OIDC, SAML, SCIM provisioning, and group-to-role mapping | A Terraform-managed stack, powered by Ory, that acts as the OIDC issuer in front of Materialize. |
+
+## When to use each option
+
+| You need... | Use |
+|---|---|
+| OIDC against an OIDC-capable IdP (Okta OIDC, Google Workspace, Auth0 OIDC) | [Simple SSO (OIDC)](/self-managed-deployments/sso/oidc/) |
+| SAML against a SAML-only IdP (Entra SAML, ADFS, Auth0 SAML, Okta SAML) | [Advanced SSO (OIDC, SAML and SCIM)](/self-managed-deployments/sso/advanced/) with Polis enabled |
+| SCIM provisioning from your IdP | [Advanced SSO (OIDC, SAML and SCIM)](/self-managed-deployments/sso/advanced/) with Polis enabled |
+| One SSO endpoint so you can swap IdPs without changing Materialize's configuration | [Advanced SSO (OIDC, SAML and SCIM)](/self-managed-deployments/sso/advanced/) |
+
+Start with OIDC if your IdP supports it and you don't need SAML or SCIM.
+Advanced SSO is a superset of the OIDC option, so you can move to it later
+without rebuilding your Materialize deployment.
+
+---
+
 ## Configuring System Parameters
 
 This guide explains how to configure system parameters for your Materialize
@@ -416,7 +444,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.43.0
+  environmentdImageRef: materialize/environmentd:v26.44.1
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
   requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
@@ -433,7 +461,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.43.0
+  environmentdImageRef: materialize/environmentd:v26.44.1
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
 ```
@@ -566,14 +594,6 @@ data:
 ```
 
 ## Configure balancerd dynamic configuration
-
-  <div class="warning">
-    <strong class="gutter">Unreleased</strong>
-    This feature will be released in
-    <a href="/releases#release-notes"><strong>v26.44</strong></a>.
-    It may not be available in your region yet.
-    The release is scheduled to complete by <strong>September 30, 2026</strong>.
-  </div>
 
 To configure balancerd, use a separate ConfigMap referenced by
 `spec.balancerdConfigmapName`. This example requires Materialize Operator and a
@@ -1386,7 +1406,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.43.0&quot;</code>
+<code>&quot;v26.44.1&quot;</code>
 </td>
 </tr>
 
@@ -1979,7 +1999,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.43.0&quot;</code>
+**Default**: <code>&quot;v26.44.1&quot;</code>
 
 The tag/version of the operator image to be used
 
@@ -2337,6 +2357,7 @@ representative history in exchange.
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
+| v26.44.1 | v26.44.1 | v26.44.1 | 2026-10-01 | See <a href="/releases/#v26441" >v26.44.1 release notes</a> |
 | v26.43 | v26.43 | v26.43 | 2026-09-24 | See <a href="/releases/#v26430" >v26.43 release notes</a> |
 | v26.42 | v26.42 | v26.42 | 2026-09-18 | See <a href="/releases/#v26420" >v26.42 release notes</a> |
 | v26.41 | v26.41 | v26.41 | 2026-09-11 | See <a href="/releases/#v26410" >v26.41 release notes</a> |
@@ -2646,7 +2667,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.43.0
+  --version v26.44.1
 ```
 
 ## Upgrading Materialize Instances
