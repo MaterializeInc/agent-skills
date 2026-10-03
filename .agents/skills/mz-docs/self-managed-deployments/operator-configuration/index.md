@@ -532,7 +532,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.43.0&quot;</code>
+<code>&quot;v26.44.1&quot;</code>
 </td>
 </tr>
 
@@ -1125,7 +1125,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.43.0&quot;</code>
+**Default**: <code>&quot;v26.44.1&quot;</code>
 
 The tag/version of the operator image to be used
 
