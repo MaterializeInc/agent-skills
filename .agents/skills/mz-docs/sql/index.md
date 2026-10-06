@@ -518,6 +518,21 @@ The resize still proceeds in the background.
 See [Monitoring a resize](#monitoring-a-resize) to track progress and
 [cancel](#monitoring-a-resize) an in-flight resize.
 
+  <div class="warning">
+    <strong class="gutter">Unreleased</strong>
+    This feature will be released in
+    <a href="/releases#release-notes"><strong>v26.46</strong></a>.
+    It may not be available in your region yet.
+    The release is scheduled to complete by <strong>October 14, 2026</strong>.
+  </div>
+
+An `ALTER CLUSTER` that changes only `REPLICATION FACTOR` can also specify
+`WITH (WAIT ...)`. If a reconfiguration is in progress, this updates its target
+replication factor, timeout, and timeout action while preserving the other
+target options. If no reconfiguration is in progress, the replication factor
+changes directly and `WAIT` has no effect: Materialize does not wait for replicas
+to become ready or roll back the replication-factor change on timeout.
+
 ##### Monitoring a resize
 You can monitor a resize through the following:
 
