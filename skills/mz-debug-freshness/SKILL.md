@@ -170,6 +170,20 @@ Queries: [references/attribution.md](references/attribution.md#compute-gates).
 Dataflows share a replica's CPU and memory, so the lagging object may be starved
 by an unrelated one.
 
+Ask the user before running the `EXPLAIN ANALYZE` commands of this step and the
+introspection queries of Step 7 on a production replica. They run as dataflows
+on that replica, which is likely already behind, so they can push its lag
+higher for a while, and only the user knows how close that comes to their
+freshness target. Name the replica and say this. If its `heap_percent` from
+Step 5 is near the limit, add that the extra work also risks a memory kill and
+a full rehydration. Offer to wait for a quiet period instead: the CPU counters
+are cumulative since each dataflow started, so a run in a quiet period still
+includes the work of the spikes. One approval covers these reads on that
+replica for the rest of the analysis.
+
+A timeout or cancel can leave such a read running on the replica for a while,
+until its operators yield, so do not resend one that timed out.
+
 Run `EXPLAIN ANALYZE CLUSTER CPU, MEMORY`, then again `WITH SKEW`. Details:
 [cluster level](references/dataflow-analysis.md#cluster-level).
 
