@@ -34,12 +34,12 @@ run=v6_preflight
 bench="$EVAL_BENCH_ROOT/$run"
 PSQL="psql -X -q -v ON_ERROR_STOP=1 $EVAL_PSQL_ARGS"
 fails=0
-pass() { echo "PASS  $1"; }
+ok() { echo "PASS  $1"; }
 fail() { echo "FAIL  $1"; fails=$((fails + 1)); }
 check() {  # $1 label, $2 expected (allow|deny), $3 observed (allow|deny)
   local detail
   detail=$(head -c 300 "$bench/last_out.txt" 2>/dev/null | tr '\n' ' ')
-  if [ "$2" = "$3" ]; then pass "$1 (expected $2)"; else fail "$1 (expected $2, observed $3): $detail"; fi
+  if [ "$2" = "$3" ]; then ok "$1 (expected $2)"; else fail "$1 (expected $2, observed $3): $detail"; fi
 }
 
 # ---- disposable schema + cluster the wrapper is pinned to ------------------
@@ -182,7 +182,7 @@ allowed=( "Bash(./bench-psql:*)" "Bash($bench/bench-psql:*)" "Bash(sleep :*)" "B
 for n in $(seq 1 25); do
   observed=$(grep -oE "PROBE $n: (ALLOWED|DENIED|YES|NO)" "$bench/preflight-transcript.txt" | tail -1 | awk '{print $3}')
   [ -z "$observed" ] && observed=UNREPORTED
-  if [ "$observed" = "${expect[$n]}" ]; then pass "probe $n: $observed"; else fail "probe $n: expected ${expect[$n]}, agent reported $observed"; fi
+  if [ "$observed" = "${expect[$n]}" ]; then ok "probe $n: $observed"; else fail "probe $n: expected ${expect[$n]}, agent reported $observed"; fi
 done
 echo "transcript: $bench/preflight-transcript.txt"
 echo "failures: $fails"
