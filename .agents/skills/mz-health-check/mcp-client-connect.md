@@ -110,9 +110,7 @@ The walkthrough is **idempotent** — re-running on a partly-configured machine 
 4. **PAUSE for the user to set the env var.** Show them, verbatim:
 
    ```sh
-   read -s MCP_DEV_PASSWORD                                          # press Enter; Emulator user has no password
-   export MCP_DEV_TOKEN="$(printf 'my_dev_agent:'"$MCP_DEV_PASSWORD" | base64)"
-   unset MCP_DEV_PASSWORD
+   export MCP_DEV_TOKEN="$(printf 'my_dev_agent:' | base64)"         # Emulator users have no password
    echo "$MCP_DEV_TOKEN"                                             # expect: bXlfZGV2X2FnZW50Og==
    ```
 
@@ -141,7 +139,7 @@ The walkthrough is **idempotent** — re-running on a partly-configured machine 
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Smoke query returns a role other than `my_dev_agent` | The user's `MCP_DEV_TOKEN` was set to a different role's base64 | Repeat step 4 with the right `read`/`base64` invocation, then restart again. |
+| Smoke query returns a role other than `my_dev_agent` | The user's `MCP_DEV_TOKEN` was set to a different role's base64 | Repeat step 4 with the right `printf`/`base64` invocation, then restart again. |
 | Smoke query returns `anonymous_http_user` | No usable `Authorization` header reached the server: the env var was unset in the shell that launched `claude`, or the token is malformed. The Emulator downgrades both to anonymous rather than rejecting them. | Confirm `echo "$MCP_DEV_TOKEN"` in the launching shell shows `bXlfZGV2X2FnZW50Og==`; if it's empty, `export` was missed. |
 | HTTP 422 on the smoke query | The request body failed to deserialize: a malformed JSON-RPC body, not a credential problem. | Check the JSON-RPC body shape, not the token. |
 | HTTP 503 on the smoke query | Usually `enable_mcp_developer` is `false` on this Emulator; the server also answers 503 when it cannot fetch a catalog snapshot in time, so retry once. | See the [server config docs](https://materialize.com/docs/integrations/mcp-server/mcp-developer-config/). Not a walkthrough fix. |
