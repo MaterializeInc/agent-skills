@@ -412,6 +412,7 @@ select
     , r.name as replica
     , u.cpu_percent
     , u.memory_percent
+    , u.heap_percent
     , u.disk_percent
 from mz_internal.mz_cluster_replica_utilization u
 join mz_catalog.mz_cluster_replicas r on r.id = u.replica_id
@@ -420,8 +421,10 @@ order by u.cpu_percent desc nulls last;
 ```
 
 These are evidence for the report. They say how much headroom the replica has,
-not whether it is healthy. `cpu_percent` and `memory_percent` both near 100 means
-the replica has no capacity left, whatever is consuming it. Between two replicas
+not whether it is healthy. `cpu_percent` and `heap_percent` both near 100 means
+the replica has no capacity left, whatever is consuming it. `heap_percent` counts
+RAM and swap, which together are the replica's memory limit; `memory_percent`
+counts RAM only and can sit near 100 while swap still has room. Between two replicas
 of one cluster, the one to analyze is whichever is doing less work and has no
 recent `offline` entry in `mz_cluster_replica_status_history`.
 
