@@ -9,6 +9,7 @@
   },
   "homepage": "https://github.com/MaterializeInc/agent-skills",
   "repository": "https://github.com/MaterializeInc/agent-skills",
+  "documentationUrl": "https://materialize.com/docs/llms.txt",
   "supportUrl": "https://materialize.com/docs/support/",
   "keywords": ["materialize", "sql", "streaming", "skills"],
   "skills": [
