@@ -424,7 +424,10 @@ These are evidence for the report. They say how much headroom the replica has,
 not whether it is healthy. `cpu_percent` and `heap_percent` both near 100 means
 the replica has no capacity left, whatever is consuming it. `heap_percent` counts
 RAM and swap, which together are the replica's memory limit; `memory_percent`
-counts RAM only and can sit near 100 while swap still has room. Between two replicas
+counts RAM only and can sit near 100 while swap still has room. On the
+emulator, `heap_percent` is null because the emulator reports no heap, and
+`memory_percent` is measured against the nominal size, not the container's
+memory, so neither column shows how much capacity is left. Between two replicas
 of one cluster, the one to analyze is whichever is doing less work and has no
 recent `offline` entry in `mz_cluster_replica_status_history`.
 
