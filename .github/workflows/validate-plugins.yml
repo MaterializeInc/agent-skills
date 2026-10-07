@@ -52,26 +52,32 @@ jobs:
         if: matrix.target != '.'
         run: claude plugin validate "${{ matrix.target }}" --strict
 
-      # Same as --strict, except that it allows the one warning for the
+      # Same as --strict, except that it allows the warnings for the
       # materialize plugin's missing version, which is deliberate (AGENTS.md).
+      # Claude Code reports it for the plugin's marketplace entry and for its
+      # own manifest, .claude-plugin/plugin.json.
       - name: Validate ${{ matrix.target }}, allowing the materialize plugin's missing version
         if: matrix.target == '.'
         shell: python
         run: |
-          import json, subprocess, sys
+          import json, os, subprocess, sys
           names = [p["name"] for p in json.load(open(".claude-plugin/marketplace.json"))["plugins"]]
-          allowed = f"plugins[{names.index('materialize')}] plugin.json \u2192 version"
+          allowed = {
+              (".claude-plugin/marketplace.json", f"plugins[{names.index('materialize')}] plugin.json \u2192 version"),
+              (".claude-plugin/plugin.json", "version"),
+          }
           result = subprocess.run(["claude", "plugin", "validate", ".", "--json"], capture_output=True, text=True)
           print(result.stdout, result.stderr, sep="\n")
           report = json.loads(result.stdout)
           failed = result.returncode != 0 or not report["success"]
           for section in [report["manifest"], *report.get("contents", [])]:
+              file = os.path.relpath(section["file"])
               for finding in section.get("errors", []):
-                  print(f"::error::{finding['path']}: {finding['message']}")
+                  print(f"::error::{file}: {finding['path']}: {finding['message']}")
                   failed = True
               for finding in section.get("warnings", []):
-                  if finding["path"] != allowed:
-                      print(f"::error::{finding['path']}: {finding['message']}")
+                  if (file, finding["path"]) not in allowed:
+                      print(f"::error::{file}: {finding['path']}: {finding['message']}")
                       failed = True
           sys.exit(1 if failed else 0)
 

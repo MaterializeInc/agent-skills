@@ -188,7 +188,7 @@ claude plugin validate .                               # marketplace manifest; t
 claude plugin validate ./plugins/mz-sql-lsp --strict   # plugin manifest
 ```
 
-CI validates the marketplace as strictly as `--strict`, except that it allows that one warning.
+CI validates the marketplace as strictly as `--strict`, except that it allows that warning, which Claude Code reports for both the marketplace entry and `.claude-plugin/plugin.json`.
 
 Manifest validation does not exercise runtime behavior. To test a plugin end to end without installing it globally, load it for one session and point Claude at a real project:
 
