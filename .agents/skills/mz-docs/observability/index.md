@@ -1773,6 +1773,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>honeycomb</code></td>
     </tr>
     <tr>
+      <td><code>mz_persist_blob_gets</code></td>
+      <td>number of Blob::get calls for batch parts, over all shards</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_persist_blob_hedge_armed</code></td>
       <td>1 once this process has opened a hedge sibling and can hedge when enabled</td>
       <td></td>
@@ -1820,6 +1825,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     <tr>
       <td><code>mz_persist_blob_hedges_won</code></td>
       <td>blob gets where the hedge request won the race</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_blob_sets</code></td>
+      <td>number of Blob::set calls for batch parts, over all shards</td>
       <td></td>
     </tr>
     <tr>
@@ -2036,6 +2046,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_persist_decode_seconds</code></td>
       <td>time spent in op decodes</td>
       <td><code>op</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_diff_size_bytes</code></td>
+      <td>total encoded diff size, over all shards</td>
+      <td></td>
     </tr>
     <tr>
       <td><code>mz_persist_encode_count</code></td>
@@ -2653,6 +2668,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>name</code>, <code>shard</code></td>
     </tr>
     <tr>
+      <td><code>mz_persist_shard_metrics_mode_invalid</code></td>
+      <td>count of metrics scrapes that found persist_shard_metrics unrecognized and so exported the default</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_persist_shard_noncompact_batches</code></td>
       <td>number of batches in the shard that aren&#39;t compact and have no ongoing compaction</td>
       <td><code>name</code>, <code>shard</code></td>
@@ -2861,6 +2881,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_persist_task_total_scheduled_duration</code></td>
       <td>Seconds of time spent scheduled, ie. ready to poll but not yet polled.</td>
       <td><code>name</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_unconsolidated_snapshot</code></td>
+      <td>in snapshot_and_read, the number of times consolidating the raw data wasn&#39;t enough to produce consolidated output, over all shards</td>
+      <td></td>
     </tr>
     <tr>
       <td><code>mz_persist_wait_resolved_via_sleep</code></td>
