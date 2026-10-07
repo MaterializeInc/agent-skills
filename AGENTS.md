@@ -33,6 +33,7 @@ evals/
 | `mz-debug-freshness` | Diagnosing why a Materialize object is behind wall-clock time, down to the operator and the SQL responsible |
 | `mz-demo-data` | Standing up continuously-updating, invariant-bearing synthetic data entirely in SQL over `mz_now()`, for demos and evaluations; six shipped domains and a rubric for designing new ones |
 | `mz-deploy` | Using the mz-deploy CLI to manage a declarative SQL project and deploy changes to Materialize |
+| `mz-graph-queries` | Writing graph and hierarchy queries in Materialize with WITH MUTUALLY RECURSIVE: pattern selection, convergence, recursion limits, maintainability |
 | `mz-health-check` | Analyze a Materialize environment via the MCP Developer endpoint and configure MCP clients |
 | `mz-ontology-design` | Designing the semantic layer of a Materialize code base as a canonical ontology (raw/core/use-case boundaries, semantic objects, relationship registry) |
 | `mz-optimize-memory` | Reducing the memory footprint and cost of Materialize compute clusters: attribution, lever selection, adjudication of index and view proposals, measured experiments, verified changes and replica sizing |

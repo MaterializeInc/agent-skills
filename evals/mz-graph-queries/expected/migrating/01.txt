@@ -1,0 +1,1 @@
+ERROR:  Expected AS, found SUBTREE
