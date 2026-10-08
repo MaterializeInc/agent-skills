@@ -26,6 +26,9 @@ stores them in your own infrastructure, and ships dashboards to query them:
 - [Grafana](/observability/self-managed/grafana/), the dashboards and query
   interface that ship with the stack.
 
+- [Alerting](/observability/self-managed/alerting/), the bundled alert rules
+  and the Alertmanager that routes them to your receivers.
+
 To configure the stack outside the Materialize Terraform modules, or to see the
 full set of module variables, see the [`materialize-monitoring` Terraform
 installation guide
@@ -51,23 +54,442 @@ each destination:
 
 ## Alerting
 
-After setting up a monitoring tool, you can configure alert rules. Alert rules
-send a notification when a metric surpasses a threshold. This will help you
-prevent operational incidents. For alert rules guidelines, see
-[Alerting](/observability/self-managed/alerting/).
+The monitoring stack installs Alertmanager and a default set of alert rules for
+Materialize and the Kubernetes platform under it. A default install configures
+no receiver, so no one is notified until you configure one. To route alerts to
+PagerDuty, Slack, Microsoft Teams, email, or a webhook, see
+[Alerting](/observability/self-managed/alerting/). To route, tune, and silence
+them further, see [Customize
+alerting](/observability/self-managed/customize-alerting/).
+
+If you alert from a platform you already run instead, see [Thresholds for alerts
+you build yourself](/observability/self-managed/alerting/#thresholds).
 
 ---
 
 ## Alerting
 
-After setting up a monitoring tool, it is important to configure alert rules. Alert rules send a notification when a metric surpasses a threshold. This will help you prevent operational incidents.
+The monitoring stack that the [Materialize Terraform
+modules](/self-managed-deployments/installation/#install-using-terraform-modules)
+install evaluates a set of bundled alert rules and delivers what fires through
+**Alertmanager**. This guide walks you through sending those alerts to a
+receiver, such as PagerDuty, Slack, Microsoft Teams, email, or a webhook.
 
-This page describes which metrics and thresholds to build as a starting point. For more details on how to set up alert rules in Datadog or Grafana, refer to:
+> **Warning:** A default install configures no receiver. Until you configure one, every alert
+> is routed to `mzmon-null`, which notifies nobody.
+
+If you alert from a platform you already run instead, such as Datadog or
+Honeycomb, see [Thresholds for alerts you build yourself](#thresholds) for the
+metrics and thresholds to start from.
+
+## How it works
+
+The stack evaluates a default set of alert rules covering Materialize and the
+Kubernetes platform under it, and sends whatever fires to Alertmanager, which
+routes each alert to the receivers that serve its severity. For every bundled
+rule, see [Common Alerts
+⧉](https://materializeinc.github.io/materialize-monitoring/reference/common-alerts/),
+and for how routing works, see [Customize
+alerting](/observability/self-managed/customize-alerting/#how-routing-works).
+
+## Instructions
+
+### Before you begin
+
+Ensure you have:
+
+- A Materialize deployment created with the [Materialize Terraform
+  modules](/self-managed-deployments/), with the monitoring stack enabled. See
+  [Step 1](#step-1-enable-observability).
+
+- [Terraform ⧉](https://developer.hashicorp.com/terraform/install) installed.
+
+- [kubectl ⧉](https://kubernetes.io/docs/tasks/tools/) installed and configured
+  to connect to your cluster.
+
+- The credential for the receiver you plan to use, such as a PagerDuty routing
+  key or a Slack incoming webhook URL.
+
+> **Note:** The Terraform steps on this page require **v15.0.0** or later of the
+> Materialize Terraform Modules, which is where the `monitoring` module accepts
+> the alerting inputs. Upgrading to v15.0.0 does not change alerting on its own:
+> every alerting input defaults to empty, so a deployment that sets none of them
+> renders exactly as before.
+> If you install the `materialize-monitoring` chart with Helm rather than through
+> the Terraform modules, skip Step 1 and use the **Helm** tab in Step 2.
+
+### Step 1. Enable observability
+
+The Materialize Terraform Modules take an `enable_observability` variable.
+Starting with **v11.0.0** it defaults to `true`, so a fresh apply installs the
+monitoring stack without any configuration, and bumping `ref=<tag>` to v11.0.0
+or later installs it on a deployment that never set the variable.
+
+1. To confirm the setting, or to change it, set it explicitly in your
+   `terraform.tfvars`:
+
+   ```hcl
+   enable_observability = true    # default starting with Materialize Terraform Modules v11.0.0
+   ```
+
+1. Apply the configuration:
+
+   ```bash
+   terraform apply
+   ```
+
+   The apply creates the object storage and cloud identities for metrics and
+   logs, and installs the stack into the `monitoring` namespace.
+
+> **Warning:** The stack and its supporting resources are billable, and the `generic` node pool
+> may need to grow before the first apply can schedule everything. If you do not
+> want it, set `enable_observability = false` before upgrading to Materialize
+> Terraform Modules v11.0.0.
+
+### Step 2. Configure a receiver
+
+A receiver is an Alertmanager notification integration, plus the classes of
+alert it serves:
+
+| Receiver attribute | Purpose |
+|--------------------|---------|
+| `class` | The classes this receiver serves, as a string or a list. Under the default `important` preset, a receiver that should get every alert serves `high`, `normal`, and `low`. |
+| `config` | An Alertmanager receiver, such as `slack_configs` or `pagerduty_configs`. Field names are Alertmanager's own. See the [receiver integration reference ⧉](https://prometheus.io/docs/alerting/latest/configuration/#receiver-integration-settings). |
+| `route` | Optional. Route options applied wherever alerts are routed to this receiver, such as `group_wait` and `repeat_interval`. |
+
+A receiver never holds its credential directly. It reads the credential from a
+file on the `alertmanager-receivers` Secret, through the `_file` variant of the
+field, such as `api_url_file` for Slack. Each key of that Secret is a file under
+`/etc/alertmanager/secrets/alertmanager-receivers/`.
+
+**Terraform:**
+
+In the `monitoring` module block of your Terraform, add a receiver under
+`alerting`, and the credential it reads under `alerting_receiver_secrets`. The
+examples ship an `alerting` block commented out in the `monitoring` module, so
+you can uncomment it in place.
+
+**Slack:**
+
+```hcl
+module "monitoring" {
+  # ...
+
+  alerting = {
+    receivers = {
+      chat = {
+        class = ["high", "normal", "low"]
+        config = {
+          slack_configs = [{
+            channel       = "#materialize-alerts"
+            api_url_file  = "/etc/alertmanager/secrets/alertmanager-receivers/slack-url"
+            send_resolved = true
+          }]
+        }
+      }
+    }
+  }
+
+  alerting_receiver_secrets = {
+    "slack-url" = var.slack_webhook_url
+  }
+}
+```
+
+**PagerDuty:**
+
+```hcl
+module "monitoring" {
+  # ...
+
+  alerting = {
+    receivers = {
+      oncall = {
+        class = ["high", "normal", "low"]
+        config = {
+          pagerduty_configs = [{
+            routing_key_file = "/etc/alertmanager/secrets/alertmanager-receivers/pagerduty-key"
+            send_resolved    = true
+          }]
+        }
+      }
+    }
+  }
+
+  alerting_receiver_secrets = {
+    "pagerduty-key" = var.pagerduty_routing_key
+  }
+}
+```
+
+**Microsoft Teams:**
+
+```hcl
+module "monitoring" {
+  # ...
+
+  alerting = {
+    receivers = {
+      teams = {
+        class = ["high", "normal", "low"]
+        config = {
+          msteamsv2_configs = [{
+            webhook_url_file = "/etc/alertmanager/secrets/alertmanager-receivers/teams-webhook-url"
+            send_resolved    = true
+          }]
+        }
+      }
+    }
+  }
+
+  alerting_receiver_secrets = {
+    "teams-webhook-url" = var.teams_webhook_url
+  }
+}
+```
+
+**Email:**
+
+```hcl
+module "monitoring" {
+  # ...
+
+  alerting = {
+    global = {
+      smtp_smarthost          = "smtp.example.com:587"
+      smtp_from               = "alertmanager@example.com"
+      smtp_auth_username      = "alertmanager"
+      smtp_auth_password_file = "/etc/alertmanager/secrets/alertmanager-receivers/smtp-password"
+    }
+    receivers = {
+      ops-email = {
+        class = ["high", "normal", "low"]
+        config = {
+          email_configs = [{
+            to = "ops@example.com"
+          }]
+        }
+      }
+    }
+  }
+
+  alerting_receiver_secrets = {
+    "smtp-password" = var.smtp_password
+  }
+}
+```
+
+**Webhook:**
+
+```hcl
+module "monitoring" {
+  # ...
+
+  alerting = {
+    receivers = {
+      incidents = {
+        class = ["high", "normal", "low"]
+        config = {
+          webhook_configs = [{
+            url           = "https://incidents.example.com/hooks/alertmanager"
+            send_resolved = true
+            http_config = {
+              authorization = {
+                credentials_file = "/etc/alertmanager/secrets/alertmanager-receivers/webhook-token"
+              }
+            }
+          }]
+        }
+      }
+    }
+  }
+
+  alerting_receiver_secrets = {
+    "webhook-token" = var.webhook_token
+  }
+}
+```
+
+The module creates the `alertmanager-receivers` Secret from
+`alerting_receiver_secrets`, so the plan fails when a receiver reads a key that
+the map does not set. The values stay out of plan output, but they are stored in
+Terraform state. To keep them out of state, see [Manage receiver
+credentials](/observability/self-managed/customize-alerting/#manage-receiver-credentials).
+
+**Helm:**
+
+Add a receiver to the chart's `alerting` values:
+
+**Slack:**
+
+```yaml
+alerting:
+  receivers:
+    chat:
+      class: [high, normal, low]
+      config:
+        slack_configs:
+          - channel: "#materialize-alerts"
+            api_url_file: /etc/alertmanager/secrets/alertmanager-receivers/slack-url
+            send_resolved: true
+```
+
+**PagerDuty:**
+
+```yaml
+alerting:
+  receivers:
+    oncall:
+      class: [high, normal, low]
+      config:
+        pagerduty_configs:
+          - routing_key_file: /etc/alertmanager/secrets/alertmanager-receivers/pagerduty-key
+            send_resolved: true
+```
+
+**Microsoft Teams:**
+
+```yaml
+alerting:
+  receivers:
+    teams:
+      class: [high, normal, low]
+      config:
+        msteamsv2_configs:
+          - webhook_url_file: /etc/alertmanager/secrets/alertmanager-receivers/teams-webhook-url
+            send_resolved: true
+```
+
+**Email:**
+
+```yaml
+alerting:
+  global:
+    smtp_smarthost: smtp.example.com:587
+    smtp_from: alertmanager@example.com
+    smtp_auth_username: alertmanager
+    smtp_auth_password_file: /etc/alertmanager/secrets/alertmanager-receivers/smtp-password
+  receivers:
+    ops-email:
+      class: [high, normal, low]
+      config:
+        email_configs:
+          - to: ops@example.com
+```
+
+**Webhook:**
+
+```yaml
+alerting:
+  receivers:
+    incidents:
+      class: [high, normal, low]
+      config:
+        webhook_configs:
+          - url: https://incidents.example.com/hooks/alertmanager
+            send_resolved: true
+            http_config:
+              authorization:
+                credentials_file: /etc/alertmanager/secrets/alertmanager-receivers/webhook-token
+```
+
+For Opsgenie, Amazon SNS, and every other integration Alertmanager supports,
+write `config` as the [receiver integration reference
+⧉](https://prometheus.io/docs/alerting/latest/configuration/#receiver-integration-settings)
+describes, using the `_file` variant of each credential field.
+
+> **Warning:** Once any receiver is configured, every class the preset maps a severity to,
+> other than `suppressed`, must be served by at least one receiver, or the apply
+> fails. Under the default `important` preset those classes are `high`, `normal`,
+> and `low`, which is why each receiver above serves all three.
+
+### Step 3. Supply the credential and apply
+
+**Terraform:**
+
+1. Declare each credential as a sensitive variable, and pass it in the way you
+   pass other secrets, for example through an environment variable. For the
+   Slack example:
+
+   ```hcl
+   variable "slack_webhook_url" {
+     type      = string
+     sensitive = true
+   }
+   ```
+
+   ```bash
+   export TF_VAR_slack_webhook_url='<your-slack-webhook-url>'
+   ```
+
+1. Apply the configuration:
+
+   ```bash
+   terraform apply
+   ```
+
+**Helm:**
+
+1. Create the `alertmanager-receivers` Secret in the namespace Alertmanager runs
+   in, with one key per credential file your receiver reads. For the Slack
+   example, replacing `<alertmanager-namespace>` as described in [Step
+   4](#step-4-confirm-where-alerts-go):
+
+   ```bash
+   kubectl --namespace <alertmanager-namespace> create secret generic alertmanager-receivers \
+     --from-file=slack-url=./slack-url.txt
+   ```
+
+   In production, source this Secret from Sealed Secrets, External Secrets, or
+   SOPS rather than creating it from a local file.
+
+1. Upgrade the release with the new values.
+
+### Step 4. Confirm where alerts go
+
+Replace `<alertmanager-namespace>` with the namespace Alertmanager runs in: the
+release namespace, which the `monitoring` module sets from its `namespace`
+(`monitoring` in the examples), or `alertmanager` under the chart's
+`split-namespace` profile.
+
+1. Check which receiver an alert of a given severity reaches:
+
+   ```bash
+   kubectl --namespace <alertmanager-namespace> exec alertmanager-0 -c alertmanager -- \
+     amtool config routes test \
+       --config.file=/etc/alertmanager/config/alertmanager.yml severity=critical
+   ```
+
+   The command prints the name of each receiver the alert would reach, such as
+   `chat`. `mzmon-null` means the alert reaches nobody.
+
+1. Send a test alert to confirm that the receiver delivers:
+
+   ```bash
+   kubectl --namespace <alertmanager-namespace> exec alertmanager-0 -c alertmanager -- \
+     amtool alert add alertname=ReceiverTest severity=warning \
+       --annotation=summary="Delivery test for the warning class"
+   ```
+
+   The test alert is a real notification to whoever the route reaches. It is
+   delivered after the route's `group_wait` (30 seconds by default), and
+   resolves on its own after five minutes.
+
+> **Note:** The apply checks the structure of the configuration, but not the fields inside
+> each receiver's `config`. Alertmanager validates those when it reloads. If it
+> rejects a configuration, it keeps running the previous one, and the
+> `alertmanager_config_last_reload_successful` metric drops to `0`. Query that
+> metric in Grafana after changing a receiver.
+
+## Thresholds for alerts you build yourself {#thresholds}
+
+If you send metrics to a platform you already run, you can build alert rules
+there instead of, or alongside, the bundled ones. Decide which system owns which
+alert, rather than evaluating the same thresholds in both and notifying twice.
+For more details on how to set up alert rules in Datadog or Grafana, refer to:
 
  * [Datadog monitors](https://docs.datadoghq.com/monitors/)
  * [Grafana alerts](https://grafana.com/docs/grafana/latest/alerting/fundamentals/)
-
-## Thresholds
 
 Alert rules tend to have two threshold levels, and we are going to define them as follows:
  * **Warning:** represents a call to attention to a symptom with high chances to develop into an issue.
@@ -90,7 +512,413 @@ For the following table, replace the two variables, _X_ and _Y_, by your organiz
 Metric | Warning | Alert | Description
 -- | -- | -- | --
 Latency | Avg > X | Avg > Y | Average latency in the last *15 minutes*. Where X and Y are the expected latencies in milliseconds.
-Credits | Consumption rate increase by X% | Consumption rate increase by Y% | Average credit consumption in the last *60 minutes*.
+
+## Next steps
+
+- [Customize alerting](/observability/self-managed/customize-alerting/), to
+  page on critical alerts, route alerts to the team that owns them, tune the
+  bundled rules, and silence alerts during maintenance.
+
+- [Alert Channels
+  ⧉](https://materializeinc.github.io/materialize-monitoring/alerting/channels/),
+  for more receiver examples, including incident-management products,
+  notification templates, and links back to Grafana.
+
+---
+
+## Customize alerting
+
+Once you have [configured a receiver](/observability/self-managed/alerting/),
+you can change which alerts reach it, send some alerts to other receivers, tune
+the bundled rules, and silence alerts during maintenance.
+
+The examples on this page set the `monitoring` module's Terraform inputs, and
+require v15.0.0 or later of the Materialize Terraform Modules. With Helm, the
+same settings are chart values under `alerting` and `rules`, usually the same
+name in camel case, such as `alerting.timeIntervals` for `time_intervals`.
+[Configuring Alerting through Terraform
+⧉](https://materializeinc.github.io/materialize-monitoring/alerting/terraform/)
+lists the chart value for each.
+
+Commands on this page use `<alertmanager-namespace>` for the namespace
+Alertmanager runs in: the release namespace, which the `monitoring` module sets
+from its `namespace` (`monitoring` in the examples), or `alertmanager` under the
+chart's `split-namespace` profile.
+
+## How routing works
+
+Every bundled rule sets a `severity` label: `critical`, `warning`, or `notice`.
+The selected **preset** maps each severity to a **class**, and an alert reaches
+every receiver whose `class` includes it. The shipped presets express how much
+the deployment depends on Materialize:
+
+| `severity` | `critical-infrastructure` | `important` (default) | `evaluation` |
+|------------|---------------------------|-----------------------|--------------|
+| `critical` | `page` | `high` | `normal` |
+| `warning` | `high` | `normal` | `normal` |
+| `notice` | `normal` | `low` | `suppressed` |
+
+`suppressed` notifies nobody. A suppressed alert still fires and still shows in
+Alertmanager and in Grafana.
+
+Every bundled rule also carries an `audience` label, which you can route on:
+`platform` for the Materialize deployment, its system clusters, and the
+Kubernetes platform under it, or `workload` for what runs on it, such as a user
+cluster falling behind or running out of memory.
+
+## Page on critical alerts
+
+The `critical-infrastructure` preset maps `critical` to `page`. This example
+pages through PagerDuty and sends everything else to Slack:
+
+```hcl
+module "monitoring" {
+  # ...
+
+  alerting = {
+    preset = "critical-infrastructure"
+
+    receivers = {
+      oncall = {
+        class = "page"
+        route = { group_wait = "10s", repeat_interval = "1h" }
+        config = {
+          pagerduty_configs = [{
+            routing_key_file = "/etc/alertmanager/secrets/alertmanager-receivers/pagerduty-key"
+            send_resolved    = true
+          }]
+        }
+      }
+      platform = {
+        class = ["high", "normal"]
+        config = {
+          slack_configs = [{
+            channel       = "#platform-alerts"
+            api_url_file  = "/etc/alertmanager/secrets/alertmanager-receivers/slack-url"
+            send_resolved = true
+          }]
+        }
+      }
+    }
+  }
+
+  alerting_receiver_secrets = {
+    "pagerduty-key" = var.pagerduty_routing_key
+    "slack-url"     = var.platform_slack_webhook
+  }
+}
+```
+
+Under this preset `warning` maps to `high` and `notice` to `normal`, so the
+`platform` receiver gets both. The `route` options on `oncall` apply only to
+alerts routed to it, so pages are grouped and repeated faster than anything
+else.
+
+### Define your own preset
+
+To map severities to classes of your own, add an entry under `presets` and
+select it with `preset`:
+
+```hcl
+module "monitoring" {
+  # ...
+
+  alerting = {
+    preset = "oncall-lite"
+    presets = {
+      oncall-lite = {
+        critical = "page"
+        warning  = "ticket"
+        notice   = "suppressed"
+      }
+    }
+
+    receivers = {
+      oncall = {
+        class = "page"
+        config = {
+          opsgenie_configs = [{
+            api_key_file = "/etc/alertmanager/secrets/alertmanager-receivers/opsgenie-key"
+          }]
+        }
+      }
+      tickets = {
+        class = "ticket"
+        config = {
+          webhook_configs = [{
+            url = "https://tickets.example.com/hooks/alertmanager"
+            http_config = {
+              authorization = {
+                credentials_file = "/etc/alertmanager/secrets/alertmanager-receivers/tickets-token"
+              }
+            }
+          }]
+        }
+      }
+    }
+  }
+
+  alerting_receiver_secrets = {
+    "opsgenie-key"  = var.opsgenie_api_key
+    "tickets-token" = var.tickets_token
+  }
+}
+```
+
+A cell set under `presets` for a shipped preset name, such as `important`,
+overrides only that cell and keeps the rest. An alert whose `severity` label is
+missing or unknown is routed as `unknown_severity`, which defaults to
+`warning`.
+
+## Route alerts to the team that owns them
+
+`routes.extra` takes routes in Alertmanager's own format, and places them ahead
+of the preset's severity routes, so a specific match wins and the preset remains
+the fallback. This example sends every `workload` alert to the team that owns
+the clusters:
+
+```hcl
+module "monitoring" {
+  # ...
+
+  alerting = {
+    receivers = {
+      chat = {
+        class = ["high", "normal", "low"]
+        config = {
+          slack_configs = [{
+            channel      = "#materialize-alerts"
+            api_url_file = "/etc/alertmanager/secrets/alertmanager-receivers/slack-url"
+          }]
+        }
+      }
+      data-team = {
+        config = {
+          slack_configs = [{
+            channel      = "#data-platform"
+            api_url_file = "/etc/alertmanager/secrets/alertmanager-receivers/data-team-slack-url"
+          }]
+        }
+      }
+    }
+
+    routes = {
+      extra = [{
+        matchers = ["audience=workload"]
+        receiver = "data-team"
+        continue = true
+      }]
+    }
+  }
+
+  alerting_receiver_secrets = {
+    "slack-url"           = var.slack_webhook_url
+    "data-team-slack-url" = var.data_team_slack_webhook
+  }
+}
+```
+
+`data-team` has no `class`, so only this route reaches it. Because the route
+sets `continue = true`, a workload alert also continues through the preset to
+`chat`. Without it, the alert would go to `data-team` only. Each receiver an
+extra route names must be defined under `receivers`, or the apply fails.
+
+## Tune the bundled rules
+
+`alert_rules` sets which bundled rules install, and adjusts them without changing
+their expressions:
+
+```hcl
+module "monitoring" {
+  # ...
+
+  alert_rules = {
+    # User-cluster freshness is opt-in, because some clusters are behind by design.
+    selected = ["cluster-falling-behind", "cluster-stale"]
+    disabled = ["pods-stuck-in-waiting"]
+
+    overrides = {
+      # Large clusters here take hours to hydrate with nothing wrong.
+      cluster-hydration-stuck   = { for_duration = "6h" }
+      cluster-replica-oomkilled = { labels = { severity = "notice" } }
+    }
+
+    excluded_namespaces = ["materialize-scratch"]
+  }
+}
+```
+
+| Attribute | Purpose |
+|-----------|---------|
+| `selected` | Rules to install beyond the default set: alert names, rule-group names, or `"*"` for every rule that applies. Evaluate a rule outside the default set against your deployment before relying on it. |
+| `disabled` | Alert names never to install. |
+| `overrides` | Per alert, `for_duration` (the rule's `for`) and `labels`. An override's `severity` must stay `critical`, `warning`, or `notice`, and its `audience` `platform` or `workload`, so the routes still match it. |
+| `excluded_namespaces` | Namespaces no rule alerts on. |
+
+For the remaining attributes, including the namespaces your Materialize
+environments run in and the infrastructure workload tiers, see [Tuning the
+bundled rules
+⧉](https://materializeinc.github.io/materialize-monitoring/alerting/terraform/#tuning-the-bundled-rules).
+For every bundled rule and whether it is in the default set, see [Common Alerts
+⧉](https://materializeinc.github.io/materialize-monitoring/reference/common-alerts/).
+
+> **Note:** The rule evaluator imports every `PrometheusRule` in the cluster, not only the
+> bundled ones. If another chart in the cluster ships its own `PrometheusRule`
+> resources, those alerts are also evaluated and notified through this
+> Alertmanager.
+
+## Silence alerts
+
+A Materialize upgrade restarts pods and rehydrates clusters, which can fire
+alerts that resolve on their own. A silence stops the notifications for alerts
+matching a set of labels until it expires. The alerts still fire and still show
+in Alertmanager and Grafana.
+
+**Grafana:**
+
+In Grafana, go to **Alerting > Silences**, select the **Alertmanager** data
+source, and create a silence.
+
+**amtool:**
+
+```bash
+kubectl --namespace <alertmanager-namespace> exec alertmanager-0 -c alertmanager -- \
+  amtool silence add namespace=materialize-environment \
+    --duration=2h --author="$USER" --comment="Planned Materialize upgrade"
+```
+
+The command has two namespaces in it. `--namespace` is where Alertmanager runs,
+and `namespace=materialize-environment` matches the alerts to silence, here
+those about the Materialize environment's namespace.
+
+`amtool silence query` lists active silences, and `amtool silence expire <id>`
+ends one early.
+
+Silences are shared between the Alertmanager replicas and survive the loss of
+either one. Give each a duration that covers the work and no more, so it does
+not hide the next incident on the same labels.
+
+For a recurring schedule, define it under `time_intervals` and reference it from
+a receiver's `route.mute_time_intervals`:
+
+```hcl
+module "monitoring" {
+  # ...
+
+  alerting = {
+    time_intervals = [{
+      name = "change-window"
+      time_intervals = [{
+        weekdays = ["saturday"]
+        times    = [{ start_time = "02:00", end_time = "06:00" }]
+        location = "America/New_York"
+      }]
+    }]
+
+    receivers = {
+      chat = {
+        class = ["high", "normal", "low"]
+        route = { mute_time_intervals = ["change-window"] }
+        config = {
+          slack_configs = [{
+            channel      = "#materialize-alerts"
+            api_url_file = "/etc/alertmanager/secrets/alertmanager-receivers/slack-url"
+          }]
+        }
+      }
+    }
+  }
+
+  alerting_receiver_secrets = {
+    "slack-url" = var.slack_webhook_url
+  }
+}
+```
+
+A mute window mutes everything routed to that receiver during the window,
+including an unrelated incident. For inhibition rules and the other options, see
+[Maintenance Windows
+⧉](https://materializeinc.github.io/materialize-monitoring/alerting/maintenance/).
+
+## Manage receiver credentials
+
+When `alerting_receiver_secrets` is set, the module creates the
+`alertmanager-receivers` Secret from it:
+
+- The plan fails when a receiver reads a key the map does not set, and the error
+  names the key.
+
+- The values stay out of plan output, because the input is `sensitive`, but they
+  are stored in Terraform state. Restrict who can read your state accordingly.
+
+- Rotating a credential needs no restart. Alertmanager reads the file on every
+  send, and the kubelet refreshes the mounted Secret within about a minute.
+
+Amazon SNS is the only integration that authenticates with the pod's own cloud
+identity rather than a credential. Every other integration reads a credential
+from the Secret, including email sent through Amazon SES or Azure Communication
+Services. For the setup of each, see [Cloud provider services
+⧉](https://materializeinc.github.io/materialize-monitoring/alerting/channels/#cloud).
+
+### Manage the Secret outside Terraform
+
+To keep receiver credentials out of Terraform state, leave
+`alerting_receiver_secrets` empty. The module then creates no Secret, so
+External Secrets Operator, Vault Agent, or a cloud secret store's CSI driver can
+own `alertmanager-receivers` instead. Create it in the namespace Alertmanager
+runs in. Alertmanager mounts it as optional, so its pods start before the Secret
+exists.
+
+> **Warning:** With no `alerting_receiver_secrets`, the plan no longer checks that the Secret
+> holds every key your receivers read. A missing key fails only when Alertmanager
+> next tries to send through that receiver.
+
+### Run Alertmanager in its own namespace
+
+The chart's `split-namespace` profile runs Alertmanager in a namespace of its
+own, `alertmanager`. When you apply that profile through `additional_values`,
+also set `alertmanager_namespace = "alertmanager"` so the Secret is created
+where Alertmanager can mount it. The module cannot infer this from the profile.
+Commands that reach Alertmanager, such as `amtool`, then run in the
+`alertmanager` namespace.
+
+## Troubleshooting
+
+Most configuration mistakes fail before anything is installed. The rest fail the
+Helm render during the apply, or are rejected by Alertmanager itself:
+
+| Mistake | Fails at |
+|---------|----------|
+| A receiver reads a key that `alerting_receiver_secrets` does not set | Plan, naming the key. Only when `alerting_receiver_secrets` is set |
+| An override's `for_duration` is not a duration | Plan |
+| `preset` is not a shipped preset or a key of `presets` | Plan |
+| A template name does not end in `.tmpl` | Plan |
+| An unknown capability, alert, or rule-group name | Apply |
+| An inline credential in a receiver or in `global` | Apply |
+| Once any receiver is configured, the preset maps a severity to a class no receiver serves | Apply |
+| An extra route names an undefined receiver or time interval | Apply |
+| An invalid field inside a receiver's `config` | Alertmanager reload. Alertmanager keeps the previous configuration, and `alertmanager_config_last_reload_successful` drops to `0` |
+
+`terraform plan` shows the composed Helm values in the monitoring module's
+`helm_release` resource, with `alerting_receiver_secrets` shown as `(sensitive
+value)`. To check where an alert is routed once applied, see [Confirm where
+alerts go](/observability/self-managed/alerting/#step-4-confirm-where-alerts-go).
+
+## See also
+
+- [Alerting](/observability/self-managed/alerting/), to configure your first
+  receiver.
+
+- [Grafana](/observability/self-managed/grafana/), where firing alerts and
+  silences are visible alongside the dashboards.
+
+- [Configuring Alerting through Terraform
+  ⧉](https://materializeinc.github.io/materialize-monitoring/alerting/terraform/),
+  the full reference for the Terraform inputs.
+
+- [Alert Channels
+  ⧉](https://materializeinc.github.io/materialize-monitoring/alerting/channels/),
+  for more receiver examples and the chart's routing values.
 
 ---
 
@@ -264,11 +1092,13 @@ In Datadog, **Metrics > Summary** filtered to `mz_` is the quickest place to loo
 
 With metrics in Datadog, build [monitors ⧉](https://docs.datadoghq.com/monitors/)
 from the metrics and thresholds in
-[Alerting](/observability/self-managed/alerting/).
+[Alerting](/observability/self-managed/alerting/#thresholds).
 
 The monitoring stack also ships Alertmanager rules that evaluate against the
-bundled Thanos. Decide which system owns which alerts rather than running both
-against the same thresholds and paging twice.
+bundled Thanos, and notify no one until you [configure a
+receiver](/observability/self-managed/alerting/#step-2-configure-a-receiver).
+Decide which system owns which alerts rather than running both against the same
+thresholds and paging twice.
 
 ## How to control which metrics Datadog receives
 
@@ -544,11 +1374,13 @@ In Cloud Monitoring, use **Metrics explorer** and filter to the prefix, which is
 
 Build Cloud Monitoring [alerting policies
 ⧉](https://cloud.google.com/monitoring/alerts) from the metrics and thresholds in
-[Alerting](/observability/self-managed/alerting/).
+[Alerting](/observability/self-managed/alerting/#thresholds).
 
 The monitoring stack also ships Alertmanager rules that evaluate against the
-bundled Thanos. Decide which system owns which alerts rather than running both
-against the same thresholds.
+bundled Thanos, and notify no one until you [configure a
+receiver](/observability/self-managed/alerting/#step-2-configure-a-receiver).
+Decide which system owns which alerts rather than running both against the same
+thresholds.
 
 ## How to control which metrics Cloud Monitoring receives
 
@@ -924,9 +1756,10 @@ installing the stack without the Materialize Terraform modules, see:
 
 ## Alerting
 
-The stack includes Alertmanager for recording and routing alerts.
-For guidance on the initial set of metrics and suggested thresholds,
-see [Alerting](/observability/self-managed/alerting/).
+The stack includes Alertmanager and a default set of alert rules. Grafana
+provisions Alertmanager as a data source, so firing alerts and silences are
+visible under **Alerting**. No one is notified until you configure a receiver.
+See [Alerting](/observability/self-managed/alerting/).
 
 ---
 
@@ -1118,11 +1951,13 @@ In Honeycomb, select the dataset you named and query for a recent metric.
 
 Build Honeycomb [triggers
 ⧉](https://docs.honeycomb.io/investigate/alerts/triggers/) from the metrics and
-thresholds in [Alerting](/observability/self-managed/alerting/).
+thresholds in [Alerting](/observability/self-managed/alerting/#thresholds).
 
 The monitoring stack also ships Alertmanager rules that evaluate against the
-bundled Thanos. Decide which system owns which alerts rather than running both
-against the same thresholds.
+bundled Thanos, and notify no one until you [configure a
+receiver](/observability/self-managed/alerting/#step-2-configure-a-receiver).
+Decide which system owns which alerts rather than running both against the same
+thresholds.
 
 ## How to control which metrics Honeycomb receives
 
@@ -1743,11 +2578,13 @@ started with, indefinitely.
 ### Step 5. Configure alerts
 
 Build alerts in your destination from the metrics and thresholds in
-[Alerting](/observability/self-managed/alerting/).
+[Alerting](/observability/self-managed/alerting/#thresholds).
 
 The monitoring stack also ships Alertmanager rules that evaluate against the
-bundled Thanos. Decide which system owns which alerts rather than running both
-against the same thresholds and paging twice.
+bundled Thanos, and notify no one until you [configure a
+receiver](/observability/self-managed/alerting/#step-2-configure-a-receiver).
+Decide which system owns which alerts rather than running both against the same
+thresholds and paging twice.
 
 ## How to forward logs
 
@@ -2090,7 +2927,7 @@ additional_values = [
 
 The Alertmanager rules the stack ships evaluate against the bundled Thanos, so
 retiring it moves alerting to the external platform. Rebuild the alerts there from
-the metrics and thresholds in [Alerting](/observability/self-managed/alerting/).
+the metrics and thresholds in [Alerting](/observability/self-managed/alerting/#thresholds).
 
 ## How to control which metrics the store receives
 

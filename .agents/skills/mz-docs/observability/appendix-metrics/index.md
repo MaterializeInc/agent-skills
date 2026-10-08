@@ -2159,6 +2159,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>worker_id</code></td>
     </tr>
     <tr>
+      <td><code>mz_persist_per_shard_metrics_regex_invalid</code></td>
+      <td>count of metrics scrapes that found persist_per_shard_metrics_enable_regex invalid and so kept no per-shard series</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_persist_pubsub_client_approx_diff_apply_latency_seconds_bucket</code></td>
       <td>histogram of (approximate) latency between sending a diff and applying it</td>
       <td><code>le</code></td>
