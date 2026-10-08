@@ -211,11 +211,13 @@ started with, indefinitely.
 ### Step 5. Configure alerts
 
 Build alerts in your destination from the metrics and thresholds in
-[Alerting](/observability/self-managed/alerting/).
+[Alerting](/observability/self-managed/alerting/#thresholds).
 
 The monitoring stack also ships Alertmanager rules that evaluate against the
-bundled Thanos. Decide which system owns which alerts rather than running both
-against the same thresholds and paging twice.
+bundled Thanos, and notify no one until you [configure a
+receiver](/observability/self-managed/alerting/#step-2-configure-a-receiver).
+Decide which system owns which alerts rather than running both against the same
+thresholds and paging twice.
 
 ## How to forward logs
 

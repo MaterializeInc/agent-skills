@@ -47,6 +47,9 @@ stores them in your own infrastructure, and ships dashboards to query them:
 - [Grafana](/observability/self-managed/grafana/), the dashboards and query
   interface that ship with the stack.
 
+- [Alerting](/observability/self-managed/alerting/), the bundled alert rules
+  and the Alertmanager that routes them to your receivers.
+
 To configure the stack outside the Materialize Terraform modules, or to see the
 full set of module variables, see the [`materialize-monitoring` Terraform
 installation guide
@@ -70,10 +73,16 @@ each destination:
 
 ### Alerting
 
-After setting up a monitoring tool, you can configure alert rules. Alert rules
-send a notification when a metric surpasses a threshold. This will help you
-prevent operational incidents. For alert rules guidelines, see
-[Alerting](/observability/self-managed/alerting/).
+The monitoring stack installs Alertmanager and a default set of alert rules for
+Materialize and the Kubernetes platform under it. A default install configures
+no receiver, so no one is notified until you configure one. To route alerts to
+PagerDuty, Slack, Microsoft Teams, email, or a webhook, see
+[Alerting](/observability/self-managed/alerting/). To route, tune, and silence
+them further, see [Customize
+alerting](/observability/self-managed/customize-alerting/).
+
+If you alert from a platform you already run instead, see [Thresholds for alerts
+you build yourself](/observability/self-managed/alerting/#thresholds).
 
 ---
 
@@ -2236,6 +2245,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_persist_peek_seconds_sum</code></td>
       <td>Time spent in (experimental) Persist fast-path peeks.</td>
       <td><code>worker_id</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_per_shard_metrics_regex_invalid</code></td>
+      <td>count of metrics scrapes that found persist_per_shard_metrics_enable_regex invalid and so kept no per-shard series</td>
+      <td></td>
     </tr>
     <tr>
       <td><code>mz_persist_pubsub_client_approx_diff_apply_latency_seconds_bucket</code></td>
@@ -4488,6 +4502,9 @@ stores them in your own infrastructure, and ships dashboards to query them:
 - [Grafana](/observability/self-managed/grafana/), the dashboards and query
   interface that ship with the stack.
 
+- [Alerting](/observability/self-managed/alerting/), the bundled alert rules
+  and the Alertmanager that routes them to your receivers.
+
 To configure the stack outside the Materialize Terraform modules, or to see the
 full set of module variables, see the [`materialize-monitoring` Terraform
 installation guide
@@ -4513,8 +4530,14 @@ each destination:
 
 ## Alerting
 
-After setting up a monitoring tool, you can configure alert rules. Alert rules
-send a notification when a metric surpasses a threshold. This will help you
-prevent operational incidents. For alert rules guidelines, see
-[Alerting](/observability/self-managed/alerting/).
+The monitoring stack installs Alertmanager and a default set of alert rules for
+Materialize and the Kubernetes platform under it. A default install configures
+no receiver, so no one is notified until you configure one. To route alerts to
+PagerDuty, Slack, Microsoft Teams, email, or a webhook, see
+[Alerting](/observability/self-managed/alerting/). To route, tune, and silence
+them further, see [Customize
+alerting](/observability/self-managed/customize-alerting/).
+
+If you alert from a platform you already run instead, see [Thresholds for alerts
+you build yourself](/observability/self-managed/alerting/#thresholds).
 

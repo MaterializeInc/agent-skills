@@ -108,6 +108,11 @@ it, see [How logs and metrics are
 stored](/observability/self-managed/storage/). For reaching Grafana, see
 [Grafana](/observability/self-managed/grafana/).
 
+> **Note:** Alertmanager installs with a default set of alert rules but no receiver, so no
+> one is notified until you configure one. Starting with v15.0.0 of the
+> Materialize Terraform Modules, you configure receivers on the `monitoring`
+> module. See [Alerting](/observability/self-managed/alerting/).
+
 ## Prerequisites
 
 ### Azure Account Requirements
