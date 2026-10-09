@@ -1159,6 +1159,13 @@ To configure the Materialize operator, you can:
 </tr>
 
 <tr>
+<td><a href='#operatorargsenabledatabasenetworkpolicies'><code>operator.args.enableDatabaseNetworkPolicies</code></a></td>
+<td>
+<code>false</code>
+</td>
+</tr>
+
+<tr>
 <td><a href='#operatorargsenableinternalstatementlogging'><code>operator.args.enableInternalStatementLogging</code></a></td>
 <td>
 <code>true</code>
@@ -1406,7 +1413,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.44.1&quot;</code>
+<code>&quot;v26.45.1&quot;</code>
 </td>
 </tr>
 
@@ -1813,6 +1820,12 @@ Additional columns to display when printing the Materialize CRD in table format.
 
 Affinity to use for the operator pod
 
+#### operator.args.enableDatabaseNetworkPolicies
+
+**Default**: <code>false</code>
+
+Whether to allow <code>CREATE NETWORK POLICY</code> and <code>ALTER NETWORK POLICY</code> in environmentd. Network policies match on client IP, which self-managed deployments generally do not preserve (port-forwards and most ingress setups present a proxy address), so they are disabled by default.
+
 #### operator.args.enableInternalStatementLogging
 
 **Default**: <code>true</code>
@@ -1999,7 +2012,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.44.1&quot;</code>
+**Default**: <code>&quot;v26.45.1&quot;</code>
 
 The tag/version of the operator image to be used
 
