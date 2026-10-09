@@ -3,18 +3,18 @@
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
-| v26.44.1 | v26.44.1 | v26.44.1 | 2026-10-01 | See <a href="/releases/#v26441" >v26.44.1 release notes</a> |
-| v26.43 | v26.43 | v26.43 | 2026-09-24 | See <a href="/releases/#v26430" >v26.43 release notes</a> |
+| v26.44.1 | v26.44.1 | v26.44.1 | 2026-10-02 | See <a href="/releases/#v26441" >v26.44.1 release notes</a> |
+| v26.43 | v26.43 | v26.43 | 2026-09-25 | See <a href="/releases/#v26430" >v26.43 release notes</a> |
 | v26.42 | v26.42 | v26.42 | 2026-09-18 | See <a href="/releases/#v26420" >v26.42 release notes</a> |
 | v26.41 | v26.41 | v26.41 | 2026-09-11 | See <a href="/releases/#v26410" >v26.41 release notes</a> |
 | v26.40.2 | v26.40.2 | v26.40.2 | 2026-09-08 | See <a href="/releases/#v26402" >v26.40.2 release notes</a> |
-| v26.40 | v26.40 | v26.40 | 2026-09-03 | See <a href="/releases/#v26400" >v26.40 release notes</a> |
-| v26.39 | v26.39 | v26.39 | 2026-08-27 | See <a href="/releases/#v26390" >v26.39 release notes</a> |
+| v26.40 | v26.40 | v26.40 | 2026-09-04 | See <a href="/releases/#v26400" >v26.40 release notes</a> |
+| v26.39 | v26.39 | v26.39 | 2026-08-28 | See <a href="/releases/#v26390" >v26.39 release notes</a> |
 | v26.38.2 | v26.38.2 | v26.38.2 | 2026-08-25 | See <a href="/releases/#v26382" >v26.38.2 release notes</a> |
 | v26.38 | v26.38 | v26.38 | 2026-08-20 | See <a href="/releases/#v26382" >v26.38 release notes</a> |
-| v26.37 | v26.37 | v26.37 | 2026-08-13 | See <a href="/releases/#v26370" >v26.37 release notes</a> |
+| v26.37 | v26.37 | v26.37 | 2026-08-14 | See <a href="/releases/#v26370" >v26.37 release notes</a> |
 | v26.36 | v26.36 | v26.36 | 2026-08-07 | See <a href="/releases/#v26360" >v26.36 release notes</a> |
-| v26.35 | v26.35 | v26.35 | 2026-07-30 | See <a href="/releases/#v26350" >v26.35 release notes</a> |
+| v26.35 | v26.35 | v26.35 | 2026-07-31 | See <a href="/releases/#v26350" >v26.35 release notes</a> |
 | v26.34.1 | v26.34.1 | v26.34.1 | 2026-07-24 | See <a href="/releases/#v26341" >v26.34.1 release notes</a> |
 | v26.34 | v26.34 | v26.34 | 2026-07-21 | See <a href="/releases/#v26340" >v26.34 release notes</a> |
 | v26.33 | v26.33 | v26.33 | 2026-07-17 | See <a href="/releases/#v26330" >v26.33 release notes</a> |

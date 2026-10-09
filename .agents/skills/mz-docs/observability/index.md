@@ -287,6 +287,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_as_of_queries_total</code></td>
+      <td>The total number of SELECT and SUBSCRIBE executions with an AS OF clause.</td>
+      <td><code>application_name</code>, <code>kind</code>, <code>session_type</code>, <code>statement</code></td>
+    </tr>
+    <tr>
       <td><code>mz_auth_refresh_tasks_active</code></td>
       <td>The number of active refresh tasks we have running.</td>
       <td></td>
