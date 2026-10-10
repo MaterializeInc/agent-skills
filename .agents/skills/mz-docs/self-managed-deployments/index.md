@@ -158,7 +158,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.44.1
+  environmentdImageRef: materialize/environmentd:v26.45.1
 # ... additional fields omitted for brevity
 ```
 
@@ -173,7 +173,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.44.1
+  environmentdImageRef: materialize/environmentd:v26.45.1
 # ... additional fields omitted for brevity
 ```
 
@@ -444,7 +444,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.44.1
+  environmentdImageRef: materialize/environmentd:v26.45.1
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
   requestRollout: 00000000-0000-0000-0000-000000000003 # Changing the CR requires a rollout
@@ -461,7 +461,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.44.1
+  environmentdImageRef: materialize/environmentd:v26.45.1
   backendSecretName: materialize-backend
   systemParameterConfigmapName: mz-system-params
 ```
@@ -2370,6 +2370,7 @@ representative history in exchange.
 
 | Materialize Operator | orchestratord version | environmentd version | Release date | Notes |
 | --- | --- | --- | --- | --- |
+| v26.45.1 | v26.45.1 | v26.45.1 | 2026-10-09 | See <a href="/releases/#v26451" >v26.45.1 release notes</a> |
 | v26.44.1 | v26.44.1 | v26.44.1 | 2026-10-02 | See <a href="/releases/#v26441" >v26.44.1 release notes</a> |
 | v26.43 | v26.43 | v26.43 | 2026-09-25 | See <a href="/releases/#v26430" >v26.43 release notes</a> |
 | v26.42 | v26.42 | v26.42 | 2026-09-18 | See <a href="/releases/#v26420" >v26.42 release notes</a> |
@@ -2680,7 +2681,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.44.1
+  --version v26.45.1
 ```
 
 ## Upgrading Materialize Instances
