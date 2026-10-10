@@ -226,6 +226,27 @@ Reducing the memory footprint and cost of Materialize compute clusters, with eve
 
 </details>
 
+## Network access and data
+
+The `materialize` plugin declares no MCP servers, hooks, or other connectors, and runs no code of its own. Its skills are instructions. When you use a skill, those instructions can have the agent fetch docs, query or change your Materialize, or run command-line tools that contact the services below. The agent does this with its own tools, under your permission settings.
+
+| Skill | Destinations | What is sent |
+|---|---|---|
+| `mz-docs` | None. It reads the copy of the docs bundled with the skill | Nothing |
+| `mz-health-check` | Your Materialize, through the MCP developer endpoint you configure. During client setup, also through `curl`, and through `psql` for the Emulator | Read-only SQL queries, with your credential in the request header. Client setup on the Emulator also creates a role |
+| `mz-debug-freshness` | Your Materialize, through the MCP developer endpoint | Read-only SQL queries |
+| `mz-optimize-memory` | Your Materialize, through the MCP developer endpoint or a SQL connection you provide. Optionally, a local Materialize container from Docker Hub, which the skill asks before starting | Read-only SQL queries, and DDL on a separate experiment cluster once you approve it |
+| `mz-demo-data` | Your Materialize, through `psql` | SQL that creates and loads a `materialize_demo` schema |
+| `mz-deploy` | Your Materialize, through the `mz-deploy` CLI. Homebrew, to install it. Docker, for local unit tests | Your project's SQL, and the credentials in your `mz-deploy` profile |
+| `mz-dbt` | Your Materialize, through `dbt`. PyPI, to install it | Your project's SQL, and the credentials in your dbt profile |
+| `mz-terraform-provider` | Your Materialize, through `terraform`. The Terraform Registry and GitHub, for the provider and its docs | Your resource definitions, and the credentials in your provider configuration |
+| `mz-terraform-self-managed` | Your AWS, Azure, or GCP account and Kubernetes cluster, through `terraform`, `kubectl`, and your cloud's CLI. GitHub, for the modules. The Helm chart and container image registries the modules install from | Your infrastructure configuration and cloud credentials. Your Materialize license key goes only into your own deployment |
+| `mz-ontology-design` | None | Nothing |
+
+Results the agent reads back, such as query results, view definitions, and source errors, enter the agent's context, so they reach the model provider your agent uses. Command-line tools such as `dbt` and `terraform` also follow their own network and telemetry settings. No skill sends data anywhere else.
+
+The `evals/` directory holds the harness `mz-optimize-memory` was developed against. The plugin doesn't load or run it.
+
 ## Claude Code Plugins
 
 This repo also doubles as a [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces), for capabilities that go beyond what a portable skill can express — such as registering a language server.
