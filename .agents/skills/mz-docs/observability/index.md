@@ -1627,6 +1627,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>case</code></td>
     </tr>
     <tr>
+      <td><code>mz_orchestrator_kubernetes_process_metrics_fetch_failures_total</code></td>
+      <td>The number of failed per-process metrics fetches, by fetch step and error kind.</td>
+      <td><code>kind</code>, <code>step</code></td>
+    </tr>
+    <tr>
       <td><code>mz_otel_on_close</code></td>
       <td>count of on_close events sent to otel</td>
       <td></td>
