@@ -327,13 +327,28 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>existing_session</code></td>
     </tr>
     <tr>
+      <td><code>mz_balancer_connection_accepting</code></td>
+      <td>Whether /api/readyz reports ready: 1 in load balancer rotation, 0 out.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_balancer_connection_active</code></td>
       <td>Count of currently open network connections.</td>
       <td><code>source</code></td>
     </tr>
     <tr>
+      <td><code>mz_balancer_connection_high_watermark</code></td>
+      <td>Connections at which balancerd leaves load balancer rotation, 0 if disabled.</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_balancer_connection_limit</code></td>
       <td>Maximum number of connections proxied at once, 0 if unlimited.</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_balancer_connection_low_watermark</code></td>
+      <td>Connections below which balancerd returns to load balancer rotation, 0 if disabled.</td>
       <td></td>
     </tr>
     <tr>
@@ -345,6 +360,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_balancer_connection_status</code></td>
       <td>Count of completed network connections, by status</td>
       <td><code>source</code>, <code>status</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_balancer_connection_watermark_transitions_total</code></td>
+      <td>Count of times balancerd left or returned to load balancer rotation because of the connection watermarks.</td>
+      <td></td>
     </tr>
     <tr>
       <td><code>mz_balancer_metadata_seconds</code></td>
