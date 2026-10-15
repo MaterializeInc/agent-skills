@@ -262,7 +262,6 @@ If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
 SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
 constraint by first excluding it in Materialize. See [Handle upstream
 constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
-
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -917,8 +916,6 @@ partitions later by [replacing the materialized
 view](/transform-data/updating-materialized-views/replace-materialized-view/),
 without recreating the objects that depend on it.
 
-> **Public Preview:** This feature is in public preview.
-
 ### 1. Set `REPLICA IDENTITY FULL` on each partition
 
 Materialize requires `REPLICA IDENTITY FULL` on every table it ingests. Setting
@@ -1468,8 +1465,6 @@ pause is the write freeze at cutover.
 ---
 
 ## Handle upstream schema changes
-
-> **Public Preview:** This feature is in public preview.
 
 > **Note:** - Changing column types is currently unsupported.
 
@@ -2455,7 +2450,6 @@ If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
 SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
 constraint by first excluding it in Materialize. See [Handle upstream
 constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
-
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -3454,7 +3448,6 @@ If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
 SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
 constraint by first excluding it in Materialize. See [Handle upstream
 constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
-
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -4521,7 +4514,6 @@ If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
 SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
 constraint by first excluding it in Materialize. See [Handle upstream
 constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
-
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -5277,7 +5269,6 @@ If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
 SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
 constraint by first excluding it in Materialize. See [Handle upstream
 constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
-
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -6032,7 +6023,6 @@ If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
 SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
 constraint by first excluding it in Materialize. See [Handle upstream
 constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
-
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -6719,7 +6709,6 @@ If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
 SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
 constraint by first excluding it in Materialize. See [Handle upstream
 constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
-
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected
@@ -7671,7 +7660,6 @@ If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
 SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
 constraint by first excluding it in Materialize. See [Handle upstream
 constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
-
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected

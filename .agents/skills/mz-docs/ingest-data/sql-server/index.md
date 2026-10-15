@@ -384,8 +384,6 @@ jobs on a replica that lacks them is done with
 
 ## Handle upstream schema changes
 
-> **Public Preview:** This feature is in public preview.
-
 > **Note:** Changing column types is currently unsupported.
 
 Materialize allows you to handle certain types of upstream

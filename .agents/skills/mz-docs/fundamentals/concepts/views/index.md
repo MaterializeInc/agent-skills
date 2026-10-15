@@ -131,8 +131,6 @@ See also:
 
 ### Updating the materialized view definition
 
-> **Public Preview:** This feature is in public preview.
-
 You can use [`CREATE REPLACEMENT MATERIALIZED
 VIEW`](/sql/create-materialized-view/) with [`ALTER MATERIALIZED VIEW ... APPLY
 REPLACEMENT`](/sql/alter-materialized-view) to replace materialized views

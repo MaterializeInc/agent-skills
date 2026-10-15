@@ -40,8 +40,6 @@ partitions later by [replacing the materialized
 view](/transform-data/updating-materialized-views/replace-materialized-view/),
 without recreating the objects that depend on it.
 
-> **Public Preview:** This feature is in public preview.
-
 ### 1. Set `REPLICA IDENTITY FULL` on each partition
 
 Materialize requires `REPLICA IDENTITY FULL` on every table it ingests. Setting

@@ -1,8 +1,6 @@
 # Replace Materialized Views
 Learn how to update a materialized view, while preserving dependencies, using CREATE REPLACEMENT and ALTER MATERIALIZED VIEW.
 
-> **Public Preview:** This feature is in public preview.
-
 This guide walks you through the steps required to modify the definition of an existing materialized view, while preserving all downstream dependencies.
 
 Materialize is able to replace a materialized view in place, by calculating the *diff* between the original and the replacement. Once applied, the *diff* flows downstream to all dependent objects.

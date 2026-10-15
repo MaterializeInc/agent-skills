@@ -38,7 +38,11 @@ Side-effecting functions are marked as such in the table below.
 
 ### Generic functionsGeneric functions can typically take arguments of any type.#### `CAST (cast_expr) -> T`
 
-Value as type <code>T</code> [(docs)](/sql/functions/cast)#### `coalesce(x: T...) -> T?`
+Value as type <code>T</code> [(docs)](/sql/functions/cast)#### `TRY_CAST (cast_expr) -> T?`
+
+Value as type <code>T</code>, or <em>NULL</em> if the conversion fails. [(docs)](/sql/functions/cast#try_cast)
+
+**Unreleased:** This function will be released in [**v26.46**](/releases#release-notes). It may not be available in your region yet. The release is scheduled to complete by **October 14, 2026**.#### `coalesce(x: T...) -> T?`
 
 First non-<em>NULL</em> arg, or <em>NULL</em> if all are <em>NULL</em>.#### `greatest(x: T...) -> T?`
 
@@ -942,6 +946,7 @@ Operator | Description
 <code>listelementany &vert;&vert; listany</code> | Prepend the element to the list.
 <code>listany @&gt; listany</code> | Check if the first list contains all elements of the second list.
 <code>listany &lt;@ listany</code> | Check if all elements of the first list are contained in the second list.
+<code>listany &lt; listany</code>, and likewise <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>=</code>, <code>&lt;&gt;</code> | Compare the two lists element by element. The first pair of elements that differ decides. A _NULL_ element is greater than any non-_NULL_ element, whatever `NULLS FIRST` or `NULLS LAST` says, since those only place values that are _NULL_ as a whole. A list is greater than any shorter list that it starts with. `ORDER BY`, `min`, and `max` order lists the same way.
 
 ---
 
@@ -1049,9 +1054,11 @@ GROUP BY
 
 ---
 
-## CAST function and operator
+## CAST and TRY_CAST
 
-The `cast` function and operator return a value converted to the specified [type](../../types/).
+The `cast` function and operator return a value converted to the specified
+[type](../../types/). The `try_cast` function does the same, but returns `NULL`
+instead of an error when the value cannot be converted.
 
 ## Signatures
 
@@ -1087,9 +1094,23 @@ The following special syntax is permitted if _val_ is a string literal:
 | `<type>` | The return value's [type](/sql/types/).  |
 | `'<val>'` | A string literal value. This special syntax is permitted if `<val>` is a string literal.  |
 
+```mzsql
+TRY_CAST ( <val> AS <type> )
+
+```
+
+| Syntax element | Description |
+| --- | --- |
+| `<val>` | Any value you want to convert.  |
+| **AS** `<type>` | The return value's [type](/sql/types/).  |
+
 ### Return value
 
 `cast` returns the value with the type specified by the _type_ parameter.
+
+`try_cast` returns the value with the type specified by the _type_ parameter,
+or `NULL` if the conversion fails. Its result is nullable whenever the
+conversion can fail, even when the value being converted is not.
 
 ## Details
 
@@ -1238,6 +1259,69 @@ Source type                                | Return type                        
 
 <sup>2</sup> Casting a [`float`](../../types/float/) to a [`numeric`](../../types/numeric/) can yield an imprecise result due to the floating point arithmetic involved in the conversion.
 
+### `TRY_CAST`
+
+> **Public Preview:** This feature is in public preview.
+
+`TRY_CAST` accepts the same explicit casts as `CAST`, and returns `NULL` where
+`CAST` would return an error: for example, text that does not parse as the
+target type, a number that does not fit in the target type, or a JSON value of
+the wrong kind. When the conversion succeeds, `TRY_CAST` and `CAST` return the
+same value.
+
+`TRY_CAST` only suppresses errors from the conversion itself. Errors raised
+while computing the value being converted still propagate:
+
+```mzsql
+SELECT TRY_CAST(1 / 0 AS text);
+```
+```nofmt
+ERROR:  division by zero
+```
+
+A parameter whose type is inferred from `TRY_CAST` is decoded as the target
+type when the statement is bound, so a bound value that does not convert is a
+bind error rather than `NULL`. To get `NULL` instead, give the parameter an
+explicit type:
+
+```mzsql
+SELECT TRY_CAST($1::text AS int);
+```
+
+Converting a value of a composite type ([`array`](../../types/array/),
+[`list`](../../types/list/), or [`record`](../../types/record/)) converts each
+element. If any element fails to convert, `TRY_CAST` returns `NULL` for the
+whole value rather than a value with `NULL` elements.
+
+`TRY_CAST` accepts every explicit cast that `CAST` does, with these
+differences, each of which is reported when the statement is planned:
+
+- `TRY_CAST` does not support the casts that look up objects in the catalog:
+  casts to or from `regclass`, `regproc`, `regtype`, `aclitem`, and
+  [`mz_aclitem`](../../types/mz_aclitem/), other than those between the `oid`
+  alias types and the integer types.
+
+- A non-empty `ARRAY`, `LIST`, or `ROW` constructor written directly inside
+  `TRY_CAST` is typed on its own before the conversion, where `CAST` would
+  type it from the target. Its elements must therefore already agree on a
+  type:
+
+  ```mzsql
+  -- With a text column s, CAST(ARRAY[s, 2] AS int[]) plans, but this does not:
+  -- "ARRAY types text and integer cannot be matched".
+  SELECT TRY_CAST(ARRAY[s, 2] AS int[]) FROM t;
+  -- Give the elements a common type instead.
+  SELECT TRY_CAST(ARRAY[s, 2::text] AS int[]) FROM t;
+  ```
+
+  An empty `ARRAY`, `LIST`, or `MAP` constructor has no elements to convert, so
+  it takes its type from the target as it does under `CAST`.
+
+- A non-empty `MAP` constructor written directly inside `TRY_CAST` is
+  rejected. It would be typed on its own like the other constructors, and
+  there is no cast between two [`map`](../../types/map/) types to convert it
+  afterward. Convert it with `CAST` or `::` instead.
+
 ## Examples
 
 ```mzsql
@@ -1269,6 +1353,30 @@ SELECT 100.21::numeric(10, 2)::float AS dec_to_float;
  dec_to_float
 --------------
        100.21
+```
+
+<hr/>
+
+```mzsql
+SELECT TRY_CAST('42' AS int) AS ok, TRY_CAST('forty-two' AS int) AS bad;
+```
+```nofmt
+ ok | bad
+----+-----
+ 42 |
+```
+
+<hr/>
+
+Routing rows whose values do not convert, instead of failing the whole view:
+
+```mzsql
+CREATE VIEW parsed AS
+  SELECT raw, TRY_CAST(raw AS timestamp) AS ts
+  FROM events;
+
+CREATE VIEW unparseable AS
+  SELECT raw FROM parsed WHERE ts IS NULL AND raw IS NOT NULL;
 ```
 
 ## Related topics
