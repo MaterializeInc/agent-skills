@@ -40,9 +40,7 @@ Side-effecting functions are marked as such in the table below.
 
 Value as type <code>T</code> [(docs)](/sql/functions/cast)#### `TRY_CAST (cast_expr) -> T?`
 
-Value as type <code>T</code>, or <em>NULL</em> if the conversion fails. [(docs)](/sql/functions/cast#try_cast)
-
-**Unreleased:** This function will be released in [**v26.46**](/releases#release-notes). It may not be available in your region yet. The release is scheduled to complete by **October 14, 2026**.#### `coalesce(x: T...) -> T?`
+Value as type <code>T</code>, or <em>NULL</em> if the conversion fails. [(docs)](/sql/functions/cast#try_cast)#### `coalesce(x: T...) -> T?`
 
 First non-<em>NULL</em> arg, or <em>NULL</em> if all are <em>NULL</em>.#### `greatest(x: T...) -> T?`
 
@@ -594,7 +592,7 @@ but supports only the following frame modes:</p>
 > consider rewriting your indexed views and materialized views to use idiomatic
 > Materialize SQL instead of window functions. If your view definitions cannot be
 > rewritten without the window functions and the performance of window functions
-> is insufficient for your use case, please [contact our team](/support/).
+> is insufficient for your use case, please [contact our team](https://materialize.com/support/).
 > See [Idiomatic Materialize SQL](/transform-data/idiomatic-materialize-sql/)
 > for examples of rewriting window functions.
 

@@ -518,14 +518,6 @@ The resize still proceeds in the background.
 See [Monitoring a resize](#monitoring-a-resize) to track progress and
 [cancel](#monitoring-a-resize) an in-flight resize.
 
-  <div class="warning">
-    <strong class="gutter">Unreleased</strong>
-    This feature will be released in
-    <a href="/releases#release-notes"><strong>v26.46</strong></a>.
-    It may not be available in your region yet.
-    The release is scheduled to complete by <strong>October 14, 2026</strong>.
-  </div>
-
 An `ALTER CLUSTER` that changes only `REPLICATION FACTOR` can also specify
 `WITH (WAIT ...)`. If a reconfiguration is in progress, this updates its target
 replication factor, timeout, and timeout action while preserving the other
@@ -2732,7 +2724,7 @@ Name                                        | Default value             |  Descr
 `statement_timeout`                         | `10s`                     | The maximum allowed duration of the read portion of write operations; i.e., the `SELECT` portion of `INSERT INTO ... (SELECT ...)`; the `WHERE` portion of `UPDATE ... WHERE ...` and `DELETE FROM ... WHERE ...`. If this value is specified without units, it is taken as milliseconds (`ms`). | Yes
 `timezone`                                  | `UTC`                     | The time zone for displaying and interpreting timestamps. The only supported value is `UTC`.                                                                           | Yes
 
-[Contact support]: /support
+[Contact support]: https://materialize.com/support/
 
 ## Privileges
 
@@ -2833,7 +2825,7 @@ Name                                        | Default value             |  Descr
 `statement_timeout`                         | `10s`                     | The maximum allowed duration of the read portion of write operations; i.e., the `SELECT` portion of `INSERT INTO ... (SELECT ...)`; the `WHERE` portion of `UPDATE ... WHERE ...` and `DELETE FROM ... WHERE ...`. If this value is specified without units, it is taken as milliseconds (`ms`). | Yes
 `timezone`                                  | `UTC`                     | The time zone for displaying and interpreting timestamps. The only supported value is `UTC`.                                                                           | Yes
 
-[Contact support]: /support
+[Contact support]: https://materialize.com/support/
 
 ## Privileges
 
@@ -3563,11 +3555,11 @@ Supported PARQUET compression formats
 
 ### Limits
 
-You can copy up to 10 GiB of data at a time. If you need to copy more than that, please [contact support](/support/).
+You can copy up to 10 GiB of data at a time. If you need to copy more than that, please [contact support](https://materialize.com/support/).
 
 When importing parquet files, entire row groups are held in memory at once, so ensure that your
 Materialize instance has enough available memory to accomodate your parquet files. If you are
-encountering memory issues, and are unable to reduce the sizes of your row groups, please [contact support](/support/).
+encountering memory issues, and are unable to reduce the sizes of your row groups, please [contact support](https://materialize.com/support/).
 
 ### Atomicity
 
@@ -3742,7 +3734,7 @@ writer settings are used:
 
 If you encounter issues trying to ingest Parquet files produced by
 Materialize into your downstream systems, please [contact our
-team](/support/).
+team](https://materialize.com/support/).
 
 #### Parquet data types
 
@@ -3834,7 +3826,7 @@ writer settings are used:
 
 If you encounter issues trying to ingest Parquet files produced by
 Materialize into your downstream systems, please [contact our
-team](/support/).
+team](https://materialize.com/support/).
 
 See also [Copy to S3: Parquet Data Types](#parquet-data-types).
 
@@ -11691,7 +11683,7 @@ Name                                        | Default value             |  Descr
 `statement_timeout`                         | `10s`                     | The maximum allowed duration of the read portion of write operations; i.e., the `SELECT` portion of `INSERT INTO ... (SELECT ...)`; the `WHERE` portion of `UPDATE ... WHERE ...` and `DELETE FROM ... WHERE ...`. If this value is specified without units, it is taken as milliseconds (`ms`). | Yes
 `timezone`                                  | `UTC`                     | The time zone for displaying and interpreting timestamps. The only supported value is `UTC`.                                                                           | Yes
 
-[Contact support]: /support
+[Contact support]: https://materialize.com/support/
 
 ## Examples
 
@@ -12452,7 +12444,7 @@ Name                                        | Default value             |  Descr
 `statement_timeout`                         | `10s`                     | The maximum allowed duration of the read portion of write operations; i.e., the `SELECT` portion of `INSERT INTO ... (SELECT ...)`; the `WHERE` portion of `UPDATE ... WHERE ...` and `DELETE FROM ... WHERE ...`. If this value is specified without units, it is taken as milliseconds (`ms`). | Yes
 `timezone`                                  | `UTC`                     | The time zone for displaying and interpreting timestamps. The only supported value is `UTC`.                                                                           | Yes
 
-[Contact support]: /support
+[Contact support]: https://materialize.com/support/
 
 ### Aliased configuration parameters
 
@@ -12593,7 +12585,7 @@ Name                                        | Default value             |  Descr
 `statement_timeout`                         | `10s`                     | The maximum allowed duration of the read portion of write operations; i.e., the `SELECT` portion of `INSERT INTO ... (SELECT ...)`; the `WHERE` portion of `UPDATE ... WHERE ...` and `DELETE FROM ... WHERE ...`. If this value is specified without units, it is taken as milliseconds (`ms`). | Yes
 `timezone`                                  | `UTC`                     | The time zone for displaying and interpreting timestamps. The only supported value is `UTC`.                                                                           | Yes
 
-[Contact support]: /support
+[Contact support]: https://materialize.com/support/
 
 ## Examples
 
@@ -14594,9 +14586,7 @@ Side-effecting functions are marked as such in the table below.
 
 Value as type <code>T</code> [(docs)](/sql/functions/cast)#### `TRY_CAST (cast_expr) -> T?`
 
-Value as type <code>T</code>, or <em>NULL</em> if the conversion fails. [(docs)](/sql/functions/cast#try_cast)
-
-**Unreleased:** This function will be released in [**v26.46**](/releases#release-notes). It may not be available in your region yet. The release is scheduled to complete by **October 14, 2026**.#### `coalesce(x: T...) -> T?`
+Value as type <code>T</code>, or <em>NULL</em> if the conversion fails. [(docs)](/sql/functions/cast#try_cast)#### `coalesce(x: T...) -> T?`
 
 First non-<em>NULL</em> arg, or <em>NULL</em> if all are <em>NULL</em>.#### `greatest(x: T...) -> T?`
 
@@ -15148,7 +15138,7 @@ but supports only the following frame modes:</p>
 > consider rewriting your indexed views and materialized views to use idiomatic
 > Materialize SQL instead of window functions. If your view definitions cannot be
 > rewritten without the window functions and the performance of window functions
-> is insufficient for your use case, please [contact our team](/support/).
+> is insufficient for your use case, please [contact our team](https://materialize.com/support/).
 > See [Idiomatic Materialize SQL](/transform-data/idiomatic-materialize-sql/)
 > for examples of rewriting window functions.
 

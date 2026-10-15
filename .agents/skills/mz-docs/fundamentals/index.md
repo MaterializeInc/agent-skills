@@ -35,9 +35,9 @@ Community Edition:</p>
           <td>48 GiB</td>
       </tr>
       <tr>
-          <td><strong><a href="/support/" >Support</a></strong></td>
+          <td><strong><a href="https://materialize.com/support/" >Support</a></strong></td>
           <td><a href="https://materialize.com/self-managed/enterprise-license/" >Per terms of your license</a></td>
-          <td><a href="/support/" >Community slack or support chat</a></td>
+          <td><a href="https://materialize.com/support/" >Community slack or support chat</a></td>
       </tr>
       <tr>
           <td><strong>License</strong></td>
@@ -97,7 +97,7 @@ might also differ, because Materialize uses an entirely different database
 engine based on [Timely and Differential Dataflow](/fundamentals/#incremental-updates).
 
 If you need specific syntax or features that are not currently supported in
-Materialize, please submit a [feature request](/support/#share-your-feedback).
+Materialize, please submit a [feature request](https://materialize.com/support/).
 
 ### Real-time data ingestion
 

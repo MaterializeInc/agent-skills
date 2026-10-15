@@ -43,7 +43,7 @@ cannot modify your existing tables, here are some common alternatives:
   > **Note:** - We **strongly recommend** using the native
 >     [PostgreSQL](/sql/create-source/postgres-v2/) source connector with `REPLICA
 >     IDENTITY FULL` instead.
->   - [Contact Support](/support/) to discuss strategies for enabling `REPLICA
+>   - [Contact Support](https://materialize.com/support/) to discuss strategies for enabling `REPLICA
 >     IDENTITY FULL`.
 
 ## For production, what if I cannot use `REPLICA IDENTITY FULL`?
@@ -57,7 +57,7 @@ values.
 > **Note:** - We **strongly recommend** using the native
 >   [PostgreSQL](/sql/create-source/postgres-v2/) source connector with `REPLICA
 >   IDENTITY FULL` instead.
-> - [Contact Support](/support/) to discuss strategies for enabling `REPLICA
+> - [Contact Support](https://materialize.com/support/) to discuss strategies for enabling `REPLICA
 >   IDENTITY FULL`.
 
 ## What if my table contains data types that are unsupported in Materialize?

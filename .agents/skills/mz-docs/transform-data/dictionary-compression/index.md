@@ -66,7 +66,7 @@ ALTER CLUSTER my_cluster RESET (EXPERIMENTAL ARRANGEMENT COMPRESSION);
 
 Dictionary compression trades CPU for memory, and it does **not** reduce memory
 on every workload. Use this section to judge whether it suits your workload, and
-[contact our team](/support/) if you have questions.
+[contact our team](https://materialize.com/support/) if you have questions.
 
 > **Note:** A single arrangement usually holds both columns that compress well and columns
 > that do not. Only the columns that compress save memory, and every column still

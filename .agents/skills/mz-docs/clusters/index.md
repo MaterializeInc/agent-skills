@@ -469,7 +469,7 @@ hydration time at the cost of a higher peak.
   parameters](/self-managed-deployments/configuration-system-parameters/) for
   other ways to set it.
 
-- On Materialize Cloud, [contact our team](/support/) to have it configured
+- On Materialize Cloud, [contact our team](https://materialize.com/support/) to have it configured
   for your cluster.
 
 ## Reuse arrangements across consumers
@@ -823,7 +823,7 @@ per-object rows live, and default to 120 and 30 days.
 
 On Materialize Cloud, these parameters are managed for you. If both tables are
 empty for a cluster that has certainly hydrated, contact
-[support](/support/).
+[support](https://materialize.com/support/).
 
 On Materialize Self-Managed, set them as the `mz_system` user, or through the
 [system parameters

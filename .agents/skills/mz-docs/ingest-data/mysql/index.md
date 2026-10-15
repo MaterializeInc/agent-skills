@@ -608,14 +608,6 @@ DROP SCHEMA v2;
 
 ## Handle upstream constraint drop
 
-  <div class="warning">
-    <strong class="gutter">Unreleased</strong>
-    This feature will be released in
-    <a href="/releases#release-notes"><strong>v26.46</strong></a>.
-    It may not be available in your region yet.
-    The release is scheduled to complete by <strong>October 14, 2026</strong>.
-  </div>
-
 > **Public Preview:** This feature is in public preview.
 
 Materialize ignores foreign key and `CHECK` constraints. As such, you can add or
@@ -1460,7 +1452,7 @@ status of the snapshotting process.
     `stalled` or `failed`, there's likely a configuration issue for you to fix.
     Check the `error` field for details and fix the issue before moving on.
     Also, if the `status` of any subsource is `starting` for more than a few
-    minutes, [contact our team](/support/).
+    minutes, [contact our team](https://materialize.com/support/).
 
 2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
@@ -2478,7 +2470,7 @@ status of the snapshotting process.
     `stalled` or `failed`, there's likely a configuration issue for you to fix.
     Check the `error` field for details and fix the issue before moving on.
     Also, if the `status` of any subsource is `starting` for more than a few
-    minutes, [contact our team](/support/).
+    minutes, [contact our team](https://materialize.com/support/).
 
 2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
@@ -3209,7 +3201,7 @@ status of the snapshotting process.
     `stalled` or `failed`, there's likely a configuration issue for you to fix.
     Check the `error` field for details and fix the issue before moving on.
     Also, if the `status` of any subsource is `starting` for more than a few
-    minutes, [contact our team](/support/).
+    minutes, [contact our team](https://materialize.com/support/).
 
 2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
@@ -3935,7 +3927,7 @@ status of the snapshotting process.
     `stalled` or `failed`, there's likely a configuration issue for you to fix.
     Check the `error` field for details and fix the issue before moving on.
     Also, if the `status` of any subsource is `starting` for more than a few
-    minutes, [contact our team](/support/).
+    minutes, [contact our team](https://materialize.com/support/).
 
 2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
@@ -4660,7 +4652,7 @@ status of the snapshotting process.
     `stalled` or `failed`, there's likely a configuration issue for you to fix.
     Check the `error` field for details and fix the issue before moving on.
     Also, if the `status` of any subsource is `starting` for more than a few
-    minutes, [contact our team](/support/).
+    minutes, [contact our team](https://materialize.com/support/).
 
 2. Once the source is running, use the [`mz_source_statistics`](/sql/system-catalog/mz_internal/#mz_source_statistics)
    table to check the status of the initial snapshot:
