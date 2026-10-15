@@ -391,11 +391,22 @@ the array has only 0 or 1 dimensions, i.e. you can cast `integer[]` to `integer
 list`, as long as the array is empty or does not contain any arrays itself.
 
 ```mzsql
-SELECT pg_typeof('{1,2,3}`::integer[]::integer list);
+SELECT pg_typeof('{1,2,3}'::integer[]::integer list);
 ```
 ```
 integer list
 ```
+
+### Comparison
+
+Arrays are compared element by element, in row-major order, and the first pair
+of elements that differ decides. A _NULL_ element is greater than any
+non-_NULL_ element, whatever `NULLS FIRST` or `NULLS LAST` says, since those
+only place values that are _NULL_ as a whole. If one array's elements are a
+prefix of the other's, the array with fewer elements is smaller. Arrays with
+the same elements are ordered by their number of dimensions, then by the length
+of each dimension, then by the lower bound of each dimension. This matches
+PostgreSQL, and `ORDER BY`, `min`, and `max` use the same order.
 
 ## Examples
 
@@ -1830,6 +1841,7 @@ Operator | Description
 <code>listelementany &vert;&vert; listany</code> | Prepend the element to the list.
 <code>listany @&gt; listany</code> | Check if the first list contains all elements of the second list.
 <code>listany &lt;@ listany</code> | Check if all elements of the first list are contained in the second list.
+<code>listany &lt; listany</code>, and likewise <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>=</code>, <code>&lt;&gt;</code> | Compare the two lists element by element. The first pair of elements that differ decides. A _NULL_ element is greater than any non-_NULL_ element, whatever `NULLS FIRST` or `NULLS LAST` says, since those only place values that are _NULL_ as a whole. A list is greater than any shorter list that it starts with. `ORDER BY`, `min`, and `max` order lists the same way.
 
 ### Functions
 

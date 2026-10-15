@@ -2589,6 +2589,10 @@ ingestion.
 Dropping a `NOT NULL`, `UNIQUE`, or `PRIMARY KEY` constraint that existed when
 the table was created puts the affected table into an error state.
 
+If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
+SOURCE`](/sql/create-source/mysql-v2/) syntax, you can safely drop such a
+constraint by first excluding it in Materialize. See [Handle upstream
+constraint drop](/ingest-data/mysql/source-versioning/#handle-upstream-constraint-drop).
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream so that it maps to a different
@@ -3102,7 +3106,6 @@ If using the new [`CREATE SOURCE` and `CREATE TABLE FROM
 SOURCE`](/sql/create-source/postgres-v2/) syntax, you can safely drop such a
 constraint by first excluding it in Materialize. See [Handle upstream
 constraint drop](/ingest-data/postgres/source-versioning/#handle-upstream-constraint-drop).
-
 ### Changing a column's data type
 
 Changing an ingested column's data type upstream puts the affected

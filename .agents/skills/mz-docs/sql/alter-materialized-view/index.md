@@ -5,7 +5,7 @@ Use `ALTER MATERIALIZED VIEW` to:
 - Rename a materialized view.
 - Change owner of a materialized view.
 - Change retain history configuration for the materialized view.
-- Replace a materialized view. (*Public preview*)
+- Replace a materialized view.
 
 ## Syntax
 
@@ -67,8 +67,6 @@ ALTER MATERIALIZED VIEW <name> RESET (RETAIN HISTORY);
 
 **Replace materialized view:**
 
-> **Public Preview:** This feature is in public preview.
-
 To replace an existing materialized view in-place with a replacement
 materialized view:
 
@@ -85,8 +83,6 @@ ALTER MATERIALIZED VIEW <name> APPLY REPLACEMENT <replacement_materialized_view>
 ## Details
 
 ### Replacing a materialized view
-
-> **Public Preview:** This feature is in public preview.
 
 You can use [`CREATE REPLACEMENT MATERIALIZED
 VIEW`](/sql/create-materialized-view/) with [`ALTER MATERIALIZED VIEW ... APPLY
@@ -165,8 +161,6 @@ The privileges required to execute this statement are:
 ## Examples
 
 ### Replace a materialized view
-
-> **Public Preview:** This feature is in public preview.
 
 A replacement materialized view can only be applied to the target materialized
 view specified in the `FOR` clause of the [`CREATE REPLACEMENT MATERIALIZED

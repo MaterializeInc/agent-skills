@@ -47,8 +47,6 @@ For detailed instructions, see the [Replace materialized view guide](replace-mat
 
 ## Replace Materialized Views
 
-> **Public Preview:** This feature is in public preview.
-
 This guide walks you through the steps required to modify the definition of an existing materialized view, while preserving all downstream dependencies.
 
 Materialize is able to replace a materialized view in place, by calculating the *diff* between the original and the replacement. Once applied, the *diff* flows downstream to all dependent objects.

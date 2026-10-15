@@ -60,8 +60,6 @@ flowchart LR
     style MV fill:#d4edda,stroke:#28a745,color:#155724
 ```
 
-> **Public Preview:** This feature is in public preview.
-
 ## Create the public interface
 
 ### Step 1. Create the source and the first ingesting table

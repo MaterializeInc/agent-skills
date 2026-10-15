@@ -1,7 +1,5 @@
 # Handle upstream schema changes
 How to add a column, or drop a column, from your source SQL Server database, without any downtime in Materialize
-> **Public Preview:** This feature is in public preview.
-
 > **Note:** Changing column types is currently unsupported.
 
 Materialize allows you to handle certain types of upstream

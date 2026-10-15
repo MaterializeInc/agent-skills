@@ -49,8 +49,6 @@ AS <select_stmt>;
 
 **CREATE REPLACEMENT MATERIALIZED VIEW:**
 
-> **Public Preview:** This feature is in public preview.
-
 Create a replacement materialized view for an existing materialized view.
 
 ```mzsql
@@ -126,8 +124,6 @@ specified, querying the materialized view will produce an error until the
 offending row is deleted.
 
 ### Creating replacement materialized views
-
-> **Public Preview:** This feature is in public preview.
 
 You can use [`CREATE REPLACEMENT MATERIALIZED
 VIEW`](/sql/create-materialized-view/) with [`ALTER MATERIALIZED VIEW ... APPLY
@@ -216,8 +212,6 @@ things like querying materialized views from different clusters, indexed vs.
 non-indexed, and so on."
 
 ### Creating a replacement materialized view
-
-> **Public Preview:** This feature is in public preview.
 
 The following example creates a replacement materialized view
 `winning_bids_replacement` for the `winning_bids` materialized view. The

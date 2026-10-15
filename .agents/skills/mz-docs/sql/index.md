@@ -1350,7 +1350,7 @@ Use `ALTER MATERIALIZED VIEW` to:
 - Rename a materialized view.
 - Change owner of a materialized view.
 - Change retain history configuration for the materialized view.
-- Replace a materialized view. (*Public preview*)
+- Replace a materialized view.
 
 ## Syntax
 
@@ -1412,8 +1412,6 @@ ALTER MATERIALIZED VIEW <name> RESET (RETAIN HISTORY);
 
 **Replace materialized view:**
 
-> **Public Preview:** This feature is in public preview.
-
 To replace an existing materialized view in-place with a replacement
 materialized view:
 
@@ -1430,8 +1428,6 @@ ALTER MATERIALIZED VIEW <name> APPLY REPLACEMENT <replacement_materialized_view>
 ## Details
 
 ### Replacing a materialized view
-
-> **Public Preview:** This feature is in public preview.
 
 You can use [`CREATE REPLACEMENT MATERIALIZED
 VIEW`](/sql/create-materialized-view/) with [`ALTER MATERIALIZED VIEW ... APPLY
@@ -1510,8 +1506,6 @@ The privileges required to execute this statement are:
 ## Examples
 
 ### Replace a materialized view
-
-> **Public Preview:** This feature is in public preview.
 
 A replacement materialized view can only be applied to the target materialized
 view specified in the `FOR` clause of the [`CREATE REPLACEMENT MATERIALIZED
@@ -6319,8 +6313,6 @@ AS <select_stmt>;
 
 **CREATE REPLACEMENT MATERIALIZED VIEW:**
 
-> **Public Preview:** This feature is in public preview.
-
 Create a replacement materialized view for an existing materialized view.
 
 ```mzsql
@@ -6396,8 +6388,6 @@ specified, querying the materialized view will produce an error until the
 offending row is deleted.
 
 ### Creating replacement materialized views
-
-> **Public Preview:** This feature is in public preview.
 
 You can use [`CREATE REPLACEMENT MATERIALIZED
 VIEW`](/sql/create-materialized-view/) with [`ALTER MATERIALIZED VIEW ... APPLY
@@ -6486,8 +6476,6 @@ things like querying materialized views from different clusters, indexed vs.
 non-indexed, and so on."
 
 ### Creating a replacement materialized view
-
-> **Public Preview:** This feature is in public preview.
 
 The following example creates a replacement materialized view
 `winning_bids_replacement` for the `winning_bids` materialized view. The
@@ -7600,6 +7588,8 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
 [WITH (
     TEXT COLUMNS (<column_name> [, ...])
   | EXCLUDE COLUMNS (<column_name> [, ...])
+  | EXCLUDE CONSTRAINTS ('<constraint_name>' [, ...])
+  | EXCLUDE ALL CONSTRAINTS
   | PARTITION BY (<column_name> [, ...])
   [, ...]
 )]
@@ -11411,7 +11401,7 @@ the syntax errors that result are not always obvious.
 The current keywords are listed below.
 
 | | | | |
-|--|--|--|--||`ABORT` |`ACCESS` |`ACCOUNT` |`ACTION`||`ADD` |`ADDED` |`ADDRESS` |`ADDRESSES`||`AFTER` |`AGGREGATE` |`AGGREGATION` |`ALIGNED`||`ALL` |`ALTER` |`ANALYSE` |`ANALYSIS`||`ANALYZE` |`AND` |`ANY` |`APPEND`||`APPLY` |`ARITY` |`ARN` |`ARRANGED`||`ARRANGEMENT` |`ARRAY` |`AS` |`ASC`||`ASSERT` |`ASSUME` |`AT` |`AUCTION`||`AUTHORITY` |`AUTO` |`AVAILABILITY` |`AVRO`||`AWS` |`BATCH` |`BEGIN` |`BETWEEN`||`BIGINT` |`BILLED` |`BODY` |`BOOLEAN`||`BOTH` |`BPCHAR` |`BROKEN` |`BROKER`||`BROKERS` |`BY` |`BYTES` |`CANCELLATION`||`CAPTURE` |`CARDINALITY` |`CASCADE` |`CASE`||`CAST` |`CATALOG` |`CERTIFICATE` |`CHAIN`||`CHAINS` |`CHAR` |`CHARACTER` |`CHARACTERISTICS`||`CHECK` |`CLASS` |`CLIENT` |`CLOCK`||`CLOSE` |`CLUSTER` |`CLUSTERS` |`COALESCE`||`COLLATE` |`COLUMN` |`COLUMNS` |`COMMENT`||`COMMIT` |`COMMITTED` |`COMPACTION` |`COMPATIBILITY`||`COMPRESSION` |`COMPUTE` |`COMPUTECTL` |`CONFIG`||`CONFLUENT` |`CONNECTION` |`CONNECTIONS` |`CONSTRAINT`||`CONSTRAINTS` |`COPY` |`CORRELATED` |`COUNT`||`COUNTER` |`CPU` |`CREATE` |`CREATECLUSTER`||`CREATEDB` |`CREATENETWORKPOLICY` |`CREATEROLE` |`CREATION`||`CREDENTIAL` |`CROSS` |`CSE` |`CSV`||`CTE` |`CURRENT` |`CURSOR` |`DATABASE`||`DATABASES` |`DATUMS` |`DAY` |`DAYS`||`DEALLOCATE` |`DEBEZIUM` |`DEBUG` |`DEBUGGING`||`DEC` |`DECIMAL` |`DECLARE` |`DECODING`||`DECORRELATED` |`DEFAULT` |`DEFAULTS` |`DELEGATION`||`DELETE` |`DELIMITED` |`DELIMITER` |`DELTA`||`DESC` |`DETAILS` |`DIRECTION` |`DISCARD`||`DISK` |`DISTINCT` |`DOC` |`DOT`||`DOUBLE` |`DROP` |`DURATION` |`EAGER`||`ELEMENT` |`ELSE` |`ENABLE` |`END`||`ENDPOINT` |`ENFORCED` |`ENVELOPE` |`EQUIVALENCES`||`ERROR` |`ERRORS` |`ESCAPE` |`ESTIMATE`||`EVERY` |`EXCEPT` |`EXCLUDE` |`EXECUTE`||`EXISTS` |`EXPECTED` |`EXPERIMENTAL` |`EXPLAIN`||`EXPOSE` |`EXPRESSIONS` |`EXTERNAL` |`EXTRACT`||`FACTOR` |`FALSE` |`FAST` |`FEATURES`||`FETCH` |`FIELDS` |`FILE` |`FILES`||`FILTER` |`FIRST` |`FIXED` |`FIXPOINT`||`FLOAT` |`FOLLOWING` |`FOR` |`FOREIGN`||`FORMAT` |`FORWARD` |`FROM` |`FULL`||`FULLNAME` |`FUNCTION` |`FUSION` |`GCP`||`GENERATOR` |`GLUE` |`GRANT` |`GREATEST`||`GROUP` |`GROUPS` |`HAVING` |`HEADER`||`HEADERS` |`HINTS` |`HISTORY` |`HOLD`||`HOST` |`HOUR` |`HOURS` |`HUMANIZED`||`HYDRATION` |`ICEBERG` |`ID` |`IDENTIFIERS`||`IDS` |`IF` |`IGNORE` |`ILIKE`||`IMPLEMENTATIONS` |`IMPORTED` |`IN` |`INCLUDE`||`INDEX` |`INDEXES` |`INFO` |`INHERIT`||`INLINE` |`INNER` |`INPUT` |`INSERT`||`INSIGHTS` |`INSPECT` |`INSTANCE` |`INT`||`INTEGER` |`INTERNAL` |`INTERSECT` |`INTERVAL`||`INTO` |`INTROSPECTION` |`IS` |`ISNULL`||`ISOLATION` |`JOIN` |`JOINS` |`JSON`||`KAFKA` |`KEY` |`KEYS` |`LAST`||`LATERAL` |`LATEST` |`LEADING` |`LEAST`||`LEFT` |`LEGACY` |`LETREC` |`LEVEL`||`LIKE` |`LIMIT` |`LINEAR` |`LINGER`||`LIST` |`LOAD` |`LOCAL` |`LOCALLY`||`LOG` |`LOGICAL` |`LOGIN` |`LOWERING`||`MANAGED` |`MANUAL` |`MAP` |`MARKETING`||`MATCHING` |`MATERIALIZE` |`MATERIALIZED` |`MAX`||`MECHANISMS` |`MEMBERSHIP` |`MEMORY` |`MESSAGE`||`METADATA` |`METRIC` |`MINUTE` |`MINUTES`||`MOCK` |`MODE` |`MONTH` |`MONTHS`||`MUTUALLY` |`MYSQL` |`NAME` |`NAMES`||`NAMESPACE` |`NATURAL` |`NEGATIVE` |`NETWORK`||`NEW` |`NEXT` |`NFC` |`NFD`||`NFKC` |`NFKD` |`NO` |`NOCREATECLUSTER`||`NOCREATEDB` |`NOCREATEROLE` |`NODE` |`NOINHERIT`||`NOLOGIN` |`NON` |`NONE` |`NORMALIZE`||`NOSUPERUSER` |`NOT` |`NOTICE` |`NOTICES`||`NULL` |`NULLIF` |`NULLS` |`OAUTH2`||`OBJECTS` |`OF` |`OFFSET` |`ON`||`ONLY` |`OPERATOR` |`OPTIMIZED` |`OPTIMIZER`||`OPTIONS` |`OR` |`ORDER` |`ORDINALITY`||`OUTER` |`OVER` |`OWNED` |`OWNER`||`PARTITION` |`PARTITIONS` |`PASSWORD` |`PATH`||`PATTERN` |`PHYSICAL` |`PLAN` |`PLANS`||`POLICIES` |`POLICY` |`PORT` |`POSITION`||`POSTGRES` |`PRECEDING` |`PRECISION` |`PREFIX`||`PREPARE` |`PRIMARY` |`PRIORITIZE` |`PRIVATELINK`||`PRIVILEGES` |`PROGRESS` |`PROJECTION` |`PROTOBUF`||`PROTOCOL` |`PROVIDER` |`PUBLIC` |`PUBLICATION`||`PUSHDOWN` |`QUALIFY` |`QUERY` |`QUOTE`||`RAISE` |`RANGE` |`RATE` |`RAW`||`READ` |`READY` |`REAL` |`REASSIGN`||`RECURSION` |`RECURSIVE` |`REDACTED` |`REDUCE`||`REFERENCE` |`REFERENCES` |`REFRESH` |`REGEX`||`REGION` |`REGISTRY` |`RELATION` |`RENAME`||`REOPTIMIZE` |`REPEATABLE` |`REPLACE` |`REPLACEMENT`||`REPLAN` |`REPLICA` |`REPLICAS` |`REPLICATION`||`RESET` |`RESPECT` |`RESTRICT` |`RETAIN`||`RETURN` |`RETURNING` |`REVOKE` |`RIGHT`||`ROLE` |`ROLES` |`ROLLBACK` |`ROTATE`||`ROUNDS` |`ROW` |`ROWS` |`RULES`||`SASL` |`SCALE` |`SCALING` |`SCHEDULE`||`SCHEMA` |`SCHEMAS` |`SCOPE` |`SECOND`||`SECONDS` |`SECRET` |`SECRETS` |`SECURITY`||`SEED` |`SELECT` |`SEQUENCES` |`SERIALIZABLE`||`SERVER` |`SERVICE` |`SESSION` |`SET`||`SHARD` |`SHOW` |`SINK` |`SINKS`||`SIZE` |`SKEW` |`SMALLINT` |`SNAPSHOT`||`SOME` |`SOURCE` |`SOURCES` |`SQL`||`SSH` |`SSL` |`START` |`STDIN`||`STDOUT` |`STORAGE` |`STORAGECTL` |`STRATEGY`||`STRICT` |`STRING` |`STRONG` |`SUBSCRIBE`||`SUBSOURCE` |`SUBSOURCES` |`SUBSTRING` |`SUBTREE`||`SUPERUSER` |`SWAP` |`SYNTAX` |`SYSTEM`||`TABLE` |`TABLES` |`TAIL` |`TEMP`||`TEMPORARY` |`TEST` |`TEXT` |`THEN`||`TICK` |`TIES` |`TIME` |`TIMEOUT`||`TIMESTAMP` |`TIMESTAMPTZ` |`TIMING` |`TO`||`TOKEN` |`TOPIC` |`TPCH` |`TRACE`||`TRAILING` |`TRANSACTION` |`TRANSACTIONAL` |`TRANSFORM`||`TRIM` |`TRUE` |`TUNNEL` |`TYPE`||`TYPES` |`UNBOUNDED` |`UNCOMMITTED` |`UNION`||`UNIQUE` |`UNIT` |`UNKNOWN` |`UNNEST`||`UNTIL` |`UP` |`UPDATE` |`UPSERT`||`URL` |`USAGE` |`USER` |`USERNAME`||`USERS` |`USING` |`VALIDATE` |`VALUE`||`VALUES` |`VARCHAR` |`VARIADIC` |`VARYING`||`VERBOSE` |`VERSION` |`VIEW` |`VIEWS`||`WAIT` |`WAREHOUSE` |`WARNING` |`WEBHOOK`||`WHEN` |`WHERE` |`WHILE` |`WINDOW`||`WIRE` |`WITH` |`WITHIN` |`WITHOUT`||`WORK` |`WORKERS` |`WORKLOAD` |`WRITE`||`YEAR` |`YEARS` |`ZONE` |`ZONES`|
+|--|--|--|--||`ABORT` |`ACCESS` |`ACCOUNT` |`ACTION`||`ADD` |`ADDED` |`ADDRESS` |`ADDRESSES`||`AFTER` |`AGGREGATE` |`AGGREGATION` |`ALIGNED`||`ALL` |`ALTER` |`ANALYSE` |`ANALYSIS`||`ANALYZE` |`AND` |`ANY` |`APPEND`||`APPLY` |`ARITY` |`ARN` |`ARRANGED`||`ARRANGEMENT` |`ARRAY` |`AS` |`ASC`||`ASSERT` |`ASSUME` |`AT` |`AUCTION`||`AUTHORITY` |`AUTO` |`AVAILABILITY` |`AVRO`||`AWS` |`BATCH` |`BEGIN` |`BETWEEN`||`BIGINT` |`BILLED` |`BODY` |`BOOLEAN`||`BOTH` |`BPCHAR` |`BROKEN` |`BROKER`||`BROKERS` |`BY` |`BYTES` |`CANCELLATION`||`CAPTURE` |`CARDINALITY` |`CASCADE` |`CASE`||`CAST` |`CATALOG` |`CERTIFICATE` |`CHAIN`||`CHAINS` |`CHAR` |`CHARACTER` |`CHARACTERISTICS`||`CHECK` |`CLASS` |`CLIENT` |`CLOCK`||`CLOSE` |`CLUSTER` |`CLUSTERS` |`COALESCE`||`COLLATE` |`COLUMN` |`COLUMNS` |`COMMENT`||`COMMIT` |`COMMITTED` |`COMPACTION` |`COMPATIBILITY`||`COMPRESSION` |`COMPUTE` |`COMPUTECTL` |`CONFIG`||`CONFLUENT` |`CONNECTION` |`CONNECTIONS` |`CONSTRAINT`||`CONSTRAINTS` |`COPY` |`CORRELATED` |`COUNT`||`COUNTER` |`CPU` |`CREATE` |`CREATECLUSTER`||`CREATEDB` |`CREATENETWORKPOLICY` |`CREATEROLE` |`CREATION`||`CREDENTIAL` |`CROSS` |`CSE` |`CSV`||`CTE` |`CURRENT` |`CURSOR` |`DATABASE`||`DATABASES` |`DATUMS` |`DAY` |`DAYS`||`DEALLOCATE` |`DEBEZIUM` |`DEBUG` |`DEBUGGING`||`DEC` |`DECIMAL` |`DECLARE` |`DECODING`||`DECORRELATED` |`DEFAULT` |`DEFAULTS` |`DELEGATION`||`DELETE` |`DELIMITED` |`DELIMITER` |`DELTA`||`DESC` |`DETAILS` |`DIRECTION` |`DISCARD`||`DISK` |`DISTINCT` |`DOC` |`DOT`||`DOUBLE` |`DROP` |`DURATION` |`EAGER`||`ELEMENT` |`ELSE` |`ENABLE` |`END`||`ENDPOINT` |`ENFORCED` |`ENVELOPE` |`EQUIVALENCES`||`ERROR` |`ERRORS` |`ESCAPE` |`ESTIMATE`||`EVERY` |`EXCEPT` |`EXCLUDE` |`EXECUTE`||`EXISTS` |`EXPECTED` |`EXPERIMENTAL` |`EXPLAIN`||`EXPOSE` |`EXPRESSIONS` |`EXTERNAL` |`EXTRACT`||`FACTOR` |`FALSE` |`FAST` |`FEATURES`||`FETCH` |`FIELDS` |`FILE` |`FILES`||`FILTER` |`FIRST` |`FIXED` |`FIXPOINT`||`FLOAT` |`FOLLOWING` |`FOR` |`FOREIGN`||`FORMAT` |`FORWARD` |`FROM` |`FULL`||`FULLNAME` |`FUNCTION` |`FUSION` |`GCP`||`GENERATOR` |`GLUE` |`GRANT` |`GREATEST`||`GROUP` |`GROUPS` |`HAVING` |`HEADER`||`HEADERS` |`HINTS` |`HISTORY` |`HOLD`||`HOST` |`HOUR` |`HOURS` |`HUMANIZED`||`HYDRATION` |`ICEBERG` |`ID` |`IDENTIFIERS`||`IDS` |`IF` |`IGNORE` |`ILIKE`||`IMPLEMENTATIONS` |`IMPORTED` |`IN` |`INCLUDE`||`INDEX` |`INDEXES` |`INFO` |`INHERIT`||`INLINE` |`INNER` |`INPUT` |`INSERT`||`INSIGHTS` |`INSPECT` |`INSTANCE` |`INT`||`INTEGER` |`INTERNAL` |`INTERSECT` |`INTERVAL`||`INTO` |`INTROSPECTION` |`IS` |`ISNULL`||`ISOLATION` |`JOIN` |`JOINS` |`JSON`||`KAFKA` |`KEY` |`KEYS` |`LAST`||`LATERAL` |`LATEST` |`LEADING` |`LEAST`||`LEFT` |`LEGACY` |`LETREC` |`LEVEL`||`LIKE` |`LIMIT` |`LINEAR` |`LINGER`||`LIST` |`LOAD` |`LOCAL` |`LOCALLY`||`LOG` |`LOGICAL` |`LOGIN` |`LOWERING`||`MANAGED` |`MANUAL` |`MAP` |`MARKETING`||`MATCHING` |`MATERIALIZE` |`MATERIALIZED` |`MAX`||`MECHANISMS` |`MEMBERSHIP` |`MEMORY` |`MESSAGE`||`METADATA` |`METRIC` |`MINUTE` |`MINUTES`||`MOCK` |`MODE` |`MONTH` |`MONTHS`||`MUTUALLY` |`MYSQL` |`NAME` |`NAMES`||`NAMESPACE` |`NATURAL` |`NEGATIVE` |`NETWORK`||`NEW` |`NEXT` |`NFC` |`NFD`||`NFKC` |`NFKD` |`NO` |`NOCREATECLUSTER`||`NOCREATEDB` |`NOCREATEROLE` |`NODE` |`NOINHERIT`||`NOLOGIN` |`NON` |`NONE` |`NORMALIZE`||`NOSUPERUSER` |`NOT` |`NOTICE` |`NOTICES`||`NULL` |`NULLIF` |`NULLS` |`OAUTH2`||`OBJECTS` |`OF` |`OFFSET` |`ON`||`ONLY` |`OPERATOR` |`OPTIMIZED` |`OPTIMIZER`||`OPTIONS` |`OR` |`ORDER` |`ORDINALITY`||`OUTER` |`OVER` |`OWNED` |`OWNER`||`PARTITION` |`PARTITIONS` |`PASSWORD` |`PATH`||`PATTERN` |`PHYSICAL` |`PLAN` |`PLANS`||`POLICIES` |`POLICY` |`PORT` |`POSITION`||`POSTGRES` |`PRECEDING` |`PRECISION` |`PREFIX`||`PREPARE` |`PRIMARY` |`PRIORITIZE` |`PRIVATELINK`||`PRIVILEGES` |`PROGRESS` |`PROJECTION` |`PROTOBUF`||`PROTOCOL` |`PROVIDER` |`PUBLIC` |`PUBLICATION`||`PUSHDOWN` |`QUALIFY` |`QUERY` |`QUOTE`||`RAISE` |`RANGE` |`RATE` |`RAW`||`READ` |`READY` |`REAL` |`REASSIGN`||`RECURSION` |`RECURSIVE` |`REDACTED` |`REDUCE`||`REFERENCE` |`REFERENCES` |`REFRESH` |`REGEX`||`REGION` |`REGISTRY` |`RELATION` |`RENAME`||`REOPTIMIZE` |`REPEATABLE` |`REPLACE` |`REPLACEMENT`||`REPLAN` |`REPLICA` |`REPLICAS` |`REPLICATION`||`RESET` |`RESPECT` |`RESTRICT` |`RETAIN`||`RETURN` |`RETURNING` |`REVOKE` |`RIGHT`||`ROLE` |`ROLES` |`ROLLBACK` |`ROTATE`||`ROUNDS` |`ROW` |`ROWS` |`RULES`||`SASL` |`SCALE` |`SCALING` |`SCHEDULE`||`SCHEMA` |`SCHEMAS` |`SCOPE` |`SECOND`||`SECONDS` |`SECRET` |`SECRETS` |`SECURITY`||`SEED` |`SELECT` |`SEQUENCES` |`SERIALIZABLE`||`SERVER` |`SERVICE` |`SESSION` |`SET`||`SHARD` |`SHOW` |`SINK` |`SINKS`||`SIZE` |`SKEW` |`SMALLINT` |`SNAPSHOT`||`SOME` |`SOURCE` |`SOURCES` |`SQL`||`SSH` |`SSL` |`START` |`STDIN`||`STDOUT` |`STORAGE` |`STORAGECTL` |`STRATEGY`||`STRICT` |`STRING` |`STRONG` |`SUBSCRIBE`||`SUBSOURCE` |`SUBSOURCES` |`SUBSTRING` |`SUBTREE`||`SUPERUSER` |`SWAP` |`SYNTAX` |`SYSTEM`||`TABLE` |`TABLES` |`TAIL` |`TEMP`||`TEMPORARY` |`TEST` |`TEXT` |`THEN`||`TICK` |`TIES` |`TIME` |`TIMEOUT`||`TIMESTAMP` |`TIMESTAMPTZ` |`TIMING` |`TO`||`TOKEN` |`TOPIC` |`TPCH` |`TRACE`||`TRAILING` |`TRANSACTION` |`TRANSACTIONAL` |`TRANSFORM`||`TRIM` |`TRUE` |`TRY_CAST` |`TUNNEL`||`TYPE` |`TYPES` |`UNBOUNDED` |`UNCOMMITTED`||`UNION` |`UNIQUE` |`UNIT` |`UNKNOWN`||`UNNEST` |`UNTIL` |`UP` |`UPDATE`||`UPSERT` |`URL` |`USAGE` |`USER`||`USERNAME` |`USERS` |`USING` |`VALIDATE`||`VALUE` |`VALUES` |`VARCHAR` |`VARIADIC`||`VARYING` |`VERBOSE` |`VERSION` |`VIEW`||`VIEWS` |`WAIT` |`WAREHOUSE` |`WARNING`||`WEBHOOK` |`WHEN` |`WHERE` |`WHILE`||`WINDOW` |`WIRE` |`WITH` |`WITHIN`||`WITHOUT` |`WORK` |`WORKERS` |`WORKLOAD`||`WRITE` |`YEAR` |`YEARS` |`ZONE`||`ZONES` |&nbsp; |&nbsp; |&nbsp;|
 
 ---
 
@@ -14602,7 +14592,11 @@ Side-effecting functions are marked as such in the table below.
 
 ### Generic functionsGeneric functions can typically take arguments of any type.#### `CAST (cast_expr) -> T`
 
-Value as type <code>T</code> [(docs)](/sql/functions/cast)#### `coalesce(x: T...) -> T?`
+Value as type <code>T</code> [(docs)](/sql/functions/cast)#### `TRY_CAST (cast_expr) -> T?`
+
+Value as type <code>T</code>, or <em>NULL</em> if the conversion fails. [(docs)](/sql/functions/cast#try_cast)
+
+**Unreleased:** This function will be released in [**v26.46**](/releases#release-notes). It may not be available in your region yet. The release is scheduled to complete by **October 14, 2026**.#### `coalesce(x: T...) -> T?`
 
 First non-<em>NULL</em> arg, or <em>NULL</em> if all are <em>NULL</em>.#### `greatest(x: T...) -> T?`
 
@@ -15506,6 +15500,7 @@ Operator | Description
 <code>listelementany &vert;&vert; listany</code> | Prepend the element to the list.
 <code>listany @&gt; listany</code> | Check if the first list contains all elements of the second list.
 <code>listany &lt;@ listany</code> | Check if all elements of the first list are contained in the second list.
+<code>listany &lt; listany</code>, and likewise <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>=</code>, <code>&lt;&gt;</code> | Compare the two lists element by element. The first pair of elements that differ decides. A _NULL_ element is greater than any non-_NULL_ element, whatever `NULLS FIRST` or `NULLS LAST` says, since those only place values that are _NULL_ as a whole. A list is greater than any shorter list that it starts with. `ORDER BY`, `min`, and `max` order lists the same way.
 
 ---
 
