@@ -88,7 +88,7 @@ writer settings are used:
 
 If you encounter issues trying to ingest Parquet files produced by
 Materialize into your downstream systems, please [contact our
-team](/support/).
+team](https://materialize.com/support/).
 
 #### Parquet data types
 
@@ -180,7 +180,7 @@ writer settings are used:
 
 If you encounter issues trying to ingest Parquet files produced by
 Materialize into your downstream systems, please [contact our
-team](/support/).
+team](https://materialize.com/support/).
 
 See also [Copy to S3: Parquet Data Types](#parquet-data-types).
 

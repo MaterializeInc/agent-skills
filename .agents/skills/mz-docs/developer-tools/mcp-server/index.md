@@ -53,7 +53,7 @@ The `materialize-agent` endpoint is enabled by default. To disable it:
 
 **Cloud:**
 
-Contact [Materialize support](https://materialize.com/docs/support/) to
+Contact [Materialize support](https://materialize.com/support/) to
 enable/disable the MCP agent endpoint for your environment.
 
 **Self-Managed:**
@@ -482,7 +482,7 @@ The developer endpoint is enabled by default. To disable it:
 
 **Cloud:**
 
-Contact [Materialize support](https://materialize.com/docs/support/) to
+Contact [Materialize support](https://materialize.com/support/) to
 disable the MCP developer endpoint for your environment.
 
 **Self-Managed:**

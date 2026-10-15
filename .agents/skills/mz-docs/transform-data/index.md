@@ -35,7 +35,7 @@ might also differ, because Materialize uses an entirely different database
 engine based on [Timely and Differential Dataflow](/fundamentals/#incremental-updates).
 
 If you need specific syntax or features that are not currently supported in
-Materialize, please submit a [feature request](/support/#share-your-feedback).
+Materialize, please submit a [feature request](https://materialize.com/support/).
 
 ## Explore this section
 
@@ -677,7 +677,7 @@ ALTER CLUSTER my_cluster RESET (EXPERIMENTAL ARRANGEMENT COMPRESSION);
 
 Dictionary compression trades CPU for memory, and it does **not** reduce memory
 on every workload. Use this section to judge whether it suits your workload, and
-[contact our team](/support/) if you have questions.
+[contact our team](https://materialize.com/support/) if you have questions.
 
 > **Note:** A single arrangement usually holds both columns that compress well and columns
 > that do not. Only the columns that compress save memory, and every column still
@@ -1248,7 +1248,7 @@ Look for patterns such as:
   low. Use the [time-series correlation
   query](#distinguish-source-driven-vs-computation-driven-spikes) to confirm. If
   freshness degrades on objects that were *not* themselves modified during the
-  deploy, [contact Support](/support/) with the spike time window and audit
+  deploy, [contact Support](https://materialize.com/support/) with the spike time window and audit
   event output.
 
 * **Sink `alter` events**: Sinks being swapped to point to new upstream MVs

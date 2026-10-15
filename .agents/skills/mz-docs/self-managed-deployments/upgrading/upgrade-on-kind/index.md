@@ -30,7 +30,7 @@ reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/).
 ### License key
 
 Starting in v26.0, Materialize requires a license key. If your existing
-deployment does not have a license key configured, contact [Materialize support](https://materialize.com/docs/support/).
+deployment does not have a license key configured, contact [Materialize support](https://materialize.com/support/).
 
 ## Upgrade
 
@@ -115,7 +115,7 @@ prerequisites)</a>.</p>
 <li>
 <p>As of v26.0, Self-Managed Materialize requires a license key. If your
 deployment has not been configured with a license key:</p>
-<p>a. Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>.</p>
+<p>a. Contact <a href="https://materialize.com/support/" >Materialize support</a>.</p>
 <p>b. Once you have your license key, run the following command to add it to the <code>materialize-backend</code> secret:</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kubectl -n materialize-environment patch secret materialize-backend -p <span class="s1">&#39;{&#34;stringData&#34;:{&#34;license_key&#34;:&#34;&lt;your license key goes here&gt;&#34;}}&#39;</span> --type<span class="o">=</span>merge
 </span></span></code></pre></div></li>

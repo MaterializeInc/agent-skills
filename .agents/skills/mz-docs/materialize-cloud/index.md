@@ -110,7 +110,7 @@ privacy and governance requests. For details, see our [Privacy Policy](https://m
 
 Adhering to these responsibilities ensures that your data is protected, and
 Materialize is utilized effectively. If you have any questions or need further
-clarification on your responsibilities, please [contact support](/support).
+clarification on your responsibilities, please [contact support](https://materialize.com/support/).
 
 ---
 
@@ -392,7 +392,7 @@ of the [Materialize console](/developer-tools/console/). Pricing is
 usage-based and is billed on a monthly basis. Invoices will be sent to the
 account email and paid via the card on file on the first of the month. If you
 have questions about billing or are interested in converting to an annual
-enterprise contract, please [contact us](https://materialize.com/docs/support/)
+enterprise contract, please [contact us](https://materialize.com/support/)
 to discuss further.
 
 If you'd like to cancel your On Demand account with Materialize, please email

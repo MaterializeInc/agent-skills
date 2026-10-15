@@ -18,7 +18,7 @@ to some ordering, in each group.
 > consider rewriting your indexed views and materialized views to use idiomatic
 > Materialize SQL instead of window functions. If your view definitions cannot be
 > rewritten without the window functions and the performance of window functions
-> is insufficient for your use case, please [contact our team](/support/).
+> is insufficient for your use case, please [contact our team](https://materialize.com/support/).
 
 ## Idiomatic Materialize SQL
 

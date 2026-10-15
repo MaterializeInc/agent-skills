@@ -132,9 +132,9 @@ A Google account with permission to:
 | License key type | Deployment type | Action |
 | --- | --- | --- |
 | Community | New deployments | <p>To get a license key:</p> <ul> <li>If you have a Cloud account, visit the <a href="https://console.materialize.com/license/" ><strong>License</strong> page in the Materialize Console</a>.</li> <li>If you do not have a Cloud account, visit <a href="https://materialize.com/self-managed/community-license/" >https://materialize.com/self-managed/community-license/</a>.</li> </ul> |
-| Community | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
+| Community | Existing deployments | Contact <a href="https://materialize.com/support/" >Materialize support</a>. |
 | Enterprise | New deployments | Visit <a href="https://materialize.com/self-managed/enterprise-license/" >https://materialize.com/self-managed/enterprise-license/</a> to purchase an Enterprise license. |
-| Enterprise | Existing deployments | Contact <a href="https://materialize.com/docs/support/" >Materialize support</a>. |
+| Enterprise | Existing deployments | Contact <a href="https://materialize.com/support/" >Materialize support</a>. |
 
 ## Getting started: Simple example
 
