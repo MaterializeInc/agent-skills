@@ -1,0 +1,1 @@
+ERROR:  error while rendering explain output: The linear_chains option is not supported with WITH MUTUALLY RECURSIVE.

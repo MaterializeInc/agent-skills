@@ -1,0 +1,8 @@
+      Gus	{Ada,Bob,Dee,Gus}
+      Hal	{Ada,Bob,Dee,Hal}
+    Dee	{Ada,Bob,Dee}
+    Eli	{Ada,Bob,Eli}
+    Fay	{Ada,Cy,Fay}
+  Bob	{Ada,Bob}
+  Cy	{Ada,Cy}
+Ada	{Ada}

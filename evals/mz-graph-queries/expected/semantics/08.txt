@@ -1,0 +1,1 @@
+ERROR:  UNION types integer and text cannot be matched
