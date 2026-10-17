@@ -92,7 +92,7 @@ groups that should exist in Materialize. Most providers let you scope
 provisioning to specific groups, so only those groups and their members are
 synced.
 
-## Steps 3–5. Map groups to database roles {#map-groups-to-database-roles}
+## Steps 3–5. Map groups to database roles
 
 Wait until the group appears under **Account** > **Account Settings** >
 **Groups**. Multiple groups can grant the same organization role, and one group

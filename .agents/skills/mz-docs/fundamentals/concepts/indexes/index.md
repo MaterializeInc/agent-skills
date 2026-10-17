@@ -31,7 +31,7 @@ To create indexes on an object, use the [`CREATE INDEX`](/sql/create-index/)
 command. To create the index in a cluster other than the active cluster, include
 the `IN CLUSTER` clause in the `CREATE INDEX` statement.
 
-<no value>```mzsql
+```mzsql
 CREATE INDEX [<index_name>]
 [IN CLUSTER <cluster_name>]
 ON <obj_name> [USING <method>] (<col_expr>, ...)

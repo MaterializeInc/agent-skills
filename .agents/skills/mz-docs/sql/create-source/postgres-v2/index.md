@@ -456,7 +456,7 @@ To create a source from PostgreSQL 11+, you must first:
 For details, see the [PostgreSQL integration
 guides](/ingest-data/postgres/#integration-guides).
 
-### Create a source {#create-source-example}
+### Create a source
 
 Once you have configured the upstream PostgreSQL, network security, and
 created the connection, you can create the source. In this example, the

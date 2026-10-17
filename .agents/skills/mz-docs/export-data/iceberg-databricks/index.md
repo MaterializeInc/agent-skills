@@ -260,7 +260,7 @@ In Materialize, you can sink from a materialized view, table, or source. Use
 
 For the full list of syntax options, see the [`CREATE SINK` reference](/sql/create-sink/iceberg).
 
-### Append-only sinks {#append-only-sinks}
+### Append-only sinks
 
 Unity Catalog tables accept only `MODE APPEND`, so the sink appends a row per
 change rather than updating rows in place: `_mz_diff` is `+1` for an insertion
@@ -286,7 +286,7 @@ CREATE SINK <sink_name>
 
 ## Considerations
 
-### Commit interval tradeoffs {#commit-interval-tradeoffs}
+### Commit interval tradeoffs
 
 The `COMMIT INTERVAL` setting controls how frequently Materialize commits
 snapshots to your Iceberg table, making the data available to downstream query

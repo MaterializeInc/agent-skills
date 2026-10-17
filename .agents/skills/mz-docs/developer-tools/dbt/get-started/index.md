@@ -586,7 +586,7 @@ The sink above would be compiled to:
 database.schema.kafka_topic_c
 ```
 
-### Configuration: clusters, databases and indexes {#configuration}
+### Configuration: clusters, databases and indexes
 
 #### Clusters
 
@@ -657,7 +657,7 @@ Component                            | Value     | Description
     indexes=[{'default': True}]) }}
 ```
 
-### Configuration: model contracts and constraints {#configuration-contracts}
+### Configuration: model contracts and constraints
 
 #### Model contracts
 

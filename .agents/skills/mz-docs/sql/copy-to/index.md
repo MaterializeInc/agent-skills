@@ -7,7 +7,7 @@ This command is useful to output [`SUBSCRIBE`](/sql/subscribe/) results
 ## Syntax
 
 **Copy to stdout:**
-### Copy to `stdout`  {#copy-to-stdout}
+### Copy to `stdout`
 
 Copying results to `stdout` is useful to output the stream of updates from a
 [`SUBSCRIBE`](/sql/subscribe/) command in interactive SQL clients like `psql`.
@@ -23,7 +23,7 @@ COPY ( <query> ) TO STDOUT [WITH ( <option> = <val> )];
 | `WITH ( <option> = <val> )` | Optional. The following `<option>` are supported: \| Name \|  Description \| \|------\|---------------\| `FORMAT` \| Sets the output format. Valid output formats are: `TEXT`,`BINARY`, `CSV`.<br><br> Default: `TEXT`.  |
 
 **Copy to Amazon S3 and S3 compatible services:**
-### Copy to Amazon S3 and S3 compatible services {#copy-to-s3}
+### Copy to Amazon S3 and S3 compatible services
 
 Copying results to Amazon S3 (or S3-compatible services) is useful to perform
 tasks like periodic backups for auditing, or downstream processing in
@@ -55,7 +55,7 @@ WITH (
 
 ## Details
 
-### Copy to S3: CSV {#copy-to-s3-csv}
+### Copy to S3: CSV
 
 #### Writer settings
 
@@ -69,7 +69,7 @@ writer settings:
 | escape | `"` |
 | header | `false` |
 
-### Copy to S3: Parquet {#copy-to-s3-parquet}
+### Copy to S3: Parquet
 
 #### Writer settings
 
@@ -147,13 +147,13 @@ The privileges required to execute this statement are:
 
 ## Examples
 
-### Copy to stdout {#copy-to-stdout-examples}
+### Copy to stdout
 
 ```mzsql
 COPY (SUBSCRIBE some_view) TO STDOUT WITH (FORMAT binary);
 ```
 
-### Copy to S3 {#copy-to-s3-examples}
+### Copy to S3
 
 #### File format Parquet
 

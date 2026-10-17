@@ -437,6 +437,10 @@ CREATE VIEW my_typed_source AS
 To avoid doing this task manually, you can use [this **JSON parsing
 widget**](/sql/types/jsonb/#parsing).
 
+To get `NULL` instead of an error for values that do not convert, use
+[`TRY_CAST`](/sql/functions/cast/#try_cast), for example
+`TRY_CAST(data->>'field2' AS int)`.
+
 #### Schema registry integration
 
 Retrieving schemas from a schema registry is not supported yet for JSON-formatted sources. This means that Materialize cannot decode messages serialized using the [JSON Schema](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/serdes-json.html#json-schema-serializer-and-deserializer) serialization format (`JSON_SR`).

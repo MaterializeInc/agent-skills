@@ -333,4 +333,3 @@ Query the data using standard SQL.
 
 See also: [Debezium documentation on the MongoDB
 Connector](https://debezium.io/documentation/reference/stable/connectors/mongodb.html#mongodb-when-things-go-wrong)
-

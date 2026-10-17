@@ -4,7 +4,7 @@ Returns a string normalized to the specified Unicode normalization form.
 
 ## Signatures
 
-<no value>```mzsql
+```mzsql
 normalize(str)
 normalize(str, form)
 

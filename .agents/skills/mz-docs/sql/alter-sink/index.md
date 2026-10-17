@@ -281,7 +281,7 @@ intermediary materialized view and table).
 
 At first, the `switch.value` is `false`, so the `transition` materialized view contains the `matview_old` content.
 
-   <no value>```mzsql
+   ```mzsql
    CREATE TABLE switch (value bool);
    INSERT INTO switch VALUES (false); -- controls whether we want the new or the old materialized view.
 
@@ -295,14 +295,14 @@ At first, the `switch.value` is `false`, so the `transition` materialized view c
 
 1. `ALTER SINK` to use `transition`, which currently contains `matview_old` content:
 
-   <no value>```mzsql
+   ```mzsql
    ALTER SINK avro_sink SET FROM transition;
 
    ```
 
 1. Update `switch.value` to `true`, which causes the `transition` materialized view to contain `matview_new` content:
 
-   <no value>```mzsql
+   ```mzsql
    UPDATE switch SET value = true;
 
    ```
@@ -312,7 +312,7 @@ At first, the `switch.value` is `false`, so the `transition` materialized view c
 beyond the time of the switch update. Once advanced, alter sink to use
 `matview_new`:
 
-   <no value>```mzsql
+   ```mzsql
    -- After sink upper has advanced beyond the time of the switch UPDATE.
    ALTER SINK avro_sink SET FROM matview_new;
 
@@ -320,7 +320,7 @@ beyond the time of the switch update. Once advanced, alter sink to use
 
 1. Drop the `transition` materialized view and the `switch` table:
 
-   <no value>```mzsql
+   ```mzsql
    DROP MATERIALIZED VIEW transition;
    DROP TABLE switch;
 

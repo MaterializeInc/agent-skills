@@ -349,7 +349,7 @@ jobs on a replica that lacks them is done with
 > **Important:** Before creating a SQL Server source, you must enable Change Data Capture and
 > `SNAPSHOT` transaction isolation in the upstream database.
 
-### Creating a source {#create-source-example}
+### Creating a source
 
 #### Prerequisite: Creating a connection to SQL Server
 

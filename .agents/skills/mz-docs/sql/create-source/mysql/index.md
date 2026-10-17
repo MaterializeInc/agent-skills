@@ -732,7 +732,7 @@ For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check
 [this guide](/ops/network-security/ssh-tunnel/).
 
-### Creating a source {#create-source-example}
+### Creating a source
 
 _Create subsources for all tables in MySQL_
 
