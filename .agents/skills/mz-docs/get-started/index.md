@@ -689,4 +689,3 @@ creating indexes, see [Index Best Practices](/fundamentals/concepts/indexes/#bes
 - For help getting started with your data or other questions about Materialize,
   you can schedule a [free guided
   trial](https://materialize.com/demo/?utm_campaign=General&utm_source=documentation).
-

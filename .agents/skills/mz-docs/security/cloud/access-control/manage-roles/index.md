@@ -126,7 +126,7 @@ The examples below assume:
 - The existence of a `source_cluster`, a `compute_cluster`, and a
   `serving_cluster`. For example:
 
-  <no value>```mzsql
+  ```mzsql
   CREATE CLUSTER source_cluster (SIZE = '25cc');
   CREATE CLUSTER compute_cluster (SIZE = '25cc');
   CREATE CLUSTER serving_cluster (SIZE = '25cc');
@@ -136,7 +136,7 @@ The examples below assume:
 - The existence of a `mydb` database and a `sales` schema within the `mydb`
   database. For example:
 
-  <no value>```mzsql
+  ```mzsql
   CREATE DATABASE IF NOT EXISTS mydb;
   CREATE SCHEMA IF NOT EXISTS mydb.sales;
 
@@ -145,7 +145,7 @@ The examples below assume:
 - The existence of `items`, `orders`, and `sales_items` tables within the
   `mydb.sales` schema. For example:
 
-  <no value>```mzsql
+  ```mzsql
   SET CLUSTER = source_cluster;
 
   SET DATABASE = mydb;

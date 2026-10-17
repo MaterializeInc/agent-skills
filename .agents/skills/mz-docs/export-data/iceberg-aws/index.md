@@ -226,7 +226,7 @@ CREATE SINK <sink_name>
 
 ## Considerations
 
-### Commit interval tradeoffs {#commit-interval-tradeoffs}
+### Commit interval tradeoffs
 
 The `COMMIT INTERVAL` setting controls how frequently Materialize commits
 snapshots to your Iceberg table, making the data available to downstream query

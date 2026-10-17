@@ -480,7 +480,7 @@ For step-by-step instructions on creating SSH tunnel connections and configuring
 an SSH bastion server to accept connections from Materialize, check
 [this guide](/ops/network-security/ssh-tunnel/).
 
-### Creating a source {#create-source-example}
+### Creating a source
 
 You **must** enable Change Data Capture. See the setup instructions for
 [Azure SQL Database](/ingest-data/sql-server/azure-db/#a-configure-azure-sql-database)

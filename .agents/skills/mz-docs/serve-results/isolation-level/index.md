@@ -46,7 +46,7 @@ over `t`. If the two transactions execute sufficiently close together, `mv` may
 not yet reflect the latest updates to `t` that **T1** observed, so **T2** may
 not observe all rows visible to **T1**.
 
-### Logical timestamp selection {#serializable-logical-timestamp-selection}
+### Logical timestamp selection
 
 When using the [serializable](/serve-results/isolation-level#serializable)
 isolation level, the logical timestamp may be arbitrarily ahead of or behind the
@@ -79,7 +79,7 @@ The linearizable guarantee applies only to transactions (including single-statem
 - However, once that data is included in the results of a read transaction, all
   subsequent read transactions are guaranteed to see it.
 
-### Logical timestamp selection {#strict-serializable-logical-timestamp-selection}
+### Logical timestamp selection
 
 When using the [strict
 serializable](/serve-results/isolation-level#strict-serializable) isolation level,

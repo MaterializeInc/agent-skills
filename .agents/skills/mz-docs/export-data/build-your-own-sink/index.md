@@ -26,4 +26,3 @@ README](https://github.com/MaterializeIncLabs/mz-sink-sdk).
 
 For destinations that Materialize supports natively, prefer the native sink or
 `COPY TO`. See [Sink results](/export-data/).
-

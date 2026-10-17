@@ -412,7 +412,7 @@ release namespace, which the `monitoring` module sets from its `namespace`
 > `alertmanager_config_last_reload_successful` metric drops to `0`. Query that
 > metric in Grafana after changing a receiver.
 
-## Thresholds for alerts you build yourself {#thresholds}
+## Thresholds for alerts you build yourself
 
 If you send metrics to a platform you already run, you can build alert rules
 there instead of, or alongside, the bundled ones. Decide which system owns which

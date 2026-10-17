@@ -39,7 +39,7 @@ statements in the transaction are committed at the same timestamp.
 
 ## Examples
 
-### Commit a write-only transaction {#write-only-transactions}
+### Commit a write-only transaction
 
 In Materialize, write-only transactions are **insert-only** transactions.
 

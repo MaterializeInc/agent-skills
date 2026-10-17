@@ -127,7 +127,7 @@ default.
 >   system parameter to `false`. Once disabled, you can only query data products
 >   that are discoverable by [`get_data_products`](#get_data_products).
 
-#### Restricting `query` tool access to user objects only {#restrict-to-user-objects}
+#### Restricting `query` tool access to user objects only
 
 When the [`query` tool](/developer-tools/mcp-server/mcp-agent-tools/#query) is
 enabled, a role can, by default, query any object for which it has appropriate
