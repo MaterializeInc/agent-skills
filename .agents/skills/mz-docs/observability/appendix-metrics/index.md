@@ -2439,6 +2439,36 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>code</code>, <code>op</code></td>
     </tr>
     <tr>
+      <td><code>mz_persist_s3_http_pool_client_in_flight_max</code></td>
+      <td>most requests in flight on one HTTP client in the pool</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_s3_http_pool_client_in_flight_min</code></td>
+      <td>fewest requests in flight on one HTTP client in the pool</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_s3_http_pool_clients</code></td>
+      <td>number of HTTP clients in the pool, whether or not requests use the pool</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_s3_http_pool_clients_in_use</code></td>
+      <td>number of HTTP clients in the pool with at least one request in flight</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_s3_http_pool_in_flight</code></td>
+      <td>number of requests in flight through the pool of HTTP clients</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td><code>mz_persist_s3_http_pool_requests</code></td>
+      <td>number of requests (including retries but excluding hedged gets) sent through the pool of HTTP clients</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_persist_s3_operation_attempt_timeouts</code></td>
       <td>number of operation attempt timeouts (within a single retry)</td>
       <td></td>

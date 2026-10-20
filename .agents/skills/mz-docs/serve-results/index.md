@@ -10,9 +10,11 @@ To serve results, you can:
 - [Query using `SELECT` and `SUBSCRIBE`
   statements](/serve-results/query-results/)
 
+- [Understand the query lifecycle](/serve-results/query-lifecycle/)
+
 - [Use BI/data collaboration tools](/serve-results/bi-tools/)
 
-- [Sink results to to external systems](/export-data/)
+- [Sink results to external systems](/export-data/)
 
 - [Use Foreign Data Wrapper (FDW)](/serve-results/fdw/)
 
@@ -23,6 +25,7 @@ To serve results, you can:
   </div>
   <ul>
 <li><a href="/serve-results/query-results/" >Query using <code>SELECT</code> and <code>SUBSCRIBE</code></a></li>
+<li><a href="/serve-results/query-lifecycle/" >Query lifecycle</a></li>
 <li><a href="/serve-results/fdw/" >Use Foreign Data Wrapper (FDW)</a></li>
 </ul>
 
@@ -72,5 +75,6 @@ To serve results, you can:
 - [Isolation levels](/serve-results/isolation-level/index.md): Materialize supports different isolation levels that determine how it isolates the execution of transactions.
 - [SQL clients](/serve-results/sql-clients/index.md): How to connect to Materialize using common SQL clients
 - [Troubleshooting](/serve-results/troubleshooting/index.md): Troubleshooting guides for queries that are slow, unresponsive, or expensive in Materialize.
+- [Understand the query lifecycle](/serve-results/query-lifecycle/index.md): Understand how Materialize executes a `SELECT` query, and what latency to expect for each type of query.
 - [Use BI/data collaboration tools](/serve-results/bi-tools/index.md): Querying results from Materialize using external BI/data collaboration tools
 - [Use foreign data wrapper (FDW)](/serve-results/fdw/index.md): Use FDW to query results from Materialize

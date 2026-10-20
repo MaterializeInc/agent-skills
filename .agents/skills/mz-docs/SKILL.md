@@ -122,7 +122,7 @@ Serving results from Materialize
 - **Foreign data wrapper (FDW) **: `serve-results/fdw-setup/index.md`
 - **Isolation levels**: `serve-results/isolation-level/index.md`
 - **SQL clients**: `serve-results/sql-clients/index.md`
-- _(and 3 more files in this section)_
+- _(and 4 more files in this section)_
 
 ### Sink results
 Sinking results from Materialize to external systems.
