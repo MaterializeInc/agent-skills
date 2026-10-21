@@ -158,7 +158,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.46.0
+  environmentdImageRef: materialize/environmentd:v26.46.1
 # ... additional fields omitted for brevity
 ```
 
@@ -173,7 +173,7 @@ metadata:
   name: 12345678-1234-1234-1234-123456789012
   namespace: materialize-environment
 spec:
-  environmentdImageRef: materialize/environmentd:v26.46.0
+  environmentdImageRef: materialize/environmentd:v26.46.1
 # ... additional fields omitted for brevity
 ```
 
