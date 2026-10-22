@@ -40,9 +40,7 @@ Side-effecting functions are marked as such in the table below.
 
 Value as type <code>T</code> [(docs)](/sql/functions/cast)#### `TRY_CAST (cast_expr) -> T?`
 
-Value as type <code>T</code>, or <em>NULL</em> if the conversion fails. [(docs)](/sql/functions/cast#try_cast)
-
-**Unreleased:** This function will be released in [**v26.47**](/releases#release-notes). It may not be available in your region yet. The release is scheduled to complete by **October 21, 2026**.#### `coalesce(x: T...) -> T?`
+Value as type <code>T</code>, or <em>NULL</em> if the conversion fails. [(docs)](/sql/functions/cast#try_cast)#### `coalesce(x: T...) -> T?`
 
 First non-<em>NULL</em> arg, or <em>NULL</em> if all are <em>NULL</em>.#### `greatest(x: T...) -> T?`
 
