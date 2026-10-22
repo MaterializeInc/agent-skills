@@ -257,7 +257,7 @@ where db.name || '.' || s.name || '.' || o.name = 'materialize.public.my_view';
 
 `local_lag` is the lag added by this object. `global_lag` is the lag from the root inputs. `slowest_global_input_id` is the root input. `slowest_local_input_id` is one hop toward that root; follow it repeatedly to trace the path.
 
-Walk the local chain in one query. Materialize spells recursion `with mutually recursive`:
+Walk the local chain in one query. Materialize spells recursion `with mutually recursive` (the `mz-graph-queries` skill covers writing such queries in general):
 
 ```sql
 with mutually recursive
