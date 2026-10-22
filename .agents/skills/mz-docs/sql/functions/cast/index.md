@@ -207,14 +207,6 @@ Source type                                | Return type                        
 
 > **Public Preview:** This feature is in public preview.
 
-  <div class="warning">
-    <strong class="gutter">Unreleased</strong>
-    This feature will be released in
-    <a href="/releases#release-notes"><strong>v26.47</strong></a>.
-    It may not be available in your region yet.
-    The release is scheduled to complete by <strong>October 21, 2026</strong>.
-  </div>
-
 `TRY_CAST` accepts the same explicit casts as `CAST`, and returns `NULL` where
 `CAST` would return an error: for example, text that does not parse as the
 target type, a number that does not fit in the target type, or a JSON value of
