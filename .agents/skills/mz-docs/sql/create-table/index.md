@@ -56,6 +56,7 @@ CREATE TABLE [IF NOT EXISTS] <table_name> FROM SOURCE <source_name> (REFERENCE <
   | EXCLUDE COLUMNS (<column_name> [, ...])
   | EXCLUDE CONSTRAINTS ('<constraint_name>' [, ...])
   | EXCLUDE ALL CONSTRAINTS
+  | EXCLUDE ALL NOT NULL CONSTRAINTS
   | PARTITION BY (<column_name> [, ...])
   [, ...]
 )]
