@@ -2129,6 +2129,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_persist_lease_expired_live_read</code></td>
+      <td>count of fetches that found their reader&#39;s lease had timed out</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_persist_lease_timeout_read</code></td>
       <td>count of readers whose lease timed out</td>
       <td></td>
