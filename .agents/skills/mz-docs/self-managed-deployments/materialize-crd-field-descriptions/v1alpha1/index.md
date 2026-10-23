@@ -87,6 +87,18 @@ The <code>dnsNames</code> and <code>issuerRef</code> fields are required.</p>
 </td>
 </tr>
 <tr>
+<td><code>balancerdExternallyScaled</code></td>
+<td></td>
+<td>
+<em><strong>Bool</strong></em>
+
+<p>Leave the balancerd Deployment&rsquo;s replica count to an external
+autoscaler, such as a HorizontalPodAutoscaler. <code>balancerd_replicas</code>
+then only seeds the count when the Deployment is first created.</p>
+
+</td>
+</tr>
+<tr>
 <td><code>balancerdReplicas</code></td>
 <td></td>
 <td>
