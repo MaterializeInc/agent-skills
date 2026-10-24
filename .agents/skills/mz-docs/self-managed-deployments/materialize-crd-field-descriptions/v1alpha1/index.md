@@ -208,6 +208,34 @@ the CREATE CONNECTION feature.</p>
 </td>
 </tr>
 <tr>
+<td><code>environmentdLivenessProbe</code></td>
+<td></td>
+<td>
+<em><strong><a href='#iok8sapicorev1probe'>io.k8s.api.core.v1.Probe</a></strong></em>
+
+<p><p>Liveness probe for the environmentd container.</p>
+<p>Fields set here are overlaid onto the operator&rsquo;s default probe, so only the fields
+being changed need to be set. If no handler (<code>exec</code>, <code>grpc</code>, <code>httpGet</code>, <code>tcpSocket</code>)
+is set, the default TCP check against environmentd&rsquo;s SQL port is kept.</p>
+</p>
+
+</td>
+</tr>
+<tr>
+<td><code>environmentdReadinessProbe</code></td>
+<td></td>
+<td>
+<em><strong><a href='#iok8sapicorev1probe'>io.k8s.api.core.v1.Probe</a></strong></em>
+
+<p><p>Readiness probe for the environmentd container.</p>
+<p>Fields set here are overlaid onto the operator&rsquo;s default probe, so only the fields
+being changed need to be set. If no handler (<code>exec</code>, <code>grpc</code>, <code>httpGet</code>, <code>tcpSocket</code>)
+is set, the default TCP check against environmentd&rsquo;s SQL port is kept.</p>
+</p>
+
+</td>
+</tr>
+<tr>
 <td><code>environmentdResourceRequirements</code></td>
 <td></td>
 <td>
@@ -224,6 +252,23 @@ the CREATE CONNECTION feature.</p>
 <em><strong>io.k8s.apimachinery.pkg.api.resource.Quantity</strong></em>
 
 <p>Amount of disk to allocate, if a storage class is provided.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>environmentdStartupProbe</code></td>
+<td></td>
+<td>
+<em><strong><a href='#iok8sapicorev1probe'>io.k8s.api.core.v1.Probe</a></strong></em>
+
+<p><p>Startup probe for the environmentd container. Liveness and readiness checks are held
+off until it succeeds, so it can allow a long startup without loosening the liveness
+probe.</p>
+<p>No startup probe runs unless this field or the operator&rsquo;s default sets one. Fields set
+here are overlaid onto the operator&rsquo;s default probe, so only the fields being changed
+need to be set. If no handler (<code>exec</code>, <code>grpc</code>, <code>httpGet</code>, <code>tcpSocket</code>) is set, the
+default TCP check against environmentd&rsquo;s SQL port is used.</p>
+</p>
 
 </td>
 </tr>
@@ -602,6 +647,306 @@ Value must be in units accepted by Go
 <em><strong>String</strong></em>
 
 <p>Kind of the resource being referred to.</p>
+
+</td>
+</tr>
+</tbody>
+</table>
+
+#### io.k8s.api.core.v1.Probe
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>exec</code></td>
+<td></td>
+<td>
+<em><strong><a href='#iok8sapicorev1execaction'>io.k8s.api.core.v1.ExecAction</a></strong></em>
+
+<p>Exec specifies a command to execute in the container.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>failureThreshold</code></td>
+<td></td>
+<td>
+<em><strong>Integer</strong></em>
+
+<p>Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>grpc</code></td>
+<td></td>
+<td>
+<em><strong><a href='#iok8sapicorev1grpcaction'>io.k8s.api.core.v1.GRPCAction</a></strong></em>
+
+<p>GRPC specifies a GRPC HealthCheckRequest.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>httpGet</code></td>
+<td></td>
+<td>
+<em><strong><a href='#iok8sapicorev1httpgetaction'>io.k8s.api.core.v1.HTTPGetAction</a></strong></em>
+
+<p>HTTPGet specifies an HTTP GET request to perform.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>initialDelaySeconds</code></td>
+<td></td>
+<td>
+<em><strong>Integer</strong></em>
+
+<p>Number of seconds after the container has started before liveness probes are initiated. More info: <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes" >https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes</a></p>
+
+</td>
+</tr>
+<tr>
+<td><code>periodSeconds</code></td>
+<td></td>
+<td>
+<em><strong>Integer</strong></em>
+
+<p>How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>successThreshold</code></td>
+<td></td>
+<td>
+<em><strong>Integer</strong></em>
+
+<p>Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup. Minimum value is 1.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>tcpSocket</code></td>
+<td></td>
+<td>
+<em><strong><a href='#iok8sapicorev1tcpsocketaction'>io.k8s.api.core.v1.TCPSocketAction</a></strong></em>
+
+<p>TCPSocket specifies a connection to a TCP port.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>terminationGracePeriodSeconds</code></td>
+<td></td>
+<td>
+<em><strong>Integer</strong></em>
+
+<p>Optional duration in seconds the pod needs to terminate gracefully upon probe failure. The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. Set this value longer than the expected cleanup time for your process. If this value is nil, the pod&rsquo;s terminationGracePeriodSeconds will be used. Otherwise, this value overrides the value provided by the pod spec. Value must be non-negative integer. The value zero indicates stop immediately via the kill signal (no opportunity to shut down). This is a beta field and requires enabling ProbeTerminationGracePeriod feature gate. Minimum value is 1. spec.terminationGracePeriodSeconds is used if unset.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>timeoutSeconds</code></td>
+<td></td>
+<td>
+<em><strong>Integer</strong></em>
+
+<p>Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1. More info: <a href="https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes" >https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes</a></p>
+
+</td>
+</tr>
+</tbody>
+</table>
+
+#### io.k8s.api.core.v1.TCPSocketAction
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td>✅</td>
+<td>
+<em><strong>io.k8s.apimachinery.pkg.util.intstr.IntOrString</strong></em>
+
+<p>Number or name of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>host</code></td>
+<td></td>
+<td>
+<em><strong>String</strong></em>
+
+<p>Optional: Host name to connect to, defaults to the pod IP.</p>
+
+</td>
+</tr>
+</tbody>
+</table>
+
+#### io.k8s.api.core.v1.HTTPGetAction
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td>✅</td>
+<td>
+<em><strong>io.k8s.apimachinery.pkg.util.intstr.IntOrString</strong></em>
+
+<p>Name or number of the port to access on the container. Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>host</code></td>
+<td></td>
+<td>
+<em><strong>String</strong></em>
+
+<p>Host name to connect to, defaults to the pod IP. You probably want to set &ldquo;Host&rdquo; in httpHeaders instead.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>httpHeaders</code></td>
+<td></td>
+<td>
+<em><strong>Array&lt;<a href='#iok8sapicorev1httpheader'>io.k8s.api.core.v1.HTTPHeader</a>&gt;</strong></em>
+
+<p>Custom headers to set in the request. HTTP allows repeated headers.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td></td>
+<td>
+<em><strong>String</strong></em>
+
+<p>Path to access on the HTTP server.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>scheme</code></td>
+<td></td>
+<td>
+<em><strong>String</strong></em>
+
+<p>Scheme to use for connecting to the host. Defaults to HTTP.</p>
+
+</td>
+</tr>
+</tbody>
+</table>
+
+#### io.k8s.api.core.v1.HTTPHeader
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>✅</td>
+<td>
+<em><strong>String</strong></em>
+
+<p>The header field name. This will be canonicalized upon output, so case-variant names will be understood as the same header.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>✅</td>
+<td>
+<em><strong>String</strong></em>
+
+<p>The header field value</p>
+
+</td>
+</tr>
+</tbody>
+</table>
+
+#### io.k8s.api.core.v1.GRPCAction
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td>✅</td>
+<td>
+<em><strong>Integer</strong></em>
+
+<p>Port number of the gRPC service. Number must be in the range 1 to 65535.</p>
+
+</td>
+</tr>
+<tr>
+<td><code>service</code></td>
+<td></td>
+<td>
+<em><strong>String</strong></em>
+
+<p><p>Service is the name of the service to place in the gRPC HealthCheckRequest (see <a href="https://github.com/grpc/grpc/blob/master/doc/health-checking.md%29" >https://github.com/grpc/grpc/blob/master/doc/health-checking.md)</a>.</p>
+<p>If this is not specified, the default behavior is defined by gRPC.</p>
+</p>
+
+</td>
+</tr>
+</tbody>
+</table>
+
+#### io.k8s.api.core.v1.ExecAction
+<table>
+<thead>
+<tr>
+<th>Field Name</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>command</code></td>
+<td></td>
+<td>
+<em><strong>Array&lt;String&gt;</strong></em>
+
+<p>Command is the command line to execute inside the container, the working directory for the command  is root (&rsquo;/&rsquo;) in the container&rsquo;s filesystem. The command is simply exec&rsquo;d, it is not run inside a shell, so traditional shell instructions (&rsquo;|&rsquo;, etc) won&rsquo;t work. To use a shell, you need to explicitly call out to that shell. Exit status of 0 is treated as live/healthy and non-zero is unhealthy.</p>
 
 </td>
 </tr>
