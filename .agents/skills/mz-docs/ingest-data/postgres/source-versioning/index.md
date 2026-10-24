@@ -82,11 +82,16 @@ CREATE TABLE v1.T
 Once you've created a table from source, the [initial
 snapshot](/ingest-data/#snapshotting) of table `v1.T` will begin.
 
-> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
-> source is temporarily blocked. As such, if possible, you can resize the cluster
-> to speed up the snapshotting process and once the process finishes, resize the
-> cluster for steady-state. You can monitor the snapshot progress on the overview
-> page for the source in the Materialize console.
+> **Note:** In private preview starting in v26.47, Materialize can snapshot a new table
+> without blocking ingestion for existing tables. This uses more memory and CPU.
+> Single-worker replica sizes (`25cc` or `50cc`) might not have enough capacity
+> to keep both the new table and existing tables fresh. Use a source cluster size
+> of `100cc` or larger, or temporarily resize it up for the snapshot. See the
+> [release notes](/releases/#v26.47-postgres-add-table-freshness).
+> Without this feature, snapshotting a new table blocks ingestion for existing
+> tables. To speed up the snapshot, consider sizing up the cluster. You can
+> monitor snapshot progress on the source's overview page in the Materialize
+> Console.
 
 ## Create a view on top of the table.
 
@@ -131,11 +136,16 @@ CREATE TABLE v2.T
 The [snapshotting](/ingest-data/#snapshotting) of table `v2.T` will begin.
 `v2.T` will include columns `A` and `B`.
 
-> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
-> source is temporarily blocked. As such, if possible, you can resize the cluster
-> to speed up the snapshotting process and once the process finishes, resize the
-> cluster for steady-state. You can monitor the snapshot progress on the overview
-> page for the source in the Materialize console.
+> **Note:** In private preview starting in v26.47, Materialize can snapshot a new table
+> without blocking ingestion for existing tables. This uses more memory and CPU.
+> Single-worker replica sizes (`25cc` or `50cc`) might not have enough capacity
+> to keep both the new table and existing tables fresh. Use a source cluster size
+> of `100cc` or larger, or temporarily resize it up for the snapshot. See the
+> [release notes](/releases/#v26.47-postgres-add-table-freshness).
+> Without this feature, snapshotting a new table blocks ingestion for existing
+> tables. To speed up the snapshot, consider sizing up the cluster. You can
+> monitor snapshot progress on the source's overview page in the Materialize
+> Console.
 
 When the new `v2.T` table has finished snapshotting, create a new materialized
 view `matview` in the new schema.  Since the new `v2.matview` is referencing the
@@ -162,11 +172,16 @@ CREATE TABLE v3.T
     FROM SOURCE my_source(REFERENCE public.T) WITH (EXCLUDE COLUMNS (B));
 ```
 
-> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
-> source is temporarily blocked. As such, if possible, you can resize the cluster
-> to speed up the snapshotting process and once the process finishes, resize the
-> cluster for steady-state. You can monitor the snapshot progress on the overview
-> page for the source in the Materialize console.
+> **Note:** In private preview starting in v26.47, Materialize can snapshot a new table
+> without blocking ingestion for existing tables. This uses more memory and CPU.
+> Single-worker replica sizes (`25cc` or `50cc`) might not have enough capacity
+> to keep both the new table and existing tables fresh. Use a source cluster size
+> of `100cc` or larger, or temporarily resize it up for the snapshot. See the
+> [release notes](/releases/#v26.47-postgres-add-table-freshness).
+> Without this feature, snapshotting a new table blocks ingestion for existing
+> tables. To speed up the snapshot, consider sizing up the cluster. You can
+> monitor snapshot progress on the source's overview page in the Materialize
+> Console.
 
 ### B. Drop a column in your upstream PostgreSQL database
 
@@ -247,11 +262,16 @@ CREATE TABLE v4.T
     FROM SOURCE my_source(REFERENCE public.T) WITH (EXCLUDE ALL CONSTRAINTS);
 ```
 
-> **Note:** During the snapshotting, the data ingestion for the existing tables for the same
-> source is temporarily blocked. As such, if possible, you can resize the cluster
-> to speed up the snapshotting process and once the process finishes, resize the
-> cluster for steady-state. You can monitor the snapshot progress on the overview
-> page for the source in the Materialize console.
+> **Note:** In private preview starting in v26.47, Materialize can snapshot a new table
+> without blocking ingestion for existing tables. This uses more memory and CPU.
+> Single-worker replica sizes (`25cc` or `50cc`) might not have enough capacity
+> to keep both the new table and existing tables fresh. Use a source cluster size
+> of `100cc` or larger, or temporarily resize it up for the snapshot. See the
+> [release notes](/releases/#v26.47-postgres-add-table-freshness).
+> Without this feature, snapshotting a new table blocks ingestion for existing
+> tables. To speed up the snapshot, consider sizing up the cluster. You can
+> monitor snapshot progress on the source's overview page in the Materialize
+> Console.
 
 ### B. Drop the constraint in your upstream PostgreSQL database
 
