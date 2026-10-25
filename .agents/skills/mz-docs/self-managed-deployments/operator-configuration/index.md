@@ -691,20 +691,6 @@ To configure the Materialize operator, you can:
 </tr>
 
 <tr>
-<td><a href='#telemetrysegmentapikey'><code>telemetry.segmentApiKey</code></a></td>
-<td>
-<code>&quot;hMWi3sZ17KFMjn2sPWo9UJGpOQqiba4A&quot;</code>
-</td>
-</tr>
-
-<tr>
-<td><a href='#telemetrysegmentclientside'><code>telemetry.segmentClientSide</code></a></td>
-<td>
-<code>true</code>
-</td>
-</tr>
-
-<tr>
 <td><a href='#tlsdefaultcertificatespecs'><code>tls.defaultCertificateSpecs</code></a></td>
 <td>
 <code>{}</code>
@@ -1267,14 +1253,6 @@ CSI driver to use, eg &ldquo;local.csi.openebs.io&rdquo;
 ### `telemetry` parameters
 
 #### telemetry.enabled
-
-**Default**: <code>true</code>
-
-#### telemetry.segmentApiKey
-
-**Default**: <code>&quot;hMWi3sZ17KFMjn2sPWo9UJGpOQqiba4A&quot;</code>
-
-#### telemetry.segmentClientSide
 
 **Default**: <code>true</code>
 
