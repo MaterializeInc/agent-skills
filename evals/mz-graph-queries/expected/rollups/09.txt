@@ -1,0 +1,2 @@
+distinct parts	5
+paths	6

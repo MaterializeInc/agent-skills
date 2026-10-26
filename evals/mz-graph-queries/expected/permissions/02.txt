@@ -1,0 +1,6 @@
+d1	docX	read
+d2	docX	edit
+d3	docX	edit
+d3	docX	read
+d4	docX	edit
+d4	docX	read

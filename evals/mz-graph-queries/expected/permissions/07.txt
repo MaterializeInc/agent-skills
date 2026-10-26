@@ -1,0 +1,4 @@
+h1	docA	read
+h1	docB	read
+h2	docB	read
+h3	docB	read

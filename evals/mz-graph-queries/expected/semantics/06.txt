@@ -1,0 +1,1 @@
+ERROR:  WITH MUTUALLY RECURSIVE query "bar" declared types (bigint), but query returns types (text)
