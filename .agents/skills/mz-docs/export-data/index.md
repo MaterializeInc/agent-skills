@@ -46,6 +46,7 @@ sinks](/export-data/sink-troubleshooting/).
 - [OpenSearch](/export-data/opensearch/index.md): How to export results from Materialize to OpenSearch using the Kafka sink and Kafka Connect.
 - [S3 Compatible Object Storage](/export-data/s3_compatible/index.md): How to export results from Materialize to S3 compatible object storage
 - [Snowflake](/export-data/snowflake/index.md): How to export results from Materialize to Snowflake.
+- [Troubleshooting Iceberg sinks](/export-data/iceberg-troubleshooting/index.md): How to diagnose and resolve common issues with Iceberg sinks.
 - [Troubleshooting sinks](/export-data/sink-troubleshooting/index.md)
 - [turbopuffer](/export-data/turbopuffer/index.md): How to export results from Materialize to turbopuffer using the Kafka sink and mz-tpuf-sink.
 - [Understand the lifecycle of a sink](/export-data/lifecycle-of-a-sink/index.md): The states a sink moves through, how to monitor each one, and the error states you might encounter.

@@ -1224,6 +1224,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>immediately_handled</code>, <code>type</code></td>
     </tr>
     <tr>
+      <td><code>mz_linearize_read_fast_path_total</code></td>
+      <td>The number of ordinary strict serializable reads already linearized at transaction end</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_mcp_requests_total</code></td>
       <td>Total number of MCP requests received.</td>
       <td><code>endpoint_type</code>, <code>method</code>, <code>status</code></td>
@@ -3676,6 +3681,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
     <tr>
       <td><code>mz_storage_upsert_multi_put_size_total</code></td>
       <td>The batch size, of getting values into the upsert state for this source. Specific implementations of upsert state may have more detailed metrics about sub-batches.</td>
+      <td><code>source_id</code>, <code>worker_id</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_storage_upsert_restashed_total</code></td>
+      <td>The number of updates the upsert v2 operator extracted from its stash before the persist feedback frontier reached their time, and pushed back.</td>
       <td><code>source_id</code>, <code>worker_id</code></td>
     </tr>
     <tr>
