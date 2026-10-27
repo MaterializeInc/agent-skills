@@ -137,7 +137,7 @@ Sinking results from Materialize to external systems.
 - **GCP BigLake**: `export-data/iceberg-gcp/index.md`
 - **Kafka and Redpanda**: `export-data/kafka/index.md`
 - **OpenSearch**: `export-data/opensearch/index.md`
-- _(and 5 more files in this section)_
+- _(and 6 more files in this section)_
 
 ### SQL commands
 SQL commands reference.
