@@ -69,7 +69,7 @@ Materialize, please submit a [feature request](https://materialize.com/support/)
   </div>
   <ul>
 <li><a href="/serve-results/troubleshooting/" >Troubleshooting</a></li>
-<li><a href="/transform-data/freshness-troubleshooting/" >Freshness troubleshooting</a></li>
+<li><a href="/transform-data/freshness/troubleshoot-freshness/" >Freshness troubleshooting</a></li>
 <li><a href="/transform-data/dataflow-troubleshooting/" >Dataflow troubleshooting</a></li>
 <li><a href="/transform-data/faq/" >FAQ: Indexes</a></li>
 </ul>
@@ -83,8 +83,7 @@ Materialize, please submit a [feature request](https://materialize.com/support/)
 - [Dataflow troubleshooting](/transform-data/dataflow-troubleshooting/index.md): How to troubleshoot common dataflow-level scenarios where Materialize is not working as expected.
 - [Dictionary compression](/transform-data/dictionary-compression/index.md): Reduce arrangement memory for columns that hold a small set of repeated values.
 - [FAQ: Indexes](/transform-data/faq/index.md): Frequently asked questions about indexes.
-- [Freshness troubleshooting](/transform-data/freshness-troubleshooting/index.md): How to diagnose and resolve freshness problems in Materialize.
-- [How to monitor freshness in Materialize](/transform-data/monitor-freshness/index.md): How to monitor data freshness across your environment and for specific objects in Materialize.
+- [Freshness](/transform-data/freshness/index.md): Guides for tuning, monitoring, and troubleshooting data freshness in Materialize.
 - [Idiomatic Materialize SQL](/transform-data/idiomatic-materialize-sql/index.md): Learn about idiomatic Materialize SQL. Materialize offers various idiomatic query patterns, such as for top-k query pattern, first value/last value query paterrns, etc.
 - [Optimization](/transform-data/optimization/index.md): Recommendations for query optimization in Materialize.
 - [Patterns](/transform-data/patterns/index.md): Learn about common Materialize query patterns.

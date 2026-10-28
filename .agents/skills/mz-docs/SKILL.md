@@ -80,8 +80,7 @@ Learn how to efficiently transform data using Materialize SQL.
 - **Dataflow troubleshooting**: `transform-data/dataflow-troubleshooting/index.md`
 - **Dictionary compression**: `transform-data/dictionary-compression/index.md`
 - **FAQ: Indexes**: `transform-data/faq/index.md`
-- **Freshness troubleshooting**: `transform-data/freshness-troubleshooting/index.md`
-- **How to monitor freshness in Materialize**: `transform-data/monitor-freshness/index.md`
+- **Freshness**: `transform-data/freshness/index.md`
 - **Idiomatic Materialize SQL**: `transform-data/idiomatic-materialize-sql/index.md`
 - **Optimization**: `transform-data/optimization/index.md`
 - **Patterns**: `transform-data/patterns/index.md`

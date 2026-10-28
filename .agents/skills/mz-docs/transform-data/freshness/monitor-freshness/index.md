@@ -7,7 +7,7 @@ to summarize a whole window of freshness observations with a CCDF or an HDR
 histogram.
 
 If freshness is worse than expected, see [Freshness
-troubleshooting](/transform-data/freshness-troubleshooting/) to diagnose and
+troubleshooting](/transform-data/freshness/troubleshoot-freshness/) to diagnose and
 resolve the cause.
 
 ## Track freshness over time
@@ -42,6 +42,11 @@ output like the following:
 Each row is one minute-binned observation of the object's wallclock lag, most
 recent first. Here lag holds steady at about two seconds, which is the expected,
 healthy pattern for a lightly loaded object.
+
+Wallclock lag is recorded in whole seconds, rounded up, so sub-second lag
+reads as `00:00:01`. To measure sub-second freshness, see [Fine tune for
+sub-second
+freshness](/transform-data/freshness/subsecond-freshness/#step-3-verify-freshness-with-end-to-end-latency).
 
 > **Note:** [`mz_internal.mz_wallclock_global_lag_recent_history`](/sql/system-catalog/mz_internal/#mz_wallclock_global_lag_recent_history)
 > is indexed and holds only the past 24 hours of data. Querying it is fast, so it

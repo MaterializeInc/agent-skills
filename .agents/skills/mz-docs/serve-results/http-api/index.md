@@ -131,7 +131,7 @@ Result | JSON value
 ---------------------|------------
 Rows | `{"rows": <2D array of JSON-ified results>, "desc": <array of column descriptions>, "notices": <array of notices>}`
 Error | `{"error": <Error object from execution>, "notices": <array of notices>}`
-Ok | `{"ok": <tag>, "notices": <array of notices>}`
+Ok | `{"ok": <tag>, "notices": <array of notices>, "parameters": <array of changed session parameters, omitted if empty>}`
 
 Each committed statement returns exactly one of these values; e.g. in the case
 of "complex responses", such as `INSERT INTO...RETURNING`, the presence of a
@@ -207,6 +207,7 @@ type SqlResult =
 } | {
 	ok: string;
 	notices: Notice[];
+	parameters?: { name: string; value: string }[];
 } | {
 	error: Error;
 	notices: Notice[];
