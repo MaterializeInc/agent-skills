@@ -251,22 +251,19 @@ Materialize adds the following headers to each message emitted by the sink:
 | Header key              | Value                                                                                                   | Added when                                               |
 |-------------------------|---------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
 | `materialize-timestamp` | The logical time at which the event described by the message occurred.                                 | Always.                                                  |
-| `materialize-sink-id`   | The ID of the sink, as shown in [`mz_sinks`](/sql/system-catalog/mz_catalog/#mz_sinks).                 | Enabled for your environment (private preview).          |
-| Any other key           | The entries of the column named in the [`HEADERS`](#the-headers-option) option.                         | The `HEADERS` option is specified (private preview).     |
+| `materialize-sink-id`   | The ID of the sink, as shown in [`mz_sinks`](/sql/system-catalog/mz_catalog/#mz_sinks).                 | Always.                                                  |
+| Any other key           | The entries of the column named in the [`HEADERS`](#the-headers-option) option.                         | The `HEADERS` option is specified.                       |
 
 ### The `materialize-sink-id` header
 
-When enabled for your environment, Materialize adds a header with key
-`materialize-sink-id` to each message emitted by the sink. The value of this
+Materialize adds a header with key `materialize-sink-id` to each message
+emitted by the sink. The value of this
 header is the ID of the sink, as shown in
 [`mz_sinks`](/sql/system-catalog/mz_catalog/#mz_sinks). This is the same ID
 Materialize records in the [progress topic](#exactly-once-processing), so
 downstream consumers (for example, a ClickHouse view or a Kafka Streams
 application) can correlate a data topic with its progress records without
 querying Materialize.
-
-The `materialize-sink-id` header will become generally available, and be added
-to every message, in v26.48.
 
 ### The `HEADERS` option
 
@@ -285,8 +282,6 @@ column must be of type `map[text => text]` or `map[text => bytea]`.
     column appears in the message body as well as in the headers.
   * Materialize only supports using the `HEADERS` option with the [upsert
     envelope](#upsert-envelope).
-
-The `HEADERS` option will become generally available in v26.48.
 
 ## Formats
 
