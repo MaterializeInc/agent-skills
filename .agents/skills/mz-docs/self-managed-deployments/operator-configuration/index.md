@@ -173,6 +173,20 @@ To configure the Materialize operator, you can:
 </tr>
 
 <tr>
+<td><a href='#environmentddefaultlivenessprobe'><code>environmentd.defaultLivenessProbe</code></a></td>
+<td>
+
+</td>
+</tr>
+
+<tr>
+<td><a href='#environmentddefaultreadinessprobe'><code>environmentd.defaultReadinessProbe</code></a></td>
+<td>
+
+</td>
+</tr>
+
+<tr>
 <td><a href='#environmentddefaultresourceslimits'><code>environmentd.defaultResources.limits</code></a></td>
 <td>
 <code>{&quot;memory&quot;:&quot;4Gi&quot;}</code>
@@ -183,6 +197,13 @@ To configure the Materialize operator, you can:
 <td><a href='#environmentddefaultresourcesrequests'><code>environmentd.defaultResources.requests</code></a></td>
 <td>
 <code>{&quot;cpu&quot;:&quot;1&quot;,&quot;memory&quot;:&quot;4095Mi&quot;}</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#environmentddefaultstartupprobe'><code>environmentd.defaultStartupProbe</code></a></td>
+<td>
+
 </td>
 </tr>
 
@@ -309,6 +330,13 @@ To configure the Materialize operator, you can:
 <td><a href='#operatorargsinstallv1crd'><code>operator.args.installV1CRD</code></a></td>
 <td>
 <code>false</code>
+</td>
+</tr>
+
+<tr>
+<td><a href='#operatorargslicensekeyintermediatecerts'><code>operator.args.licenseKeyIntermediateCerts</code></a></td>
+<td>
+<code>[]</code>
 </td>
 </tr>
 
@@ -539,7 +567,7 @@ To configure the Materialize operator, you can:
 <tr>
 <td><a href='#operatorimagetag'><code>operator.image.tag</code></a></td>
 <td>
-<code>&quot;v26.47.0&quot;</code>
+<code>&quot;v26.48.2&quot;</code>
 </td>
 </tr>
 
@@ -830,6 +858,18 @@ Tolerations to use for console pods spawned by the operator
 
 Affinity to use for environmentd pods spawned by the operator
 
+#### environmentd.defaultLivenessProbe
+
+**Default**: 
+
+Default liveness probe overrides for environmentd, overlaid onto the built-in TCP check against environmentd&rsquo;s SQL port. Only the fields set here are changed, and setting a handler (<code>exec</code>, <code>grpc</code>, <code>httpGet</code>, <code>tcpSocket</code>) replaces the built-in one. The Materialize CR&rsquo;s <code>environmentdLivenessProbe</code> is overlaid on top of this.
+
+#### environmentd.defaultReadinessProbe
+
+**Default**: 
+
+Default readiness probe overrides for environmentd, overlaid onto the built-in TCP check against environmentd&rsquo;s SQL port. Only the fields set here are changed, and setting a handler (<code>exec</code>, <code>grpc</code>, <code>httpGet</code>, <code>tcpSocket</code>) replaces the built-in one. The Materialize CR&rsquo;s <code>environmentdReadinessProbe</code> is overlaid on top of this.
+
 #### environmentd.defaultResources.limits
 
 **Default**: <code>{&quot;memory&quot;:&quot;4Gi&quot;}</code>
@@ -841,6 +881,12 @@ Default resource limits for environmentd&rsquo;s CPU and memory if not set in th
 **Default**: <code>{&quot;cpu&quot;:&quot;1&quot;,&quot;memory&quot;:&quot;4095Mi&quot;}</code>
 
 Default resources requested for environmentd&rsquo;s CPU and memory if not set in the Materialize CR
+
+#### environmentd.defaultStartupProbe
+
+**Default**: 
+
+Default startup probe for environmentd. Liveness and readiness checks are held off until it succeeds. No startup probe runs unless this or the Materialize CR&rsquo;s <code>environmentdStartupProbe</code> sets one. It is overlaid onto the built-in TCP check against environmentd&rsquo;s SQL port in the same way as <code>defaultReadinessProbe</code>.
 
 #### environmentd.nodeSelector
 
@@ -951,6 +997,12 @@ Whether to allow <code>CREATE NETWORK POLICY</code> and <code>ALTER NETWORK POLI
 **Default**: <code>false</code>
 
 Whether to install the v1 version of the Materialize CRD and the conversion webhook that converts between v1 and v1alpha1. When false, only the v1alpha1 CRD version is installed and no webhook serving certificate or service is created.
+
+#### operator.args.licenseKeyIntermediateCerts
+
+**Default**: <code>[]</code>
+
+Root-signed intermediate certificates whose keys may also sign license keys. Requires an operator built from v26.49.0-dev.0 or later.
 
 #### operator.args.startupLogFilter
 
@@ -1124,7 +1176,7 @@ The Docker repository for the operator image
 
 #### operator.image.tag
 
-**Default**: <code>&quot;v26.47.0&quot;</code>
+**Default**: <code>&quot;v26.48.2&quot;</code>
 
 The tag/version of the operator image to be used
 
