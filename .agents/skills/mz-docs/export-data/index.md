@@ -44,6 +44,7 @@ sinks](/export-data/sink-troubleshooting/).
 - [GCP BigLake](/export-data/iceberg-gcp/index.md): How to export results from Materialize to Apache Iceberg tables on Google Cloud BigLake.
 - [Kafka and Redpanda](/export-data/kafka/index.md): How to export results from Materialize to Kafka/Redpanda.
 - [OpenSearch](/export-data/opensearch/index.md): How to export results from Materialize to OpenSearch using the Kafka sink and Kafka Connect.
+- [Patterns](/export-data/patterns/index.md): Learn about common patterns for consuming data that Materialize sinks to external systems.
 - [S3 Compatible Object Storage](/export-data/s3_compatible/index.md): How to export results from Materialize to S3 compatible object storage
 - [Snowflake](/export-data/snowflake/index.md): How to export results from Materialize to Snowflake.
 - [Troubleshooting Iceberg sinks](/export-data/iceberg-troubleshooting/index.md): How to diagnose and resolve common issues with Iceberg sinks.

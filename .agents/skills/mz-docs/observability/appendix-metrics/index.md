@@ -2814,6 +2814,11 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_persist_state_hollow_run_missing_on_delete</code></td>
+      <td>count of hollow run blobs found already missing while deleting the parts they reference</td>
+      <td></td>
+    </tr>
+    <tr>
       <td><code>mz_persist_state_rollup_at_seqno_migration</code></td>
       <td>count of fetch_rollup_at_seqno calls that only worked because of the migration</td>
       <td></td>
