@@ -1154,7 +1154,7 @@ Materialize supports the following catalog type and destination combinations:
 | `'s3tablesrest'` | [AWS S3 Tables](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-tables.html) | [AWS connection](#aws) |
 | `'rest'` | [Google Cloud BigLake](https://docs.cloud.google.com/lakehouse/docs/lakehouse-iceberg-rest-catalog) <a class="private-preview-inline" href="https://materialize.com/preview-terms/">(feature in private preview)</a>
  | [GCP connection](#gcp) |
-| `'rest'` | Any [Iceberg REST catalog](https://iceberg.apache.org/spec/), including [Databricks Unity Catalog](/export-data/iceberg-databricks/) | OAuth2 credentials in a secret |
+| `'rest'` | Any [Iceberg REST catalog](https://iceberg.apache.org/rest-catalog-spec/), including [Databricks Unity Catalog](/export-data/iceberg-databricks/) and [Apache Polaris](/export-data/iceberg-rest/) | OAuth2 credentials in a secret |
 
 #### Syntax
 
@@ -1210,7 +1210,8 @@ CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
     CREDENTIAL = SECRET <secret_name>,
     OAUTH2 SERVER URL = '<token_url>',
     SCOPE = '<scope>',
-    ACCESS DELEGATION = 'vended-credentials'
+    ACCESS DELEGATION = 'vended-credentials',
+    STORAGE PROVIDER = '<provider>'
 );
 
 ```
@@ -1221,9 +1222,10 @@ CREATE CONNECTION <connection_name> TO ICEBERG CATALOG (
 | `URL` | *Value:* `text`. Required.  The catalog's Iceberg REST endpoint, the path the catalog serves `/v1/` under. Consult your catalog's documentation for the exact URL.  |
 | `WAREHOUSE` | *Value:* `text`. Optional.  The warehouse to operate in. What this names is catalog-specific: some catalogs expect a storage location, others the name of a catalog or warehouse object.  |
 | `CREDENTIAL` | *Value:* secret name or `text`. Required unless `GCP CONNECTION` is used.  OAuth2 client credentials as `<client_id>:<client_secret>`. A value with no colon is sent as the client secret alone.  |
-| `OAUTH2 SERVER URL` | *Value:* `text`. Optional.  The token endpoint to exchange `CREDENTIAL` at. Defaults to `<url>/v1/oauth/tokens`, the endpoint the Iceberg REST specification derives from the catalog URL.  Required for catalogs that serve their token endpoint elsewhere, or behind an auth gateway that will not serve an unauthenticated exchange.  |
+| `OAUTH2 SERVER URL` | *Value:* `text`. Optional.  The token endpoint to exchange `CREDENTIAL` at. Defaults to `<url>/v1/oauth/tokens`, the endpoint the Iceberg REST specification derives from the catalog URL.  Required for catalogs that serve their token endpoint elsewhere, or behind an auth gateway that will not serve an unauthenticated exchange.  The URL must resolve to a public address. Materialize sends the credential to it, so it rejects a URL that resolves to a private address when the connection is created.  |
 | `SCOPE` | *Value:* `text`. Optional.  The OAuth2 scope to request. Defaults to `catalog`, the scope the Iceberg REST specification defines.  |
 | `ACCESS DELEGATION` | *Value:* `'vended-credentials'`. Optional.  Requests temporary, table-scoped storage credentials from the catalog. Required for catalogs that manage their own storage and vend credentials as the only way to reach it.  See [Storage access delegation](/sql/create-connection/#iceberg-catalog-access-delegation).  |
+| `STORAGE PROVIDER` | *Value:* `'s3'`, `'gcs'`, or `'adls'`. Optional. Defaults to `'s3'`.  The object store holding the catalog's data files: Amazon S3 or an S3-compatible store, Google Cloud Storage, or Azure Data Lake Storage Gen2. The catalog reports where data files live but not what kind of store they are in, so Materialize uses this to pick its storage client.  Not supported with `CATALOG TYPE = 's3tablesrest'`, which always stores data in S3. A connection that authenticates with a GCP connection always uses `'gcs'`, and rejects any other value.  |
 
 #### Examples
 
