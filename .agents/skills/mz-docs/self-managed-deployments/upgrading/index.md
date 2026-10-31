@@ -125,7 +125,7 @@ Then, to upgrade:
 ```shell
 helm upgrade -n materialize my-demo materialize/operator \
   -f my-values.yaml \
-  --version v26.47.1
+  --version v26.48.2
 ```
 
 ## Upgrading Materialize Instances

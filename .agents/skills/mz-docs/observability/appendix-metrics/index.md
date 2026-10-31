@@ -249,6 +249,21 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>source</code></td>
     </tr>
     <tr>
+      <td><code>mz_balancer_connection_duration_seconds_bucket</code></td>
+      <td>Time from accepting a connection until it closes, for connections that reach proxying.</td>
+      <td><code>le</code>, <code>source</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_balancer_connection_duration_seconds_count</code></td>
+      <td>Time from accepting a connection until it closes, for connections that reach proxying.</td>
+      <td><code>source</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_balancer_connection_duration_seconds_sum</code></td>
+      <td>Time from accepting a connection until it closes, for connections that reach proxying.</td>
+      <td><code>source</code></td>
+    </tr>
+    <tr>
       <td><code>mz_balancer_connection_high_watermark</code></td>
       <td>Connections at which balancerd leaves load balancer rotation, 0 if disabled.</td>
       <td></td>
@@ -269,8 +284,23 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td></td>
     </tr>
     <tr>
+      <td><code>mz_balancer_connection_setup_duration_seconds_bucket</code></td>
+      <td>Time from accepting a connection until proxying it to environmentd begins, for connections that reach proxying.</td>
+      <td><code>le</code>, <code>source</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_balancer_connection_setup_duration_seconds_count</code></td>
+      <td>Time from accepting a connection until proxying it to environmentd begins, for connections that reach proxying.</td>
+      <td><code>source</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_balancer_connection_setup_duration_seconds_sum</code></td>
+      <td>Time from accepting a connection until proxying it to environmentd begins, for connections that reach proxying.</td>
+      <td><code>source</code></td>
+    </tr>
+    <tr>
       <td><code>mz_balancer_connection_status</code></td>
-      <td>Count of completed network connections, by status</td>
+      <td>Count of completed network connections, by status. `error` means balancerd or its backend could not serve the connection. Connections the client ended or failed count as `success`.</td>
       <td><code>source</code>, <code>status</code></td>
     </tr>
     <tr>
@@ -312,6 +342,26 @@ whose name is completed at runtime (for example, `mz_persist_*_bytes`).
       <td><code>mz_balancer_tenant_pgwire_sni_count</code></td>
       <td>Count of pgwire connections that have and do not have SNI available per tenant.</td>
       <td><code>has_sni</code>, <code>tenant</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_balancer_tls_handshake_failures_total</code></td>
+      <td>Count of client TLS handshakes that failed. Rises when clients reject the certificate balancerd presents, as well as with scanners and misconfigured clients, none of which count as an `error` connection status.</td>
+      <td><code>source</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_balancer_upstream_connect_duration_seconds_bucket</code></td>
+      <td>Time to open a TCP connection to environmentd, for connections that succeed.</td>
+      <td><code>le</code>, <code>source</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_balancer_upstream_connect_duration_seconds_count</code></td>
+      <td>Time to open a TCP connection to environmentd, for connections that succeed.</td>
+      <td><code>source</code></td>
+    </tr>
+    <tr>
+      <td><code>mz_balancer_upstream_connect_duration_seconds_sum</code></td>
+      <td>Time to open a TCP connection to environmentd, for connections that succeed.</td>
+      <td><code>source</code></td>
     </tr>
     <tr>
       <td><code>mz_bytes_read_total</code></td>
