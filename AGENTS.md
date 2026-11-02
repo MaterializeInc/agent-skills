@@ -28,7 +28,7 @@ evals/
 
 | Skill | Description |
 |-------|-------------|
-| `mz-docs` | Materialize documentation for SQL syntax, data ingestion, concepts, and best practices |
+| `mz-docs` | Materialize documentation for SQL syntax, data ingestion, concepts, and best practices, fetched live from materialize.com |
 | `mz-dbt` | Using the dbt-materialize adapter to manage Materialize streaming pipelines with dbt |
 | `mz-debug-freshness` | Diagnosing why a Materialize object is behind wall-clock time, down to the operator and the SQL responsible |
 | `mz-demo-data` | Standing up continuously-updating, invariant-bearing synthetic data entirely in SQL over `mz_now()`, for demos and evaluations; six shipped domains and a rubric for designing new ones |
@@ -43,22 +43,7 @@ evals/
 
 ### Reading Documentation
 
-When answering questions about Materialize, navigate the `.agents/skills/mz-docs/` directory:
-
-- **SQL syntax and commands**: `sql/` (120+ command references)
-- **Core concepts**: `fundamentals/concepts/` (clusters, sources, sinks, views, indexes), with architecture patterns in `fundamentals/architecture-patterns/`
-- **Clusters**: `clusters/` (sizing, autoscaling, system clusters, troubleshooting)
-- **Data ingestion**: `ingest-data/` (Kafka, PostgreSQL, MySQL, webhooks, etc.)
-- **Data transformation**: `transform-data/` (patterns, optimization, idiomatic SQL)
-- **Serving results**: `serve-results/` (BI tools, client libraries, HTTP/WebSocket APIs, FDW)
-- **Exporting data**: `export-data/` (sinks to Kafka, Iceberg, S3, Snowflake, and more)
-- **Developer tools**: `developer-tools/` (Console, dbt, Terraform, mz-deploy, MCP server, emulator)
-- **Observability**: `observability/` (metrics and monitoring)
-- **Security**: `security/` (RBAC, network policies, SSO)
-- **Materialize Cloud**: `materialize-cloud/` (billing, disaster recovery)
-- **Deployment**: `self-managed-deployments/` (AWS, Azure, GCP, Kubernetes)
-
-Each topic directory contains an `index.md` with the full documentation for that topic.
+When answering questions about Materialize, use the `mz-docs` skill. It does not contain the docs; it tells the agent how to find pages in `https://materialize.com/docs/llms.txt` and fetch their markdown from materialize.com with WebFetch or the agent's equivalent fetch tool. See `.agents/skills/mz-docs/SKILL.md`.
 
 ### SKILL.md Anatomy
 
@@ -140,11 +125,7 @@ Skills load in three stages:
 
 ## Adding Documentation
 
-When adding new documentation to an existing skill:
-
-1. Create the appropriate directory under the skill (e.g., `.agents/skills/mz-docs/{section}/{topic}/`)
-2. Add an `index.md` file with the documentation content
-3. Update the skill's `SKILL.md` to reference the new documentation in the appropriate section
+Materialize product documentation lives in [`doc/user/`](https://github.com/MaterializeInc/materialize/tree/main/doc/user) in the materialize repo and reaches agents through the `mz-docs` skill once it is published to materialize.com. Do not copy docs pages into this repo.
 
 ## Claude Code Plugins
 

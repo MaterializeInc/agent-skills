@@ -1,9 +1,0 @@
-# Materialize v0.72
-## v0.72.0
-
-#### Bug fixes and other improvements
-
-* Refactor [`mz_internal.mz_dataflow_arrangement_sizes`](/sql/system-catalog/mz_introspection/#mz_dataflow_arrangement_sizes)
-to include **all active dataflows**, not just the ones referenced from the
-system catalog. This makes debugging issues like high memory usage caused by
-arrangements more intuitive for users.
