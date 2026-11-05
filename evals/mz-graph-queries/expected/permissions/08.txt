@@ -1,0 +1,4 @@
+doc:d1	editor	user:bob
+doc:d1	viewer	user:ann
+doc:d1	viewer	user:bob
+folder:f1	viewer	user:ann
