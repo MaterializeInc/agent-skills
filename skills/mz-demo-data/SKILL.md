@@ -169,7 +169,7 @@ Show the user three queries, after `SET search_path = materialize_demo;`:
 
 These three are also where the story beats planned in Turn 3 usually land.
 Subscribe to a *result* as well as the heartbeat, so the user watches an
-aggregate move within a second of its input (freshness). Run the invariant
+aggregate move as its input changes (freshness). Run the invariant
 while data is changing underneath it (consistency). Run the cool query with
 `\timing` on, and if the domain has an editable table, change a row and read
 the result again (responsiveness). When a beat shows up, name it in one
@@ -204,8 +204,9 @@ domain, rather than reading a claim about it. Don't force them into the
 demo. Plan in Turn 3 where each one will show up, build the domain so that
 moment exists, and point it out when it happens.
 
-**Freshness** is often the headline. Results stay within about a second of
-their inputs, through joins, aggregates, and late or corrected data.
+**Freshness** is often the headline: how soon a result reflects its
+inputs, through joins, aggregates, and late or corrected data. Report the
+lag you measure, not the lag you expect.
 - Show it with a `SUBSCRIBE ... WITH (progress = true)` on a *derived*
   result, not only on the raw input. Each update carries an `mz_timestamp`
   that tracks the wall clock.
@@ -234,8 +235,9 @@ all views read at that timestamp agree with each other.
   check: a view that compares the two with `EXCEPT ALL` in both directions
   stays empty.
 
-**Responsiveness** means reads against indexed views come back in
-milliseconds, and a write shows up in dependent results straight away.
+**Responsiveness** is how quickly a read against an indexed view comes
+back, and how soon a write shows up in the results that depend on it.
+Report the times you measure.
 - Time a lookup with `\timing`.
 - Generated data runs on its own, so it gives the user nothing to change.
   If the domain has a natural setting (a threshold, a price, a plan, a
@@ -252,8 +254,11 @@ Some agents can publish a page the user can keep and pass around (Claude's
 artifacts, for example). If you can, offer one once the beats have shown
 up. Offer it, don't build it unasked. It gives the user something to show
 a colleague, and it is the natural place to set each beat against the
-volume of data behind it: "results within 300 ms of their inputs, while
-maintaining 2M bids arriving at 500 per second" says more than either half.
+volume of data behind it. A sentence of the form "results within
+\<measured lag\> of their inputs, while maintaining \<measured row count\>
+\<entities\> arriving at \<measured rate\> per second" says more than either
+half. Fill every placeholder from a measurement in this session, or drop
+the clause.
 
 Put in it:
 - The domain in two sentences, with the entities and their rates as agreed
