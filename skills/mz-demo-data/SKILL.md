@@ -104,11 +104,20 @@ plus the invariant you'd bake in. Format:
 >
 > **Joins to people?** \<yes/no, and why\>
 >
+> **Where the story beats show up:** freshness in \<the result to watch
+> update\>, consistency in \<the invariant or check\>, responsiveness in
+> \<the lookup to time, or the row the user can edit\>
+>
 > Sound right, or different entities?
 
 Wait for their reaction. **Don't write SQL until they sign off.** They will
 usually correct one of: an entity name, a missing field, the invariant, or
 the cardinality. Cheap to iterate here, expensive later.
+
+The story-beats line is a plan, not a script. See [Story
+beats](#story-beats-freshness-consistency-responsiveness) for what each one
+means and how to reveal it. If a beat has no natural home in the domain,
+leave it out of the line rather than inventing an entity to carry it.
 
 ### Turn 4 — show the byte budget
 
@@ -158,6 +167,14 @@ Show the user three queries, after `SET search_path = materialize_demo;`:
 3. **One "cool" query** — the demo payoff. For aggregations,
    `SELECT ... GROUP BY ...`; for cross-domain, a join through `people`.
 
+These three are also where the story beats planned in Turn 3 usually land.
+Subscribe to a *result* as well as the heartbeat, so the user watches an
+aggregate move within a second of its input (freshness). Run the invariant
+while data is changing underneath it (consistency). Run the cool query with
+`\timing` on, and if the domain has an editable table, change a row and read
+the result again (responsiveness). When a beat shows up, name it in one
+plain sentence, with the number you just saw.
+
 Then offer: "Want to layer another domain on top? You'll see joins through
 the shared `people` table stay live too."
 
@@ -172,6 +189,58 @@ the shared `people` table stay live too."
   query returns its expected value against THEIR Materialize instance.
 - Don't add columns the user didn't ask for. The template's free bytes
   exist; leave them free unless the user names a use.
+- Don't open with a speech about freshness, consistency and
+  responsiveness. Show the beat first, then name it.
+
+## Story beats: freshness, consistency, responsiveness
+
+These are the three properties people usually come to Materialize for. A
+demo is most convincing when the user watches each one happen on their own
+domain, rather than reading a claim about it. Don't force them into the
+demo. Plan in Turn 3 where each one will show up, build the domain so that
+moment exists, and point it out when it happens.
+
+**Freshness** is often the headline. Results stay within about a second of
+their inputs, through joins, aggregates, and late or corrected data.
+- Show it with a `SUBSCRIBE ... WITH (progress = true)` on a *derived*
+  result, not only on the raw input. Each update carries an `mz_timestamp`
+  that tracks the wall clock.
+- Measure it. Generated rows become visible at their moment, so the gap
+  between an update's `mz_timestamp` and the wall-clock time the client
+  receives it is the time from "event arrived" to "result in hand". Measure
+  the input view too. The difference is what the domain's logic costs.
+- Materialize keeps its own record, at one-second granularity:
+  ```sql
+  SELECT o.name, l.lag
+  FROM mz_internal.mz_wallclock_global_lag l
+  JOIN mz_objects o ON o.id = l.object_id
+  JOIN mz_schemas s ON s.id = o.schema_id
+  WHERE s.name = 'materialize_demo';
+  -- Distribution over recent history:
+  -- mz_internal.mz_wallclock_global_lag_histogram (lag_seconds, count)
+  ```
+- If lag is seconds or more and growing, that is a finding, not a detail
+  to skip. The `mz-debug-freshness` skill finds the cause.
+
+**Consistency** means every result is correct as of a single timestamp, and
+all views read at that timestamp agree with each other.
+- The domain's invariant is the natural place. Subscribe to it, or re-run
+  it while data changes, and it never shows a wrong value.
+- A second, independent computation of the same answer makes a strong
+  check: a view that compares the two with `EXCEPT ALL` in both directions
+  stays empty.
+
+**Responsiveness** means reads against indexed views come back in
+milliseconds, and a write shows up in dependent results straight away.
+- Time a lookup with `\timing`.
+- Generated data runs on its own, so it gives the user nothing to change.
+  If the domain has a natural setting (a threshold, a price, a plan, a
+  lookup row), make it a regular table. An `UPDATE` followed by a read of
+  the result it changes shows responsiveness and consistency together.
+
+Report every number with the scale it was measured at (rows, events per
+second, where it ran). A sub-second number from a laptop is still worth
+showing, as long as it is labelled as a laptop number.
 
 ## The two-layer model
 
