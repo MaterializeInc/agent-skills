@@ -178,6 +178,10 @@ plain sentence, with the number you just saw.
 Then offer: "Want to layer another domain on top? You'll see joins through
 the shared `people` table stay live too."
 
+If you can publish a page the user can share, also offer one that records
+what they built and what they saw. See [A shareable
+record](#a-shareable-record).
+
 ### Things to *not* do during first contact
 
 - Don't dump the catalog up front. The user came with a domain or wants
@@ -241,6 +245,40 @@ milliseconds, and a write shows up in dependent results straight away.
 Report every number with the scale it was measured at (rows, events per
 second, where it ran). A sub-second number from a laptop is still worth
 showing, as long as it is labelled as a laptop number.
+
+### A shareable record
+
+Some agents can publish a page the user can keep and pass around (Claude's
+artifacts, for example). If you can, offer one once the beats have shown
+up. Offer it, don't build it unasked. It gives the user something to show
+a colleague, and it is the natural place to set each beat against the
+volume of data behind it: "results within 300 ms of their inputs, while
+maintaining 2M bids arriving at 500 per second" says more than either half.
+
+Put in it:
+- The domain in two sentences, with the entities and their rates as agreed
+  in Turn 3.
+- The scale: rows maintained, events per second, the window, how many views
+  deep the cool query sits, and where it ran (laptop emulator, cloud
+  cluster size).
+- Each beat that showed up, with the number you measured. Freshness as
+  arrival-to-result time, and the lag histogram if you read it.
+  Consistency as the invariant and how many changes it held through.
+  Responsiveness as lookup latency and the time from `UPDATE` to changed
+  result.
+- The invariant and the cool query as SQL, so a reader can rerun them.
+
+Keep it honest:
+- Only numbers measured in this session, each labelled with its scale. No
+  extrapolating from a laptop to production.
+- The page is a snapshot, so say when it was measured. If it can't be
+  live, a captured `SUBSCRIBE` trace drawn as values against wall-clock
+  time stands in for the moving result.
+- A beat that didn't show up is left out, not claimed. A finding, such as
+  lag that grew, goes in plainly.
+- Leave out hostnames, connection strings, credentials, and the user's
+  organization and cluster names unless they ask for them. The data is
+  synthetic, so the rows themselves are safe to show.
 
 ## The two-layer model
 
