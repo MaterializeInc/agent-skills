@@ -222,7 +222,7 @@ Reducing the memory footprint and cost of Materialize compute clusters, with eve
 - You are deciding which indexes to add or drop, or tuning GROUP SIZE hints
 - Someone hands you a list of proposed index or view changes to adjudicate
 
-**Covers:** the arrangement cost model with a per-operator table, reading introspection safely (hydration gating, replica targeting, the MCP developer endpoint's two tools), a top-down workflow from census to replica resize, a lever table from measured signatures to fixes (hints, shared and boundary indexes, delta-join flips, payload slimming, projection pushdown, outer-join lowerings, subquery decorrelation, window-function rewrites), the landmines each change carries, change mechanics (experiment clusters, pinning, cascades, plan caching) and the verification discipline. The eval harness it was developed against lives in `evals/mz-optimize-memory/`.
+**Covers:** the arrangement cost model with a per-operator table, reading introspection safely (hydration gating, replica targeting, the MCP developer endpoint's two tools), a top-down workflow from census to replica resize, a lever table from measured signatures to fixes (hints, shared and boundary indexes, delta-join flips, payload slimming, projection pushdown, outer-join lowerings, subquery decorrelation, window-function rewrites), the landmines each change carries, change mechanics (experiment clusters, pinning, cascades, plan caching) and the verification discipline. The eval harness it was developed against lives in [`evals/mz-optimize-memory/`](https://github.com/MaterializeInc/agent-skills/tree/main/evals/mz-optimize-memory) on `main`.
 
 </details>
 
@@ -245,7 +245,7 @@ The `materialize` plugin declares no MCP servers, hooks, or other connectors, an
 
 Results the agent reads back, such as query results, view definitions, and source errors, enter the agent's context, so they reach the model provider your agent uses. Command-line tools such as `dbt` and `terraform` also follow their own network and telemetry settings. No skill sends data anywhere else.
 
-The `evals/` directory holds the harness `mz-optimize-memory` was developed against. The plugin doesn't load or run it.
+The harness `mz-optimize-memory` was developed against lives in [`evals/`](https://github.com/MaterializeInc/agent-skills/tree/main/evals/mz-optimize-memory) on the `main` branch, outside this plugin.
 
 ## Claude Code Plugins
 

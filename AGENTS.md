@@ -19,9 +19,6 @@ skills/
       index.md
 .agents/skills/
   {skill-name}/           # mz-docs and mz-health-check, same layout as skills/
-evals/
-  {skill-name}/           # Optional: the eval harness a skill was developed against
-    README.md             # (environment generator, runner, prompts, rubric, answer key)
 ```
 
 ### Current Skills

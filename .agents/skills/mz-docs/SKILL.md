@@ -1,7 +1,6 @@
 ---
 name: mz-docs
 description: Materialize documentation for SQL syntax, data ingestion, concepts, and best practices, fetched live as markdown from materialize.com. Use when users ask about Materialize queries, sources, sinks, views, indexes, clusters, or any other Materialize feature.
-allowed-tools: WebFetch(domain:materialize.com)
 ---
 
 # Materialize Documentation

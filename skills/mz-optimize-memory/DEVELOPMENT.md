@@ -2,8 +2,8 @@
 
 How mz-optimize-memory was built and evaluated, and how to test
 changes to it. The runnable harness lives at
-`evals/mz-optimize-memory/` in the agent-skills repository, the one
-this skill is published in; its README covers operation. This file covers the
+[`evals/mz-optimize-memory/`](https://github.com/MaterializeInc/agent-skills/tree/main/evals/mz-optimize-memory) on the `main` branch of the
+agent-skills repository; its README covers operation. This file covers the
 method.
 
 ## Provenance
