@@ -246,7 +246,7 @@ undersized replica | lag enters at the root | nothing behind | inconclusive
 **Evidence:**
 - Lag: <object> at <lag>, history <shape> over <samples> minutes
 - Attribution: <hop chain, with the local_lag of the hop that owns it>
-- Replica: <cpu_percent>, <memory_percent>, top dataflow <percent of total>
+- Replica: <cpu_percent>, <heap_percent>, top dataflow <percent of total>
 **Expensive operator:** <operator> at <percent_of_dataflow>, worker ratio <ratio>
 **SQL:** <clause>, in <fully qualified view name>, inlined into <dataflow name>
 **Ruled out:** <what was checked and found healthy>

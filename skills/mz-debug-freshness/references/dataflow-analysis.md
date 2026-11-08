@@ -67,6 +67,10 @@ How to read it:
 - `total_elapsed` is a total sum, not a rate. A dataflow that has run for weeks will look larger than one created this morning, even if the new one is the current problem. Compare it to the object's age from [object age](attribution.md#object-age).
 - One object can have several rows if it runs more than one dataflow. Read each `global_id` separately.
 - If metrics are null, the dataflow has not reported yet.
+- Before v26.46, `EXPLAIN ANALYZE ... CPU` counts the time of operators inside
+  a region more than once. Joins, reductions, and TopK read 1.5x to 3x high
+  next to arrangements, so a dataflow built from them can outrank one that did
+  more work. Check `select mz_version()` before relying on a close ranking.
 - `global_id` is a dataflow id, and for a materialized view it is a transient
   `t<N>` that appears in no catalog table. The `object` column is the fully
   qualified name and is the only identifier to carry forward into
@@ -87,7 +91,7 @@ EXPLAIN ANALYZE CPU, MEMORY FOR MATERIALIZED VIEW materialize.public.my_view;
 EXPLAIN ANALYZE CPU, MEMORY FOR INDEX materialize.public.my_index;
 ```
 
-The output is a tree plan. Each row is one operator. The tree is indented by nesting. `total_elapsed` does not include child operators, so the cost belongs to the operator on that row.
+The output is a tree plan. Each row is one operator. The tree is indented by nesting. `total_elapsed` does not include child operators, so the cost belongs to the operator on that row. Before v26.46 it overstates joins, reductions, and TopK as described in [cluster level](#cluster-level); the [operator costs](#operator-costs) query does not.
 
 Large plans use bindings: `With l13 = ...` starts a subplan. Other parts of the tree call it `Arranged l13`, `Read l13`, or `Stream l13`. Expensive work is often in bindings because they are used more than once.
 
@@ -132,20 +136,38 @@ cluster that hosts the dataflow. `mz_mappable_objects.name` is already a fully
 qualified name, so it is the only input.
 
 ```sql
-with per_operator as (
+with span_operators as (
     select
         mlm.global_id
         , mlm.lir_id
-        , sum(mse.elapsed_ns) as total_ns
+        , valid_id as id
+        , list_length(mda.address) as depth
     from mz_introspection.mz_lir_mapping as mlm
     cross join generate_series(
         (mlm.operator_id_start)::int8, (mlm.operator_id_end - 1)::int8
     ) as valid_id
-    join mz_introspection.mz_scheduling_elapsed_per_worker as mse
-        on mse.id = valid_id
+    join mz_introspection.mz_dataflow_operators as mdo
+        on mdo.id = valid_id
+    join mz_introspection.mz_dataflow_addresses as mda
+        on mda.id = valid_id
     join mz_introspection.mz_mappable_objects as mo
         on mo.global_id = mlm.global_id
     where mo.name = 'materialize.public.my_view'
+)
+
+, per_operator as (
+    select
+        so.global_id
+        , so.lir_id
+        , sum(mse.elapsed_ns) as total_ns
+    from span_operators as so
+    join mz_introspection.mz_scheduling_elapsed_per_worker as mse
+        on mse.id = so.id
+    where (so.global_id, so.lir_id, so.depth) in (
+        select global_id, lir_id, min(depth)
+        from span_operators
+        group by 1, 2
+    )
     group by 1, 2
 )
 
@@ -162,8 +184,15 @@ order by p.total_ns desc nulls last
 limit 15;
 ```
 
+A plan node's operators include the regions it renders into, and a region's
+elapsed time already contains the time of the operators inside it. The query
+therefore counts only each node's outermost operators, those at the smallest
+address depth, so nested time is counted once. The join with
+`mz_dataflow_operators` keeps channels, which share their scope's address, out
+of that comparison.
+
 `lir_id` is the join key to the plan in [mapping to SQL](#mapping-to-sql).
-The object name appears twice on purpose: once inside the aggregate and once in
+The object name appears twice on purpose: once in `span_operators` and once in
 the outer query. With a left join the aggregate no longer constrains which plan
 nodes come back, so without the outer filter the result is every object's plan on
 the cluster.
@@ -193,21 +222,39 @@ Whether an operator's work is spread across workers or landing on one. Same
 input, same cluster rule.
 
 ```sql
-with per_worker as (
+with span_operators as (
     select
         mlm.global_id
         , mlm.lir_id
-        , mse.worker_id
-        , sum(mse.elapsed_ns) as worker_ns
+        , valid_id as id
+        , list_length(mda.address) as depth
     from mz_introspection.mz_lir_mapping as mlm
     cross join generate_series(
         (mlm.operator_id_start)::int8, (mlm.operator_id_end - 1)::int8
     ) as valid_id
-    join mz_introspection.mz_scheduling_elapsed_per_worker as mse
-        on mse.id = valid_id
+    join mz_introspection.mz_dataflow_operators as mdo
+        on mdo.id = valid_id
+    join mz_introspection.mz_dataflow_addresses as mda
+        on mda.id = valid_id
     join mz_introspection.mz_mappable_objects as mo
         on mo.global_id = mlm.global_id
     where mo.name = 'materialize.public.my_view'
+)
+
+, per_worker as (
+    select
+        so.global_id
+        , so.lir_id
+        , mse.worker_id
+        , sum(mse.elapsed_ns) as worker_ns
+    from span_operators as so
+    join mz_introspection.mz_scheduling_elapsed_per_worker as mse
+        on mse.id = so.id
+    where (so.global_id, so.lir_id, so.depth) in (
+        select global_id, lir_id, min(depth)
+        from span_operators
+        group by 1, 2
+    )
     group by 1, 2, 3
 )
 

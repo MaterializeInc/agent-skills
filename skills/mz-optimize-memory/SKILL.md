@@ -384,7 +384,11 @@ live row for as long as the row lives. The near-term ones (within the
 `compute_temporal_bucketing_summary` horizon, two seconds by default) sit in
 the consuming operator's batcher and the rest in a separate `Temporal delay`
 operator just ahead of it (temporal bucketing), which logs them the same way
-under its own operator id.
+under its own operator id. Temporal bucketing is on in Materialize Cloud, and
+on self-managed and the emulator from v26.47. Older self-managed versions and
+emulators run without it unless `enable_compute_temporal_bucketing` is set:
+there is no `Temporal delay` operator, and every parked retraction sits in the
+consuming operator's batcher.
 
 ### Memory beyond arrangements
 
