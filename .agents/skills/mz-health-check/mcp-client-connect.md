@@ -30,10 +30,9 @@ Keep the initial reply short (target ≤ 30 lines / one screen). Don't paste con
 
    *Claude Code · Claude Desktop · Cursor · VS Code (Copilot Chat) · Zed · Continue · Windsurf*
 
-4. **List the three runtime patterns** for selecting the user/role, names only:
-   1. Env-var rotation (placeholder in config + env var rotation)
-   2. Multiple registrations (one per identity, each with its own literal `Authorization` header)
-   3. Direct config edit (swap the literal token in the existing entry)
+4. **List the two runtime patterns** for selecting the user/role, names only:
+   1. Multiple registrations (one per identity, each with its own literal `Authorization` header)
+   2. Direct config edit (swap the literal token in the existing entry)
 
 5. **Detect or ask which client the user wants help with:**
    - **If the user named a client in the prompt**, confirm that's the focus.
@@ -58,7 +57,7 @@ If the user already named a client, deployment, or specific topic (e.g., *"confi
 
 ## Walkthrough — first-time setup against the Emulator with Claude Code
 
-The canonical "minimum-drama" path for getting Claude Code talking to a local Materialize Emulator's `/api/mcp/developer` endpoint. **Scope:** Emulator (`http://localhost:6876`), Claude Code, the `my_dev_agent` role, and Pattern A (env-var rotation). For other deployments, clients, or auth patterns, use the deep reference content below this section instead.
+The canonical "minimum-drama" path for getting Claude Code talking to a local Materialize Emulator's `/api/mcp/developer` endpoint. **Scope:** Emulator (`http://localhost:6876`), Claude Code, the `my_dev_agent` role, and a single registration with a literal `Authorization` header. For other deployments, clients, or auth patterns, use the deep reference content below this section instead.
 
 ### State-detection probes (run before each step; skip the step if state is already in place)
 
@@ -80,8 +79,8 @@ psql postgres://materialize@127.0.0.1:6875/materialize -tAc \
 # 3. materialize-developer registered in Claude Code?
 claude mcp list 2>&1 | grep -E '^materialize-developer:'
 
-# 4. ~/.claude.json entry uses the env-var placeholder form?
-grep -A 3 '"materialize-developer"' ~/.claude.json | grep -q 'Basic ${MCP_DEV_TOKEN}'
+# 4. ~/.claude.json entry carries the my_dev_agent token?
+grep -A 3 '"materialize-developer"' ~/.claude.json | grep -q 'Basic bXlfZGV2X2FnZW50Og=='
 ```
 
 ### Steps
@@ -102,21 +101,12 @@ The walkthrough is **idempotent** — re-running on a partly-configured machine 
 
    ```sh
    claude mcp add-json materialize-developer \
-     '{"type":"http","url":"http://localhost:6876/api/mcp/developer","headers":{"Authorization":"Basic ${MCP_DEV_TOKEN}"}}'
+     '{"type":"http","url":"http://localhost:6876/api/mcp/developer","headers":{"Authorization":"Basic bXlfZGV2X2FnZW50Og=="}}'
    ```
 
-   If a registration exists but uses a literal token (Pattern C variant), `claude mcp remove materialize-developer` first, then re-add in the placeholder form. The walkthrough is opinionated about Pattern A — the env var is the rotation point.
+   `bXlfZGV2X2FnZW50Og==` is `base64("my_dev_agent:")`. Emulator roles have no password, so this token is fixed and not a secret. If a registration exists with a different token (another role), `claude mcp remove materialize-developer` first, then re-add. For any other role or deployment, build the token as in [Building the Basic token](#building-the-basic-token), and have the user run the command themselves rather than pasting a real password into the conversation.
 
-4. **PAUSE for the user to set the env var.** Show them, verbatim:
-
-   ```sh
-   export MCP_DEV_TOKEN="$(printf 'my_dev_agent:' | base64)"         # Emulator users have no password
-   echo "$MCP_DEV_TOKEN"                                             # expect: bXlfZGV2X2FnZW50Og==
-   ```
-
-   Wait for the user to confirm the echo matches before continuing. macOS reminder: do **not** add `-w0` to `base64`; that's GNU coreutils only.
-
-5. **PAUSE for the user to restart Claude Code:**
+4. **PAUSE for the user to restart Claude Code:**
 
    ```sh
    ^C^C
@@ -125,7 +115,7 @@ The walkthrough is **idempotent** — re-running on a partly-configured machine 
 
    The conversation context is preserved. When the user returns ("back" / "ready" / similar), proceed.
 
-6. **Smoke query** to prove the connection is live and identifies the right role:
+5. **Smoke query** to prove the connection is live and identifies the right role:
 
    ```
    query_system_catalog: SELECT current_role FROM mz_catalog.mz_databases LIMIT 1
@@ -133,24 +123,24 @@ The walkthrough is **idempotent** — re-running on a partly-configured machine 
 
    Expected: `my_dev_agent`. The query needs to reference a system catalog table — a bare `SELECT current_role` is rejected with `Query must reference at least one system catalog table`.
 
-7. **Confirm success** in one short sentence and offer a follow-up. Example: *"You're connected as `my_dev_agent`. Try `/mz-health-check what's the health of my environment?` next."*
+6. **Confirm success** in one short sentence and offer a follow-up. Example: *"You're connected as `my_dev_agent`. Try `/mz-health-check what's the health of my environment?` next."*
 
 ### Failure handling
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Smoke query returns a role other than `my_dev_agent` | The user's `MCP_DEV_TOKEN` was set to a different role's base64 | Repeat step 4 with the right `printf`/`base64` invocation, then restart again. |
-| Smoke query returns `anonymous_http_user` | No usable `Authorization` header reached the server: the env var was unset in the shell that launched `claude`, or the token is malformed. The Emulator downgrades both to anonymous rather than rejecting them. | Confirm `echo "$MCP_DEV_TOKEN"` in the launching shell shows `bXlfZGV2X2FnZW50Og==`; if it's empty, `export` was missed. |
+| Smoke query returns a role other than `my_dev_agent` | The registration's header carries a different role's token | `claude mcp remove materialize-developer`, redo step 3, then restart (step 4). |
+| Smoke query returns `anonymous_http_user` | No usable `Authorization` header reached the server: the registration has no header, or the token is malformed. The Emulator downgrades both to anonymous rather than rejecting them. | Check that `claude mcp get materialize-developer` shows `Basic bXlfZGV2X2FnZW50Og==`; if not, remove it and redo step 3. |
 | HTTP 422 on the smoke query | The request body failed to deserialize: a malformed JSON-RPC body, not a credential problem. | Check the JSON-RPC body shape, not the token. |
 | HTTP 503 on the smoke query | Usually `enable_mcp_developer` is `false` on this Emulator; the server also answers 503 when it cannot fetch a catalog snapshot in time, so retry once. | See the [server config docs](https://materialize.com/docs/integrations/mcp-server/mcp-developer-config/). Not a walkthrough fix. |
 | HTTP 403 | The request's `Origin` header is not on the server's allowlist (a browser-based client, or a proxy adding one) | Send the request without an `Origin`, or from an allowed origin. |
 | HTTP 200 whose body carries a JSON-RPC `error` instead of a `result` | The request reached the tool; the error's `data.error_type` is `ValidationError` (the statement was refused: not read-only, not a system table, two statements), `ExecutionError` (the SQL ran and failed, read the message), `ToolNotFound` (the `query` tool is disabled), or `InternalError` (a server-side failure). Every tool-level failure looks like this, never like a non-200 status. | Read `error_type` and the message; fix the statement, not the connection. |
-| `claude mcp list` shows the server but the smoke query times out | Claude Code wasn't restarted after the env var was set | Step 5 again. |
+| `claude mcp list` shows the server but the smoke query times out | Claude Code wasn't restarted after the server was registered | Step 4 again. |
 
 ### What the walkthrough does NOT cover
 
 - **Cloud or self-managed setup** — different URLs, different credentials, possibly Bearer tokens. Use the deep reference content below.
-- **Pattern B (multiple registrations)** or **Pattern C (literal-token edit)** — the walkthrough only sets up Pattern A. Cover those if the user explicitly asks to switch identities.
+- **Switching identities**: the walkthrough sets up a single registration. Cover [Pattern A (multiple registrations) or Pattern B (direct config edit)](#choosing-the-userrole-at-runtime--two-patterns) if the user explicitly asks to switch identities.
 - **Skill installation** — `npx skills add MaterializeInc/agent-skills` is a terminal-side step done before the user can invoke the walkthrough at all. If the slash command isn't found, point the user there first.
 - **RBAC tightening** — the walkthrough leaves `my_dev_agent` at `PUBLIC` defaults, which is appropriate for training but not for production. Direct the user to the Materialize RBAC docs for production scoping. RBAC gates data, not the catalog (see the Notes section of `SKILL.md`), so the analysis workflow still works for a narrowly-scoped agent role.
 
@@ -229,32 +219,11 @@ printf 'svc-agent@example.com:<app_password>' | base64
 
 ---
 
-## Choosing the user/role at runtime — three patterns
+## Choosing the user/role at runtime — two patterns
 
 These patterns are deployment-agnostic; only the *contents* of the auth token differ by deployment.
 
-### Pattern A — env-var rotation (recommended)
-
-Store the placeholder in the client config; populate the env var in the shell that launches the client:
-
-```jsonc
-"headers": { "Authorization": "Basic ${MCP_DEV_TOKEN}" }
-```
-
-```sh
-# Helper for any deployment:
-mcp_as_basic() { export MCP_DEV_TOKEN="$(printf '%s' "$1" | base64)"; }
-mcp_as_bearer() { export MCP_DEV_TOKEN="$1"; }   # if you also flip the header to Bearer
-
-# Examples:
-mcp_as_basic 'my_dev_agent:'                       # Emulator
-mcp_as_basic 'my_agent:s3cret'                     # Self-managed
-mcp_as_basic 'svc-agent@example.com:<app_pw>'     # Cloud
-```
-
-In Claude Code you can rotate the value without losing your conversation: `^C^C` out, re-export, then `claude --continue`.
-
-### Pattern B — multiple registrations, one per identity
+### Pattern A — multiple registrations, one per identity (recommended)
 
 Register the same URL multiple times under different names with literal Authorization headers:
 
@@ -268,14 +237,14 @@ claude mcp add-json materialize-as-admin \
 
 Both connect simultaneously; tools from each are namespaced under the registration name. Useful for comparing what different identities can see.
 
-### Pattern C — edit the client config JSON directly
+### Pattern B — edit the client config JSON directly
 
-Functionally identical to Pattern B but inside the existing registration's file. Use when you want to flip identity once without re-registering.
+Functionally identical to Pattern A but inside the existing registration's file. Use when you want to flip identity once without re-registering.
 
 ### Caveats
 
 - Cloud **app passwords are non-recoverable**. Lost ones must be regenerated from the Console.
-- OIDC **Bearer tokens expire**. Pattern A makes refresh trivial (re-export + `claude --continue`); Pattern B/C are awkward for rotating tokens.
+- OIDC **Bearer tokens expire**. Refreshing one means editing the registration (Pattern B), or removing and re-adding it, then restarting the client (in Claude Code, `^C^C` and `claude --continue`).
 - The MCP tools **block `SET` statements**, so post-auth role-switching does not work — pick the right principal at connect time. The cluster is chosen per call instead, through the `query` tool's `cluster` argument.
 - In Cloud, the role of record is the *user*, not a SQL role. To scope an agent narrowly, mint a dedicated user with restricted role membership rather than expecting `SET ROLE` to confine it.
 
@@ -295,7 +264,7 @@ Official docs: <https://code.claude.com/docs/en/mcp>
 
 ```sh
 claude mcp add-json materialize-developer \
-  '{"type":"http","url":"http://localhost:6876/api/mcp/developer","headers":{"Authorization":"Basic ${MCP_DEV_TOKEN}"}}'
+  '{"type":"http","url":"http://localhost:6876/api/mcp/developer","headers":{"Authorization":"Basic <base64-token>"}}'
 ```
 
 Equivalent project-committed `.mcp.json`:
@@ -306,13 +275,13 @@ Equivalent project-committed `.mcp.json`:
     "materialize-developer": {
       "type": "http",
       "url": "http://localhost:6876/api/mcp/developer",
-      "headers": { "Authorization": "Basic ${MCP_DEV_TOKEN}" }
+      "headers": { "Authorization": "Basic <base64-token>" }
     }
   }
 }
 ```
 
-Tools are discovered at session start. After registering a server or rotating `MCP_DEV_TOKEN`, either restart Claude Code or `^C^C` and `claude --continue` to keep your conversation context.
+Tools are discovered at session start. After registering a server or changing its token, either restart Claude Code or `^C^C` and `claude --continue` to keep your conversation context.
 
 ### Claude Desktop
 
