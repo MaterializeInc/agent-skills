@@ -19,11 +19,11 @@
 -- inlining and pre-computing the whole timeline. Each level keeps its rows for
 -- `retention` past their end, so the window below is never starved.
 --
--- Load with:   \i scaffold.sql
+-- Load with:   \i scaffold.sql.txt
 -- =============================================================================
 
 -- Everything this skill creates lives in the `materialize_demo` schema, so it
--- cannot collide with your own objects and teardown.sql is one DROP SCHEMA.
+-- cannot collide with your own objects and teardown.sql.txt is one DROP SCHEMA.
 -- Every CREATE is IF NOT EXISTS, so re-running any file is safe; it also
 -- means the knobs below only take effect on a fresh load.
 CREATE SCHEMA IF NOT EXISTS materialize_demo;
@@ -31,7 +31,7 @@ SET search_path = materialize_demo;
 
 -- Knobs. Override before \i, e.g.:
 --   \set retention '6 hours'
---   \i scaffold.sql
+--   \i scaffold.sql.txt
 \if :{?retention} \else \set retention '1 day' \endif
 \if :{?tick}      \else \set tick      '1 second' \endif
 

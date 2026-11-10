@@ -23,15 +23,15 @@ bottom for an existing domain; use the rubric to design new ones.
 ## Quickstart
 
 ```sh
-psql -p 6875 -h localhost -U materialize -f assets/scaffold.sql
-psql -p 6875 -h localhost -U materialize -f assets/common/people.sql
-psql -p 6875 -h localhost -U materialize -f assets/domains/auctions.sql
+psql -p 6875 -h localhost -U materialize -f assets/scaffold.sql.txt
+psql -p 6875 -h localhost -U materialize -f assets/common/people.sql.txt
+psql -p 6875 -h localhost -U materialize -f assets/domains/auctions.sql.txt
 ```
 
 Everything lands in its own `materialize_demo` schema, so nothing in the
 user's existing schemas is touched. Every object is created `IF NOT EXISTS`,
 so re-running any file is safe, but it also means re-running an *edited* file
-keeps the old definitions. To rebuild, run `assets/teardown.sql` (it drops
+keeps the old definitions. To rebuild, run `assets/teardown.sql.txt` (it drops
 the schema) and load again.
 
 Then in a psql session:
@@ -47,15 +47,15 @@ as both ends of the window advance.
 
 To change the window or tick rate, set them before `\i`. They only take
 effect on a fresh load; if the scaffold is already there, run
-`assets/teardown.sql` first.
+`assets/teardown.sql.txt` first.
 
 ```sql
 \set retention '6 hours'
 \set tick '1 second'
-\i assets/scaffold.sql
+\i assets/scaffold.sql.txt
 ```
 
-To tear everything down: `psql -f assets/teardown.sql`.
+To tear everything down: `psql -f assets/teardown.sql.txt`.
 
 ## First contact: walking a fresh user from zero to demo
 
@@ -130,20 +130,20 @@ in some field, swap bytes here, not later.
 
 ### Turn 5 — write and load
 
-Copy `assets/domains/_template.sql` to `assets/domains/<their>.sql` and
+Copy `assets/domains/_template.sql.txt` to `assets/domains/<their>.sql` and
 fill it in following the byte budget. Then:
 
 ```sh
 # Every file is IF NOT EXISTS — safe to re-run.
-psql ... -f assets/scaffold.sql
-psql ... -f assets/common/people.sql    # only if domain joins people
+psql ... -f assets/scaffold.sql.txt
+psql ... -f assets/common/people.sql.txt    # only if domain joins people
 psql ... -f assets/domains/<their>.sql
 ```
 
 If you are iterating on the domain file, re-running it will not replace
 views that already exist. Drop the domain's objects first (`DROP VIEW
 materialize_demo.<name>_core CASCADE` takes its whole chain), or run
-`assets/teardown.sql` and load everything again.
+`assets/teardown.sql.txt` and load everything again.
 
 ### Turn 6 — prove it works, hand over the wheel
 
@@ -180,7 +180,7 @@ Every demo built with this skill has exactly two layers:
 1. **Scaffold** (stable). The `moments` view — a sliding window of timestamps
    — and the `random` view — MD5(moment) producing 16 deterministic bytes per
    moment. **Do not edit per-domain.** Always loaded first; the same scaffold
-   serves every domain. Lives in `assets/scaffold.sql`.
+   serves every domain. Lives in `assets/scaffold.sql.txt`.
 
 2. **Domain** (creative). Views that turn `random` bytes into entities,
    relationships, and aggregates. One file per domain in `assets/domains/`.
@@ -259,14 +259,14 @@ The strongest demos rely on invariants that **cannot be violated** because of
 how the data is constructed. Two patterns:
 
 **Sum-to-zero (double entry).** Each event emits two child rows with opposite
-signs (`banking.sql`). `SUM(ledger_entries.amount) = 0` holds at every
+signs (`banking.sql.txt`). `SUM(ledger_entries.amount) = 0` holds at every
 consistent timestamp, regardless of concurrent transaction volume. This is
 the headline Materialize correctness demo and it's almost impossible to fake
 with off-the-shelf data.
 
 **Count matches declared fanout.** A parent row declares `n_items`, and uses
 `generate_series(1, n_items)` to emit children. `COUNT(children) =
-SUM(parent.n_items)` is invariant (`ecommerce.sql`). State it in aggregate;
+SUM(parent.n_items)` is invariant (`ecommerce.sql.txt`). State it in aggregate;
 the per-parent form breaks on id collisions (next section).
 
 When designing a new domain, look for an invariant of this form. A demo
@@ -329,7 +329,7 @@ To add `assets/domains/<yours>.sql`, work through these steps in order:
 4. **Identify the invariant.** What sum, count, or equality must hold by
    construction? Bake it in via fanout or two-legged emission, not as a
    `CHECK` constraint.
-5. **Copy the template.** `cp assets/domains/_template.sql assets/domains/<yours>.sql`
+5. **Copy the template.** `cp assets/domains/_template.sql.txt assets/domains/<yours>.sql`
    and fill in the TODOs. The template already encodes the standard
    `_core` view → public MV → child MV → aggregate VIEW pattern, with every
    object in `materialize_demo` and created `IF NOT EXISTS`. Keep that
@@ -357,12 +357,12 @@ purposes. Re-allocate.
 
 | File | Domain | Highlights | Joins `people`? |
 |---|---|---|---|
-| `domains/auctions.sql`   | Auctions & bids                | Marketplace; lifecycle (end_time); winning-bid demo            | No |
-| `domains/ecommerce.sql`  | Orders, line items, totals     | Multi-row child fanout; `order_totals` aggregate-as-view       | Yes |
-| `domains/banking.sql`    | Accounts, double-entry txns    | **`SUM(balances) = 0`** invariant. Strongest correctness demo. | Yes |
-| `domains/iot.sql`        | Devices, readings, alerts      | High cardinality; threshold alerts; per-site rollup            | No |
-| `domains/clickstream.sql`| Sessions, page views, funnel   | Funnel analytics; conversion rate by channel                   | Yes |
-| `domains/zoo.sql`        | Zoo visits, ratings, shipments | Three invariants at once, richest domain. Proof that a domain needn't be boring: front-of-house ratings correlate with back-of-house consultations by construction. | Yes |
+| `domains/auctions.sql.txt`   | Auctions & bids                | Marketplace; lifecycle (end_time); winning-bid demo            | No |
+| `domains/ecommerce.sql.txt`  | Orders, line items, totals     | Multi-row child fanout; `order_totals` aggregate-as-view       | Yes |
+| `domains/banking.sql.txt`    | Accounts, double-entry txns    | **`SUM(balances) = 0`** invariant. Strongest correctness demo. | Yes |
+| `domains/iot.sql.txt`        | Devices, readings, alerts      | High cardinality; threshold alerts; per-site rollup            | No |
+| `domains/clickstream.sql.txt`| Sessions, page views, funnel   | Funnel analytics; conversion rate by channel                   | Yes |
+| `domains/zoo.sql.txt`        | Zoo visits, ratings, shipments | Three invariants at once, richest domain. Proof that a domain needn't be boring: front-of-house ratings correlate with back-of-house consultations by construction. | Yes |
 
 Loading more than one ecommerce/banking/clickstream domain at once gives you
 the cross-product demo: "show me Person 042's orders, their transactions, and
@@ -375,16 +375,16 @@ skills/mz-demo-data/
 ├── SKILL.md                  ← you are here
 ├── README.md                 short human intro
 └── assets/
-    ├── scaffold.sql          moments + random; do not edit per-domain
-    ├── teardown.sql          drops the materialize_demo schema
+    ├── scaffold.sql.txt      moments + random; do not edit per-domain
+    ├── teardown.sql.txt      drops the materialize_demo schema
     ├── common/
-    │   └── people.sql        256-identity pool, shared across domains
+    │   └── people.sql.txt    256-identity pool, shared across domains
     └── domains/
-        ├── _template.sql         ← copy this to start a new domain
-        ├── auctions.sql
-        ├── ecommerce.sql
-        ├── banking.sql
-        ├── iot.sql
-        ├── clickstream.sql
-        └── zoo.sql
+        ├── _template.sql.txt     ← copy this to start a new domain
+        ├── auctions.sql.txt
+        ├── ecommerce.sql.txt
+        ├── banking.sql.txt
+        ├── iot.sql.txt
+        ├── clickstream.sql.txt
+        └── zoo.sql.txt
 ```

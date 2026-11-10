@@ -17,7 +17,7 @@
 --     property and is hard to demo with synthetic data any other way.
 --   * cross-domain join to `people` for account holders
 --
--- Prerequisites: scaffold.sql, common/people.sql
+-- Prerequisites: scaffold.sql.txt, common/people.sql.txt
 -- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS materialize_demo;

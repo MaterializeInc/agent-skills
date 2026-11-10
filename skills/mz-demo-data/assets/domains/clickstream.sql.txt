@@ -15,7 +15,7 @@
 --   * window-like behavior via per-session offsets within the moment
 --   * cross-domain join to `people` for user identity
 --
--- Prerequisites: scaffold.sql, common/people.sql
+-- Prerequisites: scaffold.sql.txt, common/people.sql.txt
 -- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS materialize_demo;
@@ -127,7 +127,7 @@ GROUP BY s.source;
 -- Current funnel:
 --   SELECT * FROM funnel ORDER BY views DESC;
 --
--- Cross-domain demo (requires ecommerce.sql also loaded):
+-- Cross-domain demo (requires ecommerce.sql.txt also loaded):
 -- Which users converted AND placed an order in the window?
 --   SELECT c.user_name FROM conversions c
 --   WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.user_id);

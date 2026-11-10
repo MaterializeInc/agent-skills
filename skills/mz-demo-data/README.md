@@ -10,9 +10,9 @@ Based on [this blog post](https://github.com/frankmcsherry/blog/blob/master/post
 ```sh
 PSQL="psql -p 6875 -h localhost -U materialize"
 
-$PSQL -f assets/scaffold.sql            # moments + random (24h window, 1s tick)
-$PSQL -f assets/common/people.sql       # shared 256-identity pool
-$PSQL -f assets/domains/auctions.sql    # or any other domain
+$PSQL -f assets/scaffold.sql.txt            # moments + random (24h window, 1s tick)
+$PSQL -f assets/common/people.sql.txt       # shared 256-identity pool
+$PSQL -f assets/domains/auctions.sql.txt    # or any other domain
 ```
 
 Everything lands in the `materialize_demo` schema. Then in a psql session:
@@ -27,10 +27,10 @@ To change the retention window or tick (on a fresh load; teardown first):
 ```sql
 \set retention '6 hours'
 \set tick '1 second'
-\i assets/scaffold.sql
+\i assets/scaffold.sql.txt
 ```
 
-Teardown: `$PSQL -f assets/teardown.sql`.
+Teardown: `$PSQL -f assets/teardown.sql.txt`.
 
 ## Domains
 

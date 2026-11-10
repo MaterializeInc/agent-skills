@@ -15,7 +15,7 @@
 --   * cross-domain join to shared `people` (customer FK)
 --   * aggregate-as-view (`order_totals`) — the classic MV use case
 --
--- Prerequisites: scaffold.sql, common/people.sql
+-- Prerequisites: scaffold.sql.txt, common/people.sql.txt
 -- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS materialize_demo;

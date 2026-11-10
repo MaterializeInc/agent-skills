@@ -18,7 +18,7 @@
 --
 -- Static (not moment-driven). Names/emails are deterministic for repeatability.
 --
--- Load with:   \i common/people.sql   (after scaffold.sql)
+-- Load with:   \i common/people.sql.txt   (after scaffold.sql.txt)
 -- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS materialize_demo;

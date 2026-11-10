@@ -129,7 +129,7 @@ Do not expose heuristic matches as foreign-key-like edges. Model the match as a
 relationship object with its method, status, evidence, confidence, and effective time.
 
 `core.public.relationships` is the machine-readable registry of all reference edges.
-Read `references/relationships.sql` when creating or reviewing it. Composite references
+Read `references/relationships.sql.txt` when creating or reviewing it. Composite references
 list columns positionally and must be either wholly null or wholly non-null when
 optional.
 

@@ -26,7 +26,7 @@
 -- The per-visit forms of 1 and 3 do not survive 24-bit id collisions; see
 -- SKILL.md "Invariants vs. id collisions".
 --
--- Prerequisites: scaffold.sql, common/people.sql
+-- Prerequisites: scaffold.sql.txt, common/people.sql.txt
 -- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS materialize_demo;

@@ -17,7 +17,7 @@
 --
 -- Standalone domain: no `people` join. Devices are their own identity space.
 --
--- Prerequisites: scaffold.sql
+-- Prerequisites: scaffold.sql.txt
 -- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS materialize_demo;

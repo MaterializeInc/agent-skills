@@ -21,8 +21,8 @@
 -- larger space than the shared pool, by design — auctions are typically a
 -- long-tail marketplace.)
 --
--- Load with:  \i scaffold.sql
---             \i domains/auctions.sql
+-- Load with:  \i scaffold.sql.txt
+--             \i domains/auctions.sql.txt
 -- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS materialize_demo;

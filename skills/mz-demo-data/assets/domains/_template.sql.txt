@@ -18,7 +18,7 @@
 --   3. Distributions by byte mask
 --   4. Time-relative fields via `moment + interval`
 --
--- Prerequisites: scaffold.sql (always). Add `\i common/people.sql` to the
+-- Prerequisites: scaffold.sql.txt (always). Add `\i common/people.sql.txt` to the
 -- prereq list if your domain references people (recommended for cross-domain
 -- demos).
 -- =============================================================================
