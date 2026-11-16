@@ -172,8 +172,12 @@ window function in that case. The common mechanical rewrites:
   such gap.
 - `FIRST_VALUE`/`LAST_VALUE`: when the windowed expression IS the ordering
   column and that column is NOT NULL, rewrite to a `MIN`/`MAX` group aggregate
-  joined back on the partition key. Two traps: `LAST_VALUE` under the DEFAULT
-  frame is the current row's value, not the partition maximum, so the rewrite
+  joined back on the partition key. As with the lateral top-k, the join back
+  drops rows whose partition key is NULL, so require the partition key NOT
+  NULL or handle the NULL partition in a separate `UNION ALL` branch; the same
+  holds for every whole-partition aggregate joined back. Two traps:
+  `LAST_VALUE` under the DEFAULT frame is the current row's value, not the
+  partition maximum, so the rewrite
   holds only when the frame is spelled `ROWS BETWEEN UNBOUNDED PRECEDING AND
   UNBOUNDED FOLLOWING`, and on a nullable ordering column the two forms that
   yield the maximum (`first_value` under DESC, `last_value` under ASC) return

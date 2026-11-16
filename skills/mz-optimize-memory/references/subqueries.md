@@ -145,11 +145,13 @@ standard two-way `EXCEPT ALL` proof applies to all of them.
    the whole comparison: the semijoin plan needs BOTH the compared outer
    expression and the subquery's expression non-nullable, so `NOT NULL` on one
    side alone changes nothing.
-3. **Subquery in a LEFT JOIN's `ON`**, when it references only the right side:
-   lift it into a CTE that filters the right side, then LEFT JOIN the CTE on
-   the equality alone. Predicates on the preserved side must stay in the `ON`,
-   and a subquery that references the preserved side cannot be lifted (it
-   decides which left rows match) and keeps the general lowering.
+3. **Subquery in a LEFT JOIN's `ON`**, when it references only the right side
+   and is a conjunct of the `ON` (ANDed with the equality): lift it into a CTE
+   that filters the right side, then LEFT JOIN the CTE on the equality alone.
+   Under an `OR` the lift is not exact: the equality alone can match a right
+   row the CTE filter removes. Predicates on the preserved side must stay in
+   the `ON`, and a subquery that references the preserved side cannot be
+   lifted (it decides which left rows match) and keeps the general lowering.
 4. **`IN` over an uncorrelated aggregating or `LIMIT`ed subquery**: hoist the
    subquery into a CTE, `WITH s AS (...) ... JOIN s ON t.k = s.k`. Join
    directly only if `s.k` is unique (a `GROUP BY` key is), otherwise `SELECT
