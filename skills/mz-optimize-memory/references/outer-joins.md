@@ -248,11 +248,9 @@ and each is tolerated by the binary equi lowering:
 
 - A local predicate on either side (`r.status = 'x'`, `r.v > 5`,
   `l.flag`). On the right, push it into a derived table (`LEFT JOIN
-  (SELECT * FROM r WHERE ...) r ON ...`), which is always exact. On the
-  left there is no exact lift: in the `ON` a failing left row survives
-  with a null-extended right side, while a WHERE above the stack drops
-  it. Lift it to WHERE only when those rows are meant to go; otherwise
-  the join keeps the per-join lowering.
+  (SELECT * FROM r WHERE ...) r ON ...`), which is always exact; on the
+  left, lift it to a WHERE above the stack, exact only when the rows it
+  fails may go (the `ON` keeps them null-extended).
 - Any expression wrapping a key: a function, a cast, arithmetic,
   `coalesce`. Precompute it as a column in a derived table on that side
   and join on the column.
