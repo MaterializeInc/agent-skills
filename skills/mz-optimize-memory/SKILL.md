@@ -26,10 +26,12 @@ work share instruments but have different workflows.
 
 ## Ground rules
 
-- Ask before changing anything, and before reading the user's data. Catalog,
-  introspection and EXPLAIN reads need no permission; a SELECT over the user's
-  relations (a cardinality probe, the match-rate query, an exactness proof)
-  reads their data and is asked for first. Anything that creates, alters,
+- Ask before changing anything, and before reading the user's data. Catalog
+  and EXPLAIN reads need no permission. `EXPLAIN ANALYZE` and introspection
+  reads on a production cluster need one yes per cluster (see "Reading
+  introspection"), and a SELECT over the user's relations (a cardinality
+  probe, the match-rate query, an exactness proof) reads their data and is
+  asked for first. Anything that creates, alters,
   drops, or writes rows, in the user's environment or on their machine
   (including a local Docker container), is proposed first and run only after a
   yes. Approval covers a class of change, not each statement: an approved
@@ -47,8 +49,8 @@ work share instruments but have different workflows.
   objects on a production cluster: an object built there hydrates on
   the production replica and spends production memory and CPU on an
   experiment. Read-only `EXPLAIN ANALYZE` and introspection reads against
-  production are diagnosis and are fine; anything that hydrates goes
-  to the experiment cluster.
+  production are diagnosis, asked for once per cluster ("Reading
+  introspection"); anything that hydrates goes to the experiment cluster.
 - Do not recommend `REFRESH EVERY` materialized views as an optimization
   lever in any situation.
 - Every verdict rests on a measurement: both sides sized, the join key read
@@ -102,8 +104,9 @@ at 1 MB per response and 60 seconds per request (both per-environment settings
 an operator can move), so keep SELECT lists short and in a fixed order, and
 give census queries a `LIMIT` or an aggregation rather than listing every
 arrangement of a big cluster (a `LIMIT` bounds the result, not the work of a
-join). A timed-out request cancels the peek but sometimes not the work: its
-dataflow can run to completion on the cluster, so do not resend it unchanged.
+join). A timed-out request cancels the peek, but its dataflow can keep running
+on the cluster until its operators yield, which can take a while, so do not
+resend it unchanged.
 Timestamps arrive as milliseconds since the epoch unless cast to `text`, and
 object names outside the session's database need the database prefix, or the
 statement fails with `unknown catalog item` when a schema of that name exists
@@ -144,6 +147,16 @@ Rules for every introspection read, over MCP or SQL alike:
   previous incarnation's rows, so re-read it once the replica is back before
   trusting a `true`. For a cluster that cannot reach hydration at all, see
   "Intake: a cluster that cannot hydrate".
+- **Ask once per production cluster.** `EXPLAIN ANALYZE` and
+  `mz_introspection` reads run as dataflows on the replica they read, so they
+  can push the lag of its objects up for a while, and only the user knows
+  whether that matters for the cluster's freshness target. Before the first
+  such read on a production cluster, name the cluster and ask. If its
+  `heap_percent` (`mz_internal.mz_cluster_replica_utilization`) is near the
+  limit, add that the extra work also risks a memory kill and a full
+  rehydration. The answer covers these reads on that cluster for the rest of
+  the engagement. The experiment cluster and a local emulator need no ask. A
+  timed-out read can keep running ("Connection and tools").
 - Introspection is served by the target cluster and is session-scoped:
   `SET cluster = ...` first (or the cluster argument of the MCP
   `query` tool). On a cluster with several replicas, target one
@@ -946,8 +959,10 @@ or your own earlier pass:
 
 Who executes what, and where:
 
-- Diagnosis: read-only, anywhere; catalog, introspection and EXPLAIN reads need
-  no permission, reads of the user's data do (ground rules).
+- Diagnosis: read-only. Catalog and EXPLAIN reads need no permission,
+  `EXPLAIN ANALYZE` and introspection reads on a production cluster need one
+  yes per cluster ("Reading introspection"), and reads of the user's data
+  always do (ground rules).
 - Experiments: on a dedicated experiment cluster that the user creates.
   Propose it with an intended replica size and expected lifetime, and
   hand the user the commands, for example:
