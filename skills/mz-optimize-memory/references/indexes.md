@@ -184,25 +184,27 @@ the planner choose a delta join instead, which maintains no intermediates at
 all (a two-input join is always differential whatever indexes exist, so
 this lever needs three or more inputs):
 
-1. Read the join keys from the plan (every stage's lookup keys); the indexes to
-   add are the probe keys the delta paths need that no arrangement provides yet
-   (step 2). A relation probed on two different keys needs two of them, the
-   common case for the central fact relation of a multi-way join.
-2. Under the default configuration the planner picks delta when the
-   delta plan needs NO NEW arrangements beyond the ones the
-   differential plan would build anyway. What you must supply as
-   indexes is therefore only the EXTRA probe keys the delta paths
-   need, not every key of every input: a star join where every input
-   is probed on the same key is already delta with no indexes at all.
-   The flip is still all-or-nothing per join, so one missing probe key
-   leaves the differential cascade in place, and it can cost more than
-   the flip: when the input missing a key also carries a filter or a
-   projection (the `IS NOT NULL` guards on nullable join columns
-   count), the planner keeps that below the input's arrangement, since
-   it has to build one anyway, and then even the index that input does
-   have is read as a full scan, so the cascade also builds a private
-   arrangement where a lookup was available.
-   Supplying the missing key lifts the filter and restores both.
+1. Read the join keys from the plan (every stage's lookup keys) and which input
+   each one probes.
+2. Index the keys the delta paths need. Under the default configuration the
+   planner picks delta only when the delta plan needs NO NEW arrangements
+   beyond those the differential plan builds anyway. The differential plan
+   builds them above each input's filters and projection, where an index on the
+   input no longer serves. The flip is all-or-nothing per join: one missing
+   probe key keeps the whole differential cascade. Per input:
+   - Probed on one key: no index needed, since the differential plan's own
+     arrangement of it serves. A star join where every input is probed on the
+     same key is already delta with no indexes at all.
+   - Probed on two or more keys (the common case for the central fact relation
+     of a multi-way join): index every one of them. Indexing only the key the
+     differential plan would not build is enough only when the input reaches
+     the join as the indexed relation itself: NOT NULL join columns (so no `IS
+     NOT NULL` guard), no local predicate and every column consumed. Only then
+     does the arrangement the differential plan builds anyway hold the same
+     rows and columns as the index. Otherwise the join stays differential: the
+     plan reads the index as a full scan and still builds its private
+     arrangement of the input, as it does without the index, so for this join
+     the index only adds memory.
 3. Rebuild the consumers (plans are fixed at CREATE time) and verify:
    `EXPLAIN OPTIMIZED PLAN WITH (join implementations)` shows `type=delta` with
    per-path stage keys; the `Used Indexes` footer shows
@@ -266,18 +268,27 @@ boundaries as a design variable, and mine rather than guess:
    boundary exists; judging them pre-boundary double-counts the same
    savings.
 
-A named special case the optimization docs call LATE MATERIALIZATION
-("Further Optimize with Late Materialization"): when joins
-follow primary/foreign-key structure, create narrow two-column views
-(primary key, foreign key) with indexes on both columns, and rewrite
-the join to route through them, joining the wide relations only once,
-by primary key, where their payload is needed. The wide collection is
-then arranged once (by its key) instead of once per join site, and the
-narrow key-pair arrangements change less often than payload columns
-do. This is the same boundary vocabulary as above with the key-pair
-view as the boundary; size it the same way (narrow arrangements added
-vs wide copies removed) and note it composes with delta joins (all
-inputs pre-arranged).
+A named special case is what the optimization docs call LATE MATERIALIZATION
+("Further Optimize with Late Materialization"). When joins follow
+primary/foreign-key structure, create narrow two-column views (primary key,
+foreign key) with indexes on both columns, and rewrite the join to route
+through them, joining the wide relations only once, by primary key, where their
+payload is needed. The wide collection is then arranged once (by its key)
+instead of once per join site, and the narrow key-pair arrangements change less
+often than payload columns do. This is the same boundary move as above, with
+the key-pair view as the boundary: size it the same way (narrow arrangements
+added vs wide copies removed), and note that it composes with delta joins (all
+inputs pre-arranged). The rewrite is exact only when:
+
+- the key each wide relation is joined back on is unique and never NULL in that
+  relation: a duplicated key multiplies the rows that share it, and a NULL key
+  drops its row. Materialize enforces no primary key on a table, so without a
+  key and NOT NULL columns that the source declares or the optimizer derives,
+  both are data properties (the skill's "Adjudicating proposals and
+  estimating"; probe them with count against count distinct and a NULL count);
+- in an outer join, the join back keeps the join's kind: a wide relation on the
+  nullable side is joined back with a LEFT JOIN, since an inner one drops the
+  preserved rows that found no match.
 
 Intra-dataflow twins count too (the skill's twin census): per-consumer
 projection divergence made them different (collection, key, projection)
@@ -379,14 +390,21 @@ unique-key knowledge with keyed materialized views:
    unique key to every consumer through the catalog, while the TopK
    implementing it stays inside the MV's own dataflow, invisible to
    consumer plans.
-3. Replay the real views, MVs, and candidate indexes verbatim on top,
-   and diff `EXPLAIN OPTIMIZED PLAN` structurally against the real
-   environment's plans: join types, ArrangeBy keys, footer
-   annotations. `EXPLAIN OPTIMIZED PLAN` and `EXPLAIN PHYSICAL PLAN`
-   reject a plain view (`RAW PLAN FOR VIEW` and `LOCALLY OPTIMIZED
-   PLAN FOR VIEW` accept one, the latter the more useful of the two
-   since it shows the MIR after local transforms), so explain the
+3. Replay the real views, MVs, and candidate indexes verbatim on top, and diff
+   `EXPLAIN OPTIMIZED PLAN` structurally against the real environment's plans:
+   join types, ArrangeBy keys, footer annotations. `EXPLAIN OPTIMIZED PLAN` and
+   `EXPLAIN PHYSICAL PLAN` reject a plain view (`RAW PLAN FOR VIEW` and
+   `LOCALLY OPTIMIZED PLAN FOR VIEW` accept one, the latter the more useful of
+   the two since it shows the MIR after local transforms), so explain the
    materialized view, the index, or a `SELECT` that reads the view.
+
+   For physical plans, arrangement counts and temporal filters, explain the
+   materialized view or index (an empty one costs nothing on the rig), or
+   `EXPLAIN ... FOR CREATE MATERIALIZED VIEW <name> AS <select>`, which plans
+   the maintained dataflow without creating it: a plain `SELECT` is planned as
+   a one-shot query, so its physical plan renders reduces in their monotonic
+   forms and a delta join as a single one-shot path, and even its optimized
+   plan folds `mz_now()` to a constant.
 4. Check rig fidelity with `EXPLAIN OPTIMIZED PLAN WITH (keys)` (also `LOCALLY
    OPTIMIZED PLAN ... FOR VIEW`; a physical or raw plan silently prints no key
    annotations): the read of each keyed mock must show its unique key (`keys:
@@ -404,6 +422,7 @@ machine. The emulator runs with RBAC checks off by default (as do self-managed
 instances not created with `enableRbac: true`), so rehearsing the experiment
 role's privileges on it needs `ALTER SYSTEM SET enable_rbac_checks = true`
 first, issued as `mz_system` on the internal SQL port. Limits: the rig proves
-adoption and plan shape, never savings in bytes, and this trick declares one
-unique key per relation, so a plan that depends on a second declared key cannot
-be reproduced with it.
+adoption and plan shape, never savings in bytes. One `DISTINCT ON` declares
+one unique key; nest them to declare more, keeping every key column as a plain
+column in each select list (`SELECT DISTINCT ON (alt) ... FROM (SELECT DISTINCT
+ON (pk) ...)` exports both).
