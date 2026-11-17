@@ -547,11 +547,13 @@ elsewhere, except two load-bearing orderings: hints before attribution
    candidate, compare against the baseline, verify exactness, record the
    number and each dataflow's hydration time (Landmines: an enabling
    index can flip a join onto a hot key).
-7. Hand over: the estimated-vs-measured table (see "Adjudicating proposals
-   and estimating"), accepted changes expressed in the user's source of truth,
-   and the realization step: the replica resize, sized to clear the measured
-   full-hydration peak rather than the steady state (see "Final evaluation and
-   sizing" under "Making changes"), and the cleanup checklist.
+7. Hand over: first, the data properties the changes rely on, as conditions to
+   confirm before applying them; then the estimated-vs-measured table (both
+   under "Adjudicating proposals and estimating"), accepted changes expressed
+   in the user's source of truth, and the realization step: the replica resize,
+   sized to clear the measured full-hydration peak rather than the steady state
+   (see "Final evaluation and sizing" under "Making changes"), and the cleanup
+   checklist.
 
 ## Mapping measurements back to SQL
 
@@ -610,7 +612,7 @@ carries the full method, verification steps, and worked examples.
 | Recurring composite re-key that no existing index serves | New boundary view at exactly that (collection, key, column-union) + index, repoint consumers | [references/indexes.md] |
 | One dataflow, two big arrangements, same key and count, different widths | Union-width view + index (intra-dataflow twin) | [references/indexes.md] |
 | Expensive computed view consumed by 2+ dataflows | Index the computed view; dedups the whole computation and pays off even when consumers read it unkeyed | [references/indexes.md] |
-| Three-or-more-input `type=differential` join whose Differential Join line carries big memory (the intermediates) | Index the extra probe keys the delta paths lack so the planner flips it to a delta join | [references/indexes.md] |
+| Three-or-more-input `type=differential` join whose Differential Join line carries big memory (the intermediates) | Index every probe key of each input the delta paths probe on two or more keys, so the planner flips it to a delta join | [references/indexes.md] |
 | Temporal-filtered view (mz_now window) read by several consumers | Index the shared temporal-filtered view (N private copies become 1, and consumers that carried the `mz_now()` predicate themselves stop parking retractions in their sinks) | [references/indexes.md] |
 | Bytes/row outlier (payload riding arrangements) | Extract-in-place payload slimming (below) | inline |
 | Reduce or arrangement carrying columns no consumer reads | Dead-column narrowing (below) | inline |
@@ -632,76 +634,143 @@ source read, but it never moves a scalar EXPRESSION: a `Map` stays where the
 query put it (fused into the source read only when it already sits directly
 above it), above TopK, Reduce and Join alike, so a jsonb/text blob joined first
 and unpacked later is demanded whole by every operator between the source and
-the extraction point, the join's input arrangements and TopKs included. Fix at
-the point where the payload first enters the pipeline: extract exactly the
-consumed fields in the first view that reads the source relation (the scan or
-wrapper view, whatever the pipeline's first layer is called), so picks,
+the extraction point, the join's input arrangements and TopKs included.
+
+Fix at the point where the payload first enters the pipeline: extract exactly
+the consumed fields in the first view that reads the source relation (the scan
+or wrapper view, whatever the pipeline's first layer is called), so picks,
 hierarchical aggregates, and joins carry only slim columns. Prefer this over a
 fetch-back join (slim the pipeline, then re-join the fat relation at the end):
 the fetch-back re-arranges the fat relation by the fetch key, a full-width
 arrangement that costs back most of the saving when the pipeline you slimmed
-held only a copy or two. Extraction expressions are deterministic per row, so
-evaluating them earlier is outputs-identical as long as they cannot fault: a
-cast, division, or subscript that errors on a row a later filter would have
-discarded poisons the whole collection and every consumer of it. Guard such an
-expression with the downstream predicate (`CASE WHEN <pred> THEN <expr> END`),
-and seed the two-way `EXCEPT ALL` proof (see "Verification discipline", below)
-with a row that would fault.
+held only a copy or two.
 
-**Dead-column narrowing and compact types.** A reduce keyed wider than
-its consumers read, or a GROUP BY carrying columns no consumer uses,
-retains dead bytes in every group. Narrow the GROUP BY or the carried
-columns to what is actually consumed. A column used only as `IS NOT
-NULL` can be narrowed to a boolean at the scan. Relatedly, narrow the
-representation: text that is really a UUID casts to `uuid`, text
-booleans to `boolean`, small fixed string vocabularies to small integer
-codes. (Casting between integer widths rarely saves memory: integer
-storage is already value-sized.) These are outputs-changing at the
-column-type level, so they apply inside pipelines, with the consumer
-contract preserved at the pipeline's outputs; prove exactness at the narrowed
-sites with the two-way `EXCEPT ALL` proof.
+Extraction expressions are deterministic per row, so evaluating them earlier is
+outputs-identical only when:
+
+- nothing between the source and the old extraction point compares the payload
+  itself: a `DISTINCT`, `GROUP BY`, aggregate or set operation over it, or a
+  join on it;
+- the moved expression does not turn NULL into a value below a step that
+  produces NULLs (the nullable side of an outer join, `lag` or `lead`, a scalar
+  subquery that finds no row), where a row with no match would yield NULL
+  instead of the original's fallback.
+
+An extraction moved ahead of a filter, join or pick also sees rows the original
+may never have evaluated it on, and one that fails there makes every read fail
+(the checklist under "Verification discipline"). So extract with `->>`, `->`
+and `#>>`, which cannot fail and are NULL on NULL input, and leave casts (a
+text payload's `::jsonb` cast included), arithmetic, functions that reject some
+inputs and NULL handling (`COALESCE`, `CASE`, `IS NULL`) where the query had
+them. Where the discarding step is a predicate, guarding the expression with it
+(`CASE WHEN <pred> THEN <expr> END`) usually works too. Seed the two-way
+`EXCEPT ALL` proof (see "Verification discipline", below) with a row that would
+fail.
+
+**Dead-column narrowing and compact types.** A reduce keyed wider than its
+consumers read, or a GROUP BY carrying columns no consumer uses, retains dead
+bytes in every group. Narrow the GROUP BY or the carried columns to what is
+actually consumed (the optimizer already prunes aggregates that no consumer
+reads):
+
+- dropping a GROUP BY column merges groups, so it is exact only when the kept
+  keys functionally determine the dropped column (a data property,
+  "Adjudicating proposals and estimating"; probe it by comparing the row counts
+  of `SELECT DISTINCT` over the kept keys and over the kept keys plus the
+  dropped column, since `count(DISTINCT ...)` skips NULLs) and at least one key
+  stays, since with none the aggregate is global and returns a row even over
+  empty input;
+- a column used only as `IS NOT NULL` can be narrowed to a boolean at the scan,
+  unless an outer join null-extends it before the test (then read it as
+  `COALESCE(<flag>, false)` above the join).
+
+Relatedly, narrow the representation: text that is really a UUID casts to
+`uuid`, text booleans to `boolean`, small fixed string vocabularies to small
+integer codes (casting between integer widths rarely saves memory: integer
+storage is already value-sized). These change column types, so apply them
+inside pipelines, with the consumer contract preserved at the pipeline's
+outputs. They are exact only when:
+
+- for a `uuid` or `boolean` cast, every value, and every literal compared with
+  the column, already has the type's one canonical spelling: both types fold
+  variants (`uuid`: case, braces, spaces, the hyphenless form; `boolean`: `t`,
+  `yes`, `on`, `1` and more), which changes equality and the rendered output.
+  Canonical values are a data property ("Adjudicating proposals and
+  estimating"): probe them with `count(*) FILTER (WHERE c <> c::uuid::text)` or
+  `c::boolean::text`. A value the type rejects makes the cast fail, which can
+  fail every read (the checklist under "Verification discipline"), and makes
+  the probe fail too;
+- for integer codes, the codes keep the text's sort order wherever the column
+  is ordered, range-compared, or fed to min or max.
+
+Prove exactness at the narrowed sites with the two-way `EXCEPT ALL` proof.
 
 **Stuck projection pushdown (manual projection).** The optimizer pushes
 projections down until it meets a construct that demands its full input width,
 and everything below that point then carries every column, however few the
-consumer reads. Four constructs do this: window functions (their three-operator
-gadget, see references/window-functions.md, packs the window's whole input
-scope), the general outer-join lowering (it equates every preserving column),
-`DISTINCT` (every listed column, so `DISTINCT *` in a shared view arranges the
-full width inside each consumer), and a surviving `Threshold` (the
-implementation of `EXCEPT`, `EXCEPT ALL`, and `INTERSECT`, keyed by the whole
-row). An indexed view is a fifth, deliberate one: the index holds the full
-width of its view, whatever its readers project (its remedy is the slim
-projection view of indexes.md). One diagnostic serves all of them: `EXPLAIN
-OPTIMIZED PLAN WITH (arity)` annotates every operator with its column count,
-and a region whose arity stays far above the columns the output reads, and
-above what the region itself consumes (partition and order columns, join keys,
-the distinct list), is a stuck projection. One fix shape serves the first four,
-in two flavors: project manually just below the blocker (wrap the window's
-input in an explicit projection; pre-project the preserving side of the outer
-join; apply the DISTINCT to exactly the columns needed, at the consumer; narrow
-both operands of the set operation), or remove the blocker (rewrite the window
-function to an incremental form, references/window-functions.md; rewrite the ON
-to a plain equi-join, references/outer-joins.md; drop a redundant DISTINCT;
-move the set operation). Exactness differs: the manual projection is
-outputs-identical for windows and outer joins when the dropped columns reach no
-output, while narrowing a DISTINCT changes the result unless the dropped
-columns are functionally determined by the kept ones, so state that delta and
-let the user decide. A DISTINCT is redundant, and already elided, when the
-optimizer knows a key contained in its column list (`EXPLAIN OPTIMIZED PLAN
-WITH (keys)`); when the uniqueness is only semantic, make the key known (a
-keyed boundary, references/outer-joins.md) or prove it with a count versus
-count-distinct probe before dropping it.
+consumer reads. Four constructs do this:
+
+- window functions (their three-operator gadget, see
+  references/window-functions.md, packs the window's whole input scope);
+- the general outer-join lowering (it equates every preserving column);
+- `DISTINCT` (every listed column, so `DISTINCT *` in a shared view arranges
+  the full width inside each consumer);
+- a surviving `Threshold` (the implementation of `EXCEPT`, `EXCEPT ALL`, and
+  `INTERSECT`, keyed by the whole row).
+
+An indexed view is a fifth, deliberate one: the index holds the full width of
+its view, whatever its readers project (its remedy is the slim projection view
+of indexes.md). One diagnostic serves all of them: `EXPLAIN OPTIMIZED PLAN WITH
+(arity)` annotates every operator with its column count, and a region whose
+arity stays far above the columns the output reads, and above what the region
+itself consumes (partition and order columns, join keys, the distinct list), is
+a stuck projection.
+
+One fix shape serves the first four, in two flavors, project manually just
+below the blocker or remove it, and exactness differs per construct:
+
+- a window: wrap its input in an explicit projection, or rewrite the function
+  to an incremental form (references/window-functions.md). The projection is
+  outputs-identical when the dropped columns reach no output, up to the order
+  among the window's ORDER BY ties, which a dropped column can change (the ties
+  bullet under "Verification discipline"), and up to the last digits of a float
+  `sum` or `avg` over a window with no ORDER BY;
+- the general outer-join lowering: pre-project the preserving side, which is
+  outputs-identical when the dropped columns reach no output, or rewrite the ON
+  to a plain equi-join (references/outer-joins.md);
+- a `DISTINCT`: apply it to exactly the columns needed, at the consumer, which
+  changes the result unless the dropped columns are functionally determined by
+  the kept ones, or drop it when it is redundant. It is redundant, and already
+  elided, when the optimizer knows a key contained in its column list (`EXPLAIN
+  OPTIMIZED PLAN WITH (keys)`); when the uniqueness is only semantic, make the
+  key known (a keyed boundary, references/outer-joins.md) or, before dropping
+  it, treat the uniqueness as a data property ("Adjudicating proposals and
+  estimating", below; a count versus count-distinct probe supports it);
+- a set operation: narrow both operands, which needs that dependency to hold
+  across both operands together (a kept value carries the same dropped values
+  on both sides), or move the set operation.
+
+Where a narrowing is not exact, state the delta and let the user decide.
 
 **Argmax redundancy.** A `SELECT DISTINCT ON (k) ... ORDER BY k, v DESC` pick
 makes a sibling `max(v) ... GROUP BY k` over the same relation provably
-redundant when `v` is the first ordering term after the key and is not null, or
-when the pick spells `v DESC NULLS LAST`: the pick's first row already carries
-the maximum (with another column ordered before `v`, the pick is not an argmax
-at all). The condition is about NULL placement, since the default for DESC is
-NULLS FIRST, which returns the NULL that `max` skips. Deleting the whole max
-aggregate and reading the value from the pick is exact; prove it with the
-standard two-way `EXCEPT ALL`.
+redundant: delete the whole aggregate and read the value from the pick. That is
+exact only when:
+
+- `v` is the first ordering term after the key (with another column ordered
+  before `v`, the pick is not an argmax at all);
+- the pick's first row carries the maximum: `v` is not null, or the pick spells
+  `v DESC NULLS LAST`, since the default for DESC is NULLS FIRST, which returns
+  the NULL that `max` skips. For `min` the mirror holds: `ORDER BY k, v` is
+  exact even for a nullable `v`, because ASC defaults to NULLS LAST, and `v
+  NULLS FIRST` is not;
+- `k` is NOT NULL, or the rewrite reproduces what the query did with the
+  NULL-key group: a query that combined the pick and the aggregate on `p.k =
+  m.k` drops (inner join) or nulls out (left join) that group, which the pick
+  alone keeps, so add `WHERE k IS NOT NULL` on the pick, or `CASE WHEN k IS NOT
+  NULL THEN v END` for the left join.
+
+Prove it with the standard two-way `EXCEPT ALL`.
 
 **Dead objects and the pinning procedure.** An MV nobody reads is a
 whole-dataflow drop; confirm it is unconsumed several independent ways (no
@@ -741,23 +810,32 @@ cluster's hydration peak (each sink buffers roughly two copies of its MV's
 output at the peak; cost model), the lever is to break the MV into several
 smaller MVs (by key range, or by splitting rarely-joined column groups apart),
 so that no single snapshot is buffered whole and the pieces' peaks do not all
-coincide. This is tedious (consumers must be repointed or reunited with a UNION
-ALL, and the object graph changes) and it only lowers the peak when the pieces
-hydrate at different times. Materialize hydrates up to four dataflows
-concurrently by default, so splitting into fewer than about four pieces changes
-little and simultaneous sink buffering stays bounded by roughly four pieces'
-worth. That four is the `compute_hydration_concurrency` setting, and lowering
-it is the direct alternative to splitting. Only the Cloud flag service can
-target one replica with it, and Cloud users cannot set system parameters
-themselves, so they ask Materialize; a self-managed operator sets it with
-`ALTER SYSTEM SET` as `mz_system` or through the system-parameters ConfigMap,
-and either way the new value applies to every replica in the environment.
+coincide. This is tedious (consumers must be repointed or reunited, and the
+object graph changes), and the pieces must recombine exactly:
+
+- key-range pieces reunite with a UNION ALL only when their predicates send
+  every row to exactly one piece, NULL keys included (`k < 100` and `k >= 100
+  OR k IS NULL`);
+- column-group pieces rejoin only on a unique NOT NULL key that both carry.
+
+It also only lowers the peak when the pieces hydrate at different times.
+Materialize hydrates up to four dataflows concurrently by default, so splitting
+into fewer than about four pieces changes little and simultaneous sink
+buffering stays bounded by roughly four pieces' worth. That four is the
+`compute_hydration_concurrency` setting, and lowering it is the direct
+alternative to splitting. Only the Cloud flag service can target one replica
+with it, and Cloud users cannot set system parameters themselves, so they ask
+Materialize; a self-managed operator sets it with `ALTER SYSTEM SET` as
+`mz_system` or through the system-parameters ConfigMap, and either way the new
+value applies to every replica in the environment.
+
 Recommend either only when the sink spike is the biggest thing hurting the
-cluster's memory, established two ways: during a hydration (a replica restart
-produces one on demand), the `mv_sink(<id>)::write` lines in
-`mz_arrangement_sizes` (and the `mz_persist_sink_correction_*` high-water
-gauges) show the buffers; and independently of hydration, measure each MV's
-output size directly:
+cluster's memory, established two ways:
+
+- during a hydration (a replica restart produces one on demand), the
+  `mv_sink(<id>)::write` lines in `mz_arrangement_sizes` (and the
+  `mz_persist_sink_correction_*` high-water gauges) show the buffers;
+- independently of hydration, measure each MV's output size directly:
 
 ```sql
 SELECT sum(mz_row_size(mv.*)) FROM mv;   -- bytes of the MV's rows,
@@ -783,15 +861,22 @@ choosing levers.
 the join's only usable condition, it plans as a cross join with a post-filter:
 both inputs arranged with an empty key, everything on one worker (on NOT NULL
 columns it simplifies to `=` and stays an equi-join, and beside a real equality
-it becomes a post-filter over an ordinary equi-join). The default `EXPLAIN`
-shows it as `Differential Cross Join` over `Arrange (empty key)` inputs and the
-optimized plan as `CrossJoin`, so grep for either label in its plan text; note
-that `mz_lir_mapping` and EXPLAIN ANALYZE label the same operator a plain
-`Differential Join`, where worker-elapsed skew is the tell. Rewrite to plain
-equality, or, when NULL matching is intended, to `a.k = b.k OR (a.k IS NULL AND
-b.k IS NULL)`, which is exact and which the planner turns back into an
-equi-join (then keyed on a nullable column: run the closure audit in
-"Landmines").
+it becomes a post-filter over an ordinary equi-join). To recognize it:
+
+- the default `EXPLAIN` shows it as `Differential Cross Join` over `Arrange
+  (empty key)` inputs, and the optimized plan as `CrossJoin`, so grep the plan
+  text for either label;
+- `mz_lir_mapping` and EXPLAIN ANALYZE label the same operator a plain
+  `Differential Join`, where worker-elapsed skew is the tell.
+
+Rewrite to `a.k = b.k OR (a.k IS NULL AND b.k IS NULL)`, which is exact and
+which the planner turns back into an equi-join in an inner join (inside an
+outer join's `ON` it still takes the general lowering,
+references/outer-joins.md). The NULL keys' pairs are then real output, all on
+one worker, so size them with the pair-mass probe of the quadratic-join shape,
+below. Plain equality is exact only when at least one side cannot hold a NULL
+key; otherwise it drops the matches between NULL keys, a result change to
+disclose.
 
 **Quadratic joins (cross joins and skewed keys).** A join with no usable
 equality condition, or an equality on a low-cardinality or heavily skewed
@@ -812,29 +897,43 @@ runs on that same worker and several of them stack up there. During a heavy
 grind, replica-served introspection may not answer at all; that
 unresponsiveness combined with one busy worker is itself the signature.
 
-**Subqueries decorrelate into joins keyed by the outer columns.** A subquery
-that reads a relation, sits inside a `CASE`, or is more than Map, Filter,
-Project, and table-function calls is lowered into a `Distinct` over the
-correlation key, the subquery computed once as a dataflow, and a join back on
-that key, or a `CrossJoin` when nothing correlates; the cost is that join's
-arrangements plus the subquery's own operators, which hold one group per
-distinct outer value when the outer keys are joined in below an aggregate or a
-`LIMIT`, never a re-execution per outer row. The memory is every arrangement
-keyed by the correlation key (the join-back pair, the `Distinct` over the key,
-the subquery's own), at that key's width, so the expensive shapes are a
-subquery correlated on a payload column (`jsonb`, `list`, `array`, long
-`text`), a subquery inside an outer join's `ON` (the key is every preserving
-column), and the nullable cases (`NOT IN`, `IN` outside a filter conjunct)
-whose outer keys seed a `CrossJoin`. In the plan, look for a `CrossJoin`, or a
-`Distinct` plus `ArrangeBy` keyed on the outer relation's own columns (all of
-them, or a payload column), feeding a join back to it. In SQL, look for `NOT
-IN` on a nullable side, `IN`/`ANY` on a nullable comparison outside a filter
-conjunct (`WHERE`, an inner join's `ON`, `HAVING`), an `IN` over a subquery
-that aggregates or uses `LIMIT` (even in `WHERE`), a subquery in an outer
-join's `ON`, `= ANY(<collection column>)`, and a scalar or `LATERAL ... LIMIT
-1` subquery correlated only on the current row. The full signature list, the
-nine rewrites with their exactness obligations, what the optimizer already
-handles, and what no rewrite fixes are in [references/subqueries.md].
+**Subqueries decorrelate into joins keyed by the outer columns.** Some
+subqueries that read no relation are inlined (subqueries.md, "Already handled
+well", says which). The others are lowered into a `Distinct` over the
+correlation key (for a relation-free one in the SELECT list with a `WHERE` or a
+table-function call, every column of the outer relation in scope), the subquery
+computed once as a dataflow, and a join back on that key, or a `CrossJoin` when
+nothing correlates. The cost is that join's arrangements plus the subquery's
+own operators, which hold one group per distinct outer value when the outer
+keys are joined in below an aggregate or a `LIMIT`, never a re-execution per
+outer row.
+
+The memory is every arrangement keyed by the correlation key (the join-back
+pair, the `Distinct` over the key, the subquery's own), at that key's width, so
+the expensive shapes are:
+
+- a subquery correlated on a payload column (`jsonb`, `list`, `array`, long
+  `text`);
+- a subquery inside an outer join's `ON` (the key is every preserving column);
+- the nullable cases (`NOT IN`, `IN` outside a filter conjunct), whose outer
+  keys seed a `CrossJoin`.
+
+In the plan, look for a `CrossJoin`, or a `Distinct` plus `ArrangeBy` keyed on
+the outer relation's own columns (all of them, or a payload column), feeding a
+join back to it. In SQL, look for:
+
+- `NOT IN` on a nullable side;
+- `IN`/`ANY` on a nullable comparison outside a filter conjunct (`WHERE`, an
+  inner join's `ON`, `HAVING`);
+- an `IN` over a subquery that aggregates or uses `LIMIT` (even in `WHERE`);
+- a subquery in an outer join's `ON`;
+- `= ANY(<collection column>)`;
+- a scalar or `LATERAL ... LIMIT 1` subquery correlated only on the current
+  row.
+
+The full signature list, the nine rewrites with their exactness obligations,
+what the optimizer already handles, and what no rewrite fixes are in
+[references/subqueries.md].
 
 ## Landmines
 
@@ -851,17 +950,32 @@ join. Any join on that key then pairs the whole NULL population of one side
 against the other's (a self-join squares it), on one worker, and discards the
 product afterwards. Symptoms: one worker grinding for minutes to hours while
 the rest idle, flat memory (produce-discard retains nothing), replica
-introspection unresponsive. The audit: for every index and MV in the package,
-read `EXPLAIN PHYSICAL PLAN AS VERBOSE TEXT`; in each join stanza, flag `IS NOT
-NULL` filters sitting in the closure region (between the join line and its
-input operators) whose columns are that join's arrangement key. A filter below
-an arrange is the safe placement, not a hit. Confirmation without plan reading:
-the NULL population shows as a record-count excess on exactly one worker in
-`mz_arrangement_sizes_per_worker`. Fix, in the order the pinning procedure
-requires ("Dead objects" above, "Making changes" below): drop the raw
-nullable-key index (so no future consumer can re-arm the landmine and so the
-new index does not adopt it), create a passthrough view `WHERE key IS NOT NULL`
-and index that, then rebuild every consumer the NOTICE names.
+introspection unresponsive.
+
+The audit: for every index and MV in the package, read `EXPLAIN PHYSICAL PLAN
+AS VERBOSE TEXT`; in each join stanza, flag `IS NOT NULL` filters sitting in
+the closure region (between the join line and its input operators) whose
+columns are that join's arrangement key. A filter below an arrange is the safe
+placement, not a hit. Confirmation without plan reading: the NULL population
+shows as a record-count excess on exactly one worker in
+`mz_arrangement_sizes_per_worker`.
+
+Fix, in the order the pinning procedure requires ("Dead objects" above, "Making
+changes" below):
+
+1. drop the raw nullable-key index (so no future consumer can re-arm the
+   landmine and so the new index does not adopt it);
+2. create a passthrough view `WHERE key IS NOT NULL` and index that;
+3. repoint to it the consumers that join on the key (nothing adopts the new
+   index otherwise);
+4. rebuild every consumer the NOTICE names.
+
+Repointing is exact only where a NULL-key row cannot reach the output: an inner
+join on plain `=` or a semijoin on the key, a `NOT EXISTS` whose subquery reads
+the relation, or the non-preserved side of an outer join. Every other consumer
+(a NULL-safe join, an `IN` outside a filter conjunct, a `NOT IN`, the preserved
+side of an outer join, the side a `NOT EXISTS` filters, an unkeyed read) keeps
+reading the base relation.
 
 **An enabling index can flip a join onto a hot key.** New shared indexes
 change join implementations, not just share state: with all inputs
@@ -934,11 +1048,18 @@ or your own earlier pass:
   attributing further, not by re-asserting it. If a number cannot be
   tightened, name the unknown quantity and the experiment that would
   pin it.
-- A rewrite that relies on a data property (a window bound, a
-  uniqueness the optimizer cannot see, a match rate, a column that is
-  never NULL) gets that property derived, never assumed: a probe
-  establishes it, then state it, verify it, and record the guard rule
-  that keeps it true.
+- A rewrite whose exactness relies on a data property (a uniqueness the
+  optimizer cannot see, a column that is never NULL, a functional dependency,
+  canonical spellings, a window bound) needs a guarantee for it: a key or NOT
+  NULL column that the source declares or the optimizer derives (keys show in
+  `EXPLAIN OPTIMIZED PLAN WITH (keys)`, nullability in `mz_columns`), or the
+  user's confirmation that their data guarantees it. A probe of today's data
+  supports the property but never establishes it, since a row that breaks it
+  can arrive later: probe it to see that it holds in practice, then ask. Name
+  the property next to the change that relies on it, for example as a comment
+  beside the rewritten SQL in the user's source of truth, and in the list at
+  the start of the hand-over (workflow step 7). A property that only moves the
+  cost, such as a match rate, is measured by its probe.
 - Report estimated vs measured for everything implemented, in one
   table, and retract cleanly any number that measurement refuted.
 
@@ -1090,11 +1211,14 @@ Mechanics that hold whenever objects are built or replaced by hand
   column names, order and types are identical (the `mz_columns` diff under
   "Verification discipline").
 - `EXPLAIN ... FOR MATERIALIZED VIEW` shows the stored plan and will not
-  reflect a newly added index; explain the MV's SELECT, with the session on the
-  MV's cluster (`SET cluster`, or the `query` tool's cluster argument), to
-  preview what a fresh build would do (the `Target cluster:` footer shows which
-  cluster the preview used). On any other cluster the preview silently shows
-  the un-indexed plan, since index arrangements are cluster-local.
+  reflect a newly added index; explain `CREATE MATERIALIZED VIEW <name> AS <the
+  MV's SELECT>` instead, which plans the maintained dataflow without creating
+  anything (a bare SELECT is planned as a one-shot query, so its plan differs,
+  references/indexes.md), with the session on the MV's cluster (`SET cluster`,
+  or the `query` tool's cluster argument), to preview what a fresh build would
+  do (the `Target cluster:` footer shows which cluster the preview used). On
+  any other cluster the preview silently shows the un-indexed plan, since index
+  arrangements are cluster-local.
 
 Close every engagement with a cleanup checklist for the user: candidate objects
 dropped, the experiment cluster listed with its DROP CLUSTER command (it is the
@@ -1105,6 +1229,31 @@ are deployed.
 
 - Prove exactness with `EXCEPT ALL` in both directions per relation, ideally in
   one query per relation so both sides read at one timestamp.
+- The proof catches a broken rewrite only when the data holds the rows that
+  break it, so a clean result only says that this data held no counterexample.
+  Before building the data, work out thoroughly why the rewrite is exact, since
+  it's very important to not break the user's query results: reason from what
+  each changed operator does with NULLs, duplicates, empty input and its
+  position in the query, and seed the cases that reasoning points to, starting
+  with these:
+  - NULL in every join, group and partition key, and in every column a moved
+    predicate reads (a join back must match NULLs the way the original grouped
+    them);
+  - duplicate rows in a relation with no key, and duplicate keys on both sides
+    of a join;
+  - empty groups, empty collections and empty subquery results;
+  - NULLs where a three-valued result is used outside a filter (an `IN`, `NOT
+    IN` or `= ANY` in a SELECT list or under `NOT`);
+  - ties in every ORDER BY that picks or ranks: ties are broken on the
+    remaining columns in an order the plan decides, so dropping or narrowing a
+    column can change which tied row wins. SQL leaves that order unspecified,
+    so this is not a wrong result: pin the tie-break in both forms for the
+    comparison, and tell the user that tied rows may come out differently once
+    the change deploys;
+  - a row that makes a moved expression fail (a cast, a division, a function
+    that rejects some inputs): Materialize does not define which errors a query
+    surfaces (it depends on the plan), but one that surfaces makes every read
+    of the materialized view or index fail.
 - Declared types are part of exactness: diff the `mz_catalog.mz_columns`
   signature (name, position, type) of every changed materialized view against
   its pre-change snapshot. A rewrite can keep every row and still change a
