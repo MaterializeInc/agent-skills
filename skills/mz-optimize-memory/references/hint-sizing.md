@@ -65,12 +65,13 @@ and un-hinted top-k physical plans are identical.
 2. Map every flagged operator to its exact source clause with the skill's
    mapping technique ("Mapping measurements back to SQL"). Two hint-specific
    landmarks on top of it: for sibling `DISTINCT ON` clauses sharing a group
-   key, the `ORDER BY` column, read from `EXPLAIN PHYSICAL PLAN` (HINTS does
-   not show it); thinning renumbers the order column, so twins can print the
-   same `order_by=[#1 ...]`, in which case use the marker. And read current
-   hint values in `EXPLAIN OPTIMIZED PLAN`: on a min/max operator the physical
-   plan's bucket list narrows the value only to its 16^n bracket, and a top-k
-   operator's physical plan does not carry the hint at all.
+   key, the `ORDER BY` column, read from `EXPLAIN PHYSICAL PLAN AS TEXT`
+   (`Order By #1 asc nulls_last`; HINTS does not show it); thinning renumbers
+   the order column, so twins can print the same `Order By #1 ...`, in which
+   case use the marker. And read current hint values in `EXPLAIN OPTIMIZED
+   PLAN`: on a min/max operator the physical plan's bucket list narrows the
+   value only to its 16^n bracket, and a top-k operator's physical plan does
+   not carry the hint at all.
 3. Reconcile counts. HINTS flagged N operators, so you must finish with N
    mapped clauses. N is the count of rows carrying a non-null `levels`: HINTS
    prints the whole plan tree, one row per LIR node, with NULLs on every

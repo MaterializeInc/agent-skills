@@ -16,8 +16,8 @@ direction. Lowering to the physical plan both ELIDES MIR ArrangeBys
 as a Reduce feeding a join on its group key, needs no new
 arrangement) and INSERTS ArrangeBys that MIR never showed. When the
 question is which arrangements a dataflow actually holds, read the
-physical (LIR) plan (`EXPLAIN PHYSICAL PLAN`) or the live
-introspection sizes, never the MIR text.
+physical (LIR) plan (`EXPLAIN PHYSICAL PLAN AS TEXT`) or the live introspection
+sizes, never the MIR text.
 
 ## When an index helps at all
 

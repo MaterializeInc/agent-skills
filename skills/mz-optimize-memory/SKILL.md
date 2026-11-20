@@ -566,37 +566,38 @@ reversed relative to the plan text; the plan text also has lines with no row
 into labels (`With l0 = <op>`, `Returning <op>`), relations print as ids (`Read
 u20`) rather than names, and some labels differ (`Differential Cross Join` in
 the plan is `Differential Join` in ANALYZE). So never map rows to operators by
-position: `EXPLAIN PHYSICAL PLAN WITH (node identifiers)` annotates every
-operator with its `LirId`, the same ids `mz_introspection.mz_lir_mapping` keys
-by (with raw operator-id ranges per node; its `global_id` is a transient id,
-bridged from the object name through `mz_introspection.mz_mappable_objects`),
-and a measured row joins its plan operator by that id. The second hop, plan
-operator to source clause, has no id to follow, and operator labels are generic
-and repeat, so map it by landmarks: the column names the plan prints (`#2{col}`
-annotations in group keys, order-by lists, join equivalences, filters; derived
-columns print as bare `#n`, and names can be lost across projections), the
-feeding join's complete key set (a three-relation chain is a different CTE than
-a two-relation one on the same column), sibling aggregates (a `min` beside a
-`count(*)` is a different clause than a lone `min`), the relations the operator
-reads, distinctive constants, and the current hint value (`exp_group_size=N` on
-the operator in `EXPLAIN OPTIMIZED PLAN`; a value unique in the view pins its
-clause). A single landmark is a hypothesis; confirm it with the full key set
-and the siblings. When that leaves a mapping below about 97% certain, make it
-certain with a marker: put the view's text into `EXPLAIN OPTIMIZED PLAN FOR
-SELECT ...`, give the suspected clause a distinctive hint value (`OPTIONS (...
-INPUT GROUP SIZE = 1234)`), and the one operator whose `exp_group_size` changed
-is that clause. One EXPLAIN, no hydration, any hint-taking clause (min/max,
-`DISTINCT ON`, per-group `LIMIT`); for an operator without a hint clause, mark
-a hint-taking neighbour in the same CTE and read the subtree around it. Two
-things to know about markers: two clauses that are byte-identical, hint
-included, are ONE operator in the plan (the optimizer shares the subtree), so
-HINTS reports one row for both and both clauses get the same edit, and a marker
-on one of them splits them, which is diagnostic, not a problem; and a hint's
-trace in the physical plan is coarser (a min/max prints only its bucket list,
-the 16^n bracket, a TopK prints nothing), so read markers and current values in
-the optimized plan. Anchor every edit by content, never by line number: SQL
-read back from the catalog is the engine's re-rendering, so line numbers will
-not match the user's source. Structurally identical clauses that want the same
+position: `EXPLAIN PHYSICAL PLAN WITH (node identifiers) AS TEXT` annotates
+every operator with its `LirId`, the same ids `mz_introspection.mz_lir_mapping`
+keys by (with raw operator-id ranges per node; its `global_id` is a transient
+id, bridged from the object name through
+`mz_introspection.mz_mappable_objects`), and a measured row joins its plan
+operator by that id. The second hop, plan operator to source clause, has no id
+to follow, and operator labels are generic and repeat, so map it by landmarks:
+the column names the plan prints (`#2{col}` annotations in group keys, order-by
+lists, join equivalences, filters; derived columns print as bare `#n`, and
+names can be lost across projections), the feeding join's complete key set (a
+three-relation chain is a different CTE than a two-relation one on the same
+column), sibling aggregates (a `min` beside a `count(*)` is a different clause
+than a lone `min`), the relations the operator reads, distinctive constants,
+and the current hint value (`exp_group_size=N` on the operator in `EXPLAIN
+OPTIMIZED PLAN`; a value unique in the view pins its clause). A single landmark
+is a hypothesis; confirm it with the full key set and the siblings. When that
+leaves a mapping below about 97% certain, make it certain with a marker: put
+the view's text into `EXPLAIN OPTIMIZED PLAN FOR SELECT ...`, give the
+suspected clause a distinctive hint value (`OPTIONS (... INPUT GROUP SIZE =
+1234)`), and the one operator whose `exp_group_size` changed is that clause.
+One EXPLAIN, no hydration, any hint-taking clause (min/max, `DISTINCT ON`,
+per-group `LIMIT`); for an operator without a hint clause, mark a hint-taking
+neighbour in the same CTE and read the subtree around it. Two things to know
+about markers: two clauses that are byte-identical, hint included, are ONE
+operator in the plan (the optimizer shares the subtree), so HINTS reports one
+row for both and both clauses get the same edit, and a marker on one of them
+splits them, which is diagnostic, not a problem; and a hint's trace in the
+physical plan is coarser (a min/max prints only its bucket list, the 16^n
+bracket, a TopK prints nothing), so read markers and current values in the
+optimized plan. Anchor every edit by content, never by line number: SQL read
+back from the catalog is the engine's re-rendering, so line numbers will not
+match the user's source. Structurally identical clauses that want the same
 value get one collective instruction. references/hint-sizing.md uses this
 technique for hint clauses; it works for any operator.
 
@@ -952,12 +953,13 @@ product afterwards. Symptoms: one worker grinding for minutes to hours while
 the rest idle, flat memory (produce-discard retains nothing), replica
 introspection unresponsive.
 
-The audit: for every index and MV in the package, read `EXPLAIN PHYSICAL PLAN
-AS VERBOSE TEXT`; in each join stanza, flag `IS NOT NULL` filters sitting in
-the closure region (between the join line and its input operators) whose
-columns are that join's arrangement key. A filter below an arrange is the safe
-placement, not a hit. Confirmation without plan reading: the NULL population
-shows as a record-count excess on exactly one worker in
+The audit: for every index and MV in the package, read `EXPLAIN OPTIMIZED PLAN`
+and flag an `IS NOT NULL` filter on a join's key that sits directly above the
+`Join` while that join reads the key's input as a `ReadIndex`: that is the
+hoisted guard. A filter below an `ArrangeBy` is the safe placement, not a hit.
+(The concise physical plan prints a join's per-stage closures but not its
+initial closure, so it can miss the guard.) Confirmation without plan reading:
+the NULL population shows as a record-count excess on exactly one worker in
 `mz_arrangement_sizes_per_worker`.
 
 Fix, in the order the pinning procedure requires ("Dead objects" above, "Making
