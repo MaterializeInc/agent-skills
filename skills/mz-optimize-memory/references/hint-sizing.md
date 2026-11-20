@@ -65,12 +65,13 @@ and un-hinted top-k physical plans are identical.
 2. Map every flagged operator to its exact source clause with the skill's
    mapping technique ("Mapping measurements back to SQL"). Two hint-specific
    landmarks on top of it: for sibling `DISTINCT ON` clauses sharing a group
-   key, the `ORDER BY` column, read from `EXPLAIN PHYSICAL PLAN` (HINTS does
-   not show it); thinning renumbers the order column, so twins can print the
-   same `order_by=[#1 ...]`, in which case use the marker. And read current
-   hint values in `EXPLAIN OPTIMIZED PLAN`: on a min/max operator the physical
-   plan's bucket list narrows the value only to its 16^n bracket, and a top-k
-   operator's physical plan does not carry the hint at all.
+   key, the `ORDER BY` column, read from `EXPLAIN PHYSICAL PLAN AS TEXT`
+   (`Order By #1 asc nulls_last`; HINTS does not show it); thinning renumbers
+   the order column, so twins can print the same `Order By #1 ...`, in which
+   case use the marker. And read current hint values in `EXPLAIN OPTIMIZED
+   PLAN`: on a min/max operator the physical plan's bucket list narrows the
+   value only to its 16^n bracket, and a top-k operator's physical plan does
+   not carry the hint at all.
 3. Reconcile counts. HINTS flagged N operators, so you must finish with N
    mapped clauses. N is the count of rows carrying a non-null `levels`: HINTS
    prints the whole plan tree, one row per LIR node, with NULLs on every
@@ -87,27 +88,30 @@ and un-hinted top-k physical plans are identical.
 5. Set the new value to the measured suggestion plus one level (16x) of
    headroom. The headroom is not waste: it is insurance against update-cost
    spikes and key skew when a group outgrows the hint. A memory-only A/B will
-   always tell you to shave it off; do not, unless the user explicitly accepts
-   the update-cost risk. What a level costs (the skill's cost model): close to
-   nothing when it does real reduction, about one full copy of the retained
-   input when it does not (measured on 500,000 narrow rows, scaling with row
-   width: +0.3 MB per level on 5,000-row groups, +9 to +12 MB per level on
-   2-row groups); a min/max hierarchy pays about twice that per level, because
-   each bucket level retains a negated copy as well as its input. So take the
-   headroom by default where the suggestion sits at or below the group's real
-   grain, and measure it first where the population is small and bounded. Leave
-   correctly-sized hints alone: not flagged is no reason to retune one
-   downward, and the one reason to touch an unflagged hint is step 4's outrun
-   population, which asks for a raise.
-6. Rebuild to adopt. Hints are applied at plan time, so edit the view
-   definitions and then drop and recreate the materialized views and indexes
-   whose dataflows inline the edited view (indexes first, then MVs; see the
-   skill's "Making changes" section). Their own downstream consumers read
-   persisted or arranged output and keep their plans.
-7. Verify. Re-run HINTS after the rebuild. The residual savings should
-   be exactly your deliberate headroom level (`to_cut = 1` on the
-   retuned operators). Anything more means a mapping missed its
-   clause.
+   usually tell you to shave it off; do not, unless the user explicitly accepts
+   the update-cost risk.
+
+   What a level costs (the skill's cost model): close to nothing when it does
+   real reduction, about one full copy of the retained input when it does not.
+   From v26.45 each level of a min/max hierarchy past the first costs about
+   what a TopK level costs (before v26.45 the first level cost more). The first
+   level is the expensive one for a min/max: below a hint of 17 it renders as a
+   plain reduce with no hierarchy, so a hint in 17..256 adds the hierarchy's
+   arrangements, which can cost much more than the same step does for a TopK.
+   So:
+   - take the headroom by default where the suggestion sits at or below the
+     number of distinct (group key, aggregate argument) combinations a group
+     really holds;
+   - where the population is small and bounded or a min/max's suggestion is 15,
+     measure the dataflow at both hints before choosing;
+   - leave correctly-sized hints alone: not flagged is no reason to retune one
+     downward, and the one reason to touch an unflagged hint is step 4's outrun
+     population, which asks for a raise.
+6. Apply and verify. Apply the edited clauses like any other change (the
+   skill's "Making changes"), then re-run HINTS once the rebuilt dataflows are
+   hydrated. The residual savings should be exactly your deliberate headroom
+   level (`to_cut = 1` on the retuned operators). Anything more means a mapping
+   missed its clause.
 
 ## Grain heuristic (coherence check only)
 

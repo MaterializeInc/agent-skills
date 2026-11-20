@@ -63,14 +63,24 @@ Two cost consequences:
   recomputes the window outputs of that entire partition. Hot or huge
   partitions turn into CPU hot spots at update time.
 
-One syntax note that is not a memory matter: a `RANGE` frame other than
-the default `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` is
-rejected for every window function (`ERROR: RANGE in non-default window
-frames not yet supported`), and `GROUPS` frames are rejected outright.
-The fix is the equivalent `ROWS` frame, not a rewrite. `ROWS` matches
-`RANGE` only when the ORDER BY key is unique within the partition,
-because a RANGE frame includes the current row's peers and a ROWS frame
-stops at the current row.
+One syntax note that is not a memory matter: a `RANGE` frame other than the
+default `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW` is rejected for
+every window function (`ERROR: RANGE in non-default window frames not yet
+supported`), and `GROUPS` frames are rejected outright. The fix is the
+equivalent `ROWS` frame where one exists, not a rewrite:
+- with both bounds `UNBOUNDED` the frame is the whole partition and `ROWS`
+  always matches;
+- with a `CURRENT ROW` bound, `ROWS` matches `RANGE` only when the ORDER BY key
+  is unique within the partition, NULLs counting as equal (a `count(DISTINCT)`
+  probe skips them), because a RANGE frame includes the current row's peers and
+  a ROWS frame stops at the current row;
+- an offset bound (`RANGE BETWEEN 3 PRECEDING AND CURRENT ROW`) counts values,
+  not rows, so `ROWS` matches it only when the key is NOT NULL, unique and
+  advances by one per row with no gaps; otherwise no supported frame computes
+  it, so raise it with the user.
+
+Both conditions are data properties (the skill's "Adjudicating proposals and
+estimating").
 
 ## The projection-pushdown blocker
 
@@ -95,13 +105,22 @@ Two facts about the fix:
   ```
 
   The packed row then shrinks to exactly the projected columns
-  (`list[row(#0{k}, #1{ts})]` in the plan). Project the partition keys, the
-  ordering columns, the window function arguments, and any columns that must
-  pass through to the output; payload that only the output needs is extracted
-  early (the skill's extract-in-place lever, the preferred form) or fetched
-  back by a unique key after the window step, which re-arranges the fat
-  relation at full width and costs back most of the saving when the slimmed
-  pipeline held only a copy or two.
+  (`list[row(#0{k}, #1{ts})]` in the plan). It keeps every result up to the
+  order among ORDER BY ties, which SQL leaves unspecified: ties are broken on
+  the remaining columns of the packed row, so a dropped column can change which
+  tied row `row_number`, `lag`, `lead`, `first_value` and `last_value` see
+  first, and a float `sum` or `avg` over a window with no ORDER BY can differ
+  in its last digits. Where ties exist (compare `count(*)` with the row count
+  of `SELECT DISTINCT` over the partition and order columns), say that tied
+  rows may come out differently (the skill's ties bullet under "Verification
+  discipline").
+
+  Project the partition keys, the ordering columns, the window function
+  arguments, and any columns that must pass through to the output; payload that
+  only the output needs is extracted early (the skill's extract-in-place lever,
+  the preferred form) or fetched back by a unique key after the window step,
+  which re-arranges the fat relation at full width and costs back most of the
+  saving when the slimmed pipeline held only a copy or two.
 
 ## The arity diagnostic
 
@@ -134,7 +153,15 @@ is a discussion with the user.
   where the unfiltered window gadget keeps two full copies of packed rows
   (measured 2.1x to 2.6x smaller for `MIN`, 3.5x to 4x for `SUM`). The
   exception is a very large number of very small groups, where an accumulable
-  pays about 160 bytes per group and can lose.
+  pays about 160 bytes per group and can lose. For exactness:
+  - join back on the partition key, with a NULL-safe condition per nullable key
+    column (`t.k = g.k OR (t.k IS NULL AND g.k IS NULL)`, which plans as an
+    equi-join in the inner join back): a plain equality drops the NULL
+    partition the window keeps. A column that is NOT NULL in the window's input
+    needs only plain equality;
+  - over `real` or `double precision`, a `GROUP BY` rounds `sum`, `avg`,
+    `stddev` and `variance` differently than the window does, so disclose that
+    their results can change.
 - `ROW_NUMBER() ... WHERE rn <= k` to `DISTINCT ON` or the lateral top-k buys
   freshness and COSTS about 2x memory at a hint at or above the group size, far
   more un-hinted at the 8-level default. The window's filter fuses into its
@@ -160,37 +187,61 @@ that needs a range or inequality join condition is worse than the window
 function it replaces (see the quadratic-join shape in the skill); keep the
 window function in that case. The common mechanical rewrites:
 
-- `ROW_NUMBER() ... WHERE rn = 1`: rewrite to `DISTINCT ON (k) ...
-  ORDER BY k, <rank col>`. Top-k for k > 1: a lateral join of the
-  distinct group keys to a correlated `ORDER BY ... LIMIT k`
-  subquery. Both forms then get a GROUP SIZE hint
-  (hint-sizing.md). The lateral form joins the group keys back with
-  `t.k = g.k`, so it silently DROPS rows whose partition key is NULL,
-  which the window function keeps as a partition of its own. Require
-  the partition key NOT NULL, or handle the NULL partition in a
-  separate `UNION ALL` branch. The `DISTINCT ON` form for k = 1 has no
-  such gap.
-- `FIRST_VALUE`/`LAST_VALUE`: when the windowed expression IS the ordering
-  column and that column is NOT NULL, rewrite to a `MIN`/`MAX` group aggregate
-  joined back on the partition key. Two traps: `LAST_VALUE` under the DEFAULT
-  frame is the current row's value, not the partition maximum, so the rewrite
-  holds only when the frame is spelled `ROWS BETWEEN UNBOUNDED PRECEDING AND
-  UNBOUNDED FOLLOWING`, and on a nullable ordering column the two forms that
-  yield the maximum (`first_value` under DESC, `last_value` under ASC) return
-  the NULL that sorts at that end while `MAX` skips NULLs; the two that yield
-  the minimum (`first_value` under ASC, `last_value` under DESC) agree with
-  `MIN`. When the payload of the extreme row is needed, use the `DISTINCT ON`
-  pick instead.
+- `ROW_NUMBER() ... WHERE rn = 1`: rewrite to `DISTINCT ON (k) ... ORDER BY k,
+  <rank col>`. Top-k for k > 1: a lateral join of the distinct group keys to a
+  correlated `ORDER BY ... LIMIT k` subquery. Both forms then get a GROUP SIZE
+  hint (hint-sizing.md). Check three things:
+  - the lateral form joins the group keys back with `t.k = g.k`, so it silently
+    DROPS rows whose partition key is NULL, which the window function keeps as
+    a partition of its own. Correlate NULL-safe instead, per key column as in
+    the first bullet above: that keeps every NULL partition (a composite key
+    has several) and plans as the same single TopK. The `DISTINCT ON` form for
+    k = 1 has no such gap;
+  - predicates on other columns in the same WHERE as `rn = 1` stay above the
+    `DISTINCT ON` (wrap it in a subquery): moved into its WHERE they filter
+    before the pick and change which row wins;
+  - under ORDER BY ties both forms can keep a different one of the tied rows,
+    since the window breaks ties on its whole input row and a `DISTINCT ON` or
+    `LIMIT` on the columns it keeps: SQL leaves that unspecified, so say so
+    where the tie probe above finds ties.
+- `FIRST_VALUE`/`LAST_VALUE`: when the windowed expression IS the first ORDER
+  BY term, rewrite to a `MIN`/`MAX` group aggregate joined back on the
+  partition key, NULL-safe as in the first bullet above. The aggregate is `MIN`
+  for `FIRST_VALUE` ASC and `LAST_VALUE` DESC, `MAX` for the other two. Two
+  conditions:
+  - the frame must reach the partition's extreme row from every row:
+    `FIRST_VALUE` needs one that starts at `UNBOUNDED PRECEDING` and ends at or
+    after `CURRENT ROW` (the default frame does), `LAST_VALUE` one that ends at
+    `UNBOUNDED FOLLOWING` and starts at or before `CURRENT ROW`. Under the
+    default frame `LAST_VALUE` is the current row's value, and a sliding frame
+    is not the partition's extreme at all;
+  - on a nullable ordering column the window returns a NULL whenever NULLs sort
+    at the end it picks from, while `MIN`/`MAX` skip NULLs, so the forms agree
+    only when NULLs sort at the far end: `FIRST_VALUE` under `NULLS LAST`,
+    `LAST_VALUE` under `NULLS FIRST`. The defaults are `NULLS LAST` for ASC and
+    `NULLS FIRST` for DESC, so read the ORDER BY as spelled.
+
+  When the payload of the extreme row is needed, use the `DISTINCT ON` pick
+  instead.
 - `LAG`/`LEAD`: when the ordering column advances in a REGULAR pattern (a fixed
-  interval or step), rewrite to a self equi-join on `t1.k = t2.k AND t1.ts =
-  t2.ts + <step>` (inner join drops the boundary row, LEFT JOIN keeps it with a
-  null, so pick the one matching the window semantics). That formula is the
-  `LAG` direction, `LEAD` flips the sign. The equi-join form carries two
-  obligations the window function does not: the partition key must be NOT NULL
-  (an equi-join drops the NULL partition that `LAG` keeps, silently under the
-  LEFT variant), and `(partition key, ordering column)` must be unique (a
-  duplicate pair fans the self-join out). The LEFT variant additionally pays a
-  full equi outer-join diamond, measured at 3x the INNER form, so take INNER
+  interval or step, with no gaps), rewrite to a self equi-join on `t1.k = t2.k
+  AND t1.ts = t2.ts + <step>` (inner join drops the boundary row, LEFT JOIN
+  keeps it with a null, so pick the one matching the window semantics). That
+  formula is `LAG` under an ascending ORDER BY; `LEAD`, or a `DESC` order,
+  flips the sign. The equi-join form carries obligations the window function
+  does not:
+  - the partition key must be NOT NULL (an equi-join drops the NULL partition
+    that `LAG` keeps, silently under the LEFT variant);
+  - the ordering column must be NOT NULL (a row with a NULL ordering value gets
+    a neighbour from the window and NULL from the join);
+  - `(partition key, ordering column)` must be unique (a duplicate pair fans
+    the self-join out);
+  - it needs `RESPECT NULLS` (the default);
+  - a default argument (`lag(v, 1, d)`) becomes `CASE WHEN t2.k IS NULL THEN d
+    ELSE t2.v END`, not `coalesce`.
+
+  The LEFT variant additionally pays the outer-join diamond, mostly a
+  `Distinct` over the matched keys on top of the INNER form, so take INNER
   wherever the boundary row is expendable. When the spacing is irregular there
   is no window-free equivalent: keep the `LAG`/`LEAD` and slim its input per
   the pushdown section. Never fall back to an inequality join for adjacency.

@@ -18,14 +18,15 @@ there is no re-execution per outer row. The cost is that join's arrangements
 plus what the subquery's own operators hold, and when the outer keys are joined
 in below an aggregate or a `LIMIT` those operators hold one group per distinct
 outer value over the whole subquery input (the aggregate and `LIMIT` cases
-under "Already handled well"). A subquery made only of Map, Filter, Project,
-and table-function calls, and reading no relation, is inlined (a subquery
-inside a `CASE` never is). Anything else, a subquery that reads a relation or
-carries an aggregate, `DISTINCT`, `LIMIT`, a join, or a set operation, takes
-the general path: `Distinct` over the correlation key, the subquery, join back
-on that key. When nothing ties the subquery to the outer row (an uncorrelated
-scalar subquery; `IN` and `EXISTS` supply an equality of their own) the
-correlation key is empty and the join back is a `CrossJoin`.
+under "Already handled well").
+
+A subquery that reads no relation is often inlined, but not always ("Already
+handled well"). Anything else, a subquery that reads a relation or carries an
+aggregate, `DISTINCT`, `LIMIT`, a join, or a set operation, takes the general
+path: `Distinct` over the correlation key, the subquery, join back on that key.
+When nothing ties the subquery to the outer row (an uncorrelated scalar
+subquery; `IN` and `EXISTS` supply an equality of their own) the correlation
+key is empty and the join back is a `CrossJoin`.
 
 The memory is every arrangement keyed by the correlation key, at whatever width
 that key has: the join-back pair, one per side, the `Distinct` over the key
@@ -107,79 +108,126 @@ check the plan before touching any of them.
   distinct values with the whole subquery input under a `Reduce` or `TopK`
   grouped by the outer value, so the aggregate or top-k runs once per distinct
   outer value over all of it and rewrite 4 is the fix outright.
-- `EXISTS` and `NOT EXISTS` with an equality correlation, in any position:
-  already a semijoin or antijoin with the required `Distinct` on the inner side
-  (outside a conjunct they add a true/false diamond keyed on the correlation
-  columns, no cross join). Rewriting to a plain `JOIN` breaks multiplicity.
+- `EXISTS` and `NOT EXISTS` with an equality correlation, in any position but
+  an outer join's `ON` (rewrite 3): already a semijoin or antijoin with the
+  required `Distinct` on the inner side (outside a conjunct they add a
+  true/false diamond keyed on the correlation columns, no cross join).
+  Rewriting to a plain `JOIN` breaks multiplicity.
 - A scalar subquery that is unused, or under a trivially true
-  predicate: folded away entirely.
+  predicate: folded away entirely. A correlated one that is unused inside
+  the statement's own CTE or derived table (rather than in a view it reads)
+  leaves its `Distinct`, a count guard and the join back behind: delete the
+  dead column from the SQL.
 - Anything nullability-gated, once the columns are `NOT NULL`: `NOT IN` becomes
   a plain antijoin and a SELECT-list `IN` a semijoin with a `Negate` complement
   for the false rows. Check nullability before rewriting either.
-- A correlated subquery made only of Map, Filter, Project, and table-function
-  calls, reading no relation: inlined as a `Map`, or a `FlatMap` where it calls
-  a table function, no join back.
+- A correlated subquery that reads no relation, in `FROM` (a `LATERAL` derived
+  table or table-function call under a comma or `CROSS JOIN`) or as a bare
+  `(SELECT <expr>)`: inlined as a `Map`, `Filter` or `FlatMap`, no join back,
+  and so is an `EXISTS` with no `FROM`. Under a `LEFT JOIN LATERAL` the null
+  extension adds a `Distinct` and an anti-join keyed on the whole left row. In
+  the SELECT list with a `WHERE` or a table-function call it is not: it joins
+  back on every column of the outer relation in scope (signature 4, with the
+  whole row as the key), so flatten it as in rewrite 7 or narrow the outer
+  relation first.
 
 ## Rewrites and their exactness obligations
 
 Each rewrite below carries the obligation stated with it, and the
 standard two-way `EXCEPT ALL` proof applies to all of them.
 
-1. **`NOT IN` to `NOT EXISTS`**: `NOT EXISTS (SELECT 1 FROM t2 WHERE
-   t2.a = t1.a)` removes the cross join. Not equivalent: `NOT IN`
-   returns no rows at all when the subquery yields a NULL and drops
-   outer rows whose value is NULL, while `NOT EXISTS` treats NULL as
-   non-matching and keeps NULL outer rows. The alternative `t1.a IS
-   NOT NULL AND t1.a NOT IN (SELECT a FROM t2 WHERE a IS NOT NULL)`
-   drops NULL outer rows instead, which matches `NOT IN` only while
-   the subquery is non-empty: over an empty subquery result `NOT IN`
-   is true even for a NULL outer value. Cheapest of all: declare the
-   columns `NOT NULL`, and the cross join never appears.
+1. **`NOT IN` to `NOT EXISTS`**: `NOT EXISTS (SELECT 1 FROM t2 WHERE t2.a =
+   t1.a)` removes the cross join. Not equivalent: `NOT IN` returns no rows at
+   all when the subquery yields a NULL and drops outer rows whose value is
+   NULL, while `NOT EXISTS` treats NULL as non-matching and keeps NULL outer
+   rows. The alternative `t1.a IS NOT NULL AND t1.a NOT IN (SELECT a FROM t2
+   WHERE a IS NOT NULL)` drops NULL outer rows instead, and still differs from
+   `NOT IN`:
+   - as a projected value it yields false where `NOT IN` yields NULL;
+   - as a filter it matches `NOT IN` only while the subquery is non-empty and
+     yields no NULL: over an empty result `NOT IN` is true even for a NULL
+     outer value, and over a result that holds a NULL `NOT IN` returns no rows
+     while this form still returns the non-matching ones.
+
+   Cheapest of all: declare the columns `NOT NULL`, and the cross join never
+   appears.
 2. **`IN` or `ANY` outside a filter conjunct**: move it into a `WHERE` conjunct
-   when the boolean's consumer is a filter. A projected boolean has only the
-   other form: precompute it per key in a CTE and `LEFT JOIN` that with
-   `COALESCE(..., false)`. Keep the three-valued result if the outer key is
-   nullable or the subquery's column can be NULL, as one inner NULL turns every
-   non-match into NULL. Outside a filter conjunct the cliff is nullability
-   (inside one, a nullable comparison still plans as a semijoin), and it tests
-   the whole comparison: the semijoin plan needs BOTH the compared outer
-   expression and the subquery's expression non-nullable, so `NOT NULL` on one
-   side alone changes nothing.
-3. **Subquery in a LEFT JOIN's `ON`**, when it references only the right side:
-   lift it into a CTE that filters the right side, then LEFT JOIN the CTE on
-   the equality alone. Predicates on the preserved side must stay in the `ON`,
-   and a subquery that references the preserved side cannot be lifted (it
-   decides which left rows match) and keeps the general lowering.
-4. **`IN` over an uncorrelated aggregating or `LIMIT`ed subquery**: hoist the
-   subquery into a CTE, `WITH s AS (...) ... JOIN s ON t.k = s.k`. Join
-   directly only if `s.k` is unique (a `GROUP BY` key is), otherwise `SELECT
-   DISTINCT` first. This is the fix for the aggregate and `LIMIT` cases under
-   "Already handled well". When the compared column is the subquery's group key
-   the original already aggregates only the outer's keys, so rewrite 8's
-   condition applies: the CTE aggregates every key of the subquery's input.
-5. **Nested `IN (... IN (...))`**: a correlated `EXISTS` at each level.
-   `EXISTS` does not duplicate rows; a plain `JOIN` does, so never
-   flatten an `EXISTS` to a `JOIN` without a `DISTINCT`.
-6. **`= ANY(<array or list column>)`**: `unnest` the collection in a CTE and
-   equi-join on the elements, with `DISTINCT` if the collection can repeat
-   values. For a literal element test, `col @> ARRAY[x]` (or `LIST[x]`) is a
-   plain filter fused into the source read (`filter=` on the Source line).
+   when the boolean's consumer is a filter. Elsewhere:
+   - where the consumer treats NULL like false (an `OR` branch of a filter that
+     is not under `NOT`, a searched `CASE WHEN <condition>`, `COALESCE(...,
+     false)`), a correlated `EXISTS` is exact and needs no cross join;
+   - a projected three-valued boolean has only the other form: precompute it
+     per key in a CTE and `LEFT JOIN` that with `COALESCE(..., false)`. Keep
+     the three-valued result if the outer key is nullable or the subquery's
+     column can be NULL, as one inner NULL turns every non-match into NULL.
+
+   Here and in rewrites 1 and 5, when the subquery has a `LIMIT`, `DISTINCT
+   ON`, window function, aggregate or set operation, an equality added to its
+   own `WHERE` filters before them, so correlate against it wrapped (`EXISTS
+   (SELECT 1 FROM (<subquery>) q WHERE q.y = t.x)`). Outside a filter conjunct
+   the cliff is nullability (inside one, a nullable comparison still plans as a
+   semijoin), and it tests the whole comparison: the semijoin plan needs BOTH
+   the compared outer expression and the subquery's expression non-nullable, so
+   `NOT NULL` on one side alone changes nothing.
+3. **Subquery in an outer join's `ON`**, when the `ON` conjunct that holds it
+   references only the nullable side (the right side of a LEFT JOIN, the left
+   side of a RIGHT JOIN; a FULL JOIN has none): lift that whole conjunct into a
+   CTE that filters that side, then join the CTE on the equality alone. A
+   conjunct that also references the preserved side (an `OR` with the equality
+   or with a preserved-side term, a subquery that reads preserved columns)
+   cannot be lifted and keeps the general lowering, and other preserved-side
+   predicates stay in the `ON`.
+4. **`IN` over an uncorrelated aggregating or `LIMIT`ed subquery**: as a filter
+   conjunct, hoist the subquery into a CTE, `WITH s AS (...) ... JOIN s ON t.k
+   = s.k`; in any other position keep the `IN` and point it at the CTE (`IN
+   (SELECT k FROM s)`, then rewrite 2). Join directly only if `s.k` is unique
+   (it is when the compared columns are the subquery's whole `GROUP BY` key,
+   not part of it), otherwise `SELECT DISTINCT` first. This is the fix for the
+   aggregate and `LIMIT` cases under "Already handled well". When the compared
+   column is the subquery's group key the original already aggregates only the
+   outer's keys, so rewrite 8's condition applies: the CTE aggregates every key
+   of the subquery's input.
+5. **Nested `IN (... IN (...))`**: a correlated `EXISTS` at each level, exact
+   where the `IN` is a filter conjunct. In a SELECT list or under `NOT` the
+   swap changes results whenever the outer value or the subquery's column can
+   be NULL (`IN` yields NULL where `EXISTS` yields false): keep the
+   three-valued result as in rewrite 2. `EXISTS` does not duplicate rows; a
+   plain `JOIN` does, so never flatten an `EXISTS` to a `JOIN` without a
+   `DISTINCT`.
+6. **`= ANY(<array or list column>)`**: as a filter conjunct, `unnest` the
+   collection in a CTE, keeping a unique NOT NULL key of the collection's
+   relation beside each element, and equi-join on the elements, with `DISTINCT`
+   over that key and the element if the collection can repeat values. For a
+   literal element test, `col @> ARRAY[x]` (or `LIST[x]`) is a plain filter
+   fused into the source read (`filter=` on the Source line). It equals `x =
+   ANY(col)` as a filter conjunct; under `NOT` or as a projected value the two
+   differ on a collection that holds a NULL element and no match.
 7. **Per-row subquery over `unnest` or `jsonb_array_elements`**: put the table
-   function in `FROM` and aggregate at the outer level with `GROUP BY` or pick
-   with `DISTINCT ON`. Inner-join semantics: outer rows with an empty or NULL
-   collection disappear, and `count(*)` yields no row rather than `0`, so
-   re-add those rows explicitly if they matter. An unordered `LIMIT 1` picks an
-   arbitrary row in the original and in the `DISTINCT ON` form alike, so add
-   the `ORDER BY` that makes the pick unique before claiming exactness. `LEFT
-   JOIN LATERAL ... ON true` is NOT the fix: it keeps the wide-key diamond and
-   adds an outer-join diamond keyed on the whole row. When the flatten cannot
-   be made exact, narrow the correlated column first (`WITH j AS (SELECT id,
-   data -> 'items' AS items FROM t)`): the arrangement key shrinks from the
-   whole `jsonb` value to the extracted part. When per-row subqueries are a
-   large share of a cluster's memory even after trying to rewrite them, tell
-   Materialize: a planned optimizer change would compile a subquery that
-   depends only on the current row into a `FlatMap` with no join back, and
-   knowing about affected clusters helps prioritize it.
+   function in `FROM` and aggregate at the outer level with `GROUP BY`, or pick
+   with `DISTINCT ON`, on a unique NOT NULL key of the outer relation (a key
+   that is not unique merges rows). Then:
+   - inner-join semantics: an outer row whose subquery finds no row (an empty
+     or NULL collection, or every element filtered out) disappears; re-add it,
+     if it matters, with a `LEFT JOIN` from the outer relation on that key,
+     defaulted to what the subquery yields over no rows (`0` for `count`, an
+     empty array or list for `ARRAY(SELECT ...)` or `LIST(SELECT ...)`);
+   - give each per-row subquery of a row its own derived table, grouped and
+     joined back on the key: two table functions in one `FROM` multiply each
+     other's rows;
+   - an unordered `LIMIT 1` picks an arbitrary row in the original and in the
+     `DISTINCT ON` form alike, so add the `ORDER BY` that makes the pick unique
+     before claiming exactness.
+
+   `LEFT JOIN LATERAL ... ON true` is NOT the fix: it keeps the wide-key
+   diamond and adds an outer-join diamond keyed on the whole row. When the
+   flatten cannot be made exact, narrow the correlated column first (`WITH j AS
+   (SELECT id, data -> 'items' AS items FROM t)`): the arrangement key shrinks
+   from the whole `jsonb` value to the extracted part.
+
+   When per-row subqueries are a large share of a cluster's memory even after
+   trying to rewrite them, tell Materialize: a planned optimizer change would
+   compile a subquery that depends only on the current row into a `FlatMap`
+   with no join back, and knowing about affected clusters helps prioritize it.
 8. **Correlated aggregate with an equality correlation**: `WITH m AS (SELECT k,
    agg(...) ... GROUP BY k)` and `LEFT JOIN m`, when the outer's distinct
    correlation keys cover most of the inner relation's keys. The correlated
@@ -188,26 +236,54 @@ standard two-way `EXCEPT ALL` proof applies to all of them.
    the inner relation, so count distinct keys on both sides first. Measured on
    the rig with the inner relation holding 100x the outer's keys, the CTE form
    was 1.7x larger for `count(*)` and 16x larger for an un-hinted `max`; with
-   the outer holding 100x the inner's keys it was 3.3x and 2.4x smaller. Empty
-   groups differ: the scalar subquery yields NULL, `count()` yields 0; match
-   with `LEFT JOIN` plus `COALESCE`.
+   the outer holding 100x the inner's keys it was 3.3x and 2.4x smaller.
+   Exactness obligations:
+   - the correlation must be an equality conjunct of the subquery's `WHERE`:
+     one in a `LEFT JOIN`'s `ON` inside it restricts only that join's right
+     side, which no grouping reproduces;
+   - empty groups differ: a key the inner relation lacks gets NULLs from the
+     `LEFT JOIN`, where the subquery yields its value over no rows (`0` for
+     `count`, and whatever its expressions and `HAVING` make of that). So keep
+     only raw aggregates in the CTE and compute the subquery's value after the
+     join, `CASE WHEN m.k IS NULL THEN <its value over no rows> ELSE <its
+     expression over m's aggregates> END`, where a `HAVING` turns the `ELSE`
+     into `WHEN <the HAVING over m's aggregates> THEN`; for a bare `count` that
+     is `COALESCE(m.c, 0)`. A subquery with its own `GROUP BY` yields NULL for
+     a missing group, `count` included, so it needs none of this;
+   - a correlated `LATERAL` that aggregates without `GROUP BY` or `HAVING`
+     returns one row per outer row and takes the same `LEFT JOIN`; a grouped
+     one keeps its join kind (a comma or `CROSS JOIN LATERAL` becomes an `INNER
+     JOIN` on the correlation key);
+   - the CTE also evaluates the aggregate on inner keys the outer relation does
+     not have, where an expression that can fail (a division, a cast) may fail
+     every read (the skill's checklist under "Verification discipline"): guard
+     the expression or restrict the CTE's input to the outer relation's keys
+     (`WHERE k IN (SELECT k FROM <outer> WHERE <its filters>)`), and seed the
+     proof with such a row.
+
+   Rewrites 4 and 9 hoist the same way.
 9. **The same subquery text in two UNION branches whose outer sides differ** (a
    different filter or relation on each branch): hoist the subquery into a CTE
    and have every branch read the CTE (`IN (SELECT k FROM cte)`, or a join
-   against it), which plans it once. Materialize's common-subexpression
-   elimination runs on the MIR plan and shares structurally identical subtrees,
-   so identical branches are already computed once, and so is a derived table
-   repeated in `FROM`. What defeats it is the subquery lowering: it joins each
-   branch's distinct outer keys into its copy of the subquery, below the
-   aggregate, so the copies differ and the aggregate runs once per branch.
+   against it under rewrite 4's uniqueness rule), which plans it once.
+   Materialize's common-subexpression elimination runs on the MIR plan and
+   shares structurally identical subtrees, so identical branches are already
+   computed once, and so is a derived table repeated in `FROM`. What defeats it
+   is the subquery lowering: it joins each branch's distinct outer keys into
+   its copy of the subquery, below the aggregate, so the copies differ and the
+   aggregate runs once per branch.
 
 ## Unfixable by rewrite
 
 - Correlation through a non-equality (`WHERE t2.a < t1.a`, `ON x * f.k = y *
   d.k`): no equi-join exists, and the `CrossJoin` is the plan. An inequality
-  correlation crosses with or without an `OR` beside it, so the `OR` is not the
-  trigger, and an equality correlation under `OR` decorrelates fine. Shrink the
-  inputs instead if possible (filter, pre-aggregate, bucket).
+  correlation crosses with or without an `OR` beside it. An equality
+  correlation that is its own conjunct decorrelates fine, whatever `OR` sits
+  beside it; one that is itself a branch of an `OR` (`t2.a = t1.a OR t2.b =
+  t1.b`) crosses too, and for `EXISTS` that one is fixable: one `EXISTS` per
+  branch, joined by `OR` (for `NOT EXISTS`, `NOT EXISTS (...) AND NOT EXISTS
+  (...)`). Shrink the inputs instead if possible (filter, pre-aggregate,
+  bucket).
 - An uncorrelated scalar subquery in a SELECT list: the cross join is
   the semantics. It is not free even when the subquery returns one
   row, because the outer relation is arranged whole under an empty

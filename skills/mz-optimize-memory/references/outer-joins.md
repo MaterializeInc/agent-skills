@@ -42,18 +42,23 @@ little. Attribute before you size.
   error (`1/0`) or an `error_if_null` call, and any reference to a subquery in
   the ON. Predicates on one side only, and constants, are tolerated. An ON with
   no cross-side `=` at all (`ON true`, a pure inequality) is general too.
-- **VOJ**: `Negate` inside a `Threshold`, under a `Map (null, ...)`,
-  with `Map (true)` real-row markers, feeding one large join.
-  `Threshold` is the crisp VOJ marker. A chained VOJ (each LEFT JOIN
-  keyed off the previous right side's nullable column) shows computed
-  join keys of the form `case when #k IS NULL then null else ... end`,
-  and it also loses the delta implementation the clean stack gets.
-  Restructuring the SQL so every LEFT JOIN keys off the same base
-  column yields one clean stack instead. A stack that shows `n`
-  differential joins with a matched-key Distinct each and no
-  `Threshold` has lost the lowering ("What breaks the VOJ lowering",
-  below), and whether the lowering pays at all is a match-rate question
-  ("When the VOJ lowering is the cheaper one", below).
+- **VOJ**: `Negate` inside a `Threshold`, under a `Map (null, ...)`, with `Map
+  (true)` real-row markers, feeding one large join. `Threshold` is the crisp
+  VOJ marker. A stack that shows `n` differential joins with a matched-key
+  Distinct each and no `Threshold` has lost the lowering ("What breaks the VOJ
+  lowering", below), and whether the lowering pays at all is a match-rate
+  question ("When the VOJ lowering is the cheaper one", below).
+
+  A chained VOJ (each LEFT JOIN keyed off the previous right side's nullable
+  column) shows computed join keys of the form `case when #k IS NULL then null
+  else ... end`, and it also loses the delta implementation the clean stack
+  gets. Rekeying the chained join off the driver's column is a different query:
+  where the previous right side has no match its key is NULL and the chained
+  join finds nothing, while the driver's key still matches. Instead, nest the
+  chained join into the previous right side (`d LEFT JOIN (SELECT a.k, ... FROM
+  a LEFT JOIN b ON a.k = b.k) ab ON d.k = ab.k`), which is exact for a chained
+  `ON` that is a bare equality, as a VOJ's always is, and leaves a clean stack
+  keyed off the driver.
 - A LEFT JOIN whose RIGHT side is correlated (a LATERAL that references the
   left) never gets the equi lowering, whatever its ON says: the lowering
   evaluates the right side against the distinct left rows and closes the join
@@ -139,22 +144,33 @@ no census signature, so hunt for it deliberately on every rebuild. Two
 guarantee classes cover most of the query-visible cases and make the conversion
 a one-keyword edit:
 
-1. **Driver-rooted right side**: the right side is a view whose
-   outermost SELECT is `FROM <driver> LEFT JOIN ...` with no top-level
-   WHERE and no non-guaranteed INNER join, so it emits at least one
-   row per driver row by construction, and it is joined back on the
-   driver key.
-2. **Own-row aggregate**: the right side aggregates a join whose
-   predicate is satisfied by the driver row itself (a non-strict time
-   bound, no status filter), so the group is never empty.
+1. **Driver-rooted right side**: the right side is a view whose outermost
+   SELECT is `FROM <driver> LEFT JOIN ...` over the same driver that is the
+   left side of the join being converted, so it emits at least one row per
+   driver row by construction, and it is joined back on the driver key. That
+   holds only while nothing in the view can drop a driver row: no top-level
+   WHERE or HAVING, no INNER, RIGHT, CROSS or LATERAL join that is not itself
+   guaranteed, no `LIMIT`, `OFFSET`, `EXCEPT` or `INTERSECT`, no `DISTINCT ON`
+   or `GROUP BY` on anything but the driver key (an aggregate without `GROUP
+   BY` included), and no set-returning function in the SELECT list. The view
+   must output the driver's own key column, not the right side's (which is NULL
+   on unmatched rows), and that key equality must be the whole `ON` of the join
+   being converted.
+2. **Own-row aggregate**: the right side aggregates a join whose predicate is
+   satisfied by the driver row itself (a non-strict time bound, no status
+   filter), so the group is never empty. Every column that predicate compares
+   must be NOT NULL on the driver: `p.ts <= e.ts` is not true for a row whose
+   `ts` is NULL, so that row has no group. And nothing in the view may remove a
+   group: none of what class 1 excludes.
 
-Both classes additionally require the join key NOT NULL on the left
-side; otherwise INNER drops NULL-key rows that LEFT kept. Guarantees
-compose along chains: an INNER join FROM the driver TO a guaranteed
-view preserves the guarantee. What is NOT provable, only askable:
-foreign-key-style data properties ("the dimension row always exists").
-Offer those as a question to the user, never as an assumption.
-Multiplicity is never a concern; the conversion only changes the
+Both classes additionally require the join key NOT NULL on the left side, at
+every link of a chain; otherwise INNER drops NULL-key rows that LEFT kept. That
+means NOT NULL in the join's whole left input, not by declaration: an earlier
+LEFT or FULL JOIN can null-extend the driver. Guarantees compose along chains:
+an INNER join FROM the driver TO a guaranteed view preserves the guarantee.
+What is NOT provable, only askable: foreign-key-style data properties ("the
+dimension row always exists"). Offer those as a question to the user, never as
+an assumption. Multiplicity is never a concern; the conversion only changes the
 cannot-happen empty-match case.
 
 Size the payoff by the LEFT side ("Where the outer-join memory is" above): a
@@ -168,16 +184,21 @@ the structure).
 
 1. **Equi cannot push a predicate into the preserving side.** A WHERE above an
    equi LEFT JOIN is re-applied to consumers but not to the shared inner join's
-   preserving read. Workaround: wrap the preserving side in `(SELECT ... WHERE
-   pred)`. This works only when no index on the preserving relation is
-   competing for adoption: with such an index the planner keeps the read
-   unfiltered to preserve adoption and lifts the filter above the join either
-   way, so the workaround only moves the filter and does not shrink the
-   arrangement. The block is the matched-key Distinct itself: when the right
-   side is known unique on the key, SemijoinIdempotence removes it and the
-   predicate then pushes all the way into the source read (`filter=` and
-   `pushdown=` on `Source`), so declaring the key (a `GROUP BY k` or `DISTINCT
-   ON (k)` view over the right side) is the other workaround.
+   preserving read. Two workarounds:
+   - wrap the preserving side in `(SELECT ... WHERE pred)` (for a LEFT JOIN,
+     mirrored for a RIGHT JOIN). Under a FULL JOIN a predicate that is never
+     true on NULL input also removes the other side's unmatched rows, so the
+     exact form is the filtered side LEFT JOINed; a predicate such as `x IS
+     NULL` keeps them, and then the WHERE has to stay. This works only when no
+     index on the preserving relation is competing for adoption: with such an
+     index the planner keeps the read unfiltered to preserve adoption and lifts
+     the filter above the join either way, so the workaround only moves the
+     filter and does not shrink the arrangement;
+   - declare the key: the block is the matched-key Distinct itself, and when
+     the right side is known unique on the key, SemijoinIdempotence removes it
+     and the predicate then pushes all the way into the source read (`filter=`
+     and `pushdown=` on `Source`), so a `GROUP BY k` or `DISTINCT ON (k)` view
+     over the right side is the other workaround.
 2. **General cannot push a projection through itself.** The
    anti-join equates every preserving column, so all columns look used
    and unused ones ride through every arrangement. Workaround:
@@ -213,29 +234,40 @@ cut in OPPOSITE directions.
 LEFT JOINs. Each side of the cut is lowered on its own: a side with two or more
 LEFT JOINs keeps a VOJ of its own, a side with one is lowered per join.
 
-- An INNER (or RIGHT, or FULL) join between two LEFT JOINs. Either end of
-  the stack restores the lowering, both ends are exact when the inner
-  join's ON references only the driver and its own relation, and which
-  end is cheaper depends on what the inner join does to the rows that
-  then flow through every outer join. Check two things before moving it:
-  its selectivity (a count probe of the driver's rows before and after
-  the inner join) and the width it adds. A selective, narrow inner join
-  belongs BELOW the stack, where it shrinks the driver for all the outer
-  joins; one that multiplies rows or brings in wide columns belongs ABOVE
-  the stack, so the multiplied or widened rows never enter the outer-join
-  machinery. Above the stack it fuses into one join carrying two key sets
-  and loses the delta implementation, which, for a neutral narrow inner
-  join, can cost more than leaving the cut in place. So build both
-  placements and compare; a cut that stays may be the right
+- An INNER (or RIGHT, or FULL) join between two LEFT JOINs. Either end of the
+  stack restores the lowering. Both ends are exact when the inner join's ON
+  references only the driver and its own relation. A RIGHT or FULL join also
+  null-extends the driver, so moving one is exact only while every LEFT JOIN it
+  crosses has an `ON` that is not true for a NULL driver row: a bare column
+  equality qualifies, `coalesce(d.k, 0) = r.k` does not.
+
+  Which end is cheaper depends on what the inner join does to the rows that
+  then flow through every outer join. Check two things before moving it: its
+  selectivity (a count probe of the driver's rows before and after the inner
+  join) and the width it adds.
+  - A selective, narrow inner join belongs BELOW the stack, where it shrinks
+    the driver for all the outer joins.
+  - One that multiplies rows or brings in wide columns belongs ABOVE the stack,
+    so the multiplied or widened rows never enter the outer-join machinery.
+    Above the stack it fuses into one join carrying two key sets and loses the
+    delta implementation, which, for a neutral narrow inner join, can cost more
+    than leaving the cut in place.
+
+  So build both placements and compare; a cut that stays may be the right
   answer when the inner join is both amplifying and wide.
 - `USING` and `NATURAL`, which plan as a Project over the join. The Project
   appears only when the join column is not already the leftmost column of the
   left input, and only above the first such join, so a five-deep `USING` stack
   loses exactly its bottom join, while a stack whose `USING` joins name a
   different column each loses every join, since each key is non-leftmost after
-  the previous join. Write `ON l.k = r.k` instead, or reorder the driver so the
-  key leads; a `USING` after an `ON` on the same column name fails (the common
-  column appears more than once), so convert the whole stack at once.
+  the previous join.
+
+  Write `ON d.k = r.k` instead, with `d.k` the driver's column in every join
+  (`ON a.k = b.k` against the previous right side is the chained query, a
+  different one), and spell out the select list, since `SELECT *` over `USING`
+  lists the join column once and first; or reorder the driver so the key leads.
+  A `USING` after an `ON` on the same column name fails (the common column
+  appears more than once), so convert the whole stack at once.
 
 **ON-clause failures** make the attempt bail. The joins BELOW the failing
 one keep a VOJ if at least two remain; the failing join and everything
@@ -246,13 +278,36 @@ from the new right side to ONE prior input, and nothing else. It is
 inspected before any canonicalization, so all of the following break it,
 and each is tolerated by the binary equi lowering:
 
-- A local predicate on either side (`r.status = 'x'`, `r.v > 5`,
-  `l.flag`). On the right, push it into a derived table (`LEFT JOIN
-  (SELECT * FROM r WHERE ...) r ON ...`), which is always exact; on the
-  left, lift it to a WHERE above the stack.
-- Any expression wrapping a key: a function, a cast, arithmetic,
-  `coalesce`. Precompute it as a column in a derived table on that side
-  and join on the column.
+- A local predicate on either side (`r.status = 'x'`, `r.v > 5`, `l.flag`):
+  - on the right, when it is a top-level `AND` conjunct of the `ON`, push it
+    into a derived table (`LEFT JOIN (SELECT * FROM r WHERE ...) r ON ...`),
+    which is then always exact;
+  - on the left, a WHERE above the stack is not equivalent: it drops the rows
+    the predicate fails, which the `ON` keeps null-extended. Fold it into the
+    key instead, in a derived table on the left (`CASE WHEN l.flag THEN l.k END
+    AS k1`, then `ON k1 = r.k`). That keeps the lowering, but the right sides
+    then join the driver on two columns, which a delta join needs an index on
+    each of ("When the VOJ lowering is the cheaper one");
+  - a predicate on a prior right side `a` is a left-side one: fold it into
+    `a`'s own join-key column the same way (valid when `a` joins the driver on
+    that key), which gives the chained shape.
+- Any expression wrapping a key: a function, a cast, arithmetic, `coalesce`.
+  Precompute it as a column in a derived table on that side and join on the
+  column. That is exact on the new right side and on the driver. On a prior
+  right side it is exact only for an expression that is NULL on NULL input (a
+  widening cast, `lower`): in the `ON`, `coalesce(a.x, 0)` also sees an
+  unmatched `a`'s null-extended row, which the derived table never does. The
+  derived table also evaluates the expression on rows that match no driver row,
+  where one that can fail (a narrowing or text cast, a division) may fail every
+  read (the skill's checklist under "Verification discipline"). Compute any
+  other one in a derived table over the joins that produce the column. Counting
+  `Threshold` nodes does not catch this, since the inexact form plans as a
+  clean stack.
+- An equality between columns of different types (`int4 = int8`): the
+  planner casts the narrower side, which counts as an expression
+  wrapping a key although the SQL shows two bare columns. Precompute
+  the widening cast (`k::bigint`) on every narrower side; casting the
+  wider side down fails on values out of range.
 - A literal comparison. `AND true` is tolerated (`USING` generates it), but
   `AND 1 = 1` is not, and a dead one left in a generated query costs the
   whole stack its lowering.
@@ -272,11 +327,15 @@ diamond arrangement carries the correlation key at its width. An UNCORRELATED
 derived table or scalar subquery around the stack keeps the full VOJ, so the
 trigger is correlation, not subquery-ness. A `LEFT JOIN LATERAL` inside the
 stack breaks it; one at the top leaves the joins below intact if at least two
-of them remain. Decorrelate by hand: compute the stack once at the top level,
-aggregate by the correlation key, and LEFT JOIN that to the outer relation
-(wrapping the aggregate in `coalesce` where the scalar subquery's default
-differs). Worth doing on its own, since the correlated form carries the outer
-key through every arrangement of the stack.
+of them remain.
+
+Decorrelate by hand: compute the stack once at the top level, aggregate it by
+the correlation key and join that to the outer relation, under the exactness
+rules of subqueries.md rewrite 8 (missing groups and `HAVING`, a correlated
+`LATERAL`, where the correlation sits, failing expressions; restricting the
+input to the outer relation's keys means filtering the stack's driver, `WHERE
+d.grp IN (SELECT grp FROM o)`). That is worth doing on its own, since the
+correlated form carries the outer key through every arrangement of the stack.
 
 On a 3-deep stack each of these costs 1.4x to 2.0x the VOJ form, the
 whole-stack failures more than the partial ones. Confirm a fix by counting
@@ -353,15 +412,15 @@ fallback's per-level intermediates (fallback/VOJ): 1.60x at depth 2, 2.07x at
 Two topology traps sit outside that model. A CHAINED stack, where a LEFT JOIN
 keys off a column of the previous right side rather than the driver, loses the
 delta implementation and costs about 7% more than the fallback even when it
-plans cleanly (a fallback/VOJ ratio of 0.93x); restructure it to key off the
-driver where the semantics allow (they do not when an intermediate key can be
-NULL). And with `enable_eager_delta_joins` on (default off; settable per
-cluster only on Cloud, environment-wide elsewhere), the chained shape whose
-chained column is the previous right's own join column plans a spurious CROSS
-JOIN against the driver: look for `ArrangeBy keys=[[], ...]` with an empty key
-list, `[×]` in `WITH (join implementations)`, and an `ArrangeBy[[]]` whose
-records all sit on one worker. It costs 23.7x the CPU of the correct plan while
-using LESS memory, so a byte census will not find it.
+plans cleanly (a fallback/VOJ ratio of 0.93x); nest the chained join into the
+previous right side, not rekeying it ("Recognizing the lowering"). And with
+`enable_eager_delta_joins` on (default off; settable per cluster only on Cloud,
+environment-wide elsewhere), the chained shape whose chained column is the
+previous right's own join column plans a spurious CROSS JOIN against the
+driver: look for `ArrangeBy keys=[[], ...]` with an empty key list, `[×]` in
+`WITH (join implementations)`, and an `ArrangeBy[[]]` whose records all sit on
+one worker. It costs 23.7x the CPU of the correct plan while using LESS memory,
+so a byte census will not find it.
 
 Why the VOJ lowering gets a delta join at all with `enable_eager_delta_joins`
 off: `JoinImplementation` first plans a differential join, which arranges
@@ -393,7 +452,7 @@ Before building anything, the match rate is one query:
 ```sql
 SELECT round(count(*) FILTER (
          WHERE EXISTS (SELECT 1 FROM <right> r WHERE r.k = dk.k)
-       ) * 100.0 / count(*), 1) AS match_pct
+       ) * 100.0 / nullif(count(*), 0), 1) AS match_pct
 FROM (SELECT DISTINCT k FROM <driver> WHERE k IS NOT NULL) dk;
 ```
 
